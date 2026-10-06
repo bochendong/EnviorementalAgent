@@ -1,0 +1,340 @@
+"""The acting agent, built with the OpenAI Agents SDK.
+
+Each episode = one ``Runner.run`` of an ``Agent`` whose tools operate on a ``World``.
+Conditions (what memory the agent carries across worlds) map to the baselines of
+section 23 of the program seed:
+
+    none        stateless agent                              pi(o_t)
+    trajectory  last K episode logs in context               pi(o_t, tau_{1:t})
+    retrieval   episodic store + recall() tool               pi(o_t, Retrieve(M, q))
+    seed        learned world seed (symbolic) + predict()    Seed + Grow + Zoom + Consolidate
+    seed_llm    seed + free-text rules from an LLM consolidator
+    oracle      the true laws are given                      upper bound
+
+View modes: ``zoom`` (hierarchical, lazily grown) vs ``flat`` (everything at full
+detail, no zoom tools) for the adaptive-resolution hypothesis H3.
+"""
+
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass, field
+from typing import Any
+
+from agents import (
+    Agent,
+    MaxTurnsExceeded,
+    RunConfig,
+    RunContextWrapper,
+    RunHooks,
+    Runner,
+    ToolsToFinalOutputResult,
+    function_tool,
+    set_tracing_disabled,
+)
+from pydantic import BaseModel, Field
+
+from .memory import OracleSeed, RetrievalMemory, SeedMemory, TrajectoryMemory
+from .world import World
+
+set_tracing_disabled(True)  # no OpenAI key on Nibi; traces would try to upload
+
+CONDITIONS = ["none", "trajectory", "retrieval", "seed", "seed_llm", "oracle"]
+
+
+@dataclass
+class EpisodeCtx:
+    world: World
+    condition: str
+    seed: SeedMemory | None = None
+    retrieval: RetrievalMemory | None = None
+    tool_calls: int = 0
+    predict_calls: int = 0
+    recall_calls: int = 0
+    trace: list[dict] = field(default_factory=list)
+    llm_requests: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    _run_usage: tuple[int, int, int] = (0, 0, 0)
+
+    def commit_usage(self) -> None:
+        r, i, o = self._run_usage
+        self.llm_requests += r
+        self.input_tokens += i
+        self.output_tokens += o
+        self._run_usage = (0, 0, 0)
+
+
+class _UsageHooks(RunHooks):
+    async def on_llm_end(self, context: RunContextWrapper[EpisodeCtx], agent, response) -> None:
+        u = context.usage  # cumulative for the current Runner.run call
+        context.context._run_usage = (u.requests, u.input_tokens, u.output_tokens)
+
+
+def _log(ctx: EpisodeCtx, tool: str, args: dict, out: str) -> str:
+    ctx.tool_calls += 1
+    ctx.trace.append({"tool": tool, "args": args, "out": out[:2000]})
+    return out
+
+
+# ------------------------------------------------------------------ tools
+@function_tool
+def observe(ctx: RunContextWrapper[EpisodeCtx]) -> str:
+    """Describe what is visible at the current zoom focus (world map, a room, an object or a component)."""
+    return _log(ctx.context, "observe", {}, ctx.context.world.observe())
+
+
+@function_tool
+def zoom_in(ctx: RunContextWrapper[EpisodeCtx], target: str) -> str:
+    """Zoom one level deeper: world -> room id (e.g. r1) -> object id (e.g. k2) -> component id (e.g. m1.core).
+    Deeper levels reveal fine details such as shape, material, glyph, locks and machine parts. Costs no action.
+
+    Args:
+        target: id of a room, object or component visible at the current focus.
+    """
+    return _log(ctx.context, "zoom_in", {"target": target}, ctx.context.world.zoom_in(target))
+
+
+@function_tool
+def zoom_out(ctx: RunContextWrapper[EpisodeCtx]) -> str:
+    """Zoom one level out (component -> object -> room -> world map). Costs no action."""
+    return _log(ctx.context, "zoom_out", {}, ctx.context.world.zoom_out())
+
+
+@function_tool
+def act(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instrument: str | None = None) -> str:
+    """Perform a physical action in the room you are standing in. Each call uses one action from the budget.
+
+    Args:
+        verb: one of go, take, drop, open, unlock, press, push, smash, repair.
+        target: room id for 'go', otherwise an object id (e.g. d1, k2, c1, j3, w1, b1, m1, g1).
+        instrument: id of a held item used as instrument (a key for unlock, a tool for repair); omit otherwise.
+    """
+    w = ctx.context.world
+    msg, _ = w.act(verb, target, instrument)
+    return _log(ctx.context, "act", {"verb": verb, "target": target, "instrument": instrument}, msg)
+
+
+@function_tool
+def predict(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instrument: str | None = None) -> str:
+    """Ask your learned world model what an action would do BEFORE spending an action on it.
+    Returns PREDICT SUCCESS/FAIL, or UNCERTAIN plus which object to zoom into. Costs no action.
+
+    Args:
+        verb: unlock, smash, press, repair or push.
+        target: object id.
+        instrument: held key/tool id, if any.
+    """
+    c = ctx.context
+    c.predict_calls += 1
+    out = c.seed.predict(c.world, verb, target, instrument) if c.seed else "No world model available."
+    return _log(c, "predict", {"verb": verb, "target": target, "instrument": instrument}, out)
+
+
+@function_tool
+def recall(ctx: RunContextWrapper[EpisodeCtx], query: str) -> str:
+    """Search your memory of past episodes (other worlds) for relevant events. Costs no action.
+
+    Args:
+        query: keywords, e.g. 'unlock key fits lock shape' or 'smash jar'.
+    """
+    c = ctx.context
+    c.recall_calls += 1
+    hits = c.retrieval.recall(query) if c.retrieval else []
+    return _log(c, "recall", {"query": query}, "\n".join(hits) if hits else "(nothing relevant remembered)")
+
+
+def _stop_when_done(ctx: RunContextWrapper[EpisodeCtx], results) -> ToolsToFinalOutputResult:
+    w = ctx.context.world
+    if w.done:
+        return ToolsToFinalOutputResult(is_final_output=True, final_output="DONE")
+    if w.out_of_budget:
+        return ToolsToFinalOutputResult(is_final_output=True, final_output="OUT_OF_BUDGET")
+    return ToolsToFinalOutputResult(is_final_output=False)
+
+
+# ------------------------------------------------------------------ prompt
+BASE_INSTRUCTIONS = """You are an embodied agent exploring a symbolic world made of rooms, doors and objects.
+GOAL: obtain (take) the gem {goal}. It may be behind closed, locked, unpowered or blocked doors, or inside containers.
+
+How the world works:
+- The world is hierarchical: world map -> rooms -> objects -> components. {view_help}
+- Use act(verb, target, instrument) to change the world. Verbs: go <room>, take <obj>, drop <obj>,
+  open <door/chest/crate>, unlock <door/chest> with <key>, press <switch>, push <boulder>,
+  smash <jar>, repair <machine> with <tool>. You can only act on things in your current room
+  (or items you hold). You have {budget} actions; zooming/observing is free but keep it purposeful.
+- Things you change stay changed (opened doors stay open, shattered jars stay shattered).
+- Laws of this universe (which key fits which lock, what breaks, what powers what, which tool
+  fixes what) are consistent across worlds but NOT necessarily what you would expect.
+
+Strategy: think about which obstacle blocks the goal, gather what you need, and avoid
+wasting actions on guesses when you can inspect details first. Before an action whose outcome
+you cannot predict, zoom into the objects involved: what you perceive is what you can learn from. Call one tool at a time.
+When you hold the gem the episode ends automatically.
+{memory}"""
+
+ZOOM_HELP = ("You start zoomed into your room. Use zoom_in(id) to inspect an object's details "
+             "(shape, material, glyph, lock, components) and zoom_out() to go back up to the world map.")
+FLAT_HELP = "observe() always shows the map and your room with every detail already expanded."
+
+
+def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: OracleSeed | None,
+                       flat: bool) -> str:
+    w = ctx.world
+    mem = ""
+    c = ctx.condition
+    if c in ("seed", "seed_llm") and ctx.seed is not None:
+        mem = ("\nWORLD SEED - causal knowledge consolidated from your previous worlds "
+               f"({ctx.seed.worlds_seen} worlds). Trust it, but it may be incomplete:\n" + ctx.seed.render() +
+               "\nUse predict(verb, target, instrument) to check an action before taking it; if it says "
+               "UNCERTAIN, zoom into the object it names.")
+    elif c == "oracle" and oracle is not None:
+        mem = "\nTRUE LAWS OF THIS UNIVERSE:\n" + oracle.render()
+    elif c == "trajectory" and traj is not None:
+        mem = "\nLOGS OF YOUR PREVIOUS EPISODES (other worlds, same universe):\n" + traj.render()
+    elif c == "retrieval":
+        mem = "\nYou have an episodic memory of previous worlds in this universe; query it with recall(query)."
+    return BASE_INSTRUCTIONS.format(
+        goal=w.goal, view_help=FLAT_HELP if flat else ZOOM_HELP, budget=w.max_actions, memory=mem
+    )
+
+
+def build_agent(ctx: EpisodeCtx, model, settings, traj=None, oracle=None, flat: bool = False) -> Agent:
+    tools = [observe, act]
+    if not flat:
+        tools += [zoom_in, zoom_out]
+    if ctx.condition in ("seed", "seed_llm"):
+        tools.append(predict)
+    if ctx.condition == "retrieval":
+        tools.append(recall)
+    return Agent[EpisodeCtx](
+        name="explorer",
+        instructions=build_instructions(ctx, traj, oracle, flat),
+        tools=tools,
+        model=model,
+        model_settings=settings,
+        tool_use_behavior=_stop_when_done,
+        reset_tool_choice=False,  # keep tool_choice="required" for the whole episode
+    )
+
+
+def _trim_history(max_items: int):
+    """call_model_input_filter keeping the first message + the last ``max_items`` items.
+
+    Old tool round-trips can be dropped because the *world* keeps the state they
+    produced (open doors, held items) and every observation ends with a status line:
+    the environment is the agent's memory (H1). The cut never starts on an orphaned
+    function_call_output."""
+
+    def f(data):
+        items = list(data.model_data.input)
+        if max_items <= 0 or len(items) <= max_items + 1:
+            return data.model_data
+        tail = items[-max_items:]
+        while tail and isinstance(tail[0], dict) and tail[0].get("type") == "function_call_output":
+            tail = tail[1:]
+        note = {"role": "user", "content": "(Older steps were trimmed. The world keeps its state; "
+                                           "use observe() or zoom_out() if you need to re-orient.)"}
+        data.model_data.input = [items[0], note] + tail
+        return data.model_data
+
+    return f
+
+
+def _run_config(history_items: int) -> RunConfig:
+    wanted = {
+        "tracing_disabled": True,
+        "call_model_input_filter": _trim_history(history_items),
+        "tool_not_found_behavior": "return_error_to_model",
+    }
+    fields = getattr(RunConfig, "__dataclass_fields__", {})
+    return RunConfig(**{k: v for k, v in wanted.items() if k in fields})
+
+
+async def run_episode(
+    world: World,
+    condition: str,
+    model,
+    settings,
+    *,
+    seed: SeedMemory | None = None,
+    retrieval: RetrievalMemory | None = None,
+    traj: TrajectoryMemory | None = None,
+    oracle: OracleSeed | None = None,
+    max_turns: int = 80,
+    history_items: int = 40,
+    max_nudges: int = 3,
+) -> tuple[dict[str, Any], EpisodeCtx]:
+    flat = world.eager
+    ctx = EpisodeCtx(world=world, condition=condition, seed=seed, retrieval=retrieval)
+    agent = build_agent(ctx, model, settings, traj=traj, oracle=oracle, flat=flat)
+    run_input: Any = "Begin. Current view:\n" + world.observe()
+    t0 = time.time()
+    status, error, nudges, turns_left = "finished", None, 0, max_turns
+    hooks, rc = _UsageHooks(), _run_config(history_items)
+    while True:
+        result = None
+        try:
+            result = await Runner.run(agent, run_input, context=ctx, max_turns=turns_left, hooks=hooks,
+                                      run_config=rc)
+        except MaxTurnsExceeded:
+            status = "max_turns"
+        except Exception as e:  # model/server errors should not kill a whole sweep
+            status, error = "error", f"{type(e).__name__}: {e}"[:500]
+        finally:
+            ctx.commit_usage()
+        if result is None or world.done or world.out_of_budget or nudges >= max_nudges:
+            if result is not None and not world.done and not world.out_of_budget:
+                status = "gave_up"
+            break
+        # The model answered in plain text without finishing: nudge it to keep acting.
+        nudges += 1
+        turns_left = max(1, turns_left - len([i for i in result.new_items if i.type == "tool_call_item"]) - 1)
+        run_input = result.to_input_list() + [{
+            "role": "user",
+            "content": "You do not hold the gem yet. Keep going: call a tool (observe, zoom_in, act ...).",
+        }]
+    metrics = {
+        "success": world.done,
+        "status": status,
+        "error": error,
+        "nudges": nudges,
+        "actions": world.actions,
+        "invalid_actions": world.invalid_actions,
+        "zoom_ops": world.zoom_ops,
+        "nodes_grown": world.nodes_grown,
+        "tool_calls": ctx.tool_calls,
+        "predict_calls": ctx.predict_calls,
+        "recall_calls": ctx.recall_calls,
+        "llm_requests": ctx.llm_requests,
+        "input_tokens": ctx.input_tokens,
+        "output_tokens": ctx.output_tokens,
+        "wall_s": round(time.time() - t0, 2),
+    }
+    return metrics, ctx
+
+
+# ------------------------------------------------------------------ LLM consolidator
+class RuleBook(BaseModel):
+    rules: list[str] = Field(description="At most 12 short, general, causal rules about how this universe works.")
+
+
+CONSOLIDATOR_INSTRUCTIONS = """You maintain a compact 'world seed': general causal rules about a universe,
+learned across many different worlds. You receive the current rules and the event log of one more
+episode. Update the rules: keep rules that are confirmed, revise or delete rules contradicted by the
+log, add new general rules supported by the log. Rules must be about laws (e.g. which attribute makes a
+key fit a lock), never about specific object ids or rooms of one world. At most 12 rules."""
+
+
+async def llm_consolidate(seed: SeedMemory, events_text: str, model, settings) -> list[str]:
+    """Free-text consolidation C(S_t, trajectory) -> S_{t+1} with an LLM (Agents SDK structured output)."""
+    agent = Agent(name="consolidator", instructions=CONSOLIDATOR_INSTRUCTIONS, model=model,
+                  model_settings=settings, output_type=RuleBook)
+    prompt = "CURRENT RULES:\n" + ("\n".join(f"- {r}" for r in seed.rules) or "(none)") + \
+             "\n\nEPISODE LOG:\n" + events_text
+    try:
+        res = await Runner.run(agent, prompt, max_turns=2)
+        seed.rules = [r.strip() for r in res.final_output.rules][:12]
+    except Exception:
+        pass  # keep previous rules on failure
+    return seed.rules

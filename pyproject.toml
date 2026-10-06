@@ -1,0 +1,13 @@
+[project]
+name = "worldseeds"
+version = "0.1.0"
+description = "World Seeds: growing, zoomable, memoryful agent environments (prototype)"
+requires-python = ">=3.10"
+dependencies = ["openai-agents>=0.23", "openai>=3.0", "pydantic>=2.7"]
+
+[tool.setuptools]
+packages = ["worldseeds"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

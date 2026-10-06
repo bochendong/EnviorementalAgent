@@ -1,0 +1,5 @@
+# Client side (the agent + environment). The vLLM server lives in its own venv (see slurm/setup_nibi.sh).
+openai-agents>=0.23
+openai>=3.0
+pydantic>=2.7
+pytest>=8
