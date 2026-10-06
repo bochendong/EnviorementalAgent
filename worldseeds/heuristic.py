@@ -12,24 +12,13 @@ import random
 from collections import deque
 
 from .laws import Laws
-from .memory import SPACES, Hyp, SeedMemory
+from .memory import SeedMemory
 from .world import TAKEABLE, World
 
 
 def seed_from_laws(laws: Laws, strength: float = 50.0) -> SeedMemory:
     """A SeedMemory that is certain of the true laws (oracle condition for the heuristic)."""
-    m = SeedMemory()
-    truth = {
-        "key_match": laws.key_match,
-        "fragile_material": laws.fragile_material,
-        "link_attr": laws.link_attr,
-        "push_tool": laws.push_tool,
-        **{f"tool_for.{p}": t for p, t in laws.tool_map},
-    }
-    for sp, hs in SPACES.items():
-        for h in hs:
-            m.hyps[sp][h] = Hyp(strength, 0.0) if h == truth[sp] else Hyp(0.0, strength)
-    return m
+    return SeedMemory.certain_of(laws, strength)
 
 
 class HeuristicAgent:

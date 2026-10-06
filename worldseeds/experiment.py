@@ -21,12 +21,8 @@ import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from .heuristic import HeuristicAgent, seed_from_laws
-from .laws import Laws
-from .memory import OracleSeed, RetrievalMemory, SeedMemory, TrajectoryMemory
-from .oracle import oracle_steps
-from .seed import ALL_BLOCKS, WorldSeed, compositional_split, seeds_for
-from .world import World, grow
+from .envs import EnvSpec, get_env
+from .memory import LawSeed, OracleSeed, RetrievalMemory, TrajectoryMemory
 
 def _seed(parts) -> int:
     """Deterministic across processes (built-in hash() of str is salted per process)."""
@@ -39,6 +35,7 @@ PROTOCOLS = ["compgen", "persistence", "law_shift", "multiagent", "curriculum"]
 @dataclass
 class ExpConfig:
     protocol: str = "compgen"
+    env: str = "dungeon"  # dungeon | town
     policy: str = "llm"  # llm | heuristic
     conditions: list[str] = field(default_factory=lambda: ["none", "retrieval", "seed", "oracle"])
     universes: list[int] = field(default_factory=lambda: [0, 1, 2])
@@ -75,7 +72,7 @@ class Recorder:
                 self._t.write(json.dumps({"key": row["chain"], "episode": row["episode"], "trace": trace}) + "\n")
                 self._t.flush()
 
-    def save_seed(self, chain: str, seed: SeedMemory) -> None:
+    def save_seed(self, chain: str, seed: LawSeed) -> None:
         d = self.dir / "seeds"
         d.mkdir(exist_ok=True)
         (d / f"{chain}.json").write_text(json.dumps(seed.to_dict(), indent=1))
@@ -84,15 +81,15 @@ class Recorder:
 class Memories:
     """All memories a chain carries across episodes."""
 
-    def __init__(self, condition: str, laws: Laws, decay: float = 1.0):
+    def __init__(self, condition: str, laws, env: EnvSpec, decay: float = 1.0):
         self.condition = condition
-        self.seed = SeedMemory(decay=decay) if condition in ("seed", "seed_llm") else None
+        self.seed = env.seed_cls(decay=decay) if condition in ("seed", "seed_llm") else None
         self.retrieval = RetrievalMemory() if condition == "retrieval" else None
         self.traj = TrajectoryMemory() if condition == "trajectory" else None
         self.oracle = OracleSeed(laws) if condition == "oracle" else None
         self.laws = laws
 
-    def set_laws(self, laws: Laws) -> None:
+    def set_laws(self, laws) -> None:
         self.laws = laws
         if self.oracle is not None:
             self.oracle = OracleSeed(laws)
@@ -101,6 +98,7 @@ class Memories:
 class Runner:
     def __init__(self, cfg: ExpConfig):
         self.cfg = cfg
+        self.env = get_env(cfg.env)
         self.rec = Recorder(cfg)
         self.sem = asyncio.Semaphore(cfg.concurrency)
         self.model = self.settings = None
@@ -116,17 +114,18 @@ class Runner:
             self.llm_name = "heuristic"
 
     # ------------------------------------------------------------ one episode
-    async def play(self, world: World, mem: Memories, chain: str, episode: int, phase: str,
+    async def play(self, world, mem: Memories, chain: str, episode: int, phase: str,
                    variant: str = "", learn: bool = True, extra: dict | None = None) -> dict:
         cond = mem.condition
         try:
-            opt = oracle_steps(world)
+            opt = self.env.oracle_steps(world)
         except Exception:
             opt = None
         async with self.sem:
             if self.cfg.policy == "heuristic":
-                sd = mem.seed if cond in ("seed", "seed_llm") else (seed_from_laws(mem.laws) if cond == "oracle" else None)
-                metrics, trace = HeuristicAgent(world, sd, random.Random(episode)).run(), None
+                sd = mem.seed if cond in ("seed", "seed_llm") else (
+                    self.env.seed_cls.certain_of(mem.laws) if cond == "oracle" else None)
+                metrics, trace = self.env.heuristic(world, sd, random.Random(episode)).run(), None
             else:
                 from .agent import run_episode
 
@@ -139,7 +138,7 @@ class Runner:
         if learn:
             await self.consolidate(world, mem, chain, episode)
         row = {
-            "protocol": self.cfg.protocol, "policy": self.cfg.policy, "llm": self.llm_name,
+            "protocol": self.cfg.protocol, "env": self.env.name, "policy": self.cfg.policy, "llm": self.llm_name,
             "chain": chain, "condition": cond, "view": "flat" if world.eager else "zoom",
             "variant": variant, "phase": phase, "episode": episode,
             "seed_id": world.seed.id, "composition": world.seed.composition,
@@ -156,7 +155,7 @@ class Runner:
         await self.rec.write(row, trace)
         return row
 
-    async def consolidate(self, world: World, mem: Memories, chain: str, episode: int) -> None:
+    async def consolidate(self, world, mem: Memories, chain: str, episode: int) -> None:
         tag = f"world{episode}"
         if mem.seed is not None:
             mem.seed.consolidate_events(world.events)
@@ -171,8 +170,11 @@ class Runner:
         if mem.traj is not None:
             mem.traj.add_events(world.events, tag)
 
-    def _grow(self, s: WorldSeed, view: str) -> World:
-        return grow(s, eager=(view == "flat"), max_actions=self.cfg.max_actions)
+    def _grow(self, s, view: str):
+        return self.env.grow(s, eager=(view == "flat"), max_actions=self.cfg.max_actions)
+
+    def _mem(self, cond, laws, decay=None) -> Memories:
+        return Memories(cond, laws, self.env, self.cfg.decay if decay is None else decay)
 
     def _chains(self):
         c = self.cfg
@@ -188,14 +190,14 @@ class Runner:
     # ------------------------------------------------------------ protocols
     async def compgen_chain(self, u, cond, view, r):
         c = self.cfg
-        laws = Laws.from_index(u)
+        laws = self.env.laws(u)
         rng = random.Random(_seed((c.rng_seed, u, r)))
-        train, test = compositional_split(random.Random(c.rng_seed * 1000 + u))
-        tr = seeds_for(train, laws, c.n_train, rng, n_distractors=c.n_distractors)
-        te = seeds_for(test, laws, c.n_test, random.Random(c.rng_seed * 7 + u * 31 + r),
+        train, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
+        tr = self.env.seeds_for(train, laws, c.n_train, rng, n_distractors=c.n_distractors)
+        te = self.env.seeds_for(test, laws, c.n_test, random.Random(c.rng_seed * 7 + u * 31 + r),
                        n_distractors=c.n_distractors)
-        mem = Memories(cond, laws, c.decay)
-        chain = f"compgen-u{u}-{cond}-{view}-r{r}"
+        mem = self._mem(cond, laws)
+        chain = f"{self.env.name}-compgen-u{u}-{cond}-{view}-r{r}"
         ep = 0
         for s in tr:
             await self.play(self._grow(s, view), mem, chain, ep, "train")
@@ -208,14 +210,14 @@ class Runner:
 
     async def persistence_chain(self, u, cond, view, r):
         c = self.cfg
-        laws = Laws.from_index(u)
+        laws = self.env.laws(u)
         rng = random.Random(_seed(("persist", c.rng_seed, u, r)))
-        combos = [tuple(rng.sample(ALL_BLOCKS, 3)) for _ in range(c.n_test)]
-        seeds = [WorldSeed(laws=laws, blocks=cb, n_rooms=5, n_side_rooms=1, n_goals=3,
-                           n_distractors=c.n_distractors, surface_seed=rng.randrange(1 << 30)) for cb in combos]
+        combos = [tuple(rng.sample(self.env.blocks, 3)) for _ in range(c.n_test)]
+        seeds = [self.env.make_seed(laws, cb, rng, n_goals=3, n_distractors=c.n_distractors, big=True)
+                 for cb in combos]
         for variant in ("persistent", "reset"):
-            mem = Memories(cond, laws, c.decay)
-            chain = f"persistence-u{u}-{cond}-{view}-{variant}-r{r}"
+            mem = self._mem(cond, laws)
+            chain = f"{self.env.name}-persistence-u{u}-{cond}-{view}-{variant}-r{r}"
             ep = 0
             for s in seeds:
                 world = self._grow(s, view)
@@ -230,19 +232,19 @@ class Runner:
 
     async def law_shift_chain(self, u, cond, view, r):
         c = self.cfg
-        laws_a = Laws.from_index(u)
+        laws_a = self.env.laws(u)
         laws_b = laws_a.mutate(random.Random(u * 13 + 7), n=2)
         rng = random.Random(_seed(("shift", c.rng_seed, u, r)))
-        train, _ = compositional_split(random.Random(u))
+        train, _ = self.env.split(random.Random(u))
         for variant, decay in (("no_decay", 1.0), ("decay", c.decay if c.decay < 1 else 0.7)):
             if cond not in ("seed", "seed_llm") and variant != "no_decay":
                 continue
-            mem = Memories(cond, laws_a, decay)
-            chain = f"law_shift-u{u}-{cond}-{view}-{variant}-r{r}"
+            mem = self._mem(cond, laws_a, decay)
+            chain = f"{self.env.name}-law_shift-u{u}-{cond}-{view}-{variant}-r{r}"
             ep = 0
             for phase, laws, n in (("before", laws_a, c.n_train), ("after", laws_b, c.n_train)):
                 mem.set_laws(laws)
-                for s in seeds_for(train, laws, n, rng, n_distractors=c.n_distractors):
+                for s in self.env.seeds_for(train, laws, n, rng, n_distractors=c.n_distractors):
                     await self.play(self._grow(s, view), mem, chain, ep, phase, variant=variant)
                     ep += 1
 
@@ -250,24 +252,24 @@ class Runner:
         c = self.cfg
         if cond not in ("seed", "seed_llm"):
             return
-        laws = Laws.from_index(u)
+        laws = self.env.laws(u)
         rng = random.Random(_seed(("multi", c.rng_seed, u, r)))
-        train, test = compositional_split(random.Random(c.rng_seed * 1000 + u))
+        train, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
         rounds = max(1, c.n_train // c.n_agents)
-        te = seeds_for(test, laws, c.n_test, random.Random(u * 31 + r), n_distractors=c.n_distractors)
+        te = self.env.seeds_for(test, laws, c.n_test, random.Random(u * 31 + r), n_distractors=c.n_distractors)
         for variant in ("shared", "independent"):
-            shared = Memories(cond, laws, c.decay)
-            mems = [shared] * c.n_agents if variant == "shared" else [Memories(cond, laws, c.decay) for _ in range(c.n_agents)]
-            chain = f"multiagent-u{u}-{cond}-{view}-{variant}-r{r}"
+            shared = self._mem(cond, laws)
+            mems = [shared] * c.n_agents if variant == "shared" else [self._mem(cond, laws) for _ in range(c.n_agents)]
+            chain = f"{self.env.name}-multiagent-u{u}-{cond}-{view}-{variant}-r{r}"
             ep = 0
             for rd in range(rounds):
                 # Agents specialise: agent a explores worlds containing its "home" block, so a
                 # shared seed can hand an agent laws it has never experienced itself (section 15).
                 seeds = []
                 for a in range(c.n_agents):
-                    home = ALL_BLOCKS[a % len(ALL_BLOCKS)]
+                    home = self.env.blocks[a % len(self.env.blocks)]
                     combo = rng.choice([cb for cb in train if home in cb])
-                    seeds += seeds_for([combo], laws, 1, rng, n_distractors=c.n_distractors)
+                    seeds += self.env.seeds_for([combo], laws, 1, rng, n_distractors=c.n_distractors)
                 worlds = [self._grow(s, view) for s in seeds]
                 # play in parallel *without* learning, then consolidate the round (avoids races)
                 await asyncio.gather(*[
@@ -286,22 +288,20 @@ class Runner:
 
     async def curriculum_chain(self, u, cond, view, r):
         c = self.cfg
-        laws = Laws.from_index(u)
+        laws = self.env.laws(u)
         rng = random.Random(_seed(("curr", c.rng_seed, u, r)))
-        _, test = compositional_split(random.Random(c.rng_seed * 1000 + u))
-        te = seeds_for(test, laws, c.n_test, random.Random(u * 31 + r), n_distractors=c.n_distractors)
+        _, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
+        te = self.env.seeds_for(test, laws, c.n_test, random.Random(u * 31 + r), n_distractors=c.n_distractors)
         for variant in ("curriculum", "uniform"):
-            mem = Memories(cond, laws, c.decay)
-            chain = f"curriculum-u{u}-{cond}-{view}-{variant}-r{r}"
-            seed = WorldSeed(laws=laws, blocks=(rng.choice(ALL_BLOCKS),), n_rooms=2,
-                             n_distractors=c.n_distractors, surface_seed=rng.randrange(1 << 30))
+            mem = self._mem(cond, laws)
+            chain = f"{self.env.name}-curriculum-u{u}-{cond}-{view}-{variant}-r{r}"
+            seed = self.env.make_seed(laws, (rng.choice(self.env.blocks),), rng, n_distractors=c.n_distractors)
             ep = 0
             for _ in range(c.n_train):
                 if variant == "uniform":
-                    k = rng.randint(1, 4)
-                    blocks = tuple(rng.sample(ALL_BLOCKS, k))
-                    seed = WorldSeed(laws=laws, blocks=blocks, n_rooms=max(2, min(k + 1, 5)),
-                                     n_distractors=c.n_distractors, surface_seed=rng.randrange(1 << 30))
+                    k = rng.randint(1, min(4, len(self.env.blocks)))
+                    blocks = tuple(rng.sample(self.env.blocks, k))
+                    seed = self.env.make_seed(laws, blocks, rng, n_distractors=c.n_distractors)
                 row = await self.play(self._grow(seed, view), mem, chain, ep, "train", variant=variant,
                                       extra={"curriculum_blocks": len(seed.blocks)})
                 ep += 1
@@ -311,8 +311,7 @@ class Runner:
                     seed = seed.mutate(rng, kind)
                     if kind == "add_block":
                         seed = seed.mutate(rng, "surface")
-                    n_door = len([b for b in seed.blocks if b in ("lockable", "powered", "pushable", "machine")])
-                    seed = WorldSeed(**{**seed.__dict__, "n_rooms": max(2, min(n_door + 1, 5))})
+                    seed = self.env.normalize(seed)
             for s in te:
                 await self.play(self._grow(s, view), mem, chain, ep, "test", variant=variant, learn=False)
                 ep += 1

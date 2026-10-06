@@ -68,11 +68,34 @@ by prior-friendly universe (u0) vs. counter-intuitive universes (u1–u4).
 **Models:** Qwen3-8B as the main model. Qwen3-30B-A3B or Qwen3-32B (FP8) for scaling.
 All are free, open-weight, and served locally by vLLM on Nibi H100s.
 
+## 4b. SeedVille as the main environment
+
+A small town is the most natural home for the idea, because the doc's own zoom example
+(city → building → room → object) *is* a town. SeedVille (`worldseeds/town/`) adds three
+things the dungeon lacks:
+
+* **Exogenous dynamics (§9's ξ_t).** A clock runs, crops grow overnight, and villagers follow
+  schedules. The world changes even when the agent does nothing.
+* **Hidden laws with a believable cover story:** soil and season needs of crops, gift
+  preferences, villager routines. Universe 0 follows common sense; shuffled universes test
+  whether the seed beats the model's prior (Stardew-style knowledge from pretraining).
+* **Long-lived persistence:** planted fields and friendships carry over between goals.
+
+Suggested paper framing: run the main table on SeedVille, use the dungeon as the fully
+controlled replication, and (optionally) add one external benchmark (ScienceWorld/ALFWorld,
+or a Crafter/TextCraft Minecraft-style task with shuffled recipes) for outside validity.
+
+Closest existing town or life-sim environments, to cite and contrast (verify before citing):
+Generative Agents' "Smallville" (social behaviour, not causal laws), Concordia (LLM game
+master, so its rules are not exact), and a recent Stardew Valley benchmark (StarDojo; real
+game, hard to run on a cluster, and the rules are known to models).
+
 ## 5. Mapping from the seed document to code
 
 | Seed doc | Code |
 |---|---|
-| §2 environment as causal memory, `E_t=(x_t,m_t)` | `world.py` (persistent state, `next_goal`), `persistence` protocol |
+| §2 environment as causal memory, `E_t=(x_t,m_t)` | `world.py`, `town/world.py` (persistent state, `next_goal`), `persistence` protocol |
+| §9 exogenous events ξ_t | SeedVille clock: overnight crop growth, villager schedules |
 | §3 interventional similarity | `similarity.py`, `scripts/similarity_demo.py` |
 | §4 reusable causal blocks | `seed.py` blocks: lockable, container, powered, pushable, fragile, machine |
 | §5–6 God view, object at L = environment at L+1 | `world.py` levels: world → room → object → component; `zoom_in`/`zoom_out` |
@@ -107,7 +130,8 @@ learned only from perceived interventions, and it decides where to zoom.
 * The learned seed does not yet drive *generation* (Grow uses the true seed). Next step:
   grow imagined worlds from the learned seed and use them for planning or self-curriculum
   (Paper D/G).
-* Worlds are small (2–5 rooms). Scale with `n_rooms`, `n_distractors` and multi-goal worlds.
+* SeedVille's hypothesis spaces are also hand-designed (soil, season, gift, schedule).
+* Worlds are small (2–5 rooms, 7–9 town locations). Scale with `n_rooms`, `n_distractors` and multi-goal worlds.
 * The heuristic agent explores by brute force, so on its own it gains little from the
   seed. Its role is to test the pipeline and to show that laws can be recovered. The real
   test is the LLM agent.

@@ -39,7 +39,7 @@ def load(dirs):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("paths", nargs="+")
-    ap.add_argument("--by", nargs="+", default=["protocol", "condition", "view", "variant", "phase"])
+    ap.add_argument("--by", nargs="+", default=["env", "protocol", "condition", "view", "variant", "phase"])
     ap.add_argument("--curve", action="store_true", help="also print success by episode bucket (learning curve)")
     a = ap.parse_args()
     rows = load(a.paths)

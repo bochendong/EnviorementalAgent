@@ -2,6 +2,7 @@
 """Play one world: as a human (--mode human), with the oracle, or with the LLM agent.
 
     python scripts/play.py --mode human --blocks lockable fragile machine --universe 1
+    python scripts/play.py --env town --mode human --blocks farming gifting schedule --universe 2
     python scripts/play.py --mode oracle --blocks lockable powered pushable
     WS_BASE_URL=http://localhost:8000/v1 python scripts/play.py --mode llm --condition oracle --verbose
 """
@@ -19,8 +20,9 @@ from worldseeds.oracle import Oracle  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--env", choices=["dungeon", "town"], default="dungeon")
     ap.add_argument("--mode", choices=["human", "oracle", "llm"], default="human")
-    ap.add_argument("--blocks", nargs="+", default=["lockable", "container", "fragile"])
+    ap.add_argument("--blocks", nargs="+", default=None)
     ap.add_argument("--universe", type=int, default=0)
     ap.add_argument("--rooms", type=int, default=3)
     ap.add_argument("--surface-seed", type=int, default=7)
@@ -28,23 +30,36 @@ def main():
     ap.add_argument("--condition", default="none")
     ap.add_argument("--verbose", action="store_true")
     a = ap.parse_args()
-    seed = WorldSeed(laws=Laws.from_index(a.universe), blocks=tuple(a.blocks), n_rooms=a.rooms,
-                     surface_seed=a.surface_seed)
-    w = grow(seed, eager=a.flat)
+    if a.env == "town":
+        from worldseeds.town import TownLaws, TownSeed, grow_town
+        from worldseeds.town.agents import TownOracle, TownSeedMemory
+
+        seed = TownSeed(laws=TownLaws.from_index(a.universe), blocks=tuple(a.blocks or ["farming", "gifting"]),
+                        surface_seed=a.surface_seed)
+        w = grow_town(seed, eager=a.flat)
+        oracle_cls, seed_cls = TownOracle, TownSeedMemory
+    else:
+        from worldseeds.memory import SeedMemory
+
+        seed = WorldSeed(laws=Laws.from_index(a.universe), blocks=tuple(a.blocks or ["lockable", "container", "fragile"]),
+                         n_rooms=a.rooms, surface_seed=a.surface_seed)
+        w = grow(seed, eager=a.flat)
+        oracle_cls, seed_cls = Oracle, SeedMemory
     print("seed:", seed.to_dict())
+    print("GOAL:", w.prompt_spec()["goal"])
     if a.mode == "oracle":
-        n = Oracle(w).solve()
+        w.max_actions = 10_000
+        n = oracle_cls(w).solve()
         print("\n".join(ev.line() for ev in w.events))
         print(f"oracle solved in {n} actions")
         return
     if a.mode == "llm":
         from worldseeds.agent import run_episode
-        from worldseeds.heuristic import seed_from_laws
         from worldseeds.llm import LLMConfig, make_model, make_settings
         from worldseeds.memory import OracleSeed
 
         cfg = LLMConfig()
-        mem = seed_from_laws(seed.laws) if a.condition == "seed" else None
+        mem = seed_cls.certain_of(seed.laws) if a.condition == "seed" else None
         metrics, ctx = asyncio.run(run_episode(
             w, a.condition, make_model(cfg), make_settings(cfg), seed=mem,
             oracle=OracleSeed(seed.laws) if a.condition == "oracle" else None))
@@ -53,7 +68,7 @@ def main():
                 print(f">>> {t['tool']}({t['args']})\n{t['out']}\n")
         print(metrics)
         return
-    print("Commands: look | in <id> | out | <verb> <target> [instrument] | quit")
+    print("Commands: look | in <id> | out | <verb> [target] [instrument] | quit")
     print(w.observe())
     while not w.done and not w.out_of_budget:
         try:

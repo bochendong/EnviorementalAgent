@@ -19,11 +19,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from worldseeds.agent import CONDITIONS  # noqa: E402
+from worldseeds.envs import ENV_NAMES  # noqa: E402
 from worldseeds.experiment import PROTOCOLS, ExpConfig, run_experiment  # noqa: E402
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--env", choices=ENV_NAMES, default="dungeon", help="dungeon (rooms/doors) or town (SeedVille)")
     p.add_argument("--protocol", choices=PROTOCOLS, default="compgen")
     p.add_argument("--policy", choices=["llm", "heuristic"], default="llm")
     p.add_argument("--conditions", nargs="+", choices=CONDITIONS, default=["none", "retrieval", "seed", "oracle"])
@@ -44,7 +46,7 @@ def main():
     p.add_argument("--out", default="results/run")
     a = p.parse_args()
     cfg = ExpConfig(
-        protocol=a.protocol, policy=a.policy, conditions=a.conditions, universes=a.universes,
+        protocol=a.protocol, env=a.env, policy=a.policy, conditions=a.conditions, universes=a.universes,
         repeats=a.repeats, views=a.views, n_train=a.n_train, n_test=a.n_test, n_agents=a.n_agents,
         max_actions=a.max_actions, max_turns=a.max_turns, concurrency=a.concurrency, history_items=a.history_items, decay=a.decay,
         n_distractors=a.n_distractors, save_traces=a.save_traces, out_dir=a.out, rng_seed=a.rng_seed,

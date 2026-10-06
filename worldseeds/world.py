@@ -567,6 +567,22 @@ class World:
             self.seen_parts.add(oid)
         return f"[COMPONENT {cid}] {c.name} ({c.status}): {c.detail}\n" + self.status_line()
 
+    def prompt_spec(self) -> dict:
+        return {
+            "intro": "You are an embodied agent exploring a symbolic world made of rooms, doors and objects.",
+            "goal": f"obtain (take) the gem {self.goal}. It may be behind closed, locked, unpowered or blocked "
+                    "doors, or inside containers.",
+            "levels": "world map -> rooms -> objects -> components",
+            "details": "(shape, material, glyph, lock, components)",
+            "verbs": "go <room>, take <obj>, drop <obj>, open <door/chest/crate>, unlock <door/chest> with <key>, "
+                     "press <switch>, push <boulder>, smash <jar>, repair <machine> with <tool>",
+            "notes": "You can only act on things in your current room (or items you hold). Things you change "
+                     "stay changed (opened doors stay open, shattered jars stay shattered).",
+            "laws_hint": "Laws of this universe (which key fits which lock, what breaks, what powers what, which "
+                         "tool fixes what) are consistent across worlds but NOT necessarily what you would expect.",
+            "done_text": "When you hold the gem the episode ends automatically.",
+        }
+
     def status_line(self) -> str:
         inv = ", ".join(self.objs[i].label() for i in self.inventory) or "nothing"
         return (f"(holding: {inv} | goal: obtain {self.goal} | actions used {self.actions}/{self.max_actions} "

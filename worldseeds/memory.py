@@ -51,33 +51,142 @@ class Hyp:
         return (self.support + 1.0) / (self.support + self.against + 2.0)
 
 
-@dataclass
-class SeedMemory:
-    """The learned, maturing world seed S_t."""
+class LawSeed:
+    """A learned seed: one hypothesis space per causal block, filled with evidence.
 
-    decay: float = 1.0  # <1.0 = recency weighting (helps when laws shift)
-    hyps: dict[str, dict[str, Hyp]] = field(
-        default_factory=lambda: {s: {h: Hyp() for h in hs} for s, hs in SPACES.items()}
-    )
-    rules: list[str] = field(default_factory=list)  # free-text rules (LLM consolidator)
-    worlds_seen: int = 0
-    events_seen: int = 0
+    Subclasses (one per environment family) define ``SPACES``, how events become
+    evidence (``consolidate_events``), how the seed reads as text (``render_laws``),
+    its tiny world model (``predict``) and the ground truth for scoring (``truth``)."""
 
-    # ------------------------------------------------------------ consolidation
+    SPACES: dict[str, list[str]] = {}
+
+    def __init__(self, decay: float = 1.0):
+        self.decay = decay  # <1.0 = recency weighting (helps when laws shift)
+        self.hyps: dict[str, dict[str, Hyp]] = {s: {h: Hyp() for h in hs} for s, hs in self.SPACES.items()}
+        self.rules: list[str] = []  # free-text rules (LLM consolidator)
+        self.worlds_seen = 0
+        self.events_seen = 0
+
+    # ------------------------------------------------------------ evidence
     def _vote(self, space: str, hyp: str, ok: bool, w: float = 1.0) -> None:
+        if hyp not in self.hyps.get(space, {}):
+            return
         h = self.hyps[space][hyp]
         if ok:
             h.support += w
         else:
             h.against += w
 
-    def consolidate_events(self, events: list[Event]) -> int:
-        """Symbolic consolidation: C(S_t, trajectory) -> S_{t+1}. Returns #informative events."""
+    def _vote_exclusive(self, space: str, hyp: str, w: float = 1.0) -> None:
+        """Evidence that ``hyp`` is THE answer of a one-of-N space."""
+        for h in self.hyps.get(space, {}):
+            self._vote(space, h, h == hyp, w)
+
+    def _apply_decay(self) -> None:
         if self.decay < 1.0:
             for sp in self.hyps.values():
                 for h in sp.values():
                     h.support *= self.decay
                     h.against *= self.decay
+
+    def best(self, space: str) -> tuple[str, float, float]:
+        """(hypothesis, belief, evidence) for the leading hypothesis of ``space``."""
+        items = self.hyps[space]
+        h, v = max(items.items(), key=lambda kv: (kv[1].belief(), kv[1].support))
+        return h, v.belief(), v.support + v.against
+
+    def confident(self, space: str, thresh: float = 0.75, min_evidence: float = 1.0) -> str | None:
+        h, b, n = self.best(space)
+        others = [x.belief() for k, x in self.hyps[space].items() if k != h]
+        margin = b - (max(others) if others else 0.0)
+        return h if b >= thresh and n >= min_evidence and margin > 0.1 else None
+
+    def recovery(self, laws) -> dict[str, bool | None]:
+        """Per-space: did the seed recover the true law? (None = no confident belief yet)."""
+        truth = self.truth(laws)
+        return {sp: (None if self.confident(sp) is None else self.confident(sp) == truth[sp]) for sp in self.SPACES}
+
+    def render(self, max_rules: int = 12) -> str:
+        """The seed as compact causal DNA (text injected into the agent's instructions)."""
+        lines = self.render_laws() + [f"- {r}" for r in self.rules[:max_rules]]
+        return "\n".join(lines) if lines else "(no consolidated world knowledge yet)"
+
+    # ------------------------------------------------------------ subclass hooks
+    def consolidate_events(self, events) -> int:
+        raise NotImplementedError
+
+    def render_laws(self) -> list[str]:
+        raise NotImplementedError
+
+    def predict(self, world, verb: str, target: str, instrument: str | None = None) -> str:
+        return "No learned law covers this action."
+
+    @staticmethod
+    def truth(laws) -> dict[str, str]:
+        raise NotImplementedError
+
+    # ------------------------------------------------------------ io
+    def to_dict(self) -> dict:
+        return {
+            "type": type(self).__name__,
+            "decay": self.decay,
+            "hyps": {s: {h: [v.support, v.against] for h, v in hs.items()} for s, hs in self.hyps.items()},
+            "rules": self.rules,
+            "worlds_seen": self.worlds_seen,
+            "events_seen": self.events_seen,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        m = cls(decay=d.get("decay", 1.0))
+        for s, hs in d["hyps"].items():
+            for h, (sup, ag) in hs.items():
+                m.hyps[s][h] = Hyp(sup, ag)
+        m.rules = list(d.get("rules", []))
+        m.worlds_seen = d.get("worlds_seen", 0)
+        m.events_seen = d.get("events_seen", 0)
+        return m
+
+    def merge(self, other: "LawSeed") -> None:
+        """Merge another agent's evidence into this seed (shared multi-agent seed)."""
+        for s, hs in other.hyps.items():
+            for h, v in hs.items():
+                self.hyps[s][h].support += v.support
+                self.hyps[s][h].against += v.against
+        for r in other.rules:
+            if r not in self.rules:
+                self.rules.append(r)
+
+    @classmethod
+    def certain_of(cls, laws, strength: float = 50.0):
+        """A seed certain of the true laws (oracle condition for the heuristic agent)."""
+        m = cls()
+        truth = cls.truth(laws)
+        for sp, hs in cls.SPACES.items():
+            for h in hs:
+                m.hyps[sp][h] = Hyp(strength, 0.0) if h == truth[sp] else Hyp(0.0, strength)
+        return m
+
+
+class SeedMemory(LawSeed):
+    """The learned seed for the dungeon world (locks, jars, switches, machines, boulders)."""
+
+    SPACES = SPACES
+
+    @staticmethod
+    def truth(laws: Laws) -> dict[str, str]:
+        return {
+            "key_match": laws.key_match,
+            "fragile_material": laws.fragile_material,
+            "link_attr": laws.link_attr,
+            "push_tool": laws.push_tool,
+            **{f"tool_for.{p}": t for p, t in laws.tool_map},
+        }
+
+
+    def consolidate_events(self, events: list[Event]) -> int:
+        """Symbolic consolidation: C(S_t, trajectory) -> S_{t+1}. Returns #informative events."""
+        self._apply_decay()
         used = 0
         for ev in events:
             if not ev.valid:
@@ -133,18 +242,6 @@ class SeedMemory:
         return used
 
     # ------------------------------------------------------------ queries
-    def best(self, space: str) -> tuple[str, float, float]:
-        """(hypothesis, belief, evidence) for the leading hypothesis of ``space``."""
-        items = self.hyps[space]
-        h, v = max(items.items(), key=lambda kv: (kv[1].belief(), kv[1].support))
-        return h, v.belief(), v.support + v.against
-
-    def confident(self, space: str, thresh: float = 0.75, min_evidence: float = 1.0) -> str | None:
-        h, b, n = self.best(space)
-        others = [x.belief() for k, x in self.hyps[space].items() if k != h]
-        margin = b - (max(others) if others else 0.0)
-        return h if b >= thresh and n >= min_evidence and margin > 0.1 else None
-
     def as_laws_guess(self) -> dict:
         out = {}
         for sp in ("key_match", "fragile_material", "link_attr", "push_tool"):
@@ -152,19 +249,7 @@ class SeedMemory:
         out["tool_map"] = {p: self.best(f"tool_for.{p}")[0] for p in PARTS}
         return out
 
-    def recovery(self, laws: Laws) -> dict[str, bool | None]:
-        """Per-space: did the seed recover the true law? (None = no confident belief yet)."""
-        truth = {
-            "key_match": laws.key_match,
-            "fragile_material": laws.fragile_material,
-            "link_attr": laws.link_attr,
-            "push_tool": laws.push_tool,
-            **{f"tool_for.{p}": t for p, t in laws.tool_map},
-        }
-        return {sp: (None if self.confident(sp) is None else self.confident(sp) == truth[sp]) for sp in SPACES}
-
-    def render(self, max_rules: int = 12) -> str:
-        """The seed as compact causal DNA (text injected into the agent's instructions)."""
+    def render_laws(self) -> list[str]:
         lines = []
         km = self.confident("key_match")
         if km:
@@ -186,11 +271,7 @@ class SeedMemory:
         known = [f"{p}->{t}" for p, t in tm if t]
         if known:
             lines.append("- [machine] Repair a machine's faulty part with: " + ", ".join(known) + ".")
-        for r in self.rules[:max_rules]:
-            lines.append(f"- {r}")
-        if not lines:
-            return "(no consolidated world knowledge yet)"
-        return "\n".join(lines)
+        return lines
 
     # ------------------------------------------------------------ world model
     def predict(self, world: World, verb: str, target: str, instrument: str | None = None) -> str:
@@ -247,42 +328,10 @@ class SeedMemory:
             return f"PREDICT {'SUCCESS' if ok else 'FAIL'} (needs {pt})"
         return "No learned law covers this action."
 
-    # ------------------------------------------------------------ io
-    def to_dict(self) -> dict:
-        return {
-            "decay": self.decay,
-            "hyps": {s: {h: [v.support, v.against] for h, v in hs.items()} for s, hs in self.hyps.items()},
-            "rules": self.rules,
-            "worlds_seen": self.worlds_seen,
-            "events_seen": self.events_seen,
-        }
-
-    @classmethod
-    def from_dict(cls, d: dict) -> "SeedMemory":
-        m = cls(decay=d.get("decay", 1.0))
-        for s, hs in d["hyps"].items():
-            for h, (sup, ag) in hs.items():
-                m.hyps[s][h] = Hyp(sup, ag)
-        m.rules = list(d.get("rules", []))
-        m.worlds_seen = d.get("worlds_seen", 0)
-        m.events_seen = d.get("events_seen", 0)
-        return m
-
-    def merge(self, other: "SeedMemory") -> None:
-        """Merge another agent's evidence into this seed (shared multi-agent seed)."""
-        for s, hs in other.hyps.items():
-            for h, v in hs.items():
-                self.hyps[s][h].support += v.support
-                self.hyps[s][h].against += v.against
-        for r in other.rules:
-            if r not in self.rules:
-                self.rules.append(r)
-
-
 class OracleSeed:
-    """Upper bound: the agent is told the true laws."""
+    """Upper bound: the agent is told the true laws (any laws object with ``describe``)."""
 
-    def __init__(self, laws: Laws):
+    def __init__(self, laws):
         self.laws = laws
 
     def render(self, blocks=None) -> str:

@@ -86,29 +86,29 @@ def observe(ctx: RunContextWrapper[EpisodeCtx]) -> str:
 
 @function_tool
 def zoom_in(ctx: RunContextWrapper[EpisodeCtx], target: str) -> str:
-    """Zoom one level deeper: world -> room id (e.g. r1) -> object id (e.g. k2) -> component id (e.g. m1.core).
-    Deeper levels reveal fine details such as shape, material, glyph, locks and machine parts. Costs no action.
+    """Zoom one level deeper: map -> location id -> object id -> component id.
+    Deeper levels reveal fine details that the coarse view hides. Costs no action.
 
     Args:
-        target: id of a room, object or component visible at the current focus.
+        target: id of a location, object or component visible at the current focus.
     """
     return _log(ctx.context, "zoom_in", {"target": target}, ctx.context.world.zoom_in(target))
 
 
 @function_tool
 def zoom_out(ctx: RunContextWrapper[EpisodeCtx]) -> str:
-    """Zoom one level out (component -> object -> room -> world map). Costs no action."""
+    """Zoom one level out (component -> object -> location -> map). Costs no action."""
     return _log(ctx.context, "zoom_out", {}, ctx.context.world.zoom_out())
 
 
 @function_tool
 def act(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instrument: str | None = None) -> str:
-    """Perform a physical action in the room you are standing in. Each call uses one action from the budget.
+    """Perform a physical action where you are standing. Each call uses one action from the budget.
 
     Args:
-        verb: one of go, take, drop, open, unlock, press, push, smash, repair.
-        target: room id for 'go', otherwise an object id (e.g. d1, k2, c1, j3, w1, b1, m1, g1).
-        instrument: id of a held item used as instrument (a key for unlock, a tool for repair); omit otherwise.
+        verb: one of the verbs listed in your instructions (e.g. go, take, open, unlock, plant, give).
+        target: location id for 'go', otherwise an object or person id shown in your view.
+        instrument: id of a held item used as instrument (a key, a tool, seeds, a gift); omit otherwise.
     """
     w = ctx.context.world
     msg, _ = w.act(verb, target, instrument)
@@ -121,9 +121,9 @@ def predict(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instrume
     Returns PREDICT SUCCESS/FAIL, or UNCERTAIN plus which object to zoom into. Costs no action.
 
     Args:
-        verb: unlock, smash, press, repair or push.
-        target: object id.
-        instrument: held key/tool id, if any.
+        verb: the action you are considering (e.g. unlock, smash, repair, plant, give, find).
+        target: object or person id.
+        instrument: key/tool/seeds/gift id, if any.
     """
     c = ctx.context
     c.predict_calls += 1
@@ -136,7 +136,7 @@ def recall(ctx: RunContextWrapper[EpisodeCtx], query: str) -> str:
     """Search your memory of past episodes (other worlds) for relevant events. Costs no action.
 
     Args:
-        query: keywords, e.g. 'unlock key fits lock shape' or 'smash jar'.
+        query: keywords, e.g. 'unlock key lock shape', 'smash jar' or 'give rosa liked'.
     """
     c = ctx.context
     c.recall_calls += 1
@@ -154,28 +154,25 @@ def _stop_when_done(ctx: RunContextWrapper[EpisodeCtx], results) -> ToolsToFinal
 
 
 # ------------------------------------------------------------------ prompt
-BASE_INSTRUCTIONS = """You are an embodied agent exploring a symbolic world made of rooms, doors and objects.
-GOAL: obtain (take) the gem {goal}. It may be behind closed, locked, unpowered or blocked doors, or inside containers.
+BASE_INSTRUCTIONS = """{intro}
+GOAL: {goal}
 
 How the world works:
-- The world is hierarchical: world map -> rooms -> objects -> components. {view_help}
-- Use act(verb, target, instrument) to change the world. Verbs: go <room>, take <obj>, drop <obj>,
-  open <door/chest/crate>, unlock <door/chest> with <key>, press <switch>, push <boulder>,
-  smash <jar>, repair <machine> with <tool>. You can only act on things in your current room
-  (or items you hold). You have {budget} actions; zooming/observing is free but keep it purposeful.
-- Things you change stay changed (opened doors stay open, shattered jars stay shattered).
-- Laws of this universe (which key fits which lock, what breaks, what powers what, which tool
-  fixes what) are consistent across worlds but NOT necessarily what you would expect.
+- The world is hierarchical: {levels}. {view_help}
+- Use act(verb, target, instrument) to change the world. Verbs: {verbs}.
+  You have {budget} actions; zooming/observing is free but keep it purposeful.
+- {notes}
+- {laws_hint}
 
-Strategy: think about which obstacle blocks the goal, gather what you need, and avoid
+Strategy: think about what stands between you and the goal, gather what you need, and avoid
 wasting actions on guesses when you can inspect details first. Before an action whose outcome
-you cannot predict, zoom into the objects involved: what you perceive is what you can learn from. Call one tool at a time.
-When you hold the gem the episode ends automatically.
+you cannot predict, zoom into the objects involved: what you perceive is what you can learn from.
+Call one tool at a time. {done_text}
 {memory}"""
 
-ZOOM_HELP = ("You start zoomed into your room. Use zoom_in(id) to inspect an object's details "
-             "(shape, material, glyph, lock, components) and zoom_out() to go back up to the world map.")
-FLAT_HELP = "observe() always shows the map and your room with every detail already expanded."
+ZOOM_HELP = ("You start zoomed into your current location. Use zoom_in(id) to inspect details {details} "
+             "and zoom_out() to go back up to the map.")
+FLAT_HELP = "observe() always shows the map and your location with every detail already expanded."
 
 
 def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: OracleSeed | None,
@@ -194,9 +191,10 @@ def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: O
         mem = "\nLOGS OF YOUR PREVIOUS EPISODES (other worlds, same universe):\n" + traj.render()
     elif c == "retrieval":
         mem = "\nYou have an episodic memory of previous worlds in this universe; query it with recall(query)."
-    return BASE_INSTRUCTIONS.format(
-        goal=w.goal, view_help=FLAT_HELP if flat else ZOOM_HELP, budget=w.max_actions, memory=mem
-    )
+    p = w.prompt_spec()
+    view_help = FLAT_HELP if flat else ZOOM_HELP.format(details=p["details"])
+    return BASE_INSTRUCTIONS.format(view_help=view_help, budget=w.max_actions, memory=mem,
+                                    **{k: v for k, v in p.items() if k != "details"})
 
 
 def build_agent(ctx: EpisodeCtx, model, settings, traj=None, oracle=None, flat: bool = False) -> Agent:
@@ -292,7 +290,7 @@ async def run_episode(
         turns_left = max(1, turns_left - len([i for i in result.new_items if i.type == "tool_call_item"]) - 1)
         run_input = result.to_input_list() + [{
             "role": "user",
-            "content": "You do not hold the gem yet. Keep going: call a tool (observe, zoom_in, act ...).",
+            "content": "The goal is not complete yet. Keep going: call a tool (observe, zoom_in, act ...).",
         }]
     metrics = {
         "success": world.done,
