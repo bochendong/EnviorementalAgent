@@ -28,6 +28,9 @@ from pathlib import Path
 
 from PIL import Image
 
+import charart
+import treeart
+
 OUT = Path(__file__).resolve().parents[1] / "assets"
 T = 16
 SEASONS = ["spring", "summer", "fall", "winter"]
@@ -380,89 +383,7 @@ def make_terrain(season):
 
 
 # ============================================================================ props (trees etc.)
-LEAF = {
-    "spring": hue_ramp("#5aa848"), "summer": hue_ramp("#3f8f34"),
-    "fall": hue_ramp("#d9772e"), "winter": hue_ramp("#5f7a6c"),
-}
-PINE = {"spring": hue_ramp("#2f7a4a"), "summer": hue_ramp("#2a6b40"), "fall": hue_ramp("#3a6b40"),
-        "winter": hue_ramp("#3a5f50")}
 BARK = ramp("#2e1a10", "#4a2c1a", "#6b4228", "#8a5a36")
-
-
-def oak(season, seed):
-    rng = random.Random(seed)
-    c = C(48, 64)
-    # trunk + roots
-    c.rect(19, 36, 10, 24, BARK[2])
-    c.rect(19, 36, 3, 24, BARK[1]); c.rect(26, 36, 2, 24, BARK[3])
-    c.rect(16, 57, 16, 4, BARK[2]); c.rect(15, 59, 4, 2, BARK[1]); c.rect(29, 59, 4, 2, BARK[1])
-    for y in range(38, 58, 4):
-        c.p(22 + rng.randrange(4), y, BARK[0]); c.p(22 + rng.randrange(4), y + 1, BARK[0])
-    if season == "winter":
-        for (x0, y0, x1, y1) in ((24, 38, 10, 14), (24, 38, 38, 12), (24, 34, 24, 6), (24, 40, 6, 28), (24, 40, 42, 26),
-                                 (17, 22, 10, 18), (31, 20, 36, 14)):
-            steps = max(abs(x1 - x0), abs(y1 - y0))
-            for s in range(steps + 1):
-                x = x0 + (x1 - x0) * s / steps
-                y = y0 + (y1 - y0) * s / steps
-                c.p(x, y, BARK[1]); c.p(x + 1, y, BARK[2])
-        for (x, y) in ((10, 13), (38, 11), (24, 5), (6, 27), (42, 25), (10, 17), (36, 13)):
-            c.hline(x - 2, y, 5, hx("#ffffff")); c.hline(x - 1, y - 1, 3, hx("#f0f6ff"))
-        c.outline()
-        return c
-    L = LEAF[season]
-    for (x, y, r) in ((24, 22, 15), (13, 27, 10), (35, 27, 10), (18, 14, 10), (31, 13, 10), (24, 32, 11)):
-        c.blob(x, y, r, L, rng=rng)
-    for _ in range(40):  # leaf texture
-        x, y = rng.randrange(6, 42), rng.randrange(4, 40)
-        if c.get(x, y)[3]:
-            c.p(x, y, L[3] if rng.random() < .5 else L[1])
-    if season == "spring":
-        for _ in range(14):
-            x, y = rng.randrange(8, 40), rng.randrange(6, 36)
-            if c.get(x, y)[3]:
-                c.p(x, y, hx("#f6b8d2")); c.p(x + 1, y, hx("#ffffff"))
-    if season == "summer" and seed % 2:
-        for _ in range(7):
-            x, y = rng.randrange(10, 38), rng.randrange(10, 34)
-            if c.get(x, y)[3]:
-                c.rect(x, y, 2, 2, hx("#c0392b")); c.p(x, y, hx("#ff8a7a"))
-    c.outline()
-    return c
-
-
-def pine(season, seed):
-    rng = random.Random(seed)
-    c = C(32, 48)
-    c.rect(14, 38, 4, 9, BARK[2]); c.p(14, 38, BARK[1])
-    L = PINE[season]
-    for i, (y, w) in enumerate(((4, 4), (10, 7), (16, 10), (22, 12), (28, 14), (34, 15))):
-        for j in range(7):
-            ww = int(w * (j + 3) / 9)
-            for x in range(-ww, ww + 1):
-                v = 2 + (1 if x < 0 else -1 if x > ww // 2 else 0) + (1 if j < 2 else 0)
-                c.p(16 + x, y + j, L[max(0, min(4, v + rng.choice((0, 0, -1, 1))))])
-        if season == "winter":
-            for x in range(-w + 2, w - 1):
-                if rng.random() < .7:
-                    c.p(16 + x, y + 1, hx("#ffffff"))
-    c.outline()
-    return c
-
-
-def bush(season, seed):
-    rng = random.Random(seed)
-    c = C(16, 16)
-    L = LEAF[season] if season != "winter" else hue_ramp("#5f7a6c")
-    c.blob(8, 9, 6, L, rng=rng)
-    c.blob(4, 10, 4, L, rng=rng); c.blob(12, 10, 4, L, rng=rng)
-    if season == "summer":
-        for (x, y) in ((5, 8), (10, 6), (11, 11), (7, 12)):
-            c.p(x, y, hx("#3c5fd8")); c.p(x, y - 1, hx("#a9c4ff"))
-    if season == "winter":
-        c.hline(4, 4, 8, hx("#ffffff")); c.hline(2, 7, 3, hx("#ffffff"))
-    c.outline()
-    return c
 
 
 def rock(seed, big=False):
@@ -484,12 +405,19 @@ def stump():
 
 def make_props(season):
     a = Atlas(512)
+
+    def wrap(im):
+        c = C(im.width, im.height)
+        c.im = im
+        c.px = im.load()
+        return c
+
     for k in range(3):
-        a.add(f"oak{k}", oak(season, 10 + k))
+        a.add(f"oak{k}", wrap(treeart.oak(season, 10 + k)))
     for k in range(2):
-        a.add(f"pine{k}", pine(season, 20 + k))
+        a.add(f"pine{k}", wrap(treeart.pine(season, 20 + k)))
     for k in range(2):
-        a.add(f"bush{k}", bush(season, 30 + k))
+        a.add(f"bush{k}", wrap(treeart.bush(season, 30 + k)))
     a.add("rock0", rock(40)); a.add("rock1", rock(41, big=True)); a.add("stump", stump())
     a.save(OUT / f"props_{season}.png", OUT / f"props_{season}.json")
 
@@ -977,6 +905,13 @@ def make_objects():
             for col in COLOR_NAMES:
                 a.add(f"item_{n}_{col}", item_icon(n, cat, col))
     a.add("trophy", trophy()); a.add("coin", coin())
+    sh = C(14, 5)
+    for y in range(5):
+        for x in range(14):
+            d = ((x - 6.5) / 7) ** 2 + ((y - 2) / 2.5) ** 2
+            if d <= 1:
+                sh.px[x, y] = (20, 30, 20, int(85 * (1 - d * .5)))
+    a.add("shadow", sh)
     a.save(OUT / "objects.png", OUT / "objects.json")
 
 
@@ -988,163 +923,23 @@ HAIRS = {"brown": ramp("#2a160c", "#4a2a16", "#6e4224", "#8e5a32"), "blonde": ra
          "grey": ramp("#4a4a52", "#7a7a86", "#a8a8b4", "#d0d0d8"), "teal": ramp("#123a3a", "#1f5f5f", "#2f8a86", "#56b2aa")}
 VILLAGERS = {  # name -> (skin, hair, style)
     "Rosa": (0, "red", "long"), "Tomas": (1, "black", "short"), "Ivy": (0, "blonde", "bun"),
-    "Bram": (2, "brown", "beard"), "Lena": (1, "teal", "ponytail"), "Otto": (0, "grey", "bald"),
+    "Bram": (2, "black", "beard"), "Lena": (1, "teal", "ponytail"), "Otto": (0, "grey", "bald"),
     "Mira": (2, "black", "long"), "Finn": (0, "red", "spiky"),
 }
-
-
-def draw_char(direction, frame, skin, hair, style, shirt, pants="#4a4f6e", hat=False, overalls=False):
-    """16x32 frame. direction: down|left|right|up ; frame 0..3 (0,2 stand, 1,3 steps)."""
-    S, H = skin, hair
-    Sh = hue_ramp(shirt)
-    P = hue_ramp(pants)
-    c = C(16, 32)
-    step = {0: 0, 1: 1, 2: 0, 3: -1}[frame]
-    bob = 1 if frame in (1, 3) else 0
-    top = 8 + bob
-    # legs
-    if direction in ("down", "up"):
-        ly = top + 16
-        for (x, s) in ((5, step), (9, -step)):
-            h = 5 - max(0, s)
-            c.rect(x, ly, 3, h, P[2]); c.rect(x, ly + h, 3, 2, WOOD[0])
-    else:
-        ly = top + 16
-        c.rect(6 + step, ly, 3, 5, P[1]); c.rect(6 + step, ly + 5, 4, 2, WOOD[0])
-        c.rect(7 - step, ly, 3, 5, P[2]); c.rect(7 - step, ly + 5, 4, 2, WOOD[0])
-    # body / shirt
-    bx, bw = (4, 8) if direction in ("down", "up") else (5, 6)
-    c.rect(bx, top + 8, bw, 9, Sh[2]); c.hline(bx, top + 8, bw, Sh[3]); c.vline(bx + bw - 1, top + 9, 8, Sh[1])
-    if overalls:
-        c.rect(bx + 1, top + 11, bw - 2, 6, hx("#3a5fa8")); c.rect(bx + 1, top + 8, 1, 3, hx("#3a5fa8")); c.rect(bx + bw - 2, top + 8, 1, 3, hx("#3a5fa8"))
-    c.hline(bx, top + 16, bw, P[1])
-    # arms (swing)
-    if direction in ("down", "up"):
-        c.rect(2, top + 9 + step, 2, 6, Sh[2]); c.rect(2, top + 15 + step, 2, 2, S[2])
-        c.rect(12, top + 9 - step, 2, 6, Sh[1]); c.rect(12, top + 15 - step, 2, 2, S[2])
-    else:
-        ax = 7 + step
-        c.rect(ax, top + 9, 2, 6, Sh[1]); c.rect(ax, top + 15, 2, 2, S[2])
-    # head
-    hx0, hy = 3, top - 1
-    c.rect(hx0 + 1, hy, 9, 9, S[2]); c.rect(hx0 + 1, hy + 7, 9, 2, S[1]); c.hline(hx0 + 2, hy, 7, S[3])
-    if direction == "down":
-        c.p(hx0 + 3, hy + 4, hx("#1e1410")); c.p(hx0 + 7, hy + 4, hx("#1e1410"))
-        c.p(hx0 + 3, hy + 3, hx("#ffffff")); c.p(hx0 + 7, hy + 3, hx("#ffffff"))
-        c.p(hx0 + 5, hy + 6, S[1]); c.hline(hx0 + 4, hy + 7, 3, hx("#a8503a"))
-        c.p(hx0 + 2, hy + 6, hx("#f0a090")); c.p(hx0 + 8, hy + 6, hx("#f0a090"))
-    elif direction in ("left", "right"):
-        ex = hx0 + (2 if direction == "left" else 7)
-        c.p(ex, hy + 4, hx("#1e1410")); c.p(ex, hy + 3, hx("#ffffff"))
-        c.p(hx0 + (1 if direction == "left" else 9), hy + 5, S[1])
-    # hair
-    if style != "bald":
-        c.rect(hx0, hy - 2, 11, 4, H[2]); c.hline(hx0 + 1, hy - 3, 9, H[2]); c.hline(hx0 + 2, hy - 2, 6, H[3])
-        if direction == "up":
-            c.rect(hx0, hy - 2, 11, 9, H[2]); c.vline(hx0 + 5, hy, 6, H[1])
-        elif direction == "left":
-            c.rect(hx0 + 5, hy, 6, 5, H[2])
-        elif direction == "right":
-            c.rect(hx0, hy, 6, 5, H[2])
-        else:
-            c.rect(hx0, hy, 2, 4, H[2]); c.rect(hx0 + 9, hy, 2, 4, H[2])
-        if style == "long":
-            c.rect(hx0 - (0 if direction != "right" else 0), hy + 2, 2, 8, H[1]); c.rect(hx0 + 9, hy + 2, 2, 8, H[1])
-            if direction == "up":
-                c.rect(hx0, hy + 4, 11, 6, H[2])
-        if style == "bun":
-            c.ellipse(hx0 + 5, hy - 4, 2.5, 2, H[2]); c.p(hx0 + 4, hy - 5, H[3])
-        if style == "ponytail" and direction != "down":
-            tx = hx0 + (10 if direction == "left" else 0 if direction == "right" else 5)
-            c.rect(tx, hy + 1, 2, 7, H[1])
-        if style == "spiky":
-            for k in range(0, 11, 2):
-                c.p(hx0 + k, hy - 4, H[2]); c.p(hx0 + k, hy - 3, H[2])
-        if style == "beard" and direction != "up":
-            if direction == "down":
-                c.rect(hx0 + 2, hy + 6, 7, 3, H[2]); c.hline(hx0 + 4, hy + 7, 3, hx("#a8503a"))
-            else:
-                c.rect(hx0 + (1 if direction == "left" else 5), hy + 6, 5, 3, H[2])
-    else:
-        c.hline(hx0 + 1, hy + 1, 2, H[1]); c.hline(hx0 + 8, hy + 1, 2, H[1])
-        c.p(hx0 + 4, hy - 1, S[3])
-    if hat:
-        Y = hue_ramp("#e8c96a")
-        c.rect(hx0 - 2, hy - 1, 15, 2, Y[2]); c.hline(hx0 - 2, hy - 1, 15, Y[3])
-        c.rect(hx0 + 1, hy - 5, 9, 4, Y[2]); c.hline(hx0 + 1, hy - 5, 9, Y[3]); c.hline(hx0 + 1, hy - 2, 9, hx("#b8452f"))
-    c.outline()
-    if direction == "right":
-        pass
-    return c
-
-
-def char_sheet(**kw) -> C:
-    sheet = C(16 * 4, 32 * 4)
-    for r, d in enumerate(("down", "left", "right", "up")):
-        for f in range(4):
-            fr = draw_char("left" if d == "right" else d, f, **kw)
-            if d == "right":
-                fr = fr.flip()
-            sheet.paste(fr, f * 16, r * 32)
-    return sheet
-
-
-def portrait(skin, hair, style, shirt, hat=False, overalls=False):
-    """48x48 bust, drawn at 3x the sprite's proportions with more detail."""
-    S, H, Sh = skin, hair, hue_ramp(shirt)
-    c = C(48, 48)
-    c.rect(0, 0, 48, 48, hx("#e9cf98"))
-    for y in range(0, 48, 4):
-        c.hline(0, y, 48, hx("#e2c58a"))
-    # shoulders
-    c.ellipse(24, 47, 19, 10, Sh[2]); c.ellipse(24, 46, 17, 8, Sh[3]); c.ellipse(24, 49, 19, 6, Sh[1])
-    if overalls:
-        c.rect(15, 40, 18, 8, hx("#3a5fa8")); c.rect(15, 36, 3, 6, hx("#3a5fa8")); c.rect(30, 36, 3, 6, hx("#3a5fa8"))
-    c.rect(20, 32, 8, 6, S[1])
-    # head
-    c.ellipse(24, 22, 11, 12, S[2]); c.ellipse(22, 19, 8, 8, S[3]); c.ellipse(24, 30, 9, 4, S[2])
-    c.ellipse(13, 23, 2, 3, S[1]); c.ellipse(35, 23, 2, 3, S[1])
-    # eyes
-    for ex in (19, 29):
-        c.rect(ex - 1, 21, 3, 4, hx("#ffffff")); c.rect(ex, 22, 2, 3, hx("#2a1a10")); c.p(ex, 22, hx("#ffffff"))
-        c.hline(ex - 2, 19, 4, H[1])
-    c.rect(23, 25, 2, 3, S[1]); c.hline(21, 30, 6, hx("#a8503a")); c.hline(22, 31, 4, hx("#c86a50"))
-    c.ellipse(16, 28, 2, 1, hx("#f0a090")); c.ellipse(32, 28, 2, 1, hx("#f0a090"))
-    # hair
-    if style != "bald":
-        c.ellipse(24, 12, 13, 7, H[2]); c.ellipse(21, 10, 8, 4, H[3])
-        c.rect(11, 12, 4, 12, H[2]); c.rect(33, 12, 4, 12, H[2])
-        if style == "long":
-            c.rect(10, 14, 5, 26, H[1]); c.rect(33, 14, 5, 26, H[1])
-        if style == "bun":
-            c.ellipse(24, 4, 6, 4, H[2]); c.ellipse(23, 3, 3, 2, H[3])
-        if style == "ponytail":
-            c.rect(35, 14, 5, 18, H[1])
-        if style == "spiky":
-            for x in range(12, 38, 4):
-                c.rect(x, 3, 2, 6, H[2])
-        if style == "beard":
-            c.ellipse(24, 32, 10, 5, H[2]); c.hline(21, 30, 6, hx("#a8503a"))
-    else:
-        c.rect(11, 18, 3, 6, H[1]); c.rect(34, 18, 3, 6, H[1]); c.p(20, 13, S[3]); c.p(21, 13, S[3])
-    if hat:
-        Y = hue_ramp("#e8c96a")
-        c.ellipse(24, 12, 20, 4, Y[2]); c.ellipse(24, 7, 11, 6, Y[2]); c.ellipse(22, 5, 6, 3, Y[3]); c.hline(13, 11, 22, hx("#b8452f"))
-    c.outline()
-    return c
 
 
 def make_chars():
     (OUT / "chars").mkdir(exist_ok=True)
     (OUT / "portraits").mkdir(exist_ok=True)
-    player = dict(skin=SKINS[0], hair=HAIRS["brown"], style="short", shirt="#f6f0e0", hat=True, overalls=True)
-    char_sheet(**player).im.save(OUT / "chars" / "player.png")
-    portrait(SKINS[0], HAIRS["brown"], "short", "#f6f0e0", hat=True, overalls=True).im.save(OUT / "portraits" / "player.png")
+    player = dict(skin=SKINS[0], hair_ramp=tuple(HAIRS["brown"][1:4]), style="short", shirt="#f6f0e0",
+                  hat=True, overalls=True)
+    charart.sheet(**player).save(OUT / "chars" / "player.png")
+    charart.portrait_from(**player).save(OUT / "portraits" / "player.png")
     for name, (sk, hair, style) in VILLAGERS.items():
         for col in COLOR_NAMES:
-            kw = dict(skin=SKINS[sk], hair=HAIRS[hair], style=style, shirt=ITEM_COLORS[col])
-            char_sheet(**kw).im.save(OUT / "chars" / f"{name}_{col}.png")
-            portrait(SKINS[sk], HAIRS[hair], style, ITEM_COLORS[col]).im.save(OUT / "portraits" / f"{name}_{col}.png")
+            kw = dict(skin=SKINS[sk], hair_ramp=tuple(HAIRS[hair][1:4]), style=style, shirt=ITEM_COLORS[col])
+            charart.sheet(**kw).save(OUT / "chars" / f"{name}_{col}.png")
+            charart.portrait_from(**kw).save(OUT / "portraits" / f"{name}_{col}.png")
 
 
 # ============================================================================ UI

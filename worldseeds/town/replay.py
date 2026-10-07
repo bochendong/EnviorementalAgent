@@ -113,6 +113,8 @@ def demo_replays(universe: int = 2, n_train: int = 30, candidates: int = 40) -> 
     rng = random.Random(7)
     pool = [c for c in test if {"farming", "gifting"} <= set(c)] or test
     for s in town_seeds_for(pool, laws, candidates, rng):
+        if s.season == "winter":  # the demo should show the town in leaf
+            continue
         a = TownHeuristicAgent(grow_town(s), None).run()
         b = TownHeuristicAgent(grow_town(s), memory).run()
         gap = (b["success"] - a["success"]) * 100 + (a["actions"] - b["actions"])

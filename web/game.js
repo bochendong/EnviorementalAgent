@@ -97,6 +97,7 @@ class WorldScene extends Phaser.Scene {
     this.fogMarks = [];
     this.player = this.add.sprite(0, 0, "player", 0).setOrigin(.5, 1);
     this.player.dir = "down";
+    this.player.shadow = this.add.image(0, 0, "obj", "shadow").setDepth(-5);
     this.placeChar(this.player, this.loc("farm").anchor);
     this.cameras.main.setBounds(0, 0, MAPW * TILE, MAPH * TILE).setZoom(ZOOM).startFollow(this.player, true, .12, .12);
     this.cameras.main.roundPixels = true;
@@ -263,6 +264,7 @@ class WorldScene extends Phaser.Scene {
       const s = this.add.sprite(0, 0, charKey(o), 0).setOrigin(.5, 1);
       s.dir = "down"; s.villager = true;
       s.hearts = this.add.container(0, 0).setDepth(9400);
+      s.shadow = this.add.image(0, 0, "obj", "shadow").setDepth(-5);
       return s;
     }
     const f = frameFor(o);
@@ -309,7 +311,7 @@ class WorldScene extends Phaser.Scene {
       if (!p || p.plot) continue;
       seen.add(o.id);
       let s = this.dyn.get(o.id);
-      if (s && s.villager && s.texture.key !== charKey(o)) { s.hearts.destroy(); s.destroy(); s = null; }
+      if (s && s.villager && s.texture.key !== charKey(o)) { s.hearts.destroy(); s.shadow.destroy(); s.destroy(); s = null; }
       if (!s) { s = this.spriteFor(o); if (!s) continue; this.dyn.set(o.id, s); s.setPosition(p.x, p.y); s.tile = p.tile; }
       s.obj = o;
       if (s.villager) {
@@ -325,7 +327,7 @@ class WorldScene extends Phaser.Scene {
       s.setVisible(!hidden);
       if (s.tag) s.tag.setPosition(p.x, p.y + 1).setDepth(s.depth + 1).setVisible(!hidden);
     }
-    for (const [id, s] of this.dyn) if (!seen.has(id)) { if (s.hearts) s.hearts.destroy(); if (s.tag) s.tag.destroy(); s.destroy(); this.dyn.delete(id); }
+    for (const [id, s] of this.dyn) if (!seen.has(id)) { if (s.hearts) s.hearts.destroy(); if (s.shadow) s.shadow.destroy(); if (s.tag) s.tag.destroy(); s.destroy(); this.dyn.delete(id); }
     this.syncPlots(state);
     this.drawFog(state);
     this.setLight(state.phase, instant);
@@ -367,7 +369,11 @@ class WorldScene extends Phaser.Scene {
   }
 
   update() {
-    for (const s of this.dyn.values()) if (s.hearts) s.hearts.setPosition(s.x, s.y);
+    for (const s of this.dyn.values()) {
+      if (s.hearts) s.hearts.setPosition(s.x, s.y);
+      if (s.shadow) s.shadow.setPosition(s.x, s.y - 2).setVisible(s.visible);
+    }
+    if (this.player && this.player.shadow) this.player.shadow.setPosition(this.player.x, this.player.y - 2);
   }
 
   /* ---------- little effects */
