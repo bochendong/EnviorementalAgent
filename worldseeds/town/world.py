@@ -8,6 +8,14 @@ Quest:   each goal is a trophy held by a quest villager, handed over (``talk``)
                        right soil, watering, and two nights of growth)
            shop     -> needed goods must be bought with just enough coins
            schedule -> villagers move: home mornings/evenings, a law-given place at midday
+Board:   with ``seed.board = k`` the goal is instead the town board in the plaza: k requests
+         posted by different villagers, to finish before the end of day ``seed.days``:
+           harvest -> bring the villager a fresh crop        (farming laws)
+           friends -> reach friendship 2 with the villager   (gifting laws)
+           fetch   -> bring an item another villager keeps; that villager hands it over
+                      once you are on good terms (friendship 1, with gifting)
+           buy     -> bring an item sold at the store; coins come from finished requests
+         Every finished request pays REQUEST_REWARD coins.
 Time:    every valid action takes one tick; a day has 12 ticks (morning, midday,
          evening). ``sleep`` (at the farm) or running out of ticks ends the day; crops
          grow overnight. The world changes even when the agent does nothing (section 9's
@@ -44,6 +52,9 @@ JOB_LOOK = {"fisher": "rubber boots smelling of the sea", "doctor": "a stethosco
             "miner": "a dented helmet with a lamp"}
 DECOR = ["bench", "lamppost", "barrel", "signpost", "flowerbed", "cart"]
 HARVEST_YIELD = 3
+REQUEST_REWARD = 4
+ITEM_PRICE = 4
+SEED_PRICE = 3
 
 
 def phase_of(tick: int) -> str:
@@ -70,6 +81,7 @@ class TownWorld:
         self.events: list[Event] = []
         self.goals: list[dict] = []
         self.goal_index = 0
+        self.requests: list[dict] = []  # town board mode (seed.board > 0)
         self.actions = self.invalid_actions = self.zoom_ops = self.nodes_grown = 0
         self.home_of: dict[str, str] = {}
         self.requirements: list[tuple] = []
@@ -160,17 +172,20 @@ class TownWorld:
             packs = {}
             for c in CROPS:
                 packs[c] = self._add(Obj(self._new_id("s"), "seeds", f"{c} seeds", "", fine={"crop": c},
-                                         state={"uses": max(1, s.n_goals) + 1}, location="farm", critical=True))
+                                         state={"uses": max(1, s.n_goals, s.board) + 1}, location="farm", critical=True))
             if SHOP in s.blocks:
                 decoy = rng.choice([c for c in CROPS if c != good])
                 for c in (good, decoy):
-                    packs[c].state.update(for_sale=True, price=3)
+                    packs[c].state.update(for_sale=True, price=SEED_PRICE)
                     packs[c].location = "shop"
                 shop_needed.append(packs[good])
             self.requirements.append(("grow", good, L.soil_for[good]))
         else:
             self.crop_color = {c: rng.choice(COLORS) for c in CROPS}
 
+        if s.board:
+            self._build_board(villagers, found_spots, shop_needed)
+            return
         # ---- quests
         for k in range(max(1, s.n_goals)):
             v = villagers[k % len(villagers)]
@@ -202,6 +217,125 @@ class TownWorld:
             if FARMING in s.blocks:
                 self.requirements.append(("deliver_crop", v.id))
         self.coins = sum(o.state["price"] for o in shop_needed)
+
+    def _gift_pair(self, v: Obj, loc: str) -> Obj:
+        """One item the villager loves and one decoy matching the *other* attribute, both at ``loc``."""
+        rng, L = self._rng, self.laws
+        liked_cat = L.likes[v.fine["job"]]
+        if L.gift_attr == "color":
+            liked = (rng.choice([c for c in CATEGORIES if c != liked_cat]), v.color)
+            decoy = (liked_cat, rng.choice([c for c in COLORS if c != v.color]))
+        else:
+            liked = (liked_cat, rng.choice([c for c in COLORS if c != v.color]))
+            decoy = (rng.choice([c for c in CATEGORIES if c != liked_cat]), v.color)
+        li = self._item(*liked, loc)
+        self._item(*decoy, loc)
+        return li
+
+    def _build_board(self, villagers: list[Obj], found_spots: list[str], shop_needed: list[Obj]) -> None:
+        rng, s = self._rng, self.seed
+        kinds_on = (["harvest"] if FARMING in s.blocks else []) + (["friends"] if GIFTING in s.blocks else []) + \
+            ["fetch"] + (["buy"] if SHOP in s.blocks else [])
+        k = max(1, min(s.board, len(villagers) - 1))
+        kinds = kinds_on[:]
+        rng.shuffle(kinds)
+        kinds = kinds[:k]
+        while len(kinds) < k:
+            kinds.append(rng.choice(kinds_on))
+        # buys are paid from rewards: at most as many buys as other requests (unless buys are all there is)
+        while "buy" in kinds and kinds.count("buy") > max(1, k - kinds.count("buy")) and len(kinds_on) > 1:
+            kinds[kinds.index("buy")] = rng.choice([x for x in kinds_on if x != "buy"])
+        order = villagers[:]
+        rng.shuffle(order)
+        requesters, others = order[:k], order[k:] or order[:1]
+        self._add(Obj("board", "board", "town board", "", location="plaza", critical=True))
+        for i, (kind, v) in enumerate(zip(kinds, requesters)):
+            r = {"id": f"r{i + 1}", "kind": kind, "villager": v.id, "item": None, "holder": None, "done": False,
+                 "reward": REQUEST_REWARD}
+            if kind == "friends":
+                for _ in range(2):
+                    li = self._gift_pair(v, rng.choice([x for x in found_spots if x != self.home_of[v.id]]))
+                    self.requirements.append(("gift", v.id, li.id))
+            elif kind == "fetch":
+                h = rng.choice([o for o in others if o.id != v.id] or [o for o in order if o.id != v.id])
+                it = self._item(rng.choice(CATEGORIES), rng.choice(COLORS), h.id)
+                r.update(item=it.id, holder=h.id)
+                v.state["request"] = it.id
+                if GIFTING in s.blocks and not any(q[0] == "gift" and q[1] == h.id for q in self.requirements):
+                    li = self._gift_pair(h, rng.choice([x for x in found_spots if x != self.home_of[h.id]]))
+                    self.requirements.append(("gift", h.id, li.id))
+            elif kind == "buy":
+                cat, col = rng.choice(CATEGORIES), rng.choice(COLORS)
+                it = self._item(cat, col, "shop", ITEM_PRICE)
+                self._item(cat, rng.choice([c for c in COLORS if c != col]), "shop", ITEM_PRICE)
+                r["item"] = it.id
+                v.state["request"] = it.id
+            self.requests.append(r)
+        # start with enough for the seeds; buys are funded by rewards (or one buy, if buys are all there is)
+        self.coins = sum(o.state["price"] for o in shop_needed) + (ITEM_PRICE if all(r["kind"] == "buy" for r in self.requests) else 0)
+
+    # ================================================================ board
+    @property
+    def board_mode(self) -> bool:
+        return bool(self.requests)
+
+    def request_of(self, vid: str) -> dict | None:
+        return next((r for r in self.requests if r["villager"] == vid and not r["done"]), None)
+
+    def request_met(self, r: dict) -> tuple[bool, str]:
+        v = self.objs[r["villager"]]
+        if r["kind"] == "harvest":
+            return (True, "") if v.state["got_crop"] else (False, "'I'd love something fresh from your farm.'")
+        if r["kind"] == "friends":
+            f = v.state["friendship"]
+            return (True, "") if f >= 2 else (False, f"'We hardly know each other yet.' (friendship {f}/2)")
+        if v.state["got_request"]:
+            return True, ""
+        it = self.objs[r["item"]]
+        where = (f"{self.objs[r['holder']].name} ({r['holder']}) keeps one" if r["kind"] == "fetch"
+                 else "the general store sells it")
+        return False, f"'Could you bring me the {it.color} {it.name} ({it.id})? {where}.'"
+
+    def request_text(self, r: dict) -> str:
+        v = self.objs[r["villager"]]
+        who = f"{v.name} ({v.id}, lives in {self.home_of[v.id]})"
+        if r["kind"] == "harvest":
+            what = "wants something fresh from your farm"
+        elif r["kind"] == "friends":
+            what = "wants to become friends (friendship 2)"
+        else:
+            it = self.objs[r["item"]]
+            src = (f"which {self.objs[r['holder']].name} ({r['holder']}) keeps" if r["kind"] == "fetch"
+                   else f"sold at the general store for {ITEM_PRICE} coins")
+            what = f"needs the {it.color} {it.name} {it.id}, {src}"
+        return f"{r['id']}. {who} {what}. Reward {r['reward']} coins." + (" [DONE]" if r["done"] else "")
+
+    def board_text(self) -> str:
+        n = sum(r["done"] for r in self.requests)
+        return (f"TOWN BOARD ({n}/{len(self.requests)} done, until the end of day {self.seed.days}):\n"
+                + "\n".join("  " + self.request_text(r) for r in self.requests))
+
+    def _board_talk(self, o: Obj) -> tuple[str, bool, bool]:
+        r = self.request_of(o.id)
+        if r is not None:
+            ok, why = self.request_met(r)
+            if not ok:
+                return f"{o.name}: {why}", False, True
+            r["done"] = True
+            self.coins += r["reward"]
+            n = sum(x["done"] for x in self.requests)
+            return (f"{o.name} ticks request {r['id']} off the town board and pays you {r['reward']} coins! "
+                    f"({n}/{len(self.requests)} requests done)"), True, True
+        held = next((x for x in self.objs.values() if x.location == o.id and x.kind == "item"
+                     and any(q["item"] == x.id and q["kind"] == "fetch" for q in self.requests)), None)
+        if held is not None:
+            if GIFTING in self.seed.blocks and o.state["friendship"] < 1:
+                return (f"{o.name}: 'The {held.color} {held.name}? Maybe once we know each other a little better.' "
+                        f"(friendship {o.state['friendship']}/1)"), False, True
+            held.location = "inv"
+            self.inventory.append(held.id)
+            return f"{o.name} hands you the {held.color} {held.name} ({held.id}).", True, True
+        return f"{o.name} chats about the weather.", True, True
 
     # ================================================================ lazy growth
     def _grow_room(self, rid: str) -> None:
@@ -319,15 +453,33 @@ class TownWorld:
 
     @property
     def goal(self) -> str | None:
+        if self.requests:
+            return "board"
         return self.goals[self.goal_index]["trophy"] if self.goal_index < len(self.goals) else None
 
     @property
     def done(self) -> bool:
+        if self.requests:
+            return all(r["done"] for r in self.requests)
         return self.goal is not None and self.goal in self.inventory
 
     @property
+    def out_of_time(self) -> bool:
+        return bool(self.requests) and self.day > self.seed.days
+
+    @property
     def out_of_budget(self) -> bool:
-        return self.actions >= self.max_actions
+        return self.actions >= self.max_actions or self.out_of_time
+
+    def board_metrics(self) -> dict:
+        if not self.requests:
+            return {}
+        return {"board_done": sum(r["done"] for r in self.requests), "board_total": len(self.requests),
+                "days_used": min(self.day, self.seed.days), "coins": self.coins,
+                **{f"board_{k}_done": sum(r["done"] for r in self.requests if r["kind"] == k)
+                   for k in ("harvest", "friends", "fetch", "buy")},
+                **{f"board_{k}_total": sum(1 for r in self.requests if r["kind"] == k)
+                   for k in ("harvest", "friends", "fetch", "buy")}}
 
     def visible_attrs(self, oid: str | None) -> dict:
         if not oid or oid not in self.objs:
@@ -353,6 +505,11 @@ class TownWorld:
 
     # ================================================================ text
     def task_text(self) -> str:
+        if self.requests:
+            return ("complete the requests on the town board (in the plaza) before the end of day "
+                     f"{self.seed.days}. Finished requests pay coins.\n" + "\n".join(
+                         "  " + self.request_text(r) for r in self.requests)
+                     + "\nWhen a request is fulfilled, talk to the villager who posted it to tick it off.")
         g = self.goals[self.goal_index]
         v = self.objs[g["villager"]]
         return (f"obtain the trophy {g['trophy']} held by {v.name} ({v.id}, who lives in {self.home_of[v.id]}). "
@@ -364,6 +521,8 @@ class TownWorld:
              "harvest <plot> (also clears dead plants), sleep (at the farm: ends the day), wait (one tick)")
         if self.library is not None:
             v += ", read <shelf> (in the library)"
+        if self.requests:
+            v += ", read board (in the plaza)"
         return v
 
     def prompt_spec(self) -> dict:
@@ -379,7 +538,9 @@ class TownWorld:
             "laws_hint": ("Laws of this universe (which soil and season each crop needs, which gifts villagers "
                           "love, where villagers spend middays) are consistent across towns but NOT necessarily "
                           "what you would expect."),
-            "done_text": "When you hold the trophy the episode ends automatically.",
+            "done_text": ("The episode ends when every request is ticked off, or when the last day ends. "
+                          "Each request ticked off counts." if self.requests else
+                          "When you hold the trophy the episode ends automatically."),
         }
 
     def world_notes(self) -> str:
@@ -418,8 +579,14 @@ class TownWorld:
     def status_line(self) -> str:
         inv = ", ".join(self._label(self.objs[i]) for i in self.inventory) or "nothing"
         return (f"(Day {self.day}, {self.season}, {self.phase} [tick {self.tick}/{TICKS_PER_DAY}] | coins {self.coins} "
-                f"| holding: {inv} | goal: obtain {self.goal} | actions used {self.actions}/{self.max_actions} "
+                f"| holding: {inv} | goal: {self._goal_status()} | actions used {self.actions}/{self.max_actions} "
                 f"| zoom: {'/'.join(['town'] + self.focus)})")
+
+    def _goal_status(self) -> str:
+        if self.requests:
+            return (f"board {sum(r['done'] for r in self.requests)}/{len(self.requests)} done, "
+                    f"last day {self.seed.days}")
+        return f"obtain {self.goal}"
 
     def view_world(self) -> str:
         lines = [f"[TOWN MAP] You are at {self.agent_room} ({self.rooms[self.agent_room].name})."]
@@ -451,6 +618,9 @@ class TownWorld:
                 need.append(f"friendship {o.state['friendship']}/2")
             lines += [f"  wears {JOB_LOOK[o.fine['job']]} (a {o.fine['job']})", f"  shirt: {o.color}",
                       "  " + (", ".join(need) or "seems approachable")]
+            r = self.request_of(o.id) if self.requests else None
+            if r is not None:
+                lines.append(f"  posted board request {r['id']} ({r['kind']})")
         elif o.kind == "plot":
             lines.append(f"  soil: {o.fine['soil']}")
             if o.state["crop"]:
@@ -461,6 +631,8 @@ class TownWorld:
             lines.append(f"  label: '{o.fine['crop']}' -- no planting instructions")
         elif o.kind == "decor":
             lines.append(f"  {o.fine['condition']}")
+        elif o.kind == "board":
+            lines.append(self.board_text())
         lines.append(self.status_line())
         return "\n".join(lines)
 
@@ -539,7 +711,10 @@ class TownWorld:
         elif verb != "sleep":
             msg += self._advance(1)
         if self.done:
-            msg += f" GOAL COMPLETE: you hold {self.goal}."
+            msg += (" TOWN BOARD COMPLETE: every request is done!" if self.requests
+                    else f" GOAL COMPLETE: you hold {self.goal}.")
+        elif self.out_of_time:
+            msg += f" The season's board closes: day {self.seed.days} is over."
         elif self.out_of_budget:
             msg += " You have run out of actions."
         return msg, ok
@@ -565,6 +740,8 @@ class TownWorld:
         o = O[target]
         if not self.accessible(target):
             return f"{target} is not here (you are at {self.agent_room}).", False, False
+        if verb == "read" and o.kind == "board":
+            return self.board_text(), True, True
         if verb in ("read", "write"):
             return self._library_action(verb, o, instrument, ev)
         tool = None
@@ -596,6 +773,8 @@ class TownWorld:
         if verb == "talk":
             if o.kind != "villager":
                 return f"{o.id} does not answer.", False, False
+            if self.requests:
+                return self._board_talk(o)
             ok, why = self.requirements_met(o)
             trophy = next((x for x in O.values() if x.kind == "trophy" and x.location == o.id), None)
             if ok and trophy is not None:
@@ -729,13 +908,18 @@ class TownWorld:
                 d.update(job=o.fine["job"], friendship=o.state["friendship"], home=self.home_of[o.id],
                          work=self.work_of.get(o.id),
                          got_crop=o.state["got_crop"], request=o.state.get("request"),
-                         got_request=o.state["got_request"], needs=self.requirements_met(o)[1])
+                         got_request=o.state["got_request"],
+                         needs=(self.request_met(self.request_of(o.id))[1] if self.request_of(o.id) else "")
+                         if self.requests else self.requirements_met(o)[1])
             if o.state.get("for_sale"):
                 d.update(for_sale=True, price=o.state["price"])
             if o.kind == "decor":
                 d["condition"] = o.fine["condition"]
             objs.append(d)
         g = self.goals[self.goal_index] if self.goal_index < len(self.goals) else None
+        if self.requests:
+            nxt = next((r for r in self.requests if not r["done"]), None)
+            g = {"villager": nxt["villager"]} if nxt else None
         return {
             "day": self.day, "tick": self.tick, "ticks_per_day": TICKS_PER_DAY, "phase": self.phase,
             "season": self.season, "coins": self.coins, "agent_room": self.agent_room,
@@ -743,6 +927,8 @@ class TownWorld:
             "actions": self.actions, "max_actions": self.max_actions, "blocks": list(self.seed.blocks),
             "rooms": [{"id": r.id, "name": r.name, "visited": r.visited} for r in self.rooms.values()],
             "objects": objs, "inventory": list(self.inventory),
+            **({"requests": [dict(r, text=self.request_text(r)) for r in self.requests], "days": self.seed.days}
+               if self.requests else {}),
         }
 
     def clone(self) -> "TownWorld":

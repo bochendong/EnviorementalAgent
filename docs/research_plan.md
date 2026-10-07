@@ -81,6 +81,11 @@ things the dungeon lacks:
   whether the seed beats the model's prior (Stardew-style knowledge from pretraining).
 * **Long-lived persistence:** planted fields and friendships carry over between goals.
 
+**A purpose in the town (the board).** `--env board` replaces the single trophy with a week-long
+town board of four villager requests (harvest, friendship, fetch from another villager, buy with
+earned coins). This adds planning over days and gives every villager a role, and it is the
+setting for the memory steps below and for multi-agent cooperation (agents splitting a board).
+
 **Memory in the world (the library).** Many questions are about memory that is *not* inside the
 agent: using what another agent learned, deciding whether to trust it, and sharing it among
 several agents. SeedVille's library makes that memory a place: consolidated laws and agents'

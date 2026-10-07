@@ -775,6 +775,21 @@ def shelf_sprite(topic, full=True):
     return c
 
 
+def notice_board():
+    """the town board in the plaza: a roofed wooden board on two posts, papers pinned to it"""
+    c = C(32, 36)
+    W = WOOD
+    c.rect(4, 12, 2, 24, W[1]); c.rect(26, 12, 2, 24, W[1])
+    c.rect(1, 3, 30, 4, hx("#8a3a2a")); c.hline(1, 3, 30, hx("#b85a3a")); c.rect(3, 1, 26, 2, hx("#6a2a1e"))
+    c.rect(3, 8, 26, 18, W[3]); c.rect(4, 9, 24, 16, W[2])
+    papers = [(6, 10, "#fff6df"), (16, 11, "#f6e6b8"), (8, 18, "#f6e6b8"), (19, 18, "#fff6df")]
+    for x, y, col in papers:
+        c.rect(x, y, 7, 6, hx(col)); c.hline(x + 1, y + 2, 5, hx("#b8a07a")); c.hline(x + 1, y + 4, 4, hx("#b8a07a"))
+        c.px[x + 3, y] = hx("#c0392b")
+    c.outline()
+    return c
+
+
 def scroll_icon():
     """a note flying from shelf to reader"""
     c = C(12, 12)
@@ -842,7 +857,7 @@ def make_objects():
     for topic in SHELF_TOPICS:
         a.add(f"shelf_{topic}", shelf_sprite(topic)); a.add(f"shelf_{topic}_empty", shelf_sprite(topic, False))
     a.add("shelf_pile", note_pile()); a.add("shelf_pile_empty", note_pile(False))
-    a.add("scroll", scroll_icon())
+    a.add("scroll", scroll_icon()); a.add("board", notice_board())
     a.save(OUT / "objects.png", OUT / "objects.json")
 
 

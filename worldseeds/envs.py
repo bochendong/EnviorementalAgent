@@ -2,6 +2,7 @@
 
     dungeon  rooms, doors, keys, jars, switches, machines, boulders  (worldseeds.world)
     town     SeedVille: farm, villagers, shop, day/night schedule    (worldseeds.town)
+    board    SeedVille with the town board: several villager requests to finish within a season
 """
 
 from __future__ import annotations
@@ -66,7 +67,22 @@ def _town() -> EnvSpec:
     )
 
 
-_FACTORIES = {"dungeon": _dungeon, "town": _town}
+def _board(n_requests: int = 4, days: int = 7) -> EnvSpec:
+    """SeedVille whose goal is the town board (worldseeds.town.world, board mode)."""
+    from .town.agents import BoardHeuristicAgent
+
+    town = _town()
+
+    def make_seed(laws, blocks, rng, n_goals=1, n_distractors=2, big=False):
+        return replace(town.make_seed(laws, blocks, rng, n_goals, n_distractors, big), board=n_requests, days=days)
+
+    def seeds_for(combos, laws, n, rng, **kw):
+        return town.seeds_for(combos, laws, n, rng, **{"board": n_requests, "days": days, **kw})
+
+    return replace(town, name="board", make_seed=make_seed, seeds_for=seeds_for, heuristic=BoardHeuristicAgent)
+
+
+_FACTORIES = {"dungeon": _dungeon, "town": _town, "board": _board}
 ENV_NAMES = list(_FACTORIES)
 
 

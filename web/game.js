@@ -37,6 +37,7 @@ function frameFor(o) {
     case "seeds": return `seeds_${o.crop}`;
     case "tool": return `can_${o.color}`;
     case "trophy": return "trophy";
+    case "board": return "board";
     case "shelf": return `shelf_${o.category}${o.entries ? "" : "_empty"}`;
     case "decor": return o.name === "lamppost" ? "lamppost" : `${o.name}_${o.color}`;
   }
@@ -68,7 +69,7 @@ const Graph = {
       const m = { key, w: data.width, h: data.height, locs: {}, exits: [], doors: [] };
       for (const o of data.layers.find(l => l.name === "objects").objects) {
         const pr = props(o), tx = Math.round(o.x / TILE), ty = Math.round(o.y / TILE);
-        if (o.type === "location") m.locs[o.name] = { name: o.name, rect: [tx, ty, o.width / TILE, o.height / TILE], anchor: pt(pr.anchor), items: pts(pr.items), people: pts(pr.people), shelves: pts(pr.shelves) };
+        if (o.type === "location") m.locs[o.name] = { name: o.name, rect: [tx, ty, o.width / TILE, o.height / TILE], anchor: pt(pr.anchor), items: pts(pr.items), people: pts(pr.people), shelves: pts(pr.shelves), board: pr.board ? pt(pr.board) : null };
         if (o.type === "exit") m.exits.push({ to: pr.to, at: [tx, ty], spawn: pt(pr.spawn) });
         if (o.type === "building" && pr.interior) m.doors.push({ loc: pr.loc, interior: pr.interior, at: pt(pr.door), name: o.name });
       }
@@ -217,7 +218,7 @@ class WorldScene extends Phaser.Scene {
       const pr = props(o), tx = Math.round(o.x / TILE), ty = Math.round(o.y / TILE);
       switch (o.type) {
         case "location": {
-          const L = { name: o.name, rect: [tx, ty, o.width / TILE, o.height / TILE], anchor: pt(pr.anchor), items: pts(pr.items), people: pts(pr.people), shelves: pts(pr.shelves) };
+          const L = { name: o.name, rect: [tx, ty, o.width / TILE, o.height / TILE], anchor: pt(pr.anchor), items: pts(pr.items), people: pts(pr.people), shelves: pts(pr.shelves), board: pr.board ? pt(pr.board) : null };
           if (o.name === "here" && this.sc.instance) L.name = this.sc.instance;
           this.locs[L.name] = L;
           break;
@@ -356,6 +357,11 @@ class WorldScene extends Phaser.Scene {
     for (const o of state.objects) {
       if (o.kind === "plot" || o.kind === "bed" || !this.locs[o.location]) continue;
       const L = this.locs[o.location], isPerson = o.kind === "villager";
+      if (o.kind === "board" && L.board) {
+        const t = L.board;
+        pos[o.id] = { tile: [t[0], t[1]], x: t[0] * TILE + TILE, y: (t[1] + 1) * TILE, shelf: true };
+        continue;
+      }
       if (o.kind === "shelf" && L.shelves.length) {  // library shelves stand over the bookcases along the wall
         const k = (counts[o.location + "shelf"] = (counts[o.location + "shelf"] || 0) + 1) - 1;
         const t = L.shelves[k % L.shelves.length];
@@ -438,7 +444,8 @@ class WorldScene extends Phaser.Scene {
   dropSprite(s) { if (s.hearts) s.hearts.destroy(); if (s.shadow) s.shadow.destroy(); if (s.tag) s.tag.destroy(); s.destroy(); }
   drawMarks(s, o, state) {
     s.hearts.removeAll(true);
-    if (o.id === state.goal_villager && !state.done) {
+    const wanted = state.requests ? state.requests.some(r => !r.done && r.villager === o.id) : o.id === state.goal_villager;
+    if (wanted && !state.done) {
       const b = this.add.image(0, -36, "ui", "emote_bang");
       s.hearts.add(b);
       this.tweens.add({ targets: b, y: -38, yoyo: true, repeat: -1, duration: 500 });
@@ -596,8 +603,10 @@ class HudScene extends Phaser.Scene {
     this.state = s;
     const w = Director.world;
     this.setWeather(s.season, w && !w.indoor);
-    const v = s.objects.find(o => o.id === s.goal_villager);
-    this.qText.setText(v ? `Get the trophy from ${v.name}` : "No quest");
+    const v = s.requests ? null : s.objects.find(o => o.id === s.goal_villager);
+    this.qTitle.setText(s.requests ? "TOWN BOARD" : "QUEST");
+    this.qText.setText(s.requests ? `${s.requests.filter(r => r.done).length} of ${s.requests.length} done · until day ${s.days}`
+      : v ? `Get the trophy from ${v.name}` : "No quest");
     this.qNeeds.removeAll(true);
     let y = 0;
     const row = (txt, ok, hearts) => {
@@ -611,6 +620,13 @@ class HudScene extends Phaser.Scene {
       if (v.request) row("Bring what they asked for", v.got_request);
       if (s.blocks.includes("schedule")) row("Find them (they move)", s.done);
       if (s.done) row("Trophy in hand!", true);
+    }
+    for (const r of s.requests || []) {
+      const by = id => (s.objects.find(o => o.id === id) || {});
+      const p = by(r.villager), it = r.item ? by(r.item) : null;
+      const what = r.kind === "harvest" ? "a fresh crop" : r.kind === "friends" ? "friendship"
+        : `${it.color} ${it.name}` + (r.kind === "fetch" ? ` (${by(r.holder).name})` : " (store)");
+      row(`${p.name}: ${what}`, r.done, r.kind === "friends" ? Math.min(2, p.friendship) : undefined);
     }
     this.qPanel.height = Math.max(90, 70 + y);
     this.cDay.setText(`Day ${s.day}, ${cap(s.season)}`);
@@ -798,7 +814,12 @@ const Director = {
       }
       else if (verb === "read" && tS && !failed) { w.emote(tS, "emote_note", 600 / sp); await w.flyTo("scroll", tS, P, 450); w.emote(P, "emote_dots", 700 / sp); await delay(300); }
       else if (verb === "write" && tS && !failed) { await w.flyTo("scroll", P, tS, 450); w.burst(tS.x, tS.y - 24, "px_spark", 8); await delay(200); }
-      else if (verb === "talk" && tS) { w.emote(tS, s.done ? "emote_heart" : "emote_note", 900 / sp); await delay(400); }
+      else if (verb === "talk" && tS) {
+        const ticked = /ticks request/.test(frame.message || "");
+        w.emote(tS, s.done || ticked ? "emote_heart" : "emote_note", 900 / sp);
+        if (ticked) { w.burst(tS.x, tS.y - 30, "px_spark", 18, { gravityY: 60 }); this.game.events.emit("banner", "Request done!"); }
+        await delay(400);
+      }
       else if (verb === "wait") { w.emote(P, "emote_dots", 600 / sp); await delay(250); }
       if (failed && verb !== "give") { w.emote(P, "emote_bang", 700 / sp); w.cameras.main.shake(120, .002); await delay(250); }
     }
@@ -893,8 +914,8 @@ const Director = {
       this.liveState = d.state; UI.onLive(d);
     } finally { this.busy = false; }
   },
-  async liveNew(universe, blocks, villagers, library) {
-    const d = await this.api("api/new", { universe, blocks, n_villagers: villagers, library });
+  async liveNew(universe, blocks, villagers, library, board) {
+    const d = await this.api("api/new", { universe, blocks, n_villagers: villagers, library, board });
     this.liveState = d.state; UI.onLive(d);
     await this.show({ state: d.state, message: d.goal_text, action: "", kind: "start" });
   },
@@ -936,7 +957,7 @@ const UI = {
     $("pOracle").onclick = () => Director.liveAuto("oracle");
     $("pExplorer").onclick = () => Director.liveAuto("explorer");
     $("pGo").onclick = () => { const v = $("goTo").value; if (v) Director.liveAct("go", v); };
-    $("pNew").onclick = () => Director.liveNew(+$("uni").value, ["farming", "gifting", "shop", "schedule"].filter(b => $("blk-" + b).checked), +$("nVill").value, $("libMode").value);
+    $("pNew").onclick = () => Director.liveNew(+$("uni").value, ["farming", "gifting", "shop", "schedule"].filter(b => $("blk-" + b).checked), +$("nVill").value, $("libMode").value, $("blk-board").checked ? 4 : 0);
     document.addEventListener("keydown", e => {
       if (["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
       if (e.key === "m" || e.key === "M") Director.hud && Director.hud.toggleMap();
@@ -994,6 +1015,7 @@ const UI = {
     const o = s.objects.find(x => x.id === hit.obj); if (!o) return null;
     let t = o.label.replace(/^\S+\s/, "");
     if (o.kind === "villager") t = `${o.name}` + (o.seen ? `, the ${o.job}` : "") + ` · friendship ${o.friendship}`;
+    if (o.kind === "board" && s.requests) t = `Town board · ${s.requests.filter(r => r.done).length}/${s.requests.length} requests done · until day ${s.days}`;
     if (o.kind === "shelf") t = (o.category === "pile" ? "Unsorted notes" : `${cap(o.category)} shelf`) + ` · ${o.entries} note${o.entries === 1 ? "" : "s"}` + (o.entries ? "" : " (empty)");
     if (o.kind === "plot") t = `Plot ${o.id}` + (o.seen ? ` · ${o.soil} soil` : " · soil unknown") + (o.crop ? ` · ${o.crop} (${o.status})` : "");
     return t;
@@ -1029,6 +1051,7 @@ const UI = {
             add("Talk", A("talk", o.id));
             held.filter(h => h.kind === "item" || h.kind === "crop").forEach(h => add(`Give ${h.color} ${h.name}`, A("give", o.id, h.id)));
           }
+          if (o.kind === "board") add("Read the board", A("read", o.id));
           if (o.kind === "shelf") add(o.category === "pile" ? "Read a page" : "Read the shelf", A("read", o.id));
           if (o.kind === "plot") {
             held.filter(h => h.kind === "seeds").forEach(h => add(`Plant ${h.crop}`, A("plant", o.id, h.id)));

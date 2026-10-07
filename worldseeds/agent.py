@@ -341,6 +341,7 @@ async def run_episode(
         "input_tokens": ctx.input_tokens,
         "output_tokens": ctx.output_tokens,
         "wall_s": round(time.time() - t0, 2),
+        **(world.board_metrics() if hasattr(world, "board_metrics") else {}),
     }
     return metrics, ctx
 

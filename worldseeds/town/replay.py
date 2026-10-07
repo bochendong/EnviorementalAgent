@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import random
 
-from .agents import TownHeuristicAgent, TownOracle, TownSeedMemory
+from .agents import BoardHeuristicAgent, TownHeuristicAgent, TownOracle, TownSeedMemory
 from .library import LibraryArchive, entry_line
 from .seed import TownSeed, town_seeds_for, town_split
 from .world import TownWorld, grow_town
@@ -65,12 +65,14 @@ def record_policy(seed: TownSeed, policy: str, memory: TownSeedMemory | None = N
                   library: LibraryArchive | None = None) -> dict:
     """policy: oracle | explorer (heuristic, optionally with a learned seed ``memory``, or with an
     empty head and a town ``library`` to read)."""
+    if seed.board and max_actions == 60:
+        max_actions = 200
     w = grow_town(seed, max_actions=max_actions if policy != "oracle" else 10_000, library=library)
     rec = Recorder(w)
     if policy == "oracle":
         TownOracle(w).solve()
     else:
-        TownHeuristicAgent(w, memory, random.Random(0)).run()
+        (BoardHeuristicAgent if w.requests else TownHeuristicAgent)(w, memory, random.Random(0)).run()
     rec.detach()
     text = memory.render() if memory else (library_text(library) if library else "")
     out = _meta(w, title or policy, description, text)
@@ -152,4 +154,30 @@ def demo_replays(universe: int = 2, n_train: int = 30, candidates: int = 40) -> 
                       library=library),
         record_policy(seed, "oracle", None, title="Oracle",
                       description="Knows the hidden laws. Shows the shortest sensible route."),
+    ] + board_replays(laws, test, memory, library, n_train)
+
+
+def board_replays(laws, test, memory, library, n_train: int, candidates: int = 30) -> list[dict]:
+    """The town board (four villager requests in one week), with and without what earlier towns taught."""
+    rng = random.Random(11)
+    pool = [c for c in test if len(c) >= 3 and "farming" in c] or test
+    best, best_gap = None, -1e9
+    for s in town_seeds_for(pool, laws, candidates, rng, board=4):
+        if s.season == "winter":
+            continue
+        share = []
+        for sd in (None, memory):
+            w = grow_town(s, max_actions=200)
+            m = BoardHeuristicAgent(w, sd, random.Random(0)).run()
+            share.append(m["board_done"] - w.actions / 1000)
+        if not w.done:  # the seeded run should finish the board
+            continue
+        if share[1] - share[0] > best_gap:
+            best, best_gap = s, share[1] - share[0]
+    return [
+        record_policy(best, "explorer", None, title="Town board: explorer, no memory",
+                      description="Four villagers post requests. One week to finish them, no idea how this "
+                                  "universe works."),
+        record_policy(best, "explorer", memory, title="Town board: explorer with a learned seed",
+                      description=f"The same week, carrying laws consolidated from {n_train} earlier towns."),
     ]

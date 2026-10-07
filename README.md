@@ -133,6 +133,37 @@ day: crops grow overnight and you wake at the farm. A plot's soil and a villager
 only visible after `zoom_in`. Universe 0 follows common sense (bakers like food); the
 others are shuffled, so the model can't rely on Stardew-style prior knowledge.
 
+### The town board: a reason to live in the town (`--env board`)
+
+The classic town goal is a single trophy. With `--env board` the goal is the **town board** in
+the plaza instead: four requests posted by different villagers, to finish within one week
+(7 days). The episode ends when all four are ticked off or the week runs out; the score is
+the share of requests done (`board_done / board_total`), with days and actions used.
+
+| request | what it asks | what it needs to know |
+|---|---|---|
+| harvest | "bring me something fresh from your farm" | which seed grows this season, in which soil |
+| friends | "let's become friends" (friendship 2) | which gifts this villager loves |
+| fetch | "bring me the red ruby that Bram keeps" | Bram hands it over only once you are on good terms (friendship 1, with gifting) |
+| buy | "bring me the blue bell from the store" | coins come from finished requests (4 each), so order matters |
+
+So the villagers matter: they post the work, hold what others need, and move around on a
+schedule. Time matters too: crops need nights, so a good agent plants first and does
+other requests while they grow. All 2,160 boards generated in a sweep (6 universes, every block combination, 3–6 requests)
+are solvable by the oracle, in about 30 actions and 4 days on average.
+
+Heuristic agent, universe 1, 20 unseen board towns (share of requests done):
+
+| none | library, unsorted pile | library, sorted shelves | seed in the head | true laws |
+|---|---|---|---|---|
+| 0.34 | 0.81 | 0.93 | 0.97 | 0.97 |
+
+```bash
+python scripts/run_experiment.py --env board --policy heuristic --conditions none seed library \
+    --universes 1 --n-train 30 --n-test 20 --max-actions 200 --out results/board_pilot
+python scripts/play.py --env board --mode oracle --blocks farming gifting shop schedule
+```
+
 ### The library: memory that lives in the world
 
 With `library` / `library_flat` the agent carries **nothing** between towns. Instead, every

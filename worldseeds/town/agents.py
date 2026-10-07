@@ -82,8 +82,59 @@ class TownOracle:
         self._do("harvest", plot.id)
         return next(i for i in w.inventory if w.objs[i].kind == "crop")
 
+    def _liked_for(self, vid: str, n: int) -> list[str]:
+        w = self.w
+        cands = [r[2] for r in w.requirements if r[0] == "gift" and r[1] == vid]
+        return [c for c in cands if w.objs[c].location in w.rooms or c in w.inventory][:max(0, n)]
+
+    def _hand_in(self, vid: str, items: list[str]) -> None:
+        for item in items:
+            self.meet(vid)
+            self._do("give", vid, item, expect=False)
+        self.meet(vid)
+        self._do("talk", vid)
+
+    def solve_board(self) -> int:
+        """Town board: crops first (they need nights), then friends and fetches, buys last (paid by rewards)."""
+        w = self.w
+        start = w.actions
+        rank = {"harvest": 0, "friends": 1, "fetch": 2, "buy": 3}
+        for r in sorted(w.requests, key=lambda r: rank[r["kind"]]):
+            if r["done"]:
+                continue
+            v = w.objs[r["villager"]]
+            if r["kind"] == "harvest":
+                crops = [i for i in w.inventory if w.objs[i].kind == "crop"]
+                self._hand_in(v.id, [crops[0] if crops else self.grow_crop()])
+            elif r["kind"] == "friends":
+                items = self._liked_for(v.id, 2 - v.state["friendship"])
+                for c in items:
+                    self.obtain(c)
+                self._hand_in(v.id, items)
+            elif r["kind"] == "fetch":
+                h = w.objs[r["holder"]]
+                if r["item"] not in w.inventory:
+                    if GIFTING in w.seed.blocks and h.state["friendship"] < 1:
+                        items = self._liked_for(h.id, 1)
+                        for c in items:
+                            self.obtain(c)
+                        for c in items:
+                            self.meet(h.id)
+                            self._do("give", h.id, c)
+                    self.meet(h.id)
+                    self._do("talk", h.id)
+                self._hand_in(v.id, [r["item"]])
+            else:
+                self.obtain(r["item"])
+                self._hand_in(v.id, [r["item"]])
+            if not r["done"]:
+                raise TownOracleError(f"request {r['id']} not done")
+        return w.actions - start
+
     def solve(self) -> int:
         w = self.w
+        if w.requests:
+            return self.solve_board()
         start = w.actions
         g = w.goals[w.goal_index]
         v = w.objs[g["villager"]]
@@ -505,5 +556,138 @@ class TownHeuristicAgent:
             "success": w.done, "status": "finished", "error": None, "actions": w.actions,
             "invalid_actions": w.invalid_actions, "zoom_ops": w.zoom_ops, "nodes_grown": w.nodes_grown,
             "tool_calls": w.actions + w.zoom_ops, "predict_calls": 0, "recall_calls": 0, "llm_requests": 0,
-            "input_tokens": 0, "output_tokens": 0, "wall_s": 0.0,
+            "input_tokens": 0, "output_tokens": 0, "wall_s": 0.0, **w.board_metrics(),
         }
+
+
+class BoardHeuristicAgent(TownHeuristicAgent):
+    """Heuristic agent for the town board: works on whichever request it can advance where it is.
+
+    It knows only what the board says (who wants what, who keeps what) plus what it observes;
+    a seed (or the library) lets it predict which gifts land and where villagers are at midday."""
+
+    def _goal(self):
+        return None
+
+    def _undone(self, kind=None):
+        return [r for r in self.w.requests if not r["done"] and (kind is None or r["kind"] == kind)]
+
+    def _need_crop(self, v=None) -> bool:
+        w = self.w
+        want = sum(1 for r in self._undone("harvest") if not w.objs[r["villager"]].state["got_crop"])
+        return want > len(self._held("crop"))
+
+    def _reserved(self) -> set[str]:
+        return {r["item"] for r in self._undone() if r["item"]}
+
+    def _gift_for(self, v) -> str | None:
+        for it in self._held("item"):
+            if it in self._reserved() or (v.id, it) in self.given:
+                continue
+            if self._pred("give", v.id, it) is False:
+                continue
+            return it
+        return None
+
+    def _act_with(self, v) -> bool:
+        """Do something useful with villager ``v`` (who is here). Returns True if it acted."""
+        w = self.w
+        if self.seed is not None and v.id not in w.seen_fine:
+            self._zoom(v.id)
+        r = w.request_of(v.id)
+        if r is not None:
+            if r["kind"] == "harvest" and not v.state["got_crop"] and self._held("crop"):
+                self._act("give", v.id, self._held("crop")[0])
+                return True
+            if r["item"] and r["item"] in w.inventory:
+                self._act("give", v.id, r["item"])
+                return True
+            if r["kind"] == "friends" and v.state["friendship"] < 2:
+                it = self._gift_for(v)
+                if it is not None:
+                    self.given.add((v.id, it))
+                    self._act("give", v.id, it)
+                    return True
+            if w.request_met(r)[0]:
+                self._act("talk", v.id)
+                return True
+        for q in self._undone("fetch"):
+            if q["holder"] == v.id and q["item"] not in w.inventory and w.objs[q["item"]].location == v.id:
+                if GIFTING in w.seed.blocks and v.state["friendship"] < 1:
+                    it = self._gift_for(v)
+                    if it is None:
+                        return False
+                    self.given.add((v.id, it))
+                    self._act("give", v.id, it)
+                    return True
+                self._act("talk", v.id)
+                return True
+        return False
+
+    def _targets(self) -> list:
+        """Villagers worth seeking now, most useful first."""
+        w = self.w
+        out = []
+        for r in self._undone():
+            v = w.objs[r["villager"]]
+            if w.request_met(r)[0] or (r["item"] and r["item"] in w.inventory) or (
+                    r["kind"] == "harvest" and self._held("crop") and not v.state["got_crop"]):
+                out.append((0, v))
+            elif r["kind"] == "friends" and self._gift_for(v) is not None:
+                out.append((1, v))
+            elif r["kind"] == "fetch" and w.objs[r["item"]].location == r["holder"]:
+                h = w.objs[r["holder"]]
+                if GIFTING not in w.seed.blocks or h.state["friendship"] >= 1 or self._gift_for(h) is not None:
+                    out.append((1, h))
+        return [v for _, v in sorted(out, key=lambda x: x[0])]
+
+    def step(self) -> None:
+        w = self.w
+        if not self.lib_done and self._library_step():
+            return
+        here = w.room_objects(w.agent_room)
+        for v in [o for o in here if o.kind == "villager"]:
+            if self._act_with(v):
+                return
+        for o in here:
+            if o.kind in ("item", "seeds", "tool") and not o.state.get("for_sale"):
+                self._act("take", o.id)
+                return
+        if w.agent_room == "shop":
+            for o in here:
+                if not o.state.get("for_sale") or o.state["price"] > w.coins:
+                    continue
+                if o.kind == "seeds" and self._need_crop() and not self._viable_seeds() and self._season_ok(o.fine["crop"]):
+                    self._act("buy", o.id)
+                    return
+                if o.kind == "item" and o.id in self._reserved():
+                    self._act("buy", o.id)
+                    return
+        if w.agent_room == "farm" and FARMING in w.seed.blocks and self._farm():
+            return
+        unvisited = [r for r, room in w.rooms.items() if not room.visited]
+        if unvisited:
+            self._act("go", unvisited[0])
+            return
+        # buy what the board needs once there is money for it
+        if w.agent_room != "shop" and any(o.state.get("for_sale") and o.state["price"] <= w.coins and (
+                o.id in self._reserved() or (o.kind == "seeds" and self._need_crop() and not self._viable_seeds()))
+                for o in w.objs.values()):
+            self._act("go", "shop")
+            return
+        growing = [o for o in w.objs.values() if o.kind == "plot" and o.state["status"] in ("planted", "growing")]
+        if self._need_crop() and (self._viable_seeds() or any(not p.state["watered"] for p in growing)) \
+                and w.agent_room != "farm" and w.tick < 10:
+            self._act("go", "farm")
+            return
+        targets = self._targets()
+        if targets:
+            self._seek(targets[0])
+            return
+        if growing:
+            if w.agent_room == "farm":
+                self._act("sleep")
+            else:
+                self._act("go", "farm")
+            return
+        self._act("wait")

@@ -20,7 +20,7 @@ from worldseeds.oracle import Oracle  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--env", choices=["dungeon", "town"], default="dungeon")
+    ap.add_argument("--env", choices=["dungeon", "town", "board"], default="dungeon")
     ap.add_argument("--mode", choices=["human", "oracle", "llm"], default="human")
     ap.add_argument("--blocks", nargs="+", default=None)
     ap.add_argument("--universe", type=int, default=0)
@@ -30,13 +30,13 @@ def main():
     ap.add_argument("--condition", default="none")
     ap.add_argument("--verbose", action="store_true")
     a = ap.parse_args()
-    if a.env == "town":
+    if a.env in ("town", "board"):
         from worldseeds.town import TownLaws, TownSeed, grow_town
         from worldseeds.town.agents import TownOracle, TownSeedMemory
 
         seed = TownSeed(laws=TownLaws.from_index(a.universe), blocks=tuple(a.blocks or ["farming", "gifting"]),
-                        surface_seed=a.surface_seed)
-        w = grow_town(seed, eager=a.flat)
+                        surface_seed=a.surface_seed, board=4 if a.env == "board" else 0)
+        w = grow_town(seed, eager=a.flat, max_actions=200 if a.env == "board" else 60)
         oracle_cls, seed_cls = TownOracle, TownSeedMemory
     else:
         from worldseeds.memory import SeedMemory

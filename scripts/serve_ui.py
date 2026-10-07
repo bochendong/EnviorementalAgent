@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from worldseeds.town import TownLaws, TownSeed, grow_town  # noqa: E402
-from worldseeds.town.agents import TownHeuristicAgent, TownOracle, TownSeedMemory  # noqa: E402
+from worldseeds.town.agents import BoardHeuristicAgent, TownHeuristicAgent, TownOracle, TownSeedMemory  # noqa: E402
 from worldseeds.town.library import LibraryArchive  # noqa: E402
 from worldseeds.town.replay import Recorder, demo_replays  # noqa: E402
 from worldseeds.town.seed import TOWN_BLOCKS, town_seeds_for, town_split  # noqa: E402
@@ -46,9 +46,10 @@ def library_for(universe: int, mode: str) -> LibraryArchive | None:
 
 
 class Game:
-    def __init__(self, universe: int, blocks, surface_seed: int, n_villagers: int = 8, library: str = "categorized"):
+    def __init__(self, universe: int, blocks, surface_seed: int, n_villagers: int = 8, library: str = "categorized",
+                 board: int = 4):
         self.seed = TownSeed(laws=TownLaws.from_index(universe), blocks=tuple(blocks), surface_seed=surface_seed,
-                             n_villagers=n_villagers)
+                             n_villagers=n_villagers, board=board)
         self.universe = universe
         self.world = grow_town(self.seed, max_actions=200, library=library_for(universe, library))
 
@@ -98,7 +99,8 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/new":
             blocks = [b for b in body.get("blocks", TOWN_BLOCKS) if b in TOWN_BLOCKS] or ["farming"]
             GAME = Game(int(body.get("universe", 0)), blocks, int(body.get("surface_seed", random.randrange(1 << 30))),
-                        max(2, min(12, int(body.get("n_villagers", 8)))), str(body.get("library", "categorized")))
+                        max(2, min(12, int(body.get("n_villagers", 8)))), str(body.get("library", "categorized")),
+                        max(0, min(6, int(body.get("board", 4)))))
             self._json(GAME.payload(GAME.world.observe()))
         elif self.path == "/api/act":
             msg, ok = w.act(body.get("verb"), body.get("target"), body.get("instrument"))
@@ -113,12 +115,12 @@ class Handler(BaseHTTPRequestHandler):
             self._json(GAME.payload(msg))
         elif self.path == "/api/autoplay":
             rec = Recorder(w)
-            w.max_actions = w.actions + 80
+            w.max_actions = w.actions + (200 if w.requests else 80)
             try:
                 if body.get("policy") == "oracle":
                     TownOracle(w).solve()
                 else:
-                    TownHeuristicAgent(w, None, random.Random(0)).run()
+                    (BoardHeuristicAgent if w.requests else TownHeuristicAgent)(w, None, random.Random(0)).run()
             except Exception as e:  # the oracle may fail from a state the player messed up
                 rec.frames.append(rec._frame("act", "oracle()", f"The oracle gave up: {e}"))
             rec.detach()

@@ -32,7 +32,7 @@ def main():
     a = ap.parse_args()
     d = Path(a.run_dir)
     rows = [json.loads(x) for x in (d / "episodes.jsonl").open() if x.strip()]
-    rows = [r for r in rows if r.get("env") == "town" and r.get("seed") and r.get("goal_index", 0) == 0]
+    rows = [r for r in rows if r.get("env") in ("town", "board") and r.get("seed") and r.get("goal_index", 0) == 0]
     if a.list:
         for r in rows:
             print(f"{r['chain']}  episode {r['episode']:3d}  {r['phase']:5s}  {r['composition']:35s} "

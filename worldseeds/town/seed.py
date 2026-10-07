@@ -139,6 +139,10 @@ class TownSeed:
     n_distractors: int = 2
     n_goals: int = 1
     surface_seed: int = 0
+    # town board mode: > 0 means the episode goal is a board of this many villager requests
+    # (harvest / friendship / fetch / buy), to finish within ``days`` days, instead of one trophy
+    board: int = 0
+    days: int = 7
 
     def __post_init__(self):
         bad = [b for b in self.blocks if b not in TOWN_BLOCKS]
@@ -158,7 +162,8 @@ class TownSeed:
     def to_dict(self) -> dict:
         return {"env": "town", "laws": self.laws.to_dict(), "blocks": list(self.blocks),
                 "n_villagers": self.n_villagers, "n_distractors": self.n_distractors,
-                "n_goals": self.n_goals, "surface_seed": self.surface_seed}
+                "n_goals": self.n_goals, "surface_seed": self.surface_seed,
+                **({"board": self.board, "days": self.days} if self.board else {})}
 
     @classmethod
     def from_dict(cls, d: dict) -> "TownSeed":
@@ -198,7 +203,8 @@ class TownSeed:
         return TownSeed(laws=self.laws, blocks=tuple(set(self.blocks) | set(other.blocks)),
                         n_villagers=max(self.n_villagers, other.n_villagers),
                         n_distractors=max(self.n_distractors, other.n_distractors),
-                        n_goals=max(self.n_goals, other.n_goals), surface_seed=rng.randrange(1 << 30))
+                        n_goals=max(self.n_goals, other.n_goals), surface_seed=rng.randrange(1 << 30),
+                        board=max(self.board, other.board), days=max(self.days, other.days))
 
 
 def town_split(rng: random.Random, train_sizes=(1, 2), test_sizes=(3, 4), n_test_combos: int = 5):
@@ -214,5 +220,5 @@ def town_seeds_for(combos, laws: TownLaws, n: int, rng: random.Random, **kw) -> 
         combo = combos[i % len(combos)] if i < len(combos) else rng.choice(combos)
         out.append(TownSeed(laws=laws, blocks=combo, n_villagers=kw.get("n_villagers", 8),
                             n_distractors=kw.get("n_distractors", 2), n_goals=kw.get("n_goals", 1),
-                            surface_seed=rng.randrange(1 << 30)))
+                            surface_seed=rng.randrange(1 << 30), board=kw.get("board", 0), days=kw.get("days", 7)))
     return out

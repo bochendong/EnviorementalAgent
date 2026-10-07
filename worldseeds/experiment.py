@@ -94,8 +94,8 @@ class Memories:
         # ``lib_seed`` is the librarian: it consolidates each town's events and rewrites the shelves.
         self.library = self.lib_seed = None
         if condition in LIBRARY_CONDITIONS:
-            if env.name != "town":
-                raise ValueError(f"condition {condition!r} needs env 'town'")
+            if env.name not in ("town", "board"):
+                raise ValueError(f"condition {condition!r} needs env 'town' or 'board'")
             from .town.library import LibraryArchive
 
             self.library = LibraryArchive(mode="flat" if condition == "library_flat" else "categorized")
@@ -209,7 +209,7 @@ class Runner:
         conds = c.conditions
         if c.policy == "heuristic":
             conds = [x for x in conds if x in ("none", "seed", "oracle", *LIBRARY_CONDITIONS)]
-        if c.env != "town":
+        if c.env not in ("town", "board"):
             conds = [x for x in conds if x not in LIBRARY_CONDITIONS]
         for u in c.universes:
             for cond in conds:

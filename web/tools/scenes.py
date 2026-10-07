@@ -405,9 +405,11 @@ class MapBuilder:
             for x in range(x0, x0 + w):
                 self.taken.add((x, y))
 
-    def location(self, name, rect, anchor, items, people, shelves=()):
+    def location(self, name, rect, anchor, items, people, shelves=(), board=None):
         x, y, w, h = rect
         extra = {"shelves": ";".join(f"{a},{b}" for a, b in shelves)} if shelves else {}
+        if board:  # where the town board stands (left tile, bottom row), like a shelf
+            extra["board"] = f"{board[0]},{board[1]}"
         self.obj(name, "location", x, y, w, h, anchor=f"{anchor[0]},{anchor[1]}",
                  items=";".join(f"{a},{b}" for a, b in items), people=";".join(f"{a},{b}" for a, b in people),
                  **extra)
@@ -565,7 +567,8 @@ def town_map():
     m.obj("fountain", "fountain", 23, 19, 3, 2); m.block(23, 16, 3, 4)
     m.location("plaza", (17, 13, 15, 12), (24, 22),
                items=[(18, 14), (19, 14), (29, 14), (30, 14), (18, 23), (30, 23), (18, 19), (30, 19), (21, 23), (27, 23), (20, 16), (28, 16)],
-               people=[(20, 18), (28, 18), (21, 21), (27, 21), (20, 20), (28, 20), (22, 15), (26, 15), (19, 22), (29, 22), (21, 17), (27, 17)])
+               people=[(20, 18), (28, 18), (22, 21), (27, 21), (19, 19), (28, 20), (22, 15), (26, 15), (19, 22), (29, 22), (21, 17), (27, 17)],
+               board=(20, 21))
     for (x, y) in ((17, 13), (31, 13), (17, 24), (31, 24), (12, 20), (36, 20)):
         m.obj("lamppost", "lamppost", x, y + 1); m.block(x, y)
     for (x, y, sp) in ((20, 15, "bench"), (27, 15, "bench"), (18, 21, "flowerbed"), (29, 21, "flowerbed")):
