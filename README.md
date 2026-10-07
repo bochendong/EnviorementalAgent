@@ -2,6 +2,8 @@
 
 [English](README.md) | [中文](README.zh-CN.md)
 
+![SeedVille in the browser: a week-long town board, the clock, coins and the controls](docs/images/play_mode.png)
+
 World Seeds is a research environment for agents that **learn how a world works and remember
 it**. A world is grown from a compact *seed* that holds hidden laws. The agent explores it,
 zooms in on details, acts, and afterwards consolidates what it saw into a learned seed (its own
@@ -45,6 +47,83 @@ language model cannot rely on what it already knows and has to find out.
 Memory can also live *in* the town: a **library** with shelves by topic, **notes** written by
 other agents, **villagers** who tell you what their trade taught them (some of them wrongly),
 **teammates** in the same town, and a **hive** of many agents in many towns sharing one memory.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![farm](docs/images/farm.png) | ![town square](docs/images/town_board.png) |
+| **Your farm.** Four plots of different soils, seed packets, a watering can. Planting the wrong crop in the wrong soil or season fails overnight, and that failure is evidence. | **The town square.** The notice board lists this week's requests; villagers gather here (or somewhere else, depending on the universe) at midday. |
+| ![crops](docs/images/crops.png) | ![a gift](docs/images/interior.png) |
+| **Crops grow overnight** if they are watered and in the right soil and season. | **Gifts.** Mira, the doctor, loves the yellow ingot: in this universe doctors love metal things, not what you would expect. |
+| ![request done](docs/images/request_done.png) | ![library](docs/images/library.png) |
+| **A request done.** Friendship 2 reached; the request is ticked off and pays coins. | **The library.** Shelves by topic hold what earlier towns taught; reading costs time. |
+| ![asking a villager](docs/images/ask_villager.png) | ![town map](docs/images/town_map.png) |
+| **Asking a villager.** The florist talks about soils, but some villagers are consistently wrong. | **The town map** (`M`): farm, square, lane, mountain and beach, with every house and workplace. |
+
+## How to play
+
+You are a newcomer farmer. In the `board` game you have **one week** to finish the four
+requests on the town board; every finished request pays 4 coins.
+
+1. **Look around.** Each place shows the people and things there. Fine details stay hidden
+   until you look closer (`in <id>` / `zoom_in`): a plot's soil, a villager's job and
+   friendship, an item's category.
+2. **Farm.** Take seeds and the watering can, `plant` in a plot, `water` it every day and
+   `sleep`. A crop needs its own soil and its own season. If either is wrong it withers or lies
+   dormant overnight. Harvesting a ripe plot gives three crops.
+3. **Make friends.** `give` villagers things they love. What they love follows a hidden law:
+   either the colour of their shirt or the category their job prefers, and which category that is
+   depends on the universe.
+4. **Fetch and buy.** Some requests need an item another villager keeps (they hand it over
+   once you are on good terms), or one from the store (coins come from earlier requests).
+5. **Find people.** Villagers are home in the morning and evening; at midday they go somewhere
+   (the plaza, the store, home or work, depending on the universe).
+6. **Hand in.** `talk` to the villager who posted a request once it is fulfilled.
+
+Time is the real constraint: every action takes one tick of a 12-tick day, and crops need
+nights. A good player plants on day 1 and does other requests while the crops grow. The same
+laws hold in every town of a universe, so what you learn in one town pays off in the next.
+
+## What it is good for
+
+| research question | how SeedVille measures it |
+|---|---|
+| Can an agent **discover causal laws** by intervening, rather than relying on what it already knows? | Laws are shuffled per universe (universe 0 is common sense, 1–5 are not); the learned seed is scored law by law against the truth |
+| **World models**: which representation should be learned, and does using it for planning help? | `predict` asks the learned seed before acting; the engine gives the exact next state for any (state, action), so a world model's predictions can be checked exactly |
+| **Compositional generalisation** | train on towns with 1–2 blocks, test on unseen combinations of 3–4 (`compgen`) |
+| **Memory**: in the agent's head, in its logs, in a retrieval store, or in the world itself? | `none` / `trajectory` / `retrieval` / `seed` / `library`, and a persistent world (`persistence`) |
+| **Continual learning** when the world changes | `law_shift` (laws change midway; decay vs no decay) |
+| **Trust**: using other agents' memories when some are wrong | notes and villager testimony with controlled error rates (`--source-errors`) |
+| **Cooperation and memory sharing** among many agents | a team on one board (`team`) and a hive of up to 1,024 agents in parallel towns with groups, consolidation, verification and faulty agents (`hive`) |
+| **Exploration and curricula** | growing new worlds by mutating seeds (`curriculum`), a director that sends agents to the least-known laws (hive) |
+
+## Why it is new
+
+Most agent environments fix one set of rules, and those rules are usually the everyday ones a
+language model already knows from pretraining (text games, ALFWorld-style household tasks,
+Minecraft-like crafting, simulations of real games such as Stardew Valley). Learned simulators
+that predict environment responses (language world models) cover many domains but have no
+exact ground truth to score them against. To our knowledge, SeedVille is the first environment
+to combine all of the following:
+
+* **Worlds grown from seeds with hidden, shuffleable causal laws.** Every universe has its own
+  laws, so success needs discovery rather than recall, and every law the agent believes can be
+  scored as right, wrong or unknown, not only task success.
+* **Compositional blocks.** Mechanics (farming, gifting, shop, schedule) combine freely, so
+  generalisation to unseen combinations is a controlled experiment; bigger universes
+  (`--n-crops 64`, 138 laws with a long tail) give room to scale.
+* **Zoom.** The world is a hierarchy (town map, place, object) and fine details are only
+  perceived when the agent looks closer, so attention and uncertainty-driven inspection are
+  part of the task.
+* **Memory that lives in the world.** Persistent fields and friendships, a library with topic
+  shelves, notes by other agents and villager testimony, each with controlled reliability.
+* **Many agents, one memory.** From two teammates on one board to a hive of 1,024 agents with
+  the same switches large agent swarms use (groups, a consolidator, steering, verification),
+  all measurable against the true laws.
+* **Cheap and inspectable.** Pure Python, runs on a CPU in milliseconds per step (thousands of
+  towns in parallel), plugs into any OpenAI-compatible LLM, and every run can be replayed in a
+  pixel-art browser client.
 
 ## Quick start (CPU, no GPU needed)
 

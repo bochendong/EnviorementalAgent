@@ -745,7 +745,9 @@ const Director = {
     w.player.dir = "down"; w.idle(w.player);
     await w.sync(s, { instant: true });
     this.game.events.emit("state", s);
-    const msg = frame.kind === "start" ? `Goal: get the trophy from ${(s.objects.find(o => o.id === s.goal_villager) || {}).name}.` : frame.message;
+    const goal = s.requests ? `Goal: finish the ${s.requests.length} requests on the town board by the end of day ${s.days}.`
+      : `Goal: get the trophy from ${(s.objects.find(o => o.id === s.goal_villager) || {}).name}.`;
+    const msg = frame.kind === "start" ? goal : frame.message;
     this.game.events.emit("say", { action: frame.kind === "start" ? "" : frame.action, message: msg, kind: frame.kind, who: this.who(s, frame.action) });
   },
 
