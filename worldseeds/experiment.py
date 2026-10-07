@@ -51,6 +51,12 @@ class ExpConfig:
     decay: float = 1.0
     n_distractors: int = 2
     save_traces: bool = False
+    # source reliability (town/board): error rates of second-hand sources, one variant per rate.
+    # Empty = off (library written by an accurate librarian, no testimony). When set, library notes are
+    # written by several authors with this error rate, and the ``testimony`` condition lets the agent
+    # ask villagers, this share of whom are consistently wrong.
+    source_errors: list[float] = field(default_factory=list)
+    trusts: list[str] = field(default_factory=lambda: ["blind", "calibrated"])  # heuristic policy only
     out_dir: str = "results/run"
     rng_seed: int = 0
 
@@ -79,13 +85,18 @@ class Recorder:
 
 
 LIBRARY_CONDITIONS = ("library", "library_flat")
+SOURCE_CONDITIONS = (*LIBRARY_CONDITIONS, "testimony")
 
 
 class Memories:
     """All memories a chain carries across episodes."""
 
-    def __init__(self, condition: str, laws, env: EnvSpec, decay: float = 1.0):
+    def __init__(self, condition: str, laws, env: EnvSpec, decay: float = 1.0,
+                 source_error: float | None = None, trust: str | None = None):
         self.condition = condition
+        self.source_error, self.trust = source_error, trust
+        if condition == "testimony" and env.name not in ("town", "board"):
+            raise ValueError("condition 'testimony' needs env 'town' or 'board'")
         self.seed = env.seed_cls(decay=decay) if condition in ("seed", "seed_llm") else None
         self.retrieval = RetrievalMemory() if condition == "retrieval" else None
         self.traj = TrajectoryMemory() if condition == "trajectory" else None
@@ -136,11 +147,12 @@ class Runner:
             opt = None
         reads0 = mem.library.reads if mem.library is not None else 0
         lib0 = mem.library.to_dict() if mem.library is not None else None  # shelves as the agent found them
+        hkw = {"trust": mem.trust} if mem.trust else {}
         async with self.sem:
             if self.cfg.policy == "heuristic":
                 sd = mem.seed if cond in ("seed", "seed_llm") else (
                     self.env.seed_cls.certain_of(mem.laws) if cond == "oracle" else None)
-                metrics, trace = self.env.heuristic(world, sd, random.Random(episode)).run(), None
+                metrics, trace = self.env.heuristic(world, sd, random.Random(episode), **hkw).run(), None
                 # (library conditions: sd is None and the agent fills its head by reading the shelves)
             else:
                 from .agent import run_episode
@@ -175,6 +187,13 @@ class Runner:
             row["library_notes"] = sum(1 for e in mem.library.entries if e.source == "note")
             row["library_claims_correct"], row["library_claims"] = correct, scored
             row["library"] = lib0
+        if mem.source_error is not None:
+            row["source_error"], row["trust"] = mem.source_error, mem.trust or "llm"
+        if getattr(world, "testimony", None) is not None:
+            asks = [e for e in world.events if e.verb == "ask" and e.valid and e.effects]
+            row["asks"] = len(asks)
+            row["heard_claims"] = sum(len(e.effects[0]["claims"]) for e in asks)
+            row["heard_wrong"] = sum(e.effects[0]["wrong"] for e in asks)
         await self.rec.write(row, trace)
         return row
 
@@ -191,7 +210,12 @@ class Runner:
         if mem.library is not None:
             mem.lib_seed.consolidate_events(world.events)
             mem.lib_seed.worlds_seen += 1
-            mem.library.update_from_seed(mem.lib_seed, episode, author="librarian")
+            if mem.source_error is None:
+                mem.library.update_from_seed(mem.lib_seed, episode, author="librarian")
+            else:
+                from .town.sources import NOTE_AUTHORS
+
+                mem.library.write_notes(mem.lib_seed, episode, {a: mem.source_error for a in NOTE_AUTHORS})
         if mem.retrieval is not None:
             mem.retrieval.add_events(world.events, tag)
         if mem.traj is not None:
@@ -199,26 +223,36 @@ class Runner:
 
     def _grow(self, s, view: str, mem: Memories | None = None):
         kw = {"library": mem.library} if mem is not None and mem.library is not None else {}
+        if mem is not None and mem.condition == "testimony":
+            kw["testimony"] = mem.source_error or 0.0
         return self.env.grow(s, eager=(view == "flat"), max_actions=self.cfg.max_actions, **kw)
 
-    def _mem(self, cond, laws, decay=None) -> Memories:
-        return Memories(cond, laws, self.env, self.cfg.decay if decay is None else decay)
+    def _mem(self, cond, laws, decay=None, src=None) -> Memories:
+        err, trust = src if src else (None, None)
+        return Memories(cond, laws, self.env, self.cfg.decay if decay is None else decay, err, trust)
 
     def _chains(self):
         c = self.cfg
         conds = c.conditions
         if c.policy == "heuristic":
-            conds = [x for x in conds if x in ("none", "seed", "oracle", *LIBRARY_CONDITIONS)]
+            conds = [x for x in conds if x in ("none", "seed", "oracle", *SOURCE_CONDITIONS)]
         if c.env not in ("town", "board"):
-            conds = [x for x in conds if x not in LIBRARY_CONDITIONS]
+            conds = [x for x in conds if x not in SOURCE_CONDITIONS]
+        if not c.source_errors:
+            conds = [x for x in conds if x != "testimony"]
         for u in c.universes:
             for cond in conds:
-                for view in c.views:
-                    for r in range(c.repeats):
-                        yield u, cond, view, r
+                srcs = [None]
+                if cond in SOURCE_CONDITIONS and c.source_errors:
+                    trusts = c.trusts if c.policy == "heuristic" else [None]
+                    srcs = [(e, t) for e in c.source_errors for t in trusts]
+                for src in srcs:
+                    for view in c.views:
+                        for r in range(c.repeats):
+                            yield (u, cond, view, r, src) if c.protocol == "compgen" else (u, cond, view, r)
 
     # ------------------------------------------------------------ protocols
-    async def compgen_chain(self, u, cond, view, r):
+    async def compgen_chain(self, u, cond, view, r, src=None):
         c = self.cfg
         laws = self.env.laws(u)
         rng = random.Random(_seed((c.rng_seed, u, r)))
@@ -226,14 +260,16 @@ class Runner:
         tr = self.env.seeds_for(train, laws, c.n_train, rng, n_distractors=c.n_distractors)
         te = self.env.seeds_for(test, laws, c.n_test, random.Random(c.rng_seed * 7 + u * 31 + r),
                        n_distractors=c.n_distractors)
-        mem = self._mem(cond, laws)
-        chain = f"{self.env.name}-compgen-u{u}-{cond}-{view}-r{r}"
+        mem = self._mem(cond, laws, src=src)
+        variant = "" if src is None else f"err{src[0]:g}" + (f"-{src[1]}" if src[1] else "")
+        chain = f"{self.env.name}-compgen-u{u}-{cond}-{view}-r{r}" + (f"-{variant}" if variant else "")
         ep = 0
-        for s in tr:
-            await self.play(self._grow(s, view, mem), mem, chain, ep, "train")
+        # testimony carries nothing between towns: there is nothing to train
+        for s in (tr if cond != "testimony" else []):
+            await self.play(self._grow(s, view, mem), mem, chain, ep, "train", variant=variant)
             ep += 1
         for s in te:
-            await self.play(self._grow(s, view, mem), mem, chain, ep, "test", learn=False)
+            await self.play(self._grow(s, view, mem), mem, chain, ep, "test", variant=variant, learn=False)
             ep += 1
         if mem.seed:
             self.rec.save_seed(chain, mem.seed)

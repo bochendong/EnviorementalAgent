@@ -814,6 +814,7 @@ const Director = {
       }
       else if (verb === "read" && tS && !failed) { w.emote(tS, "emote_note", 600 / sp); await w.flyTo("scroll", tS, P, 450); w.emote(P, "emote_dots", 700 / sp); await delay(300); }
       else if (verb === "write" && tS && !failed) { await w.flyTo("scroll", P, tS, 450); w.burst(tS.x, tS.y - 24, "px_spark", 8); await delay(200); }
+      else if (verb === "ask" && tS) { w.emote(tS, "emote_note", 900 / sp); await delay(450); }
       else if (verb === "talk" && tS) {
         const ticked = /ticks request/.test(frame.message || "");
         w.emote(tS, s.done || ticked ? "emote_heart" : "emote_note", 900 / sp);
@@ -914,8 +915,8 @@ const Director = {
       this.liveState = d.state; UI.onLive(d);
     } finally { this.busy = false; }
   },
-  async liveNew(universe, blocks, villagers, library, board) {
-    const d = await this.api("api/new", { universe, blocks, n_villagers: villagers, library, board });
+  async liveNew(universe, blocks, villagers, library, board, testimony) {
+    const d = await this.api("api/new", { universe, blocks, n_villagers: villagers, library, board, testimony });
     this.liveState = d.state; UI.onLive(d);
     await this.show({ state: d.state, message: d.goal_text, action: "", kind: "start" });
   },
@@ -957,7 +958,7 @@ const UI = {
     $("pOracle").onclick = () => Director.liveAuto("oracle");
     $("pExplorer").onclick = () => Director.liveAuto("explorer");
     $("pGo").onclick = () => { const v = $("goTo").value; if (v) Director.liveAct("go", v); };
-    $("pNew").onclick = () => Director.liveNew(+$("uni").value, ["farming", "gifting", "shop", "schedule"].filter(b => $("blk-" + b).checked), +$("nVill").value, $("libMode").value, $("blk-board").checked ? 4 : 0);
+    $("pNew").onclick = () => Director.liveNew(+$("uni").value, ["farming", "gifting", "shop", "schedule"].filter(b => $("blk-" + b).checked), +$("nVill").value, $("libMode").value, $("blk-board").checked ? 4 : 0, $("testi").value);
     document.addEventListener("keydown", e => {
       if (["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
       if (e.key === "m" || e.key === "M") Director.hud && Director.hud.toggleMap();
@@ -1049,6 +1050,7 @@ const UI = {
           if (["item", "seeds", "tool", "crop"].includes(o.kind) && o.location !== "inv") add(o.for_sale ? `Buy for ${o.price}g` : "Pick up", A(o.for_sale ? "buy" : "take", o.id));
           if (o.kind === "villager") {
             add("Talk", A("talk", o.id));
+            if (s.testimony) add("Ask what they know", A("ask", o.id));
             held.filter(h => h.kind === "item" || h.kind === "crop").forEach(h => add(`Give ${h.color} ${h.name}`, A("give", o.id, h.id)));
           }
           if (o.kind === "board") add("Read the board", A("read", o.id));

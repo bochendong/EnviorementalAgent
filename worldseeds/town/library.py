@@ -69,6 +69,25 @@ class LibraryArchive:
             self.entries.append(Entry(category_of_space(sp), describe_claim(sp, val), "consolidated", author,
                                       episode, [(sp, val)]))
 
+    def write_notes(self, seed, episode: int, authors: dict[str, float]) -> int:
+        """Several authors each write what ``seed`` is confident of; author ``a`` gets each law wrong
+        with probability ``authors[a]`` (consistently: the same author is always wrong about the same
+        law). Replaces those authors' earlier notes. Returns the number of wrong claims written."""
+        from .sources import describe, maybe_corrupt
+
+        self.entries = [e for e in self.entries if e.author not in authors]
+        wrong = 0
+        for sp in seed.SPACES:
+            val = seed.confident(sp)
+            if val is None:
+                continue
+            for a, rate in authors.items():
+                v, bad = maybe_corrupt(sp, val, rate, "note", a)
+                wrong += bad
+                self.entries.append(Entry(category_of_space(sp), describe_claim(sp, v), "note", a, episode,
+                                          [(sp, v)]))
+        return wrong
+
     def add_note(self, category: str, text: str, author: str = "agent", episode: int = -1) -> Entry:
         cat = category if category in CATEGORIES else "general"
         e = Entry(cat, text.strip()[:240], "note", author, episode)
@@ -117,6 +136,6 @@ def describe_claim(space: str, value: str) -> str:
 
 
 def entry_line(e: Entry) -> str:
-    who = "consolidated" if e.source == "consolidated" else f"note by {e.author}"
+    who = "consolidated" if e.source == "consolidated" and e.author in ("agent", "librarian") else f"note by {e.author}"
     when = f", town {e.episode}" if e.episode >= 0 else ""
     return f"- {e.text} ({who}{when})"

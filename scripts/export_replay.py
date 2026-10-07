@@ -43,7 +43,9 @@ def main():
     tr = next(t for t in traces if t["key"] == a.chain and t["episode"] == a.episode)
     title = f"{row['llm']} · {row['condition']} · episode {row['episode']}"
     lib = LibraryArchive.from_dict(row["library"]) if row.get("library") else None
-    rep = replay_trace(row["seed"], tr["trace"], title=title, library=lib)
+    testimony = row.get("source_error", 0.0) if row.get("condition") == "testimony" else None
+    rep = replay_trace(row["seed"], tr["trace"], title=title, library=lib, testimony=testimony,
+                       max_actions=200 if row.get("board_total") else 60)
     Path(a.out).write_text(json.dumps(rep))
     print(f"wrote {a.out}: {len(rep['frames'])} frames, success={rep['success']}")
 

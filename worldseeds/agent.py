@@ -13,6 +13,8 @@ section 23 of the program seed:
     library     (town) memory lives on topic shelves in the town library; the agent must walk
                 there and read(); it may also leave notes with write_note()
     library_flat  same archive as one unsorted pile, read page by page
+    testimony   (town) no memory, but villagers answer act('ask', <villager>) from what their trade
+                taught them; with --source-errors some villagers (and library notes) are wrong
 
 View modes: ``zoom`` (hierarchical, lazily grown) vs ``flat`` (everything at full
 detail, no zoom tools) for the adaptive-resolution hypothesis H3.
@@ -42,7 +44,8 @@ from .world import World
 
 set_tracing_disabled(True)  # no OpenAI key on Nibi; traces would try to upload
 
-CONDITIONS = ["none", "trajectory", "retrieval", "seed", "seed_llm", "oracle", "library", "library_flat"]
+CONDITIONS = ["none", "trajectory", "retrieval", "seed", "seed_llm", "oracle", "library", "library_flat",
+              "testimony"]
 LIBRARY_CONDITIONS = ("library", "library_flat")
 
 
@@ -216,8 +219,13 @@ def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: O
                + (", sorted onto shelves by topic (farming, gifting, schedule, shop, general). "
                   if sorted_ else ", as one unsorted pile of notes read a page at a time. ")
                + "Reading costs an action and a tick, so read only what your task needs: act('read', <shelf id>). "
-               "Notes may be incomplete. Before you finish, you may leave a short general lesson with "
-               "write_note(shelf, text).")
+               "Notes may be incomplete, and notes by different people may disagree or be wrong. Before you "
+               "finish, you may leave a short general lesson with write_note(shelf, text).")
+    if getattr(w, "testimony", None) is not None:
+        mem += ("\nVILLAGERS: you carry no memory between towns, but you can ask any villager you meet what "
+                "their trade has taught them: act('ask', <villager id>). It costs an action. Not everyone is "
+                "right: some villagers are consistently mistaken, so weigh what you hear against what you "
+                "see happen.")
     p = w.prompt_spec()
     view_help = FLAT_HELP if flat else ZOOM_HELP.format(details=p["details"])
     return BASE_INSTRUCTIONS.format(view_help=view_help, budget=w.max_actions, memory=mem,

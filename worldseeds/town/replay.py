@@ -49,8 +49,12 @@ class Recorder:
 
 
 def _meta(world: TownWorld, title: str, description: str, seed_text: str = "") -> dict:
+    laws = world.laws.describe(list(world.seed.blocks))
+    if getattr(world, "testimony", None) is not None:
+        names = sorted(world.objs[v].name for v in world.liars)
+        laws.append("Villagers who are always wrong: " + (", ".join(names) if names else "none") + ".")
     return {"title": title, "description": description, "seed": world.seed.to_dict(),
-            "laws": world.laws.describe(list(world.seed.blocks)), "memory": seed_text}
+            "laws": laws, "memory": seed_text}
 
 
 def library_text(lib: LibraryArchive) -> str:
@@ -62,17 +66,19 @@ def library_text(lib: LibraryArchive) -> str:
 
 def record_policy(seed: TownSeed, policy: str, memory: TownSeedMemory | None = None,
                   max_actions: int = 60, title: str = "", description: str = "",
-                  library: LibraryArchive | None = None) -> dict:
+                  library: LibraryArchive | None = None, testimony: float | None = None,
+                  trust: str = "blind") -> dict:
     """policy: oracle | explorer (heuristic, optionally with a learned seed ``memory``, or with an
     empty head and a town ``library`` to read)."""
     if seed.board and max_actions == 60:
         max_actions = 200
-    w = grow_town(seed, max_actions=max_actions if policy != "oracle" else 10_000, library=library)
+    w = grow_town(seed, max_actions=max_actions if policy != "oracle" else 10_000, library=library,
+                  testimony=testimony)
     rec = Recorder(w)
     if policy == "oracle":
         TownOracle(w).solve()
     else:
-        (BoardHeuristicAgent if w.requests else TownHeuristicAgent)(w, memory, random.Random(0)).run()
+        (BoardHeuristicAgent if w.requests else TownHeuristicAgent)(w, memory, random.Random(0), trust=trust).run()
     rec.detach()
     text = memory.render() if memory else (library_text(library) if library else "")
     out = _meta(w, title or policy, description, text)
@@ -82,10 +88,11 @@ def record_policy(seed: TownSeed, policy: str, memory: TownSeedMemory | None = N
 
 
 def replay_trace(seed_dict: dict, trace: list[dict], title: str = "LLM agent", memory_text: str = "",
-                 max_actions: int = 60, library: LibraryArchive | None = None) -> dict:
+                 max_actions: int = 60, library: LibraryArchive | None = None,
+                 testimony: float | None = None) -> dict:
     """Re-simulate an Agents-SDK tool trace (from traces.jsonl) on the episode's seed.
     For library conditions pass the archive as it was when the episode started."""
-    w = grow_town(TownSeed.from_dict(seed_dict), max_actions=max_actions, library=library)
+    w = grow_town(TownSeed.from_dict(seed_dict), max_actions=max_actions, library=library, testimony=testimony)
     frames = [{"kind": "start", "action": "", "message": w.observe(), "state": w.snapshot()}]
     for t in trace:
         tool, a = t["tool"], t.get("args", {})
@@ -165,19 +172,24 @@ def board_replays(laws, test, memory, library, n_train: int, candidates: int = 3
     for s in town_seeds_for(pool, laws, candidates, rng, board=4):
         if s.season == "winter":
             continue
-        share = []
-        for sd in (None, memory):
-            w = grow_town(s, max_actions=200)
-            m = BoardHeuristicAgent(w, sd, random.Random(0)).run()
-            share.append(m["board_done"] - w.actions / 1000)
-        if not w.done:  # the seeded run should finish the board
+        done = []
+        for sd, kw in ((None, {}), (memory, {}), (None, {"testimony": 0.25})):
+            w = grow_town(s, max_actions=200, **kw)
+            m = BoardHeuristicAgent(w, sd, random.Random(0), trust="calibrated").run()
+            done.append(m["board_done"])
+        if done[1] < 4 or done[2] < 3:  # the seeded run finishes; asking around gets most of it
             continue
-        if share[1] - share[0] > best_gap:
-            best, best_gap = s, share[1] - share[0]
+        gap = (done[1] - done[0]) + (done[2] - done[0])
+        if gap > best_gap:
+            best, best_gap = s, gap
     return [
         record_policy(best, "explorer", None, title="Town board: explorer, no memory",
                       description="Four villagers post requests. One week to finish them, no idea how this "
                                   "universe works."),
         record_policy(best, "explorer", memory, title="Town board: explorer with a learned seed",
                       description=f"The same week, carrying laws consolidated from {n_train} earlier towns."),
+        record_policy(best, "explorer", None, title="Town board: asking villagers (a quarter are wrong)",
+                      description="No memory, but it asks the villagers it meets what their trade taught them. "
+                                  "Two of them are consistently wrong; it trusts a source only as far as what it "
+                                  "sees agrees.", testimony=0.25, trust="calibrated"),
     ]

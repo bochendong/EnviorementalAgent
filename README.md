@@ -90,12 +90,20 @@ python scripts/play.py --mode llm --condition oracle --blocks lockable powered -
           --universes 0 1 --views zoom flat --max-actions 60 --out $SCRATCH/worldseeds/results/try1
    tail -f logs/worldseeds-<jobid>.out     # vLLM log: logs/vllm-<jobid>.log
    ```
-   Do a short pilot first (e.g. `--n-train 4 --n-test 4 --universes 1`) to check
-   tool-calling quality and timing before submitting everything.
-4. **Full study** (2 environments × 5 protocols × 5 universes = 50 GPU jobs, one each):
+4. **Pilot on the town board first** (2 jobs, a few hours): checks that Qwen is neither at 0 with
+   the true laws nor at 1 without memory, how long a board episode takes, and how it handles
+   wrong notes and testimony:
+   ```bash
+   bash slurm/pilot_board.sh
+   python scripts/analyze.py $SCRATCH/worldseeds/results/qwen3-8b/pilot/* --by condition variant phase
+   ```
+   If the true-laws condition stays near 0, make the board easier before the full study
+   (fewer requests or more days: `board` / `days` in `worldseeds/envs.py`, `_board()`).
+5. **Full study** (95 GPU jobs, one per environment × protocol × universe; board and town also
+   get a library job and a source-reliability job):
    ```bash
    bash slurm/submit_all.sh
-   ENVS=town bash slurm/submit_all.sh                           # SeedVille only (25 jobs)
+   ENVS=board bash slurm/submit_all.sh                          # town board only (35 jobs)
    MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 bash slurm/submit_all.sh    # scaling run (download it first via setup)
    python scripts/analyze.py $SCRATCH/worldseeds/results/qwen3-8b --curve
    ```
@@ -152,17 +160,52 @@ schedule. Time matters too: crops need nights, so a good agent plants first and 
 other requests while they grow. All 2,160 boards generated in a sweep (6 universes, every block combination, 3–6 requests)
 are solvable by the oracle, in about 30 actions and 4 days on average.
 
-Heuristic agent, universe 1, 20 unseen board towns (share of requests done):
+Heuristic agent, universe 1, 20 unseen board towns:
 
-| none | library, unsorted pile | library, sorted shelves | seed in the head | true laws |
-|---|---|---|---|---|
-| 0.34 | 0.81 | 0.93 | 0.97 | 0.97 |
+| | none | library, unsorted pile | library, sorted shelves | seed in the head | true laws |
+|---|---|---|---|---|---|
+| share of requests done | 0.57 | 0.97 | 1.00 | 1.00 | 1.00 |
+| whole board done | 0.20 | 0.90 | 1.00 | 1.00 | 1.00 |
+
+The heuristic agent saturates once it knows the laws; whether an LLM does is what the Nibi
+pilot (`slurm/pilot_board.sh`) checks first.
 
 ```bash
 python scripts/run_experiment.py --env board --policy heuristic --conditions none seed library \
     --universes 1 --n-train 30 --n-test 20 --max-actions 200 --out results/board_pilot
 python scripts/play.py --env board --mode oracle --blocks farming gifting shop schedule
 ```
+
+### Second-hand knowledge with controlled reliability (`--source-errors`)
+
+Knowledge from other agents is only useful if you can tell when it is wrong. With
+`--source-errors 0 0.25 0.5` (town or board env), every rate becomes one variant:
+
+* **Library notes by other agents** (`library`, `library_flat`): three authors (Ada, Ben, Cleo)
+  each write down the laws, and each claim is wrong with the given probability. Errors are
+  consistent: an author who is wrong about melons is always wrong about melons.
+* **Villager testimony** (`testimony`): `ask <villager>` makes a villager say what their trade
+  taught them (the baker and doctor know seasons, the florist and librarian soils, the innkeeper
+  and fisher where people go at midday, everyone knows what gifts they love). That share of
+  villagers is consistently wrong. Nothing is carried between towns.
+
+Rows record `source_error`, `asks`, `heard_claims`, `heard_wrong` and, for the library, how many
+claims on the shelves are right. The heuristic baseline has two trust policies (`--trusts`):
+`blind` counts every claim as strong evidence; `calibrated` weighs a source by how often its
+claims agree with what the agent itself has seen. For the LLM, how much to trust is its own
+decision, which is the point of the experiment.
+
+Heuristic agent, board, universes 1 and 3, 40 unseen towns (share of requests done):
+
+| source | trust | 0% wrong | 25% wrong | 50% wrong |
+|---|---|---|---|---|
+| library notes | blind | 1.00 | 0.77 | 0.37 |
+| library notes | calibrated | 1.00 | 0.86 | 0.47 |
+| testimony | blind | 0.64 | 0.55 | 0.43 |
+| testimony | calibrated | 0.63 | 0.57 | 0.48 |
+| (no memory) | | 0.49 | | |
+
+At 50% error a library the agent believes blindly (0.37) is worse than no memory (0.49).
 
 ### The library: memory that lives in the world
 

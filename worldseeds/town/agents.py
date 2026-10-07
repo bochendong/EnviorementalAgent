@@ -321,12 +321,21 @@ class TownHeuristicAgent:
     """Explores, collects, farms and gifts by simple rules; uses a seed's predict() if given."""
 
     def __init__(self, world: TownWorld, seed: TownSeedMemory | None = None, rng: random.Random | None = None,
-                 read_library: bool | None = None):
+                 read_library: bool | None = None, trust: str = "blind"):
         self.w = world
         self.seed = seed
         # with a library, the agent's head starts empty and it fills ``seed`` by reading shelves
         self.read_library = (world.library is not None) if read_library is None else read_library
-        if self.read_library and self.seed is None:
+        # second-hand sources (library notes, villager testimony): beliefs are rebuilt from the carried
+        # seed + this episode's own evidence + what was read or heard, weighted by ``trust``:
+        #   blind       every claim counts as strong evidence
+        #   calibrated  a source counts only as much as its claims agree with the agent's own evidence
+        self.sourced = self.read_library or getattr(world, "testimony", None) is not None
+        self.trust = trust
+        self.carried = seed
+        self.heard: list[tuple[str, str, str]] = []  # (source, space, value)
+        self._cache = None
+        if self.sourced and self.seed is None:
             self.seed = TownSeedMemory()
         self.lib_done = not self.read_library
         self.lib_read: set[str] = set()
@@ -336,6 +345,7 @@ class TownHeuristicAgent:
         self.given: set[str] = set()
         self.talked = False
         self.wander = 0
+        self.sleep_when_watered = True  # the board agent uses the rest of the day for other requests
 
     def _act(self, verb, target=None, instrument=None):
         return self.w.act(verb, target, instrument)
@@ -372,13 +382,70 @@ class TownHeuristicAgent:
         return FARMING in self.w.seed.blocks and not v.state["got_crop"] and not self._held("crop")
 
     def _absorb(self) -> None:
-        ev = self.w.events[-1] if self.w.events else None
-        if ev is None or ev.verb != "read":
+        evs = self.w.events
+        for ev in evs[getattr(self, "_n_absorbed", 0):]:
+            if ev.verb not in ("read", "ask") or not ev.valid:
+                continue
+            for e in ev.effects:
+                src = e.get("source", "note:?")
+                for sp, val in e.get("claims", []):
+                    if sp in TOWN_SPACES:
+                        self.heard.append((src, sp, val))
+        self._n_absorbed = len(evs)
+        self._refresh()
+
+    def source_weight(self, src: str, own: TownSeedMemory) -> float:
+        if self.trust == "blind":
+            return 5.0
+        agree = disagree = 0
+        for s, sp, val in self.heard:
+            if s != src:
+                continue
+            mine = own.confident(sp)
+            if mine is not None:
+                agree += mine == val
+                disagree += mine != val
+        rel = (agree + 2) / (agree + disagree + 3)  # unverified sources start at 2/3
+        return max(0.0, 6.0 * (2 * rel - 1))
+
+    def _refresh(self) -> None:
+        """Rebuild beliefs: carried seed + own evidence from this episode + weighted hearsay."""
+        if not self.sourced:
             return
-        for e in ev.effects:
-            for sp, val in e.get("claims", []):
-                if sp in self.seed.hyps:
-                    self.seed._vote_exclusive(sp, val, 5.0)
+        key = (len(self.w.events), len(self.heard))
+        if self._cache == key:
+            return
+        self._cache = key
+        own = TownSeedMemory.from_dict(self.carried.to_dict()) if self.carried else TownSeedMemory()
+        own.consolidate_events(self.w.events)
+        eff = TownSeedMemory.from_dict(own.to_dict())
+        weights = {}
+        for src, sp, val in self.heard:
+            if src not in weights:
+                weights[src] = self.source_weight(src, own)
+            if weights[src] > 0:
+                eff._vote_exclusive(sp, val, weights[src])
+        self.seed = eff
+
+    def _gathering(self) -> bool:
+        """With villagers to ask, ask around (up to day 2) before farming by trial and error."""
+        w = self.w
+        if getattr(w, "testimony", None) is None or w.day > 2:
+            return False
+        n = sum(1 for o in w.objs.values() if o.kind == "villager")
+        return len(w.asked) < (n + 1) // 2
+
+    def _ask_here(self) -> bool:
+        """Ask each villager met once what they know (when the town lets you)."""
+        w = self.w
+        if getattr(w, "testimony", None) is None:
+            return False
+        for o in w.room_objects(w.agent_room):
+            if o.kind == "villager" and o.id not in w.asked:
+                self._act("ask", o.id)
+                self._absorb()
+                return True
+        return False
 
     def _library_step(self) -> bool:
         """Go to the library and read what the town's mechanics need. Returns True if it acted."""
@@ -405,7 +472,10 @@ class TownHeuristicAgent:
 
     def step(self) -> None:
         w, v = self.w, self._goal()
+        self._refresh()
         if not self.lib_done and self._library_step():
+            return
+        if self._ask_here():
             return
         here = w.room_objects(w.agent_room)
         # 1. villager here: give useful things, then talk
@@ -525,7 +595,7 @@ class TownHeuristicAgent:
             if options:
                 self._act("plant", self.rng.choice(options).id, s)
                 return True
-        if growing and all(p.state["watered"] or not can for p in growing):
+        if growing and self.sleep_when_watered and all(p.state["watered"] or not can for p in growing):
             self._act("sleep")
             return True
         return False
@@ -565,6 +635,10 @@ class BoardHeuristicAgent(TownHeuristicAgent):
 
     It knows only what the board says (who wants what, who keeps what) plus what it observes;
     a seed (or the library) lets it predict which gifts land and where villagers are at midday."""
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self.sleep_when_watered = False
 
     def _goal(self):
         return None
@@ -643,7 +717,10 @@ class BoardHeuristicAgent(TownHeuristicAgent):
 
     def step(self) -> None:
         w = self.w
+        self._refresh()
         if not self.lib_done and self._library_step():
+            return
+        if self._ask_here():
             return
         here = w.room_objects(w.agent_room)
         for v in [o for o in here if o.kind == "villager"]:
@@ -663,9 +740,12 @@ class BoardHeuristicAgent(TownHeuristicAgent):
                 if o.kind == "item" and o.id in self._reserved():
                     self._act("buy", o.id)
                     return
-        if w.agent_room == "farm" and FARMING in w.seed.blocks and self._farm():
+        gathering = self._gathering()
+        if w.agent_room == "farm" and FARMING in w.seed.blocks and not gathering and self._farm():
             return
         unvisited = [r for r, room in w.rooms.items() if not room.visited]
+        if gathering:  # ask around first: people are at home in the morning and evening
+            unvisited.sort(key=lambda r: not r.startswith("home"))
         if unvisited:
             self._act("go", unvisited[0])
             return

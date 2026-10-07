@@ -62,9 +62,15 @@ def phase_of(tick: int) -> str:
 
 
 class TownWorld:
-    def __init__(self, seed: TownSeed, eager: bool = False, max_actions: int = 60, library=None):
+    def __init__(self, seed: TownSeed, eager: bool = False, max_actions: int = 60, library=None,
+                 testimony: float | None = None):
         self.seed = seed
         self.library = library  # LibraryArchive or None: memory that lives in the town library
+        # testimony: None = villagers do not answer questions; else the share of villagers who are
+        # consistently wrong when you ``ask`` them what they know
+        self.testimony = testimony
+        self.liars: set[str] = set()
+        self.asked: dict[str, int] = {}
         self.pile_page = 0
         self.laws = seed.laws
         self.eager = eager
@@ -88,6 +94,10 @@ class TownWorld:
         self._counter: dict[str, int] = {}
         self._rng = random.Random(seed.surface_seed)
         self._build()
+        if testimony is not None:
+            vids = sorted(o.id for o in self.objs.values() if o.kind == "villager")
+            n = round(testimony * len(vids))
+            self.liars = set(random.Random(_h(seed.surface_seed, "liars")).sample(vids, n))
         self._update_schedule()
         self._enter("farm")
         if eager:
@@ -523,6 +533,8 @@ class TownWorld:
             v += ", read <shelf> (in the library)"
         if self.requests:
             v += ", read board (in the plaza)"
+        if self.testimony is not None:
+            v += ", ask <villager> (they tell you what their trade has taught them)"
         return v
 
     def prompt_spec(self) -> dict:
@@ -784,6 +796,8 @@ class TownWorld:
             if trophy is None:
                 return f"{o.name} chats about the weather.", True, True
             return f"{o.name}: {why}", False, True
+        if verb == "ask":
+            return self._ask(o, ev)
         if verb == "give":
             if o.kind != "villager":
                 return "You can only give things to villagers.", False, False
@@ -850,6 +864,28 @@ class TownWorld:
             return f"Nothing ripe in {o.id}.", False, True
         return (f"Unknown verb '{verb}'. Valid: go, take, buy, give, talk, plant, water, harvest, sleep, wait."), False, False
 
+    # ================================================================ testimony
+    def _ask(self, v: Obj, ev) -> tuple[str, bool, bool]:
+        from .sources import describe, maybe_corrupt, testimony
+
+        if v.kind != "villager":
+            return f"{v.id} cannot answer questions.", False, False
+        if self.testimony is None:
+            return f"{v.name} shrugs: 'Ask me something else.'", False, True
+        k = self.asked.get(v.id, 0)
+        self.asked[v.id] = k + 1
+        claims, wrong = [], 0
+        for sp, val in testimony(self, v, k):
+            said, bad = maybe_corrupt(sp, val, 1.0 if v.id in self.liars else 0.0, "villager", self.seed.surface_seed, v.id)
+            if sp.startswith("likes.") and claims and claims[0] == ("gift_attr", "color"):
+                continue  # someone who thinks taste goes by shirt colour names no favourite category
+            claims.append((sp, said))
+            wrong += bad
+        ev.effects = [{"source": f"villager:{v.id}", "claims": [list(c) for c in claims], "wrong": wrong}]
+        job = v.fine["job"]
+        said = "; ".join(describe(sp, val, job) for sp, val in claims)
+        return f"{v.name} the {job}: '{said[0].upper() + said[1:]}.'", True, True
+
     # ================================================================ library
     def _library_action(self, verb, shelf, text, ev) -> tuple[str, bool, bool]:
         if shelf.kind != "shelf" or self.library is None:
@@ -871,7 +907,8 @@ class TownWorld:
         else:
             entries = lib.shelf(cat)
             head = f"You read the {cat} shelf ({len(entries)} notes):"
-        ev.effects = [{"category": e.category, "claims": [list(c) for c in e.claims], "text": e.text} for e in entries]
+        ev.effects = [{"category": e.category, "claims": [list(c) for c in e.claims], "text": e.text,
+                       "source": f"note:{e.author}"} for e in entries]
         if not entries:
             return f"The {shelf.name} is empty.", True, True
         return head + "\n" + "\n".join(entry_line(e) for e in entries), True, True
@@ -929,6 +966,7 @@ class TownWorld:
             "objects": objs, "inventory": list(self.inventory),
             **({"requests": [dict(r, text=self.request_text(r)) for r in self.requests], "days": self.seed.days}
                if self.requests else {}),
+            **({"testimony": True, "liars": sorted(self.liars)} if self.testimony is not None else {}),
         }
 
     def clone(self) -> "TownWorld":

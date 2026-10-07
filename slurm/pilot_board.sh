@@ -1,0 +1,20 @@
+#!/bin/bash
+# Small Qwen pilot on the town board before the full study (two GPU jobs, a few hours each):
+#   1. difficulty: no memory vs learned seed vs true laws. The board is well calibrated if the
+#      three are clearly apart (true laws well above 0, no memory well below 1).
+#   2. sources: testimony and library notes with 0% and 50% wrong claims.
+# Each job prints the summary table at the end of its log (logs/ws-pilot-*.out).
+#   bash slurm/pilot_board.sh
+#   MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 bash slurm/pilot_board.sh
+set -euo pipefail
+cd "$(dirname "$0")/.."
+source slurm/env.sh
+OUT="${OUT:-$WS_STORE/results/$SERVED_NAME/pilot}"
+COMMON=(--env board --protocol compgen --universes 1 --n-train 12 --n-test 10 --max-actions 200
+        --max-turns 320 --concurrency 32 --save-traces)
+sbatch --job-name=ws-pilot-difficulty --time=0-08:00 slurm/serve_and_run.sh \
+  --conditions none seed oracle "${COMMON[@]}" --out "$OUT/difficulty"
+sbatch --job-name=ws-pilot-sources --time=0-08:00 slurm/serve_and_run.sh \
+  --conditions none testimony library --source-errors 0 0.5 "${COMMON[@]}" --out "$OUT/sources"
+echo "submitted. when done: python scripts/analyze.py $OUT/difficulty $OUT/sources --by condition variant phase"
+echo "replay an episode in the browser: python scripts/export_replay.py $OUT/sources --help"

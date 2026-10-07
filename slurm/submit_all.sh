@@ -38,6 +38,11 @@ for u in $UNIVERSES; do
   sbatch --job-name="ws-$env-library-u$u" slurm/serve_and_run.sh --protocol compgen \
     --conditions none seed library library_flat --universes "$u" --n-train 24 --n-test 16 "${COMMON[@]}" \
     --out "$OUT/$env/library/u$u"
+  # second-hand knowledge with controlled reliability: library notes by several authors and villager
+  # testimony, each with 0 / 25 / 50% wrong claims
+  sbatch --job-name="ws-$env-sources-u$u" slurm/serve_and_run.sh --protocol compgen \
+    --conditions none testimony library --source-errors 0 0.25 0.5 --universes "$u" --n-train 24 --n-test 16 \
+    "${COMMON[@]}" --out "$OUT/$env/sources/u$u"
   fi
   # RQ10: mutation curriculum vs uniform
   sbatch --job-name="ws-$env-curr-u$u" slurm/serve_and_run.sh --protocol curriculum \

@@ -93,10 +93,9 @@ notes sit on topic shelves, and reading costs actions and game time. The planned
 
 1. Sorted shelves vs one unsorted pile vs seed in the head vs nothing (implemented:
    conditions `library`, `library_flat`).
-2. Notes written by other agents with a controlled error rate: does the agent verify a claim
-   by intervention before relying on it?
-3. Villagers give testimony from their job (the smith knows the mine), some of it wrong:
-   testimony vs intervention as sources of causal knowledge.
+2. + 3. (implemented together, `--source-errors`): notes by other agents and villager testimony,
+   each wrong at a controlled rate with consistent errors. Does the agent verify a claim by
+   intervention before relying on it, and does it learn whom to trust?
 4. Several agents in one town: no sharing vs a shared library (stigmergy) vs direct messages.
 
 Suggested paper framing: run the main table on SeedVille, use the dungeon as the fully
