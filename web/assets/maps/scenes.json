@@ -1,0 +1,1 @@
+{"outdoor": ["farm", "town", "lane", "mountain", "beach"], "interiors": ["house", "shop", "bakery", "smithy", "florist", "clinic", "library", "inn"], "layout": {"mountain": [1, 0], "farm": [0, 1], "town": [1, 1], "lane": [2, 1], "beach": [1, 2]}}

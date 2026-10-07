@@ -68,7 +68,7 @@ details summary { cursor: pointer; font-family: var(--font-display); font-size: 
     <div class="modes">
       <button id="modeReplay" class="on" aria-pressed="true">Replays</button>
       <button id="modePlay" aria-pressed="false" disabled>Play</button>
-      <button id="bMap" title="Map overview (M)">Map</button>
+      <button id="bMap" title="Town map (M)">Town map</button>
     </div>
   </header>
 
@@ -96,12 +96,16 @@ details summary { cursor: pointer; font-family: var(--font-display); font-size: 
   </div>
 
   <div class="bar" id="playBar" hidden>
+    <select id="goTo" aria-label="Place"></select>
+    <button id="pGo">Go</button>
     <button id="pWait">Wait</button>
     <button id="pSleep">Sleep</button>
     <button id="pOracle">Let the oracle finish</button>
     <button id="pExplorer">Let the explorer try</button>
     <label class="check" for="uni">Universe</label>
     <select id="uni"><option>0</option><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select>
+    <label class="check" for="nVill">Villagers</label>
+    <select id="nVill"><option>4</option><option>6</option><option selected>8</option><option>10</option><option>12</option></select>
     <label class="check"><input type="checkbox" id="blk-farming" checked> farming</label>
     <label class="check"><input type="checkbox" id="blk-gifting" checked> gifting</label>
     <label class="check"><input type="checkbox" id="blk-shop"> shop</label>
@@ -127,7 +131,7 @@ details summary { cursor: pointer; font-family: var(--font-display); font-size: 
       </details>
     </section>
   </div>
-  <p class="keys">Space play/pause · ← → step · M map. Hover anything in the town to see what it is. In Play mode, click to act.</p>
+  <p class="keys">Space play/pause · ← → step · M town map. Hover anything to see what it is. In Play mode, click people, plots, items, doors and exits to act.</p>
   <p class="note" id="note">Replays are recorded from the real Python engine. To play, run <code>python scripts/serve_ui.py</code> and open it on localhost.</p>
 </div>
 <script src="vendor/phaser.min.js"></script>

@@ -25,8 +25,9 @@ from worldseeds.town.seed import TOWN_BLOCKS  # noqa: E402
 
 
 class Game:
-    def __init__(self, universe: int, blocks, surface_seed: int):
-        self.seed = TownSeed(laws=TownLaws.from_index(universe), blocks=tuple(blocks), surface_seed=surface_seed)
+    def __init__(self, universe: int, blocks, surface_seed: int, n_villagers: int = 8):
+        self.seed = TownSeed(laws=TownLaws.from_index(universe), blocks=tuple(blocks), surface_seed=surface_seed,
+                             n_villagers=n_villagers)
         self.universe = universe
         self.world = grow_town(self.seed, max_actions=200)
 
@@ -75,7 +76,8 @@ class Handler(BaseHTTPRequestHandler):
         w = GAME.world
         if self.path == "/api/new":
             blocks = [b for b in body.get("blocks", TOWN_BLOCKS) if b in TOWN_BLOCKS] or ["farming"]
-            GAME = Game(int(body.get("universe", 0)), blocks, int(body.get("surface_seed", random.randrange(1 << 30))))
+            GAME = Game(int(body.get("universe", 0)), blocks, int(body.get("surface_seed", random.randrange(1 << 30))),
+                        max(2, min(12, int(body.get("n_villagers", 8)))))
             self._json(GAME.payload(GAME.world.observe()))
         elif self.path == "/api/act":
             msg, ok = w.act(body.get("verb"), body.get("target"), body.get("instrument"))

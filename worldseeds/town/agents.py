@@ -189,8 +189,8 @@ class TownSeedMemory(LawSeed):
                 for e in ev.effects:
                     if e["present"] and e["place"] in MIDDAY_PLACES:
                         self._vote_exclusive("midday_place", e["place"])
-                    elif not e["present"] and e["place"] == "home":
-                        self._vote("midday_place", "home", False)
+                    elif not e["present"] and e["place"] in ("home", "work"):
+                        self._vote("midday_place", e["place"], False)
                 used += 1
         self.events_seen += len(events)
         return used
@@ -212,8 +212,8 @@ class TownSeedMemory(LawSeed):
                          + (": " + ", ".join(likes) if likes else " (which category per job: unknown yet)") + ".")
         mp = self.confident("midday_place")
         if mp:
-            lines.append(f"- [schedule] At midday villagers are at the {mp.upper()}" +
-                         (" (their own home)" if mp == "home" else "") + "; mornings and evenings at home.")
+            where = {"home": "their own HOME", "work": "their WORKPLACE"}.get(mp, f"the {mp.upper()}")
+            lines.append(f"- [schedule] At midday villagers are at {where}; mornings and evenings at home.")
         return lines
 
     def predict(self, world, verb: str, target: str, instrument: str | None = None) -> str:
@@ -257,7 +257,9 @@ class TownSeedMemory(LawSeed):
             mp = self.confident("midday_place")
             if mp is None:
                 return "UNCERTAIN: unknown where villagers spend middays; mornings/evenings they are home."
-            return f"PREDICT: at midday villagers are at the {mp}; otherwise at home."
+            if mp == "work" and t.get("kind") == "villager" and target in getattr(world, "work_of", {}):
+                return f"PREDICT: at midday {t['name']} is at their workplace ({world.work_of[target]}); otherwise at home."
+            return f"PREDICT: at midday villagers are at {'their workplace' if mp == 'work' else 'the ' + mp}; otherwise at home."
         return "No learned law covers this action."
 
 
@@ -441,11 +443,11 @@ class TownHeuristicAgent:
         if self.seed is not None and SCHEDULE in w.seed.blocks and w.phase == "midday":
             mp = self.seed.confident("midday_place")
             if mp:
-                guess = w.home_of[v.id] if mp == "home" else mp
+                guess = {"home": w.home_of[v.id], "work": w.work_of[v.id]}.get(mp, mp)
         if guess is None and (SCHEDULE not in w.seed.blocks or w.phase != "midday"):
             guess = w.home_of[v.id]
         if guess is None:
-            spots = ["plaza", "shop", w.home_of[v.id]]
+            spots = ["plaza", "shop", w.work_of[v.id], w.home_of[v.id]]
             guess = spots[self.wander % len(spots)]
             self.wander += 1
         if guess == w.agent_room:

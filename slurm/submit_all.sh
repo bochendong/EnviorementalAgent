@@ -13,7 +13,7 @@ ENVS="${ENVS:-town dungeon}"
 
 for env in $ENVS; do
 # the town needs a few more actions: crops take two nights to grow
-if [ "$env" = town ]; then MAX_ACTIONS=60; else MAX_ACTIONS=50; fi
+if [ "$env" = town ]; then MAX_ACTIONS=80; else MAX_ACTIONS=50; fi
 COMMON=(--env "$env" --repeats "$REPEATS" --concurrency 32 --max-actions "$MAX_ACTIONS" --max-turns 140 --save-traces)
 for u in $UNIVERSES; do
   # H4/RQ8 + H3: compositional generalisation, all memory conditions, zoom vs flat

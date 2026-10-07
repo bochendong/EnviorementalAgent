@@ -56,7 +56,7 @@ def _town() -> EnvSpec:
     from .town.world import grow_town
 
     def make_seed(laws, blocks, rng, n_goals=1, n_distractors=2, big=False):
-        return TownSeed(laws=laws, blocks=tuple(blocks), n_villagers=4 if big else 3, n_goals=n_goals,
+        return TownSeed(laws=laws, blocks=tuple(blocks), n_villagers=10 if big else 8, n_goals=n_goals,
                         n_distractors=n_distractors, surface_seed=rng.randrange(1 << 30))
 
     return EnvSpec(

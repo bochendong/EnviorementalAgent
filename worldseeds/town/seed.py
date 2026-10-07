@@ -11,10 +11,15 @@ from dataclasses import asdict, dataclass, field, replace
 CROPS = ["turnip", "melon", "pumpkin", "berry"]
 SOILS = ["loam", "clay", "sand", "peat"]
 SEASONS = ["spring", "summer", "fall", "winter"]
-JOBS = ["baker", "smith", "florist", "miner"]
+JOBS = ["baker", "smith", "florist", "miner", "fisher", "doctor", "librarian", "innkeeper"]
+# every job has a workplace in town (location id, display name)
+WORKPLACE = {"baker": ("bakery", "the bakery"), "smith": ("smithy", "the smithy"),
+             "florist": ("florist", "the flower shop"), "miner": ("mine", "the mine entrance"),
+             "fisher": ("pier", "the pier"), "doctor": ("clinic", "the clinic"),
+             "librarian": ("library", "the library"), "innkeeper": ("inn", "the inn")}
 CATEGORIES = ["food", "metal", "flower", "gem"]
 GIFT_ATTRS = ["color", "category"]
-MIDDAY_PLACES = ["plaza", "shop", "home"]
+MIDDAY_PLACES = ["plaza", "shop", "home", "work"]
 COLORS = ["red", "blue", "green", "yellow", "purple", "orange"]
 ITEM_NAMES = {
     "food": ["bread", "pie", "cheese"],
@@ -40,7 +45,8 @@ class TownLaws:
         default=(("turnip", "spring"), ("melon", "summer"), ("pumpkin", "fall"), ("berry", "winter")))
     gift_attr: str = "category"  # villagers like gifts matching their shirt COLOR, or their job's CATEGORY
     job_likes: tuple[tuple[str, str], ...] = field(
-        default=(("baker", "food"), ("smith", "metal"), ("florist", "flower"), ("miner", "gem")))
+        default=(("baker", "food"), ("smith", "metal"), ("florist", "flower"), ("miner", "gem"),
+                 ("fisher", "food"), ("doctor", "flower"), ("librarian", "gem"), ("innkeeper", "metal")))
     midday_place: str = "plaza"  # where villagers spend middays (with the schedule block)
 
     @property
@@ -57,9 +63,10 @@ class TownLaws:
 
     @classmethod
     def sample(cls, rng: random.Random) -> "TownLaws":
-        soils, seasons, cats = SOILS[:], SEASONS[:], CATEGORIES[:]
+        soils, seasons = SOILS[:], SEASONS[:]
         rng.shuffle(soils)
         rng.shuffle(seasons)
+        cats = CATEGORIES * 2  # every category is liked by exactly two jobs
         rng.shuffle(cats)
         return cls(
             crop_soil=tuple(zip(CROPS, soils)),
@@ -83,6 +90,10 @@ class TownLaws:
                 d[k] = [a for a in GIFT_ATTRS if a != self.gift_attr][0]
             elif k == "midday_place":
                 d[k] = rng.choice([p for p in MIDDAY_PLACES if p != self.midday_place])
+            elif k == "job_likes":
+                pairs = self.job_likes
+                vals = [v for _, v in pairs]
+                d[k] = tuple(zip([c for c, _ in pairs], vals[2:] + vals[:2]))
             else:
                 pairs = getattr(self, k)
                 vals = [v for _, v in pairs]
@@ -112,7 +123,9 @@ class TownLaws:
                  "Villagers love gifts of the CATEGORY their job prefers: "
                  + ", ".join(f"{j}->{c}" for j, c in self.job_likes) + "."),
             ],
-            SCHEDULE: [f"At midday villagers go to the {self.midday_place.upper()}; mornings and evenings they are home."],
+            SCHEDULE: [("At midday villagers go to their WORKPLACE" if self.midday_place == "work" else
+                        f"At midday villagers go to the {self.midday_place.upper()}")
+                       + "; mornings and evenings they are home."],
         }
         blocks = blocks or list(lines)
         return [x for b in blocks for x in lines.get(b, [])]
@@ -122,7 +135,7 @@ class TownLaws:
 class TownSeed:
     laws: TownLaws = field(default_factory=TownLaws)
     blocks: tuple[str, ...] = (FARMING,)
-    n_villagers: int = 3
+    n_villagers: int = 8  # 2..12; each villager has a home and a workplace
     n_distractors: int = 2
     n_goals: int = 1
     surface_seed: int = 0
@@ -135,7 +148,8 @@ class TownSeed:
 
     @property
     def n_rooms(self) -> int:  # locations, for logging parity with the dungeon
-        return 4 + self.n_villagers
+        jobs = min(len(JOBS), self.n_villagers)
+        return 4 + self.n_villagers + jobs
 
     @property
     def season(self) -> str:
@@ -172,7 +186,7 @@ class TownSeed:
             b = rng.choice(self.blocks)
             return replace(self, blocks=tuple(x for x in self.blocks if x != b))
         if kind in ("grow", "drop_block"):
-            return replace(self, n_villagers=min(self.n_villagers + 1, 5))
+            return replace(self, n_villagers=min(self.n_villagers + 2, 12))
         if kind == "distract":
             return replace(self, n_distractors=self.n_distractors + 1)
         if kind == "laws":
@@ -198,7 +212,7 @@ def town_seeds_for(combos, laws: TownLaws, n: int, rng: random.Random, **kw) -> 
     out = []
     for i in range(n):
         combo = combos[i % len(combos)] if i < len(combos) else rng.choice(combos)
-        out.append(TownSeed(laws=laws, blocks=combo, n_villagers=kw.get("n_villagers", 3),
+        out.append(TownSeed(laws=laws, blocks=combo, n_villagers=kw.get("n_villagers", 8),
                             n_distractors=kw.get("n_distractors", 2), n_goals=kw.get("n_goals", 1),
                             surface_seed=rng.randrange(1 << 30)))
     return out

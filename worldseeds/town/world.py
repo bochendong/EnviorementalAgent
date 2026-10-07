@@ -28,6 +28,7 @@ from .seed import (
     GIFTING,
     ITEM_NAMES,
     JOBS,
+    WORKPLACE,
     SCHEDULE,
     SHOP,
     SOILS,
@@ -35,8 +36,10 @@ from .seed import (
 )
 
 TICKS_PER_DAY = 12
-VILLAGER_NAMES = ["Rosa", "Tomas", "Ivy", "Bram", "Lena", "Otto", "Mira", "Finn"]
-JOB_LOOK = {"baker": "a flour-dusted apron", "smith": "soot-stained gloves", "florist": "a pollen-covered smock",
+VILLAGER_NAMES = ["Rosa", "Tomas", "Ivy", "Bram", "Lena", "Otto", "Mira", "Finn", "Hana", "Leo", "Clara", "Abe"]
+JOB_LOOK = {"fisher": "rubber boots smelling of the sea", "doctor": "a stethoscope", "librarian": "ink-stained fingers",
+            "innkeeper": "a towel over one shoulder",
+            "baker": "a flour-dusted apron", "smith": "soot-stained gloves", "florist": "a pollen-covered smock",
             "miner": "a dented helmet with a lamp"}
 DECOR = ["bench", "lamppost", "barrel", "signpost", "flowerbed", "cart"]
 HARVEST_YIELD = 3
@@ -101,20 +104,31 @@ class TownWorld:
             self.rooms[rid] = Room(rid, name)
         names = VILLAGER_NAMES[:]
         rng.shuffle(names)
+        jobs = JOBS[:]
+        rng.shuffle(jobs)
         villagers = []
-        for k in range(s.n_villagers):
+        self.work_of: dict[str, str] = {}
+        for k in range(min(s.n_villagers, len(VILLAGER_NAMES))):
             vid = f"v{k + 1}"
             home = f"home{k + 1}"
             self.rooms[home] = Room(home, f"{names[k]}'s house")
-            v = self._add(Obj(vid, "villager", names[k], rng.choice(COLORS), fine={"job": rng.choice(JOBS)},
+            job = jobs[k % len(jobs)]
+            v = self._add(Obj(vid, "villager", names[k], rng.choice(COLORS), fine={"job": job},
                               state={"friendship": 0, "got_crop": False, "got_request": False},
                               location=home, critical=True))
             self.home_of[vid] = home
+            wid, wname = WORKPLACE[job]
+            self.work_of[vid] = wid
+            if wid not in self.rooms:
+                self.rooms[wid] = Room(wid, wname)
             villagers.append(v)
+        order = ["farm", "plaza", "shop", "forest"] + [w for w, _ in WORKPLACE.values() if w in self.rooms] + \
+            [h for h in self.rooms if h.startswith("home")]
+        self.rooms = {k: self.rooms[k] for k in order}
         self.nodes_grown += len(self.rooms)
         self._add(Obj("bed", "bed", "bed", "", location="farm", critical=True))
 
-        found_spots = ["forest", "plaza"] + [f"home{k + 1}" for k in range(s.n_villagers)]
+        found_spots = ["forest", "plaza"] + sorted(set(self.work_of.values())) + list(self.home_of.values())
         shop_needed: list[Obj] = []
 
         # ---- farming: plots (one per soil), seed packets (one per crop), watering can
@@ -203,7 +217,11 @@ class TownWorld:
         if SCHEDULE not in self.seed.blocks or ph != "midday":
             return self.home_of[vid]
         place = self.laws.midday_place
-        return self.home_of[vid] if place == "home" else place
+        if place == "home":
+            return self.home_of[vid]
+        if place == "work":
+            return self.work_of[vid]
+        return place
 
     def _update_schedule(self) -> None:
         for o in self.objs.values():
@@ -211,6 +229,8 @@ class TownWorld:
                 o.location = self.villager_location(o.id)
 
     def _place_type(self, loc: str, vid: str) -> str:
+        if loc == self.work_of.get(vid):
+            return "work"
         if loc.startswith("home"):
             return "home" if self.home_of[vid] == loc else "other_home"
         return loc
@@ -225,7 +245,7 @@ class TownWorld:
             if o.kind != "villager":
                 continue
             present = o.location == here
-            if present or self.home_of[o.id] == here:
+            if present or self.home_of[o.id] == here or self.work_of.get(o.id) == here:
                 eff.append({"villager": o.id, "place": self._place_type(here, o.id), "present": present})
         if eff:
             self.events.append(Event(self.actions, "see", here, None, True, True,
@@ -656,6 +676,7 @@ class TownWorld:
                          status=o.state["status"], watered=o.state["watered"])
             if o.kind == "villager":
                 d.update(job=o.fine["job"], friendship=o.state["friendship"], home=self.home_of[o.id],
+                         work=self.work_of.get(o.id),
                          got_crop=o.state["got_crop"], request=o.state.get("request"),
                          got_request=o.state["got_request"], needs=self.requirements_met(o)[1])
             if o.state.get("for_sale"):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Generate SeedVille's original pixel-art assets and its Tiled map.
+"""Generate SeedVille's original pixel-art assets and its Tiled scene maps.
 
     python web/tools/make_assets.py          # writes web/assets/*
 
@@ -16,183 +16,22 @@ Outputs
   chars/<name>_<color>.png, chars/player.png   16x32 frames, rows: down, left, right, up
   portraits/<name>_<color>.png                 48x48
   ui.png (+ ui.json)     panels, slots, emotes, icons
-  town.json              Tiled map (orthogonal, 48x32 tiles)
+  maps/<scene>.json      Tiled maps: farm, town, lane, mountain, beach and interiors (see scenes.py)
 """
 
 from __future__ import annotations
 
-import json
 import math
 import random
-from pathlib import Path
-
-from PIL import Image
 
 import charart
+import scenes
 import treeart
 
-OUT = Path(__file__).resolve().parents[1] / "assets"
-T = 16
-SEASONS = ["spring", "summer", "fall", "winter"]
 
 
-# ============================================================================ colour
-def hx(s: str) -> tuple:
-    s = s.lstrip("#")
-    return (int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16), 255)
-
-
-def ramp(*cs):
-    return [hx(c) for c in cs]
-
-
-def mix(a, b, t):
-    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3)) + (255,)
-
-
-def shade(c, f):
-    return tuple(max(0, min(255, int(c[i] * f))) for i in range(3)) + (255,)
-
-
-def hue_ramp(base: str):
-    """5-step ramp from one base colour: darker hues lean cool, lighter lean warm (pixel-art rule)."""
-    b = hx(base)
-    cool, warm = hx("#2b2440"), hx("#fff3c4")
-    return [mix(b, cool, .55), mix(b, cool, .3), b, mix(b, warm, .3), mix(b, warm, .6)]
-
-
-GRASS = {
-    "spring": ramp("#1f4524", "#2f6a30", "#4a8f3a", "#6eb048", "#a6d264"),
-    "summer": ramp("#1b4020", "#285f26", "#3f862c", "#5fa834", "#8fcb4a"),
-    "fall": ramp("#3f3520", "#6a5726", "#8f7a2e", "#b39a3c", "#d6bd5a"),
-    "winter": ramp("#6e7f9c", "#97a8c2", "#c3d1e2", "#e2eaf3", "#fbfdff"),
-}
-DIRT = ramp("#4a2e1c", "#6b4429", "#8c5d37", "#ad7a4a", "#cf9d66")
-STONE = ramp("#3d3b4a", "#5d5b6c", "#807e8f", "#a6a4b2", "#cac8d2")
-WATER = ramp("#16305c", "#1f4c8a", "#2f6cb4", "#5094d4", "#a3d2f0")
-WOOD = ramp("#2e1a10", "#4d2d1a", "#6e4428", "#925d37", "#b77d4d")
-SOIL = ramp("#2c1a10", "#432818", "#5c3a22", "#764d2e")
-SOIL_WET = ramp("#1e120b", "#2d1b10", "#3d2516", "#4f311d")
-PLASTER = ramp("#7c6248", "#a88a66", "#cdb08a", "#e8d2ab", "#f7ead0")
-OUTLINE = hx("#26160e")
-CLEAR = (0, 0, 0, 0)
-
-ITEM_COLORS = {"red": "#cf3f38", "blue": "#3c6fd8", "green": "#3f9e48", "yellow": "#e9c43c",
-               "purple": "#8b52c8", "orange": "#e8842c", "gold": "#f2b632"}
-COLOR_NAMES = ["red", "blue", "green", "yellow", "purple", "orange"]
-ROOF = {"red": "#b8433a", "blue": "#3f6ab8", "teal": "#2f8a8a", "purple": "#7d4fb0", "green": "#4f8f3a",
-        "orange": "#d17a2e"}
-
-
-# ============================================================================ canvas
-class C:
-    def __init__(self, w, h):
-        self.im = Image.new("RGBA", (w, h), CLEAR)
-        self.px = self.im.load()
-        self.w, self.h = w, h
-
-    def p(self, x, y, c):
-        x, y = int(x), int(y)
-        if 0 <= x < self.w and 0 <= y < self.h and c is not None:
-            if len(c) == 4 and c[3] < 255:
-                o = self.px[x, y]
-                a = c[3] / 255
-                c = tuple(int(o[i] * (1 - a) + c[i] * a) for i in range(3)) + (max(o[3], c[3]),)
-            self.px[x, y] = c
-
-    def get(self, x, y):
-        if 0 <= x < self.w and 0 <= y < self.h:
-            return self.px[x, y]
-        return CLEAR
-
-    def rect(self, x, y, w, h, c):
-        for j in range(int(h)):
-            for i in range(int(w)):
-                self.p(x + i, y + j, c)
-
-    def hline(self, x, y, w, c):
-        self.rect(x, y, w, 1, c)
-
-    def vline(self, x, y, h, c):
-        self.rect(x, y, 1, h, c)
-
-    def ellipse(self, cx, cy, rx, ry, c):
-        for j in range(-int(ry) - 1, int(ry) + 2):
-            for i in range(-int(rx) - 1, int(rx) + 2):
-                if (i / max(rx, .5)) ** 2 + (j / max(ry, .5)) ** 2 <= 1.0:
-                    self.p(cx + i, cy + j, c)
-
-    def blob(self, cx, cy, r, ramp_, light=(-1, -1), rng=None, dither=True):
-        """Shaded sphere-ish blob, lit from ``light`` direction."""
-        lx, ly = light
-        n = math.hypot(lx, ly) or 1
-        lx, ly = lx / n, ly / n
-        for j in range(-r - 1, r + 2):
-            for i in range(-r - 1, r + 2):
-                d = math.hypot(i, j)
-                if d > r + .3:
-                    continue
-                k = (-(i * lx + j * ly) / max(r, 1)) * .6 + (1 - d / (r + .5)) * .5  # -1..1-ish
-                v = 1.6 + k * 2.2
-                if dither and rng is not None:
-                    v += rng.uniform(-.35, .35)
-                idx = max(0, min(len(ramp_) - 1, int(round(v))))
-                self.p(cx + i, cy + j, ramp_[idx])
-
-    def outline(self, color=OUTLINE, sides="all"):
-        """Add a 1px outline around opaque pixels (pixel-art sprite convention)."""
-        src = self.im.copy().load()
-        for y in range(self.h):
-            for x in range(self.w):
-                if src[x, y][3] > 0:
-                    continue
-                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < self.w and 0 <= ny < self.h and src[nx, ny][3] > 200:
-                        self.px[x, y] = color
-                        break
-
-    def paste(self, other: "C", x, y):
-        self.im.alpha_composite(other.im, (int(x), int(y)))
-        self.px = self.im.load()
-
-    def flip(self) -> "C":
-        c = C(self.w, self.h)
-        c.im = self.im.transpose(Image.FLIP_LEFT_RIGHT)
-        c.px = c.im.load()
-        return c
-
-
-class Atlas:
-    """Simple shelf packer -> PNG + Phaser JSON-hash atlas."""
-
-    def __init__(self, width=512):
-        self.frames: list[tuple[str, C]] = []
-        self.width = width
-
-    def add(self, name, c: C):
-        self.frames.append((name, c))
-
-    def save(self, png: Path, js: Path):
-        x = y = shelf = 0
-        placed = []
-        for name, c in self.frames:
-            if x + c.w > self.width:
-                x, y, shelf = 0, y + shelf + 1, 0
-            placed.append((name, c, x, y))
-            x += c.w + 1
-            shelf = max(shelf, c.h)
-        H = y + shelf + 1
-        im = Image.new("RGBA", (self.width, H), CLEAR)
-        frames = {}
-        for name, c, px, py in placed:
-            im.alpha_composite(c.im, (px, py))
-            frames[name] = {"frame": {"x": px, "y": py, "w": c.w, "h": c.h}, "rotated": False, "trimmed": False,
-                            "spriteSourceSize": {"x": 0, "y": 0, "w": c.w, "h": c.h},
-                            "sourceSize": {"w": c.w, "h": c.h}}
-        im.save(png)
-        js.write_text(json.dumps({"frames": frames, "meta": {"image": png.name, "size": {"w": self.width, "h": H},
-                                                              "scale": "1"}}))
+from pixel import (C, CLEAR, COLOR_NAMES, DIRT, GRASS, ITEM_COLORS, OUT, PLASTER, ROOF, SEASONS, SOIL,  # noqa: E402
+                   SOIL_WET, STONE, WATER, WOOD, Atlas, T, hue_ramp, hx, ramp, shade)
 
 
 # ============================================================================ terrain tiles
@@ -366,7 +205,7 @@ def decor_tiles(season, rng):
 
 
 def make_terrain(season):
-    sheet = C(16 * T, 6 * T)
+    sheet = C(16 * T, 10 * T)
     rng = random.Random(hash(season) & 0xFFFF)
     for v in range(8):
         sheet.paste(grass_tile(season, v, random.Random(100 + v)), v * T, 0)
@@ -379,6 +218,7 @@ def make_terrain(season):
             sheet.paste(wt, m * T, row * T)
     for i, d in enumerate(decor_tiles(season, rng)):
         sheet.paste(d, i * T, 5 * T)
+    scenes.extra_tiles(sheet, season)
     sheet.im.save(OUT / f"terrain_{season}.png")
 
 
@@ -551,9 +391,13 @@ def make_buildings(season):
     a = Atlas(512)
     a.add("farmhouse", farmhouse(season))
     a.add("shop", shop_building(season))
-    for i, r in enumerate(["purple", "blue", "red", "green", "orange", "teal"]):
-        wall = ["plaster", "#9c6a44", "#b8956a", "plaster", "#8a6a8a", "#7a8a6a"][i]
-        a.add(f"house{i}", house(ROOF[r], wall, season, 11 + i))
+    roofs = ["purple", "blue", "red", "green", "orange", "teal"]
+    walls = ["plaster", "#9c6a44", "#b8956a", "plaster", "#8a6a8a", "#7a8a6a"]
+    for i in range(12):  # 12 homes: every roof colour with two wall styles
+        a.add(f"house{i}", house(ROOF[roofs[i % 6]], walls[(i + i // 6 * 3) % 6], season, 11 + i))
+    for kind in ("bakery", "smithy", "florist", "clinic", "library", "inn"):
+        a.add(kind, scenes.workplace(kind, season, house))
+    a.add("mine", scenes.mine_entrance(season))
     a.save(OUT / f"buildings_{season}.png", OUT / f"buildings_{season}.json")
 
 
@@ -912,6 +756,9 @@ def make_objects():
             if d <= 1:
                 sh.px[x, y] = (20, 30, 20, int(85 * (1 - d * .5)))
     a.add("shadow", sh)
+    for k, c in scenes.furniture().items():
+        a.add(k, c)
+    a.add("pier_post", scenes.pier_post()); a.add("boat", scenes.boat())
     a.save(OUT / "objects.png", OUT / "objects.json")
 
 
@@ -925,6 +772,8 @@ VILLAGERS = {  # name -> (skin, hair, style)
     "Rosa": (0, "red", "long"), "Tomas": (1, "black", "short"), "Ivy": (0, "blonde", "bun"),
     "Bram": (2, "black", "beard"), "Lena": (1, "teal", "ponytail"), "Otto": (0, "grey", "bald"),
     "Mira": (2, "black", "long"), "Finn": (0, "red", "spiky"),
+    "Hana": (0, "black", "bun"), "Leo": (1, "blonde", "short"), "Clara": (0, "brown", "ponytail"),
+    "Abe": (1, "grey", "beard"),
 }
 
 
@@ -1005,172 +854,6 @@ def make_ui():
     a.save(OUT / "ui.png", OUT / "ui.json")
 
 
-# ============================================================================ Tiled map
-MW, MH = 48, 32
-
-
-def make_map():
-    """Write a Tiled-compatible map (open web/assets/town.json in the Tiled editor to adjust it).
-
-    Object conventions (pixels): building/fence/plot -> x,y = top-left tile of the bottom row
-    (buildings) or of the object; everything else -> x = tile left, y = bottom edge."""
-    kind = [["grass"] * MW for _ in range(MH)]
-
-    def fill(x0, y0, w, h, k):
-        for y in range(y0, y0 + h):
-            for x in range(x0, x0 + w):
-                if 0 <= x < MW and 0 <= y < MH:
-                    kind[y][x] = k
-
-    fill(21, 13, 11, 9, "stone")      # plaza
-    fill(3, 11, 4, 1, "path")         # farmhouse door
-    fill(4, 12, 18, 2, "path")        # farm road -> plaza
-    fill(25, 10, 3, 3, "path")        # shop -> plaza
-    fill(32, 9, 2, 10, "path")        # plaza corner -> forest
-    fill(31, 19, 17, 2, "path")       # east road (upper homes)
-    fill(31, 21, 2, 7, "path")        # connector
-    fill(31, 28, 17, 2, "path")       # lower lane (lower homes)
-    fill(37, 3, 6, 4, "water")        # forest pond
-    ground = [[TILE_GRASS + random.Random(x * 131 + y * 7).choice((0, 0, 0, 1, 1, 2, 3, 4, 5, 6, 7))
-               for x in range(MW)] for y in range(MH)]
-    tiles_of = {"path": TILE_PATH, "stone": TILE_STONE, "water": TILE_WATER_A}
-    for y in range(MH):
-        for x in range(MW):
-            k = kind[y][x]
-            if k == "grass":
-                continue
-            m = 0
-            for bit, (dx, dy) in ((N_, (0, -1)), (E_, (1, 0)), (S_, (0, 1)), (W_, (-1, 0))):
-                nx, ny = x + dx, y + dy
-                if not (0 <= nx < MW and 0 <= ny < MH) or kind[ny][nx] == k:
-                    m |= bit
-            ground[y][x] = tiles_of[k] + m
-
-    objs = []
-    oid = [0]
-    taken = set()  # tiles used by objects/spots (keeps trees and decor out)
-
-    def obj(name, type_, x, y, w=0, h=0, **props):
-        oid[0] += 1
-        o = {"id": oid[0], "name": name, "type": type_, "x": x * T, "y": y * T, "width": w * T, "height": h * T,
-             "rotation": 0, "visible": True}
-        if props:
-            o["properties"] = [{"name": k, "type": "string", "value": str(v)} for k, v in props.items()]
-        objs.append(o)
-
-    homes_up = [(34, 17), (39, 17), (44, 17)]     # (left tile, bottom row) of each house
-    homes_down = [(34, 26), (39, 26), (44, 26)]
-    locs = {
-        "farm": dict(rect=(0, 3, 21, 26), anchor=(12, 12), label=(10, 3.5),
-                     items=[(9, 10), (10, 10), (11, 10), (13, 10), (14, 10), (15, 10), (9, 9), (15, 9), (4, 23), (5, 23), (6, 23), (7, 23)],
-                     people=[(14, 12), (16, 13)]),
-        "shop": dict(rect=(21, 0, 10, 13), anchor=(26, 12), label=(25, 0.6),
-                     items=[(22, 10), (23, 10), (24, 10), (28, 10), (29, 10), (22, 11), (29, 11), (23, 11)],
-                     people=[(24, 11), (28, 11), (24, 12), (28, 12), (23, 12)]),
-        "plaza": dict(rect=(21, 13, 11, 9), anchor=(26, 20), label=(26.5, 13.5),
-                      items=[(22, 14), (23, 14), (29, 14), (30, 14), (22, 20), (30, 20), (22, 17), (30, 17), (24, 20), (28, 20)],
-                      people=[(23, 17), (29, 17), (24, 19), (28, 19), (23, 18), (29, 18)]),
-        "forest": dict(rect=(31, 0, 17, 10), anchor=(33, 9), label=(39, 0.6),
-                       items=[(34, 5), (35, 8), (44, 8), (45, 4), (35, 2), (43, 1), (40, 8), (34, 2)],
-                       people=[(35, 7), (42, 8)]),
-    }
-    for i, (x, y) in enumerate(homes_up + homes_down):
-        front = y + 1
-        locs[f"home{i + 1}"] = dict(rect=(x - 1, y - 4, 6, 6), anchor=(x + 2, front + 1), label=(x + 2, y - 4.4),
-                                    items=[(x, front), (x + 3, front), (x + 1, front), (x - 1, front)],
-                                    people=[(x + 2, front), (x + 1, front + 1), (x + 3, front + 1)])
-    for name, L in locs.items():
-        x, y, w, h = L["rect"]
-        obj(name, "location", x, y, w, h, anchor=f"{L['anchor'][0]},{L['anchor'][1]}",
-            label=f"{L['label'][0]},{L['label'][1]}",
-            items=";".join(f"{a},{b}" for a, b in L["items"]), people=";".join(f"{a},{b}" for a, b in L["people"]))
-        for (a, b) in L["items"] + L["people"] + [L["anchor"]]:
-            taken.add((a, b))
-
-    def block(x0, y0, w, h):
-        for yy in range(y0, y0 + h):
-            for xx in range(x0, x0 + w):
-                taken.add((xx, yy))
-
-    obj("farmhouse", "building", 2, 10, 5, 3, sprite="farmhouse")
-    block(1, 4, 7, 7)
-    obj("shop", "building", 21, 9, 8, 3, sprite="shop")
-    block(20, 2, 10, 8)
-    for i, (x, y) in enumerate(homes_up + homes_down):
-        obj(f"home{i + 1}", "building", x, y, 4, 2, sprite=f"house{i}")
-        block(x - 1, y - 4, 6, 6)
-    obj("fountain", "fountain", 25, 19, 3, 2)
-    block(25, 16, 3, 4)
-    for (x, y) in ((21, 13), (31, 13), (21, 21), (31, 21), (12, 14), (33, 14), (19, 11)):
-        obj("lamppost", "lamppost", x, y + 1)
-        taken.add((x, y))
-    obj("shipping_bin", "prop", 8, 11, sprite="shipping_bin", w="2")
-    obj("mailbox", "prop", 7, 12, sprite="mailbox")
-    obj("well", "prop", 17, 10, sprite="well", w="2")
-    for (x, y, w) in ((8, 10, 2), (7, 11, 1), (17, 9, 2)):
-        block(x, y, w, 1)
-    for i, (x, y) in enumerate(((5, 16), (8, 16), (11, 16), (14, 16))):
-        obj(f"plot{i + 1}", "plot", x, y, 2, 2)
-    block(3, 15, 15, 6)
-    for x in range(3, 18):
-        if x not in (11, 12):  # gate
-            obj("fence", "fence_h", x, 15)
-        obj("fence", "fence_h", x, 20)
-    for y in range(15, 21):
-        obj("fence", "fence_v", 2, y)
-        obj("fence", "fence_v", 18, y)
-    for (x, y, sp) in ((23, 15, "bench"), (28, 15, "bench"), (21, 18, "flowerbed"), (29, 21, "flowerbed")):
-        obj(sp, "plaza_decor", x, y + 1, sprite=sp)
-        block(x, y, 2, 1)
-
-    # trees: dense forest, scattered border trees, never on roads, spots or buildings
-    trng = random.Random(9)
-    planted = []
-    for _ in range(600):
-        x, y = trng.randrange(0, MW), trng.randrange(1, MH)
-        if kind[y][x] != "grass" or (x, y) in taken:
-            continue
-        in_forest = x >= 31 and y <= 10
-        border = x < 2 or y > MH - 3 or (y < 3 and x < 21) or x > MW - 2
-        if not (in_forest or border):
-            continue
-        if any(abs(x - a) < 2 and abs(y - b) < 2 for a, b in planted):
-            continue
-        if any((x + dx, y + dy) in taken for dx in (-1, 0, 1) for dy in (0, 1)):
-            continue
-        planted.append((x, y))
-        sp = trng.choice(["oak0", "oak1", "oak2", "pine0", "pine1", "pine0"] if in_forest else ["oak0", "oak1", "oak2", "bush0", "bush1"])
-        obj("tree", "tree", x, y + 1, sprite=sp)
-    for (x, y, sp) in ((19, 6, "rock1"), (2, 27, "rock0"), (36, 11, "stump"), (19, 24, "bush0"), (20, 26, "bush1"),
-                       (10, 26, "rock0"), (24, 26, "rock1"), (14, 7, "bush0"), (29, 25, "bush1")):
-        if (x, y) not in taken:
-            obj("rock", "tree", x, y + 1, sprite=sp)
-    deco = [[0] * MW for _ in range(MH)]
-    rng = random.Random(5)
-    for _ in range(90):
-        x, y = rng.randrange(MW), rng.randrange(MH)
-        if kind[y][x] == "grass" and (x, y) not in taken:
-            deco[y][x] = TILE_DECOR + rng.randrange(8) + 1  # gid
-
-    tm = {
-        "compressionlevel": -1, "height": MH, "width": MW, "infinite": False, "orientation": "orthogonal",
-        "renderorder": "right-down", "tiledversion": "1.10.2", "tileheight": T, "tilewidth": T, "type": "map",
-        "version": "1.10", "nextlayerid": 4, "nextobjectid": oid[0] + 1,
-        "tilesets": [{"firstgid": 1, "name": "terrain", "image": "terrain_spring.png", "imagewidth": 256,
-                      "imageheight": 96, "tilewidth": T, "tileheight": T, "tilecount": 96, "columns": 16,
-                      "margin": 0, "spacing": 0}],
-        "layers": [
-            {"id": 1, "name": "ground", "type": "tilelayer", "width": MW, "height": MH, "x": 0, "y": 0,
-             "opacity": 1, "visible": True, "data": [ground[y][x] + 1 for y in range(MH) for x in range(MW)]},
-            {"id": 2, "name": "decor", "type": "tilelayer", "width": MW, "height": MH, "x": 0, "y": 0,
-             "opacity": 1, "visible": True, "data": [deco[y][x] for y in range(MH) for x in range(MW)]},
-            {"id": 3, "name": "objects", "type": "objectgroup", "draworder": "topdown", "x": 0, "y": 0,
-             "opacity": 1, "visible": True, "objects": objs},
-        ],
-    }
-    (OUT / "town.json").write_text(json.dumps(tm))
-
-
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for s in SEASONS:
@@ -1180,7 +863,7 @@ def main():
     make_objects()
     make_chars()
     make_ui()
-    make_map()
+    scenes.make_maps()
     print("assets written to", OUT)
 
 

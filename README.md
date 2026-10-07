@@ -138,8 +138,12 @@ others are shuffled, so the model can't rely on Stardew-style prior knowledge.
 `web/` is a 2D game client built with [Phaser 3](https://phaser.io) (vendored in `web/vendor`, MIT).
 It renders the Python engine's state, so what you see is exactly what the agent played.
 
-* **Engine features used:** Tiled tilemap (`web/assets/town.json`, editable in the
-  [Tiled](https://www.mapeditor.org) editor), sprite-sheet walk cycles in 4 directions,
+* **Scenes like Stardew Valley:** the town is split into a farm, the town square, a residential
+  lane, the mountain (forest, pond, mine) and the beach (pier), plus interiors for the shop, the
+  six workplaces and every home. Travel walks through exits and doors with fade transitions; M
+  opens the town map. Maps are Tiled JSON (`web/assets/maps/*.json`, editable in the
+  [Tiled](https://www.mapeditor.org) editor).
+* **Engine features used:** tilemaps, sprite-sheet walk cycles in 4 directions,
   Y-sorted sprites, BFS pathfinding, a follow camera with map overview (M), day/evening lighting
   with lamp and window glow, seasonal weather particles, and a Stardew-style HUD (clock,
   quest checklist, toolbar, dialogue with portraits, action-energy bar).
