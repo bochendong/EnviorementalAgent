@@ -109,7 +109,7 @@ def zoom_out(ctx: RunContextWrapper[EpisodeCtx]) -> str:
 
 
 @function_tool
-def act(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instrument: str | None = None) -> str:
+async def act(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instrument: str | None = None) -> str:
     """Perform a physical action where you are standing. Each call uses one action from the budget.
 
     Args:
@@ -119,7 +119,22 @@ def act(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instrument: 
     """
     w = ctx.context.world
     msg, _ = w.act(verb, target, instrument)
+    if getattr(w, "team", None) is not None and w.asleep:  # in a team: wait in bed for the next morning
+        await w.team.wait_morning(w.i)
+        msg += "\n" + ("A new day begins.\n" + w.observe() if not w.done else "")
     return _log(ctx.context, "act", {"verb": verb, "target": target, "instrument": instrument}, msg)
+
+
+@function_tool
+def tell(ctx: RunContextWrapper[EpisodeCtx], teammate: str, message: str) -> str:
+    """Send a short message to a teammate; they read it with their next observation. Uses one action.
+
+    Args:
+        teammate: the teammate's name.
+        message: what you want them to know or do (e.g. a law you learned, which request you take on).
+    """
+    msg, _ = ctx.context.world.tell(teammate, message)
+    return _log(ctx.context, "tell", {"teammate": teammate, "message": message}, msg)
 
 
 @function_tool
@@ -212,7 +227,11 @@ def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: O
         mem = "\nLOGS OF YOUR PREVIOUS EPISODES (other worlds, same universe):\n" + traj.render()
     elif c == "retrieval":
         mem = "\nYou have an episodic memory of previous worlds in this universe; query it with recall(query)."
-    elif c in LIBRARY_CONDITIONS and getattr(w, "library", None) is not None:
+    if getattr(w, "library", None) is not None and getattr(w, "team", None) is not None:
+        mem += ("\nTHE LIBRARY (location 'library'): your teammates wrote down what they learned in their earlier "
+                "towns, on shelves by topic (farming, gifting, schedule, shop, general). Reading costs an action and "
+                "a tick: act('read', <shelf id>).")
+    elif getattr(w, "library", None) is not None and c in LIBRARY_CONDITIONS:
         sorted_ = c == "library"
         mem = ("\nTHE LIBRARY: you carry no memory between towns, but this universe has a library (location "
                "'library') holding what was learned in earlier towns"
@@ -221,6 +240,9 @@ def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: O
                + "Reading costs an action and a tick, so read only what your task needs: act('read', <shelf id>). "
                "Notes may be incomplete, and notes by different people may disagree or be wrong. Before you "
                "finish, you may leave a short general lesson with write_note(shelf, text).")
+    if getattr(w, "team", None) is not None and w.team.messages:
+        mem += ("\nTEAM: work out with your teammates who does which request. You can message a teammate "
+                "with tell(teammate, message); it costs an action.")
     if getattr(w, "testimony", None) is not None:
         mem += ("\nVILLAGERS: you carry no memory between towns, but you can ask any villager you meet what "
                 "their trade has taught them: act('ask', <villager id>). It costs an action. Not everyone is "
@@ -240,8 +262,10 @@ def build_agent(ctx: EpisodeCtx, model, settings, traj=None, oracle=None, flat: 
         tools.append(predict)
     if ctx.condition == "retrieval":
         tools.append(recall)
-    if ctx.condition in LIBRARY_CONDITIONS and getattr(ctx.world, "library", None) is not None:
+    if getattr(ctx.world, "library", None) is not None:
         tools.append(write_note)
+    if getattr(ctx.world, "team", None) is not None and ctx.world.team.messages:
+        tools.append(tell)
     return Agent[EpisodeCtx](
         name="explorer",
         instructions=build_instructions(ctx, traj, oracle, flat),
@@ -304,6 +328,7 @@ async def run_episode(
     flat = world.eager
     if library is not None and getattr(world, "library", None) is None:
         raise ValueError("library condition: grow the world with library=<LibraryArchive>")
+    team = getattr(world, "team", None)
     ctx = EpisodeCtx(world=world, condition=condition, seed=seed, retrieval=retrieval)
     agent = build_agent(ctx, model, settings, traj=traj, oracle=oracle, flat=flat)
     run_input: Any = "Begin. Current view:\n" + world.observe()
@@ -321,7 +346,8 @@ async def run_episode(
             status, error = "error", f"{type(e).__name__}: {e}"[:500]
         finally:
             ctx.commit_usage()
-        if result is None or world.done or world.out_of_budget or nudges >= max_nudges:
+        if result is None or world.done or world.out_of_budget or nudges >= max_nudges or (
+                team is not None and team.done):
             if result is not None and not world.done and not world.out_of_budget:
                 status = "gave_up"
             break
@@ -332,6 +358,8 @@ async def run_episode(
             "role": "user",
             "content": "The goal is not complete yet. Keep going: call a tool (observe, zoom_in, act ...).",
         }]
+    if team is not None:
+        team.finish(world.i)
     metrics = {
         "success": world.done,
         "status": status,

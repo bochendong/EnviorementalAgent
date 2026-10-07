@@ -71,6 +71,7 @@ class TownWorld:
         self.testimony = testimony
         self.liars: set[str] = set()
         self.asked: dict[str, int] = {}
+        self.clock_divisor, self._clock_acc = 1, 0
         self.pile_page = 0
         self.laws = seed.laws
         self.eager = eager
@@ -459,7 +460,7 @@ class TownWorld:
 
     def accessible(self, oid: str) -> bool:
         o = self.objs.get(oid)
-        return o is not None and (o.location == "inv" or o.location == self.agent_room)
+        return o is not None and (oid in self.inventory or o.location == self.agent_room)
 
     @property
     def goal(self) -> str | None:
@@ -721,7 +722,11 @@ class TownWorld:
         if not valid:
             self.invalid_actions += 1
         elif verb != "sleep":
-            msg += self._advance(1)
+            # with a team in town (worldseeds.town.team) the clock moves one tick per round of moves
+            self._clock_acc += 1
+            if self._clock_acc >= self.clock_divisor:
+                self._clock_acc = 0
+                msg += self._advance(1)
         if self.done:
             msg += (" TOWN BOARD COMPLETE: every request is done!" if self.requests
                     else f" GOAL COMPLETE: you hold {self.goal}.")

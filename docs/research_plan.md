@@ -96,7 +96,8 @@ notes sit on topic shelves, and reading costs actions and game time. The planned
 2. + 3. (implemented together, `--source-errors`): notes by other agents and villager testimony,
    each wrong at a controlled rate with consistent errors. Does the agent verify a claim by
    intervention before relying on it, and does it learn whom to trust?
-4. Several agents in one town: no sharing vs a shared library (stigmergy) vs direct messages.
+4. Several agents in one town (implemented, `--protocol team`): solo vs independent vs a shared
+   library (stigmergy) vs direct messages vs merged seeds.
 
 Suggested paper framing: run the main table on SeedVille, use the dungeon as the fully
 controlled replication, and (optionally) add one external benchmark (ScienceWorld/ALFWorld,

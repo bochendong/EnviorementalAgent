@@ -45,6 +45,9 @@ def main():
     p.add_argument("--rng-seed", type=int, default=0)
     p.add_argument("--source-errors", nargs="*", type=float, default=[],
                    help="town/board: error rates of library notes and villager testimony (one variant each)")
+    p.add_argument("--team-modes", nargs="+", default=["solo", "independent", "library", "messages", "merged"],
+                   choices=["solo", "independent", "library", "messages", "merged"],
+                   help="team protocol (board env): how teammates share what they learned")
     p.add_argument("--trusts", nargs="+", choices=["blind", "calibrated"], default=["blind", "calibrated"],
                    help="heuristic policy only: how the agent weighs second-hand claims")
     p.add_argument("--out", default="results/run")
@@ -54,7 +57,7 @@ def main():
         repeats=a.repeats, views=a.views, n_train=a.n_train, n_test=a.n_test, n_agents=a.n_agents,
         max_actions=a.max_actions, max_turns=a.max_turns, concurrency=a.concurrency, history_items=a.history_items, decay=a.decay,
         n_distractors=a.n_distractors, save_traces=a.save_traces, out_dir=a.out, rng_seed=a.rng_seed,
-        source_errors=a.source_errors, trusts=a.trusts,
+        source_errors=a.source_errors, trusts=a.trusts, team_modes=a.team_modes,
     )
     out = run_experiment(cfg)
     print(f"done -> {out}/episodes.jsonl")

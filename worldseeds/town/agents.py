@@ -636,9 +636,10 @@ class BoardHeuristicAgent(TownHeuristicAgent):
     It knows only what the board says (who wants what, who keeps what) plus what it observes;
     a seed (or the library) lets it predict which gifts land and where villagers are at midday."""
 
-    def __init__(self, *a, **kw):
+    def __init__(self, *a, prefer=(), **kw):
         super().__init__(*a, **kw)
         self.sleep_when_watered = False
+        self.prefer = set(prefer)  # request ids this agent takes on first (teams split the board)
 
     def _goal(self):
         return None
@@ -713,7 +714,10 @@ class BoardHeuristicAgent(TownHeuristicAgent):
                 h = w.objs[r["holder"]]
                 if GIFTING not in w.seed.blocks or h.state["friendship"] >= 1 or self._gift_for(h) is not None:
                     out.append((1, h))
-        return [v for _, v in sorted(out, key=lambda x: x[0])]
+        return [v for _, v in sorted(out, key=lambda x: (x[0], not self._mine(x[1])))]
+
+    def _mine(self, v) -> bool:
+        return any(r["id"] in self.prefer and v.id in (r["villager"], r["holder"]) for r in self.w.requests)
 
     def step(self) -> None:
         w = self.w

@@ -73,7 +73,7 @@ class LibraryArchive:
         """Several authors each write what ``seed`` is confident of; author ``a`` gets each law wrong
         with probability ``authors[a]`` (consistently: the same author is always wrong about the same
         law). Replaces those authors' earlier notes. Returns the number of wrong claims written."""
-        from .sources import describe, maybe_corrupt
+        from .sources import maybe_corrupt
 
         self.entries = [e for e in self.entries if e.author not in authors]
         wrong = 0

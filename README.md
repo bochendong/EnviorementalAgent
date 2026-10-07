@@ -90,7 +90,7 @@ python scripts/play.py --mode llm --condition oracle --blocks lockable powered -
           --universes 0 1 --views zoom flat --max-actions 60 --out $SCRATCH/worldseeds/results/try1
    tail -f logs/worldseeds-<jobid>.out     # vLLM log: logs/vllm-<jobid>.log
    ```
-4. **Pilot on the town board first** (2 jobs, a few hours): checks that Qwen is neither at 0 with
+4. **Pilot on the town board first** (3 jobs, a few hours): checks that Qwen is neither at 0 with
    the true laws nor at 1 without memory, how long a board episode takes, and how it handles
    wrong notes and testimony:
    ```bash
@@ -99,11 +99,17 @@ python scripts/play.py --mode llm --condition oracle --blocks lockable powered -
    ```
    If the true-laws condition stays near 0, make the board easier before the full study
    (fewer requests or more days: `board` / `days` in `worldseeds/envs.py`, `_board()`).
-5. **Full study** (95 GPU jobs, one per environment × protocol × universe; board and town also
-   get a library job and a source-reliability job):
+5. **Full study** (75 GPU jobs over 5 universes; the board gets 24 h per job, the others 12 h):
+
+   | env | jobs per universe |
+   |---|---|
+   | board | compgen (memory conditions), library, sources, team |
+   | town | compgen, persistence, law_shift, multiagent, curriculum, library |
+   | dungeon | compgen, persistence, law_shift, multiagent, curriculum |
+
    ```bash
    bash slurm/submit_all.sh
-   ENVS=board bash slurm/submit_all.sh                          # town board only (35 jobs)
+   ENVS=board bash slurm/submit_all.sh                          # town board only (20 jobs)
    MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 bash slurm/submit_all.sh    # scaling run (download it first via setup)
    python scripts/analyze.py $SCRATCH/worldseeds/results/qwen3-8b --curve
    ```
@@ -207,6 +213,36 @@ Heuristic agent, board, universes 1 and 3, 40 unseen towns (share of requests do
 
 At 50% error a library the agent believes blindly (0.37) is worse than no memory (0.49).
 
+### Teams on one board (`--protocol team`)
+
+Several agents (Ana, Bo, Cy, Di) live in the same town at the same time
+(`worldseeds/town/team.py`). Each has its own body: position, bag, what it has inspected, and
+action budget. The farm, coins, board and clock are shared. The clock moves one tick per round
+of moves, so a team gets more done per day. An agent in bed waits until everyone still working
+is in bed (or the day runs out).
+
+The protocol first lets each agent specialise: agent *a* plays its own towns containing block
+*a* (farming, gifting, shop, schedule) and learns its own seed. Then every test board is played
+once per sharing mode (`--team-modes`):
+
+| mode | who plays | what is shared |
+|---|---|---|
+| solo | agent 0 alone | nothing |
+| independent | whole team | nothing; each carries its own seed |
+| library | whole team | everyone's seed is in the library as signed notes (walk there to read) |
+| messages | whole team | `tell(teammate, message)` (one action per message) |
+| merged | whole team | everyone carries the merged seed (upper bound for sharing) |
+
+One row per team episode: `board_done`, `days_used`, `team_actions`, `agent_actions`,
+`messages`, `library_reads`. Heuristic teams (three agents, universes 1 and 3, 32 boards each):
+
+| solo | independent | library | messages | merged |
+|---|---|---|---|---|
+| 0.92 | 0.97 | 0.99 | 1.00 | 1.00 |
+
+(share of requests done; the heuristic splits the board by request number, an LLM team has to
+agree on it.)
+
 ### The library: memory that lives in the world
 
 With `library` / `library_flat` the agent carries **nothing** between towns. Instead, every
@@ -278,6 +314,7 @@ It renders the Python engine's state, so what you see is exactly what the agent 
 | `law_shift` | H5/RQ7: laws change mid-stream | seed with/without recency `decay` |
 | `multiagent` | RQ9: 4 specialised agents | `shared` vs `independent` seed |
 | `curriculum` | RQ10: seed-mutation curriculum | `curriculum` vs `uniform` sampling |
+| `team` | several agents on one town board (board env) | `solo` / `independent` / `library` / `messages` / `merged` |
 
 ## Sanity results (heuristic agent, CPU)
 

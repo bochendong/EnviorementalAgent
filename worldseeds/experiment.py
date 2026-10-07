@@ -29,7 +29,7 @@ def _seed(parts) -> int:
     return int(hashlib.sha1(repr(parts).encode()).hexdigest()[:8], 16)
 
 
-PROTOCOLS = ["compgen", "persistence", "law_shift", "multiagent", "curriculum"]
+PROTOCOLS = ["compgen", "persistence", "law_shift", "multiagent", "curriculum", "team"]
 
 
 @dataclass
@@ -57,6 +57,8 @@ class ExpConfig:
     # ask villagers, this share of whom are consistently wrong.
     source_errors: list[float] = field(default_factory=list)
     trusts: list[str] = field(default_factory=lambda: ["blind", "calibrated"])  # heuristic policy only
+    # team protocol (board env): how teammates share what they learned while specialising
+    team_modes: list[str] = field(default_factory=lambda: ["solo", "independent", "library", "messages", "merged"])
     out_dir: str = "results/run"
     rng_seed: int = 0
 
@@ -75,7 +77,8 @@ class Recorder:
             self._f.write(json.dumps(row) + "\n")
             self._f.flush()
             if self._t is not None and trace is not None:
-                self._t.write(json.dumps({"key": row["chain"], "episode": row["episode"], "trace": trace}) + "\n")
+                self._t.write(json.dumps({"key": row["chain"], "episode": row["episode"],
+                                          "variant": row.get("variant", ""), "trace": trace}) + "\n")
                 self._t.flush()
 
     def save_seed(self, chain: str, seed: LawSeed) -> None:
@@ -381,6 +384,101 @@ class Runner:
             for s in te:
                 await self.play(self._grow(s, view, mem), mem, chain, ep, "test", variant=variant, learn=False)
                 ep += 1
+
+    async def team_chain(self, u, cond, view, r):
+        """Specialise, then work one town board together. Each of ``n_agents`` agents first plays its own
+        towns containing its "home" block (agent a: block a), learning its own seed. Then every test town
+        is played once per sharing mode:
+            solo         agent 0 alone
+            independent  the whole team, each with its own seed, no communication
+            library      + everyone's seed written to the library as signed notes (go there to read)
+            messages     + teammates can message each other (tell)
+            merged       everyone carries the merged seed of the team (sharing upper bound)"""
+        c = self.cfg
+        if cond not in ("seed", "seed_llm") or self.env.name != "board":
+            return
+        from .town.team import TEAM_NAMES
+
+        laws = self.env.laws(u)
+        rng = random.Random(_seed(("team", c.rng_seed, u, r)))
+        train, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
+        n = max(2, min(c.n_agents, len(TEAM_NAMES)))
+        rounds = max(1, c.n_train // n)
+        mems = [self._mem(cond, laws) for _ in range(n)]
+        chain = f"{self.env.name}-team-u{u}-{cond}-{view}-r{r}"
+        ep = 0
+        for rd in range(rounds):
+            seeds = []
+            for a in range(n):
+                home = self.env.blocks[a % len(self.env.blocks)]
+                combo = rng.choice([cb for cb in train if home in cb])
+                seeds += self.env.seeds_for([combo], laws, 1, rng, n_distractors=c.n_distractors)
+            await asyncio.gather(*[
+                self.play(self._grow(s, view), mems[a], chain, ep + a, "train", variant=f"agent{a}",
+                          extra={"agent": a, "round": rd})
+                for a, s in enumerate(seeds)])
+            ep += n
+        for a, m in enumerate(mems):
+            self.rec.save_seed(f"{chain}-agent{a}", m.seed)
+        merged = self.env.seed_cls.from_dict(mems[0].seed.to_dict())
+        for m in mems[1:]:
+            merged.merge(m.seed)
+        te = self.env.seeds_for(test, laws, c.n_test, random.Random(c.rng_seed * 7 + u * 31 + r),
+                                n_distractors=c.n_distractors)
+        for s in te:
+            await asyncio.gather(*[self.play_team(s, view, [m.seed for m in mems], merged, mode, chain, ep, laws)
+                                   for mode in c.team_modes])
+            ep += 1
+
+    async def play_team(self, s, view, seeds, merged, mode, chain, ep, laws) -> dict:
+        from .town.library import LibraryArchive
+        from .town.team import TEAM_NAMES, Team, Teammate, run_heuristic_team
+
+        c = self.cfg
+        n = 1 if mode == "solo" else len(seeds)
+        lib = None
+        if mode == "library":
+            lib = LibraryArchive()
+            for a in range(n):
+                lib.write_notes(seeds[a], ep, {TEAM_NAMES[a]: 0.0})
+        world = self.env.grow(s, eager=(view == "flat"), max_actions=c.max_actions, library=lib)
+        team = Team(world, n, messages=(mode == "messages"))
+        carried = [merged] * n if mode == "merged" else seeds[:n]
+        try:
+            opt = self.env.oracle_steps(world.clone())
+        except Exception:
+            opt = None
+        team.activate(0)
+        tokens = [0, 0]
+        async with self.sem:
+            if c.policy == "heuristic":
+                metrics = run_heuristic_team(team, carried, rng_seed=ep, messages=(mode == "messages"))
+                traces = None
+            else:
+                from .agent import run_episode
+
+                outs = await asyncio.gather(*[
+                    run_episode(Teammate(team, i), "seed", self.model, self.settings, seed=carried[i],
+                                max_turns=c.max_turns, history_items=c.history_items)
+                    for i in range(n)])
+                metrics = team.metrics()
+                for m, _ in outs:
+                    tokens[0] += m["input_tokens"]
+                    tokens[1] += m["output_tokens"]
+                traces = [{"agent": TEAM_NAMES[i], "trace": ctx.trace} for i, (_, ctx) in enumerate(outs)]
+                metrics["status"] = ",".join(m["status"] for m, _ in outs)
+        row = {
+            "protocol": "team", "env": self.env.name, "policy": c.policy, "llm": self.llm_name, "chain": chain,
+            "condition": "seed", "view": view, "variant": mode, "phase": "test", "episode": ep,
+            "seed_id": s.id, "seed": s.to_dict(), "composition": s.composition, "n_blocks": len(s.blocks),
+            "n_rooms": s.n_rooms, "goal_index": 0, "oracle_steps": opt,
+            "actions": metrics["team_actions"], "invalid_actions": metrics["team_invalid_actions"],
+            "zoom_ops": 0, "nodes_grown": world.nodes_grown, "input_tokens": tokens[0], "output_tokens": tokens[1],
+            "status": metrics.get("status", "finished"), "error": None, "time": time.time(),
+            "library_reads": lib.reads if lib is not None else None, **metrics,
+        }
+        await self.rec.write(row, traces)
+        return row
 
     async def run(self) -> Path:
         fn = getattr(self, f"{self.cfg.protocol}_chain")

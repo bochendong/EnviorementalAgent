@@ -38,7 +38,7 @@ def test_shelves_exist_and_reading_costs_an_action():
     msg, ok = w.act("read", "shelf_farming")
     assert not ok and "not here" in msg  # must walk to the library first
     w.act("go", "library")
-    a, t = w.actions, w.tick
+    a = w.actions
     msg, ok = w.act("read", "shelf_farming")
     assert ok and "empty" in msg
     assert w.actions == a + 1 and lib.reads == 1
