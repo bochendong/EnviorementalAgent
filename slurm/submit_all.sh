@@ -29,6 +29,12 @@ for u in $UNIVERSES; do
   # RQ9: shared vs independent seeds
   sbatch --job-name="ws-$env-multi-u$u" slurm/serve_and_run.sh --protocol multiagent \
     --conditions seed --n-agents 4 --universes "$u" --n-train 16 --n-test 12 "${COMMON[@]}" --out "$OUT/$env/multiagent/u$u"
+  # memory that lives in the world: categorized library vs one unsorted pile vs seed in the head (town only)
+  if [ "$env" = town ]; then
+  sbatch --job-name="ws-$env-library-u$u" slurm/serve_and_run.sh --protocol compgen \
+    --conditions none seed library library_flat --universes "$u" --n-train 24 --n-test 16 "${COMMON[@]}" \
+    --out "$OUT/$env/library/u$u"
+  fi
   # RQ10: mutation curriculum vs uniform
   sbatch --job-name="ws-$env-curr-u$u" slurm/serve_and_run.sh --protocol curriculum \
     --conditions seed --universes "$u" --n-train 24 --n-test 12 "${COMMON[@]}" --out "$OUT/$env/curriculum/u$u"

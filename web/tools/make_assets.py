@@ -723,6 +723,86 @@ def well():
     return c
 
 
+# library shelves: one bookcase per memory topic, books in the topic's colours, a plaque with its icon
+SHELF_TOPICS = {  # topic -> (book colours, plaque icon colour)
+    "farming": (["#3f9e48", "#6cbf4a", "#8a5a2c", "#e8c23a"], "#3f9e48"),
+    "gifting": (["#c0392b", "#e86a8a", "#f2b632", "#d94f6a"], "#d94f6a"),
+    "schedule": (["#3f6fd6", "#5a8fe8", "#2a4a9e", "#9ab8f0"], "#3f6fd6"),
+    "shop": (["#e8a82c", "#c08a2a", "#f2d06a", "#8a5a1a"], "#e8a82c"),
+    "general": (["#8b52c8", "#7a7a86", "#a8a8b4", "#5a3a8a"], "#8b52c8"),
+}
+
+
+def _plaque_icon(c, topic, x, y, col):
+    """5x5 topic icon drawn on the bookcase plaque."""
+    if topic == "farming":  # sprout
+        c.vline(x + 2, y + 2, 3, col); c.px[x + 1, y + 1] = col; c.px[x, y] = col; c.px[x + 3, y + 1] = col
+        c.px[x + 4, y] = col
+    elif topic == "gifting":  # heart
+        for dx, dy in [(0, 1), (1, 0), (3, 0), (4, 1), (1, 1), (2, 1), (3, 1), (0, 2), (1, 2), (2, 2), (3, 2),
+                       (4, 2), (1, 3), (2, 3), (3, 3), (2, 4)]:
+            c.px[x + dx, y + dy] = col
+    elif topic == "schedule":  # clock
+        c.ellipse(x + 2, y + 2, 2, 2, col); c.px[x + 2, y + 1] = hx("#fff6df"); c.px[x + 2, y + 2] = hx("#fff6df")
+        c.px[x + 3, y + 2] = hx("#fff6df")
+    elif topic == "shop":  # coin
+        c.ellipse(x + 2, y + 2, 2, 2, col); c.vline(x + 2, y + 1, 3, hx("#fff3c4"))
+    else:  # question mark
+        c.hline(x + 1, y, 3, col); c.px[x + 3, y + 1] = col; c.px[x + 2, y + 2] = col; c.px[x + 2, y + 4] = col
+
+
+def shelf_sprite(topic, full=True):
+    books, icon = SHELF_TOPICS[topic]
+    W = WOOD
+    c = C(32, 40)
+    c.rect(0, 6, 32, 34, W[1]); c.rect(2, 8, 28, 30, W[0])
+    rng = random.Random(sum(map(ord, topic)))
+    for shelf in range(3):
+        y = 9 + shelf * 10
+        x = 3
+        limit = 28 if full else 3 + rng.choice((4, 7, 9))
+        while x < limit:
+            w = rng.choice((2, 3))
+            h = rng.choice((6, 7, 8))
+            c.rect(x, y + 8 - h, w, h, hx(rng.choice(books)))
+            c.vline(x, y + 8 - h, 1, hx("#fff6df") if rng.random() < .3 else hx(rng.choice(books)))
+            x += w + (0 if rng.random() < .6 else 1)
+        c.rect(2, y + 8, 28, 2, W[2])
+    # plaque on top
+    c.rect(9, 0, 14, 8, W[3]); c.rect(10, 1, 12, 6, hx("#f1d9a7")); c.hline(9, 0, 14, W[4])
+    _plaque_icon(c, topic, 14, 1, hx(icon))
+    c.outline()
+    return c
+
+
+def scroll_icon():
+    """a note flying from shelf to reader"""
+    c = C(12, 12)
+    c.rect(2, 2, 8, 8, hx("#fff6df")); c.rect(1, 1, 10, 2, hx("#e5c588")); c.rect(1, 9, 10, 2, hx("#e5c588"))
+    c.hline(3, 5, 6, hx("#8a6a44")); c.hline(3, 7, 5, hx("#8a6a44"))
+    c.outline()
+    return c
+
+
+def note_pile(full=True):
+    """the unsorted pile: a table heaped with loose notes and books"""
+    c = C(32, 32)
+    W = WOOD
+    c.rect(1, 12, 30, 9, W[3]); c.hline(1, 12, 30, W[4]); c.rect(1, 21, 30, 3, W[1])
+    c.rect(3, 24, 3, 8, W[1]); c.rect(26, 24, 3, 8, W[1])
+    rng = random.Random(7)
+    n = 9 if full else 3
+    for k in range(n):
+        x, y = rng.randrange(3, 22), rng.randrange(3 if full else 8, 11)
+        if rng.random() < .55:
+            c.rect(x, y, 7, 5, hx("#fff6df")); c.hline(x + 1, y + 1, 5, hx("#b8a07a")); c.hline(x + 1, y + 3, 4, hx("#b8a07a"))
+        else:
+            c.rect(x, y, 8, 3, hx(rng.choice(["#c0392b", "#3f6fd6", "#3f9e48", "#8b52c8", "#e8a82c"])))
+            c.hline(x, y + 1, 8, hx("#fff6df"))
+    c.outline()
+    return c
+
+
 def make_objects():
     a = Atlas(512)
     for f in range(3):
@@ -759,6 +839,10 @@ def make_objects():
     for k, c in scenes.furniture().items():
         a.add(k, c)
     a.add("pier_post", scenes.pier_post()); a.add("boat", scenes.boat())
+    for topic in SHELF_TOPICS:
+        a.add(f"shelf_{topic}", shelf_sprite(topic)); a.add(f"shelf_{topic}_empty", shelf_sprite(topic, False))
+    a.add("shelf_pile", note_pile()); a.add("shelf_pile_empty", note_pile(False))
+    a.add("scroll", scroll_icon())
     a.save(OUT / "objects.png", OUT / "objects.json")
 
 

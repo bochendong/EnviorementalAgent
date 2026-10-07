@@ -405,10 +405,12 @@ class MapBuilder:
             for x in range(x0, x0 + w):
                 self.taken.add((x, y))
 
-    def location(self, name, rect, anchor, items, people):
+    def location(self, name, rect, anchor, items, people, shelves=()):
         x, y, w, h = rect
+        extra = {"shelves": ";".join(f"{a},{b}" for a, b in shelves)} if shelves else {}
         self.obj(name, "location", x, y, w, h, anchor=f"{anchor[0]},{anchor[1]}",
-                 items=";".join(f"{a},{b}" for a, b in items), people=";".join(f"{a},{b}" for a, b in people))
+                 items=";".join(f"{a},{b}" for a, b in items), people=";".join(f"{a},{b}" for a, b in people),
+                 **extra)
         for p in list(items) + list(people) + [anchor]:
             self.taken.add(tuple(p))
 
@@ -654,8 +656,8 @@ INTERIORS = {  # kind -> (wallpaper, floor, [(sprite, x, bottom_row, solid_w, so
                                         ("f_pot2", 14, 4, 1, 1), ("f_plant", 1, 9, 1, 1), ("f_plant", 14, 9, 1, 1)]),
     "clinic": ("blue", "floor_check", [("f_clinicbed", 1, 6, 1, 2), ("f_clinicbed", 3, 6, 1, 2), ("f_counter", 9, 5, 3, 1),
                                        ("f_cabinet", 13, 3, 1, 1), ("f_cabinet", 14, 3, 1, 1), ("f_plant", 14, 9, 1, 1)]),
-    "library": ("green", "floor_dark", [("f_bookshelf", 1, 4, 2, 1), ("f_bookshelf", 3, 4, 2, 1), ("f_bookshelf", 11, 4, 2, 1),
-                                        ("f_bookshelf", 13, 4, 2, 1), ("f_table", 6, 8, 2, 1), ("f_chair", 5, 8, 1, 1),
+    "library": ("green", "floor_dark", [("f_bookshelf", 1, 4, 2, 1), ("f_bookshelf", 3, 4, 2, 1), ("f_bookshelf", 9, 4, 2, 1),
+                                        ("f_bookshelf", 11, 4, 2, 1), ("f_bookshelf", 13, 4, 2, 1), ("f_table", 6, 8, 2, 1), ("f_chair", 5, 8, 1, 1),
                                         ("f_chair", 8, 8, 1, 1), ("f_rug", 5, 11, 0, 0)]),
     "inn": ("rose", "floor_wood", [("f_bar", 1, 5, 4, 1), ("barrel_orange", 6, 4, 1, 1), ("f_fireplace", 11, 2, 2, 1),
                                    ("f_table", 10, 8, 2, 1), ("f_chair", 9, 8, 1, 1), ("f_chair", 12, 8, 1, 1),
@@ -679,7 +681,9 @@ def interior_map(kind):
     m.obj("doormat", "furniture", 7, 12, sprite="f_doormat", solid="0,0")
     m.location("here", (0, 3, 16, 9), (8, 10),
                items=[(4, 7), (6, 6), (9, 6), (11, 7), (4, 10), (12, 10), (3, 8), (13, 8)],
-               people=[(8, 6), (5, 8), (11, 8), (7, 9), (10, 10), (3, 10)])
+               people=[(8, 6), (5, 8), (11, 8), (7, 9), (10, 10), (3, 10)],
+               # memory shelves (game objects) stand over the decorative bookcases: (left tile, bottom row)
+               shelves=[(x, b) for sp, x, b, _, _ in furn if sp == "f_bookshelf"] if kind == "library" else ())
     m.exit("@parent", 8, 11, (0, 0))
     m.save()
 

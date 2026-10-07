@@ -20,6 +20,7 @@ import copy
 import random
 
 from ..world import Event, Obj, Room, _h
+from .library import CATEGORIES as LIB_CATEGORIES, entry_line
 from .seed import (
     CATEGORIES,
     COLORS,
@@ -50,8 +51,10 @@ def phase_of(tick: int) -> str:
 
 
 class TownWorld:
-    def __init__(self, seed: TownSeed, eager: bool = False, max_actions: int = 60):
+    def __init__(self, seed: TownSeed, eager: bool = False, max_actions: int = 60, library=None):
         self.seed = seed
+        self.library = library  # LibraryArchive or None: memory that lives in the town library
+        self.pile_page = 0
         self.laws = seed.laws
         self.eager = eager
         self.max_actions = max_actions
@@ -122,8 +125,19 @@ class TownWorld:
             if wid not in self.rooms:
                 self.rooms[wid] = Room(wid, wname)
             villagers.append(v)
+        if self.library is not None:
+            self.rooms.setdefault("library", Room("library", "the library"))
+            if self.library.mode == "flat":
+                self._add(Obj("shelf_pile", "shelf", "pile of unsorted notes", "", fine={"category": "pile"},
+                              location="library", critical=True))
+            else:
+                for cat in LIB_CATEGORIES:
+                    self._add(Obj(f"shelf_{cat}", "shelf", f"{cat} shelf", "", fine={"category": cat},
+                                  location="library", critical=True))
         order = ["farm", "plaza", "shop", "forest"] + [w for w, _ in WORKPLACE.values() if w in self.rooms] + \
             [h for h in self.rooms if h.startswith("home")]
+        if "library" in self.rooms and "library" not in order:
+            order.insert(4, "library")
         self.rooms = {k: self.rooms[k] for k in order}
         self.nodes_grown += len(self.rooms)
         self._add(Obj("bed", "bed", "bed", "", location="farm", critical=True))
@@ -328,6 +342,8 @@ class TownWorld:
             d["crop"] = o.fine["crop"]
         if o.kind == "plot":
             d["crop"] = o.state["crop"]
+        if o.kind == "shelf":
+            d["category"] = o.fine["category"]
         if oid in self.seen_fine:
             if o.kind == "villager":
                 d["job"] = o.fine["job"]
@@ -343,14 +359,17 @@ class TownWorld:
                 f"Talk to {v.name} to learn what they need before they hand it over.")
 
     def verbs_text(self) -> str:
-        return ("go <location>, take <item>, buy <item> (in the shop, costs coins), give <villager> with <item>, "
-                "talk <villager>, plant <plot> with <seeds>, water <plot> (hold a watering can), "
-                "harvest <plot> (also clears dead plants), sleep (at the farm: ends the day), wait (one tick)")
+        v = ("go <location>, take <item>, buy <item> (in the shop, costs coins), give <villager> with <item>, "
+             "talk <villager>, plant <plot> with <seeds>, water <plot> (hold a watering can), "
+             "harvest <plot> (also clears dead plants), sleep (at the farm: ends the day), wait (one tick)")
+        if self.library is not None:
+            v += ", read <shelf> (in the library)"
+        return v
 
     def prompt_spec(self) -> dict:
         return {
-            "intro": ("You are a newcomer farmer in SeedVille, a small town with your farm, a plaza, a general "
-                      "store, the forest edge and the villagers' houses."),
+            "intro": ("You are a newcomer farmer in SeedVille, a town with your farm, a plaza, a general store, "
+                      "the villagers' workplaces, the forest edge, the mountain, the beach and the villagers' houses."),
             "goal": self.task_text(),
             "levels": "town map -> locations -> objects and people",
             "details": "(a plot's soil, a villager's job and friendship, an item's category)",
@@ -546,6 +565,8 @@ class TownWorld:
         o = O[target]
         if not self.accessible(target):
             return f"{target} is not here (you are at {self.agent_room}).", False, False
+        if verb in ("read", "write"):
+            return self._library_action(verb, o, instrument, ev)
         tool = None
         if instrument:
             if instrument not in O or instrument not in self.inventory:
@@ -650,6 +671,32 @@ class TownWorld:
             return f"Nothing ripe in {o.id}.", False, True
         return (f"Unknown verb '{verb}'. Valid: go, take, buy, give, talk, plant, water, harvest, sleep, wait."), False, False
 
+    # ================================================================ library
+    def _library_action(self, verb, shelf, text, ev) -> tuple[str, bool, bool]:
+        if shelf.kind != "shelf" or self.library is None:
+            return f"You cannot {verb} {shelf.id}.", False, False
+        lib, cat = self.library, shelf.fine["category"]
+        if verb == "write":
+            if not text:
+                return "Write what? Use write <shelf> with <note text>.", False, False
+            e = lib.add_note("general" if cat == "pile" else cat, text, author="agent", episode=self.seed.surface_seed)
+            ev.effects = [{"wrote": e.text, "category": e.category}]
+            return f"You add a note to the {shelf.name}: \"{e.text}\"", True, True
+        lib.reads += 1
+        if cat == "pile":
+            n = lib.pages()
+            k = self.pile_page % n
+            self.pile_page += 1
+            entries = lib.page(k)
+            head = f"You leaf through the unsorted notes (page {k + 1} of {n}):"
+        else:
+            entries = lib.shelf(cat)
+            head = f"You read the {cat} shelf ({len(entries)} notes):"
+        ev.effects = [{"category": e.category, "claims": [list(c) for c in e.claims], "text": e.text} for e in entries]
+        if not entries:
+            return f"The {shelf.name} is empty.", True, True
+        return head + "\n" + "\n".join(entry_line(e) for e in entries), True, True
+
     # ================================================================ episodes
     def next_goal(self, reset_agent: bool = True) -> bool:
         if self.goal_index + 1 >= len(self.goals):
@@ -667,6 +714,10 @@ class TownWorld:
         for o in self.objs.values():
             d = {"id": o.id, "kind": o.kind, "name": o.name, "color": o.color, "location": o.location,
                  "label": self._label(o), "seen": o.id in self.seen_fine}
+            if o.kind == "shelf":
+                d["category"] = o.fine["category"]
+                d["entries"] = (len(self.library.entries) if o.fine["category"] == "pile"
+                                else len(self.library.shelf(o.fine["category"]))) if self.library else 0
             if o.kind in ("item", "crop"):
                 d["category"] = o.fine["category"]
             if o.kind == "seeds":

@@ -10,6 +10,9 @@ section 23 of the program seed:
     seed        learned world seed (symbolic) + predict()    Seed + Grow + Zoom + Consolidate
     seed_llm    seed + free-text rules from an LLM consolidator
     oracle      the true laws are given                      upper bound
+    library     (town) memory lives on topic shelves in the town library; the agent must walk
+                there and read(); it may also leave notes with write_note()
+    library_flat  same archive as one unsorted pile, read page by page
 
 View modes: ``zoom`` (hierarchical, lazily grown) vs ``flat`` (everything at full
 detail, no zoom tools) for the adaptive-resolution hypothesis H3.
@@ -39,7 +42,8 @@ from .world import World
 
 set_tracing_disabled(True)  # no OpenAI key on Nibi; traces would try to upload
 
-CONDITIONS = ["none", "trajectory", "retrieval", "seed", "seed_llm", "oracle"]
+CONDITIONS = ["none", "trajectory", "retrieval", "seed", "seed_llm", "oracle", "library", "library_flat"]
+LIBRARY_CONDITIONS = ("library", "library_flat")
 
 
 @dataclass
@@ -144,6 +148,20 @@ def recall(ctx: RunContextWrapper[EpisodeCtx], query: str) -> str:
     return _log(c, "recall", {"query": query}, "\n".join(hits) if hits else "(nothing relevant remembered)")
 
 
+@function_tool
+def write_note(ctx: RunContextWrapper[EpisodeCtx], shelf: str, text: str) -> str:
+    """Leave a note on a library shelf for whoever comes to this universe's library later
+    (including you, in later towns). You must be in the library. Uses one action.
+
+    Args:
+        shelf: shelf id shown in the library, e.g. shelf_farming, shelf_gifting, shelf_schedule.
+        text: one short, general lesson about the laws (not about this town's ids).
+    """
+    w = ctx.context.world
+    msg, _ = w.act("write", shelf, text)
+    return _log(ctx.context, "write_note", {"shelf": shelf, "text": text}, msg)
+
+
 def _stop_when_done(ctx: RunContextWrapper[EpisodeCtx], results) -> ToolsToFinalOutputResult:
     w = ctx.context.world
     if w.done:
@@ -191,6 +209,15 @@ def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: O
         mem = "\nLOGS OF YOUR PREVIOUS EPISODES (other worlds, same universe):\n" + traj.render()
     elif c == "retrieval":
         mem = "\nYou have an episodic memory of previous worlds in this universe; query it with recall(query)."
+    elif c in LIBRARY_CONDITIONS and getattr(w, "library", None) is not None:
+        sorted_ = c == "library"
+        mem = ("\nTHE LIBRARY: you carry no memory between towns, but this universe has a library (location "
+               "'library') holding what was learned in earlier towns"
+               + (", sorted onto shelves by topic (farming, gifting, schedule, shop, general). "
+                  if sorted_ else ", as one unsorted pile of notes read a page at a time. ")
+               + "Reading costs an action and a tick, so read only what your task needs: act('read', <shelf id>). "
+               "Notes may be incomplete. Before you finish, you may leave a short general lesson with "
+               "write_note(shelf, text).")
     p = w.prompt_spec()
     view_help = FLAT_HELP if flat else ZOOM_HELP.format(details=p["details"])
     return BASE_INSTRUCTIONS.format(view_help=view_help, budget=w.max_actions, memory=mem,
@@ -205,6 +232,8 @@ def build_agent(ctx: EpisodeCtx, model, settings, traj=None, oracle=None, flat: 
         tools.append(predict)
     if ctx.condition == "retrieval":
         tools.append(recall)
+    if ctx.condition in LIBRARY_CONDITIONS and getattr(ctx.world, "library", None) is not None:
+        tools.append(write_note)
     return Agent[EpisodeCtx](
         name="explorer",
         instructions=build_instructions(ctx, traj, oracle, flat),
@@ -259,11 +288,14 @@ async def run_episode(
     retrieval: RetrievalMemory | None = None,
     traj: TrajectoryMemory | None = None,
     oracle: OracleSeed | None = None,
+    library=None,
     max_turns: int = 80,
     history_items: int = 40,
     max_nudges: int = 3,
 ) -> tuple[dict[str, Any], EpisodeCtx]:
     flat = world.eager
+    if library is not None and getattr(world, "library", None) is None:
+        raise ValueError("library condition: grow the world with library=<LibraryArchive>")
     ctx = EpisodeCtx(world=world, condition=condition, seed=seed, retrieval=retrieval)
     agent = build_agent(ctx, model, settings, traj=traj, oracle=oracle, flat=flat)
     run_input: Any = "Begin. Current view:\n" + world.observe()
@@ -304,6 +336,7 @@ async def run_episode(
         "tool_calls": ctx.tool_calls,
         "predict_calls": ctx.predict_calls,
         "recall_calls": ctx.recall_calls,
+        "notes_written": sum(1 for t in ctx.trace if t["tool"] == "write_note"),
         "llm_requests": ctx.llm_requests,
         "input_tokens": ctx.input_tokens,
         "output_tokens": ctx.output_tokens,

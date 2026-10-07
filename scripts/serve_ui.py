@@ -19,17 +19,38 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from worldseeds.town import TownLaws, TownSeed, grow_town  # noqa: E402
-from worldseeds.town.agents import TownHeuristicAgent, TownOracle  # noqa: E402
+from worldseeds.town.agents import TownHeuristicAgent, TownOracle, TownSeedMemory  # noqa: E402
+from worldseeds.town.library import LibraryArchive  # noqa: E402
 from worldseeds.town.replay import Recorder, demo_replays  # noqa: E402
-from worldseeds.town.seed import TOWN_BLOCKS  # noqa: E402
+from worldseeds.town.seed import TOWN_BLOCKS, town_seeds_for, town_split  # noqa: E402
+
+LIBRARIES: dict[tuple[int, str], LibraryArchive] = {}  # (universe, mode) -> archive; your notes persist here
+
+
+def library_for(universe: int, mode: str) -> LibraryArchive | None:
+    """The universe's library, written by a librarian from 20 earlier towns (built once per universe)."""
+    if mode not in ("categorized", "flat"):
+        return None
+    if (universe, mode) not in LIBRARIES:
+        laws = TownLaws.from_index(universe)
+        train, _ = town_split(random.Random(universe))
+        mem = TownSeedMemory()
+        for s in town_seeds_for(train, laws, 20, random.Random(universe + 100)):
+            w = grow_town(s)
+            TownHeuristicAgent(w, mem).run()
+            mem.consolidate_events(w.events)
+        lib = LibraryArchive(mode=mode)
+        lib.update_from_seed(mem, 20, author="librarian")
+        LIBRARIES[(universe, mode)] = lib
+    return LIBRARIES[(universe, mode)]
 
 
 class Game:
-    def __init__(self, universe: int, blocks, surface_seed: int, n_villagers: int = 8):
+    def __init__(self, universe: int, blocks, surface_seed: int, n_villagers: int = 8, library: str = "categorized"):
         self.seed = TownSeed(laws=TownLaws.from_index(universe), blocks=tuple(blocks), surface_seed=surface_seed,
                              n_villagers=n_villagers)
         self.universe = universe
-        self.world = grow_town(self.seed, max_actions=200)
+        self.world = grow_town(self.seed, max_actions=200, library=library_for(universe, library))
 
     def payload(self, message: str = "") -> dict:
         return {"live": True, "state": self.world.snapshot(), "message": message, "seed": self.seed.to_dict(),
@@ -77,7 +98,7 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/new":
             blocks = [b for b in body.get("blocks", TOWN_BLOCKS) if b in TOWN_BLOCKS] or ["farming"]
             GAME = Game(int(body.get("universe", 0)), blocks, int(body.get("surface_seed", random.randrange(1 << 30))),
-                        max(2, min(12, int(body.get("n_villagers", 8)))))
+                        max(2, min(12, int(body.get("n_villagers", 8)))), str(body.get("library", "categorized")))
             self._json(GAME.payload(GAME.world.observe()))
         elif self.path == "/api/act":
             msg, ok = w.act(body.get("verb"), body.get("target"), body.get("instrument"))

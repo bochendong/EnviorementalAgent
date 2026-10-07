@@ -78,6 +78,9 @@ class Recorder:
         (d / f"{chain}.json").write_text(json.dumps(seed.to_dict(), indent=1))
 
 
+LIBRARY_CONDITIONS = ("library", "library_flat")
+
+
 class Memories:
     """All memories a chain carries across episodes."""
 
@@ -87,6 +90,16 @@ class Memories:
         self.retrieval = RetrievalMemory() if condition == "retrieval" else None
         self.traj = TrajectoryMemory() if condition == "trajectory" else None
         self.oracle = OracleSeed(laws) if condition == "oracle" else None
+        # library conditions (town only): memory lives in the world, on shelves the agent must go and read.
+        # ``lib_seed`` is the librarian: it consolidates each town's events and rewrites the shelves.
+        self.library = self.lib_seed = None
+        if condition in LIBRARY_CONDITIONS:
+            if env.name != "town":
+                raise ValueError(f"condition {condition!r} needs env 'town'")
+            from .town.library import LibraryArchive
+
+            self.library = LibraryArchive(mode="flat" if condition == "library_flat" else "categorized")
+            self.lib_seed = env.seed_cls(decay=decay)
         self.laws = laws
 
     def set_laws(self, laws) -> None:
@@ -121,17 +134,20 @@ class Runner:
             opt = self.env.oracle_steps(world)
         except Exception:
             opt = None
+        reads0 = mem.library.reads if mem.library is not None else 0
+        lib0 = mem.library.to_dict() if mem.library is not None else None  # shelves as the agent found them
         async with self.sem:
             if self.cfg.policy == "heuristic":
                 sd = mem.seed if cond in ("seed", "seed_llm") else (
                     self.env.seed_cls.certain_of(mem.laws) if cond == "oracle" else None)
                 metrics, trace = self.env.heuristic(world, sd, random.Random(episode)).run(), None
+                # (library conditions: sd is None and the agent fills its head by reading the shelves)
             else:
                 from .agent import run_episode
 
                 metrics, ctx = await run_episode(
                     world, cond, self.model, self.settings, seed=mem.seed, retrieval=mem.retrieval,
-                    traj=mem.traj, oracle=mem.oracle, max_turns=self.cfg.max_turns,
+                    traj=mem.traj, oracle=mem.oracle, library=mem.library, max_turns=self.cfg.max_turns,
                     history_items=self.cfg.history_items,
                 )
                 trace = ctx.trace
@@ -152,6 +168,13 @@ class Runner:
             row["seed_laws_confident"] = len(known)
             row["seed_laws_correct"] = sum(1 for v in known if v)
             row["seed_rules"] = len(mem.seed.rules)
+        if mem.library is not None:
+            correct, scored = mem.library.accuracy(self.env.seed_cls.truth(mem.laws))
+            row["library_reads"] = mem.library.reads - reads0
+            row["library_entries"] = len(mem.library.entries)
+            row["library_notes"] = sum(1 for e in mem.library.entries if e.source == "note")
+            row["library_claims_correct"], row["library_claims"] = correct, scored
+            row["library"] = lib0
         await self.rec.write(row, trace)
         return row
 
@@ -165,13 +188,18 @@ class Runner:
 
                 lines = "\n".join(ev.line() for ev in world.events if ev.valid)[-6000:]
                 await llm_consolidate(mem.seed, lines, self.model, self.cons_settings)
+        if mem.library is not None:
+            mem.lib_seed.consolidate_events(world.events)
+            mem.lib_seed.worlds_seen += 1
+            mem.library.update_from_seed(mem.lib_seed, episode, author="librarian")
         if mem.retrieval is not None:
             mem.retrieval.add_events(world.events, tag)
         if mem.traj is not None:
             mem.traj.add_events(world.events, tag)
 
-    def _grow(self, s, view: str):
-        return self.env.grow(s, eager=(view == "flat"), max_actions=self.cfg.max_actions)
+    def _grow(self, s, view: str, mem: Memories | None = None):
+        kw = {"library": mem.library} if mem is not None and mem.library is not None else {}
+        return self.env.grow(s, eager=(view == "flat"), max_actions=self.cfg.max_actions, **kw)
 
     def _mem(self, cond, laws, decay=None) -> Memories:
         return Memories(cond, laws, self.env, self.cfg.decay if decay is None else decay)
@@ -180,7 +208,9 @@ class Runner:
         c = self.cfg
         conds = c.conditions
         if c.policy == "heuristic":
-            conds = [x for x in conds if x in ("none", "seed", "oracle")]
+            conds = [x for x in conds if x in ("none", "seed", "oracle", *LIBRARY_CONDITIONS)]
+        if c.env != "town":
+            conds = [x for x in conds if x not in LIBRARY_CONDITIONS]
         for u in c.universes:
             for cond in conds:
                 for view in c.views:
@@ -200,10 +230,10 @@ class Runner:
         chain = f"{self.env.name}-compgen-u{u}-{cond}-{view}-r{r}"
         ep = 0
         for s in tr:
-            await self.play(self._grow(s, view), mem, chain, ep, "train")
+            await self.play(self._grow(s, view, mem), mem, chain, ep, "train")
             ep += 1
         for s in te:
-            await self.play(self._grow(s, view), mem, chain, ep, "test", learn=False)
+            await self.play(self._grow(s, view, mem), mem, chain, ep, "test", learn=False)
             ep += 1
         if mem.seed:
             self.rec.save_seed(chain, mem.seed)
@@ -220,10 +250,10 @@ class Runner:
             chain = f"{self.env.name}-persistence-u{u}-{cond}-{view}-{variant}-r{r}"
             ep = 0
             for s in seeds:
-                world = self._grow(s, view)
+                world = self._grow(s, view, mem)
                 for g in range(s.n_goals):
                     if variant == "reset":
-                        world = self._grow(s, view)
+                        world = self._grow(s, view, mem)
                         world.goal_index = g
                     await self.play(world, mem, chain, ep, f"goal{g}", variant=variant)
                     ep += 1
@@ -245,7 +275,7 @@ class Runner:
             for phase, laws, n in (("before", laws_a, c.n_train), ("after", laws_b, c.n_train)):
                 mem.set_laws(laws)
                 for s in self.env.seeds_for(train, laws, n, rng, n_distractors=c.n_distractors):
-                    await self.play(self._grow(s, view), mem, chain, ep, phase, variant=variant)
+                    await self.play(self._grow(s, view, mem), mem, chain, ep, phase, variant=variant)
                     ep += 1
 
     async def multiagent_chain(self, u, cond, view, r):
@@ -302,7 +332,7 @@ class Runner:
                     k = rng.randint(1, min(4, len(self.env.blocks)))
                     blocks = tuple(rng.sample(self.env.blocks, k))
                     seed = self.env.make_seed(laws, blocks, rng, n_distractors=c.n_distractors)
-                row = await self.play(self._grow(seed, view), mem, chain, ep, "train", variant=variant,
+                row = await self.play(self._grow(seed, view, mem), mem, chain, ep, "train", variant=variant,
                                       extra={"curriculum_blocks": len(seed.blocks)})
                 ep += 1
                 if variant == "curriculum":
@@ -313,7 +343,7 @@ class Runner:
                         seed = seed.mutate(rng, "surface")
                     seed = self.env.normalize(seed)
             for s in te:
-                await self.play(self._grow(s, view), mem, chain, ep, "test", variant=variant, learn=False)
+                await self.play(self._grow(s, view, mem), mem, chain, ep, "test", variant=variant, learn=False)
                 ep += 1
 
     async def run(self) -> Path:

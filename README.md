@@ -133,6 +133,40 @@ day: crops grow overnight and you wake at the farm. A plot's soil and a villager
 only visible after `zoom_in`. Universe 0 follows common sense (bakers like food); the
 others are shuffled, so the model can't rely on Stardew-style prior knowledge.
 
+### The library: memory that lives in the world
+
+With `library` / `library_flat` the agent carries **nothing** between towns. Instead, every
+town of a universe has a library (location `library`). After each town a librarian
+consolidates what happened and rewrites the shelves (`worldseeds/town/library.py`):
+
+* `library`: one shelf per topic (`farming`, `gifting`, `schedule`, `shop`, `general`).
+  `read shelf_farming` lists every note on that topic.
+* `library_flat`: the same notes as one unsorted pile, read four notes per page.
+
+Reading is an `act` like any other, so it costs an action and a tick of game time, and the
+agent has to walk to the library first. That makes the value of *organising* memory
+measurable: same content, different retrieval cost. Agents can also leave notes with
+`write_note(shelf, text)` (LLM tool) or `act("write", shelf, text)`. Notes are attributed
+(`note by <author>`), which is the hook for the next steps: notes with a controlled error
+rate (trust), wrong testimony from villagers, and several agents sharing one library.
+
+Each result row records `library_reads`, `library_entries`, `library_notes`,
+`library_claims_correct/library_claims` and the shelves as the agent found them (`library`),
+so `scripts/export_replay.py` can replay library runs exactly.
+
+Heuristic agent, 30 unseen test towns after 40 training towns:
+
+| condition | universe 1 success | actions | reads | universe 3 success |
+|---|---|---|---|---|
+| none | 0.27 | 57.0 | 0 | 0.27 |
+| seed (in the agent's head) | 0.80 | 44.7 | 0 | 0.57 |
+| library, sorted shelves | 0.77 | 45.0 | 2.4 | 0.53 |
+| library, unsorted pile | 0.63 | 48.5 | 4.0 | 0.50 |
+
+In Play mode (`serve_ui.py`) choose the library type when you grow a town. The universe's
+library persists across towns while the server runs, so notes you write are still there in
+the next town.
+
 ### SeedVille game client (Phaser 3)
 
 `web/` is a 2D game client built with [Phaser 3](https://phaser.io) (vendored in `web/vendor`, MIT).

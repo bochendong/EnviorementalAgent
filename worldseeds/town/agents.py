@@ -269,9 +269,17 @@ class TownSeedMemory(LawSeed):
 class TownHeuristicAgent:
     """Explores, collects, farms and gifts by simple rules; uses a seed's predict() if given."""
 
-    def __init__(self, world: TownWorld, seed: TownSeedMemory | None = None, rng: random.Random | None = None):
+    def __init__(self, world: TownWorld, seed: TownSeedMemory | None = None, rng: random.Random | None = None,
+                 read_library: bool | None = None):
         self.w = world
         self.seed = seed
+        # with a library, the agent's head starts empty and it fills ``seed`` by reading shelves
+        self.read_library = (world.library is not None) if read_library is None else read_library
+        if self.read_library and self.seed is None:
+            self.seed = TownSeedMemory()
+        self.lib_done = not self.read_library
+        self.lib_read: set[str] = set()
+        self.pages_read = 0
         self.rng = rng or random.Random(0)
         self.failed_plant: set[tuple] = set()  # (crop, plot)
         self.given: set[str] = set()
@@ -312,8 +320,42 @@ class TownHeuristicAgent:
     def _need_crop(self, v) -> bool:
         return FARMING in self.w.seed.blocks and not v.state["got_crop"] and not self._held("crop")
 
+    def _absorb(self) -> None:
+        ev = self.w.events[-1] if self.w.events else None
+        if ev is None or ev.verb != "read":
+            return
+        for e in ev.effects:
+            for sp, val in e.get("claims", []):
+                if sp in self.seed.hyps:
+                    self.seed._vote_exclusive(sp, val, 5.0)
+
+    def _library_step(self) -> bool:
+        """Go to the library and read what the town's mechanics need. Returns True if it acted."""
+        w = self.w
+        if w.agent_room != "library":
+            self._act("go", "library")
+            return True
+        shelves = {o.fine["category"]: o.id for o in w.objs.values() if o.kind == "shelf"}
+        if "pile" in shelves:
+            if self.pages_read < w.library.pages():
+                self.pages_read += 1
+                self._act("read", shelves["pile"])
+                self._absorb()
+                return True
+        else:
+            for cat in [b for b in ("farming", "gifting", "schedule") if b in w.seed.blocks]:
+                if cat not in self.lib_read and cat in shelves:
+                    self.lib_read.add(cat)
+                    self._act("read", shelves[cat])
+                    self._absorb()
+                    return True
+        self.lib_done = True
+        return False
+
     def step(self) -> None:
         w, v = self.w, self._goal()
+        if not self.lib_done and self._library_step():
+            return
         here = w.room_objects(w.agent_room)
         # 1. villager here: give useful things, then talk
         if v.location == w.agent_room:

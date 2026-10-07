@@ -81,6 +81,19 @@ things the dungeon lacks:
   whether the seed beats the model's prior (Stardew-style knowledge from pretraining).
 * **Long-lived persistence:** planted fields and friendships carry over between goals.
 
+**Memory in the world (the library).** Many questions are about memory that is *not* inside the
+agent: using what another agent learned, deciding whether to trust it, and sharing it among
+several agents. SeedVille's library makes that memory a place: consolidated laws and agents'
+notes sit on topic shelves, and reading costs actions and game time. The planned sequence:
+
+1. Sorted shelves vs one unsorted pile vs seed in the head vs nothing (implemented:
+   conditions `library`, `library_flat`).
+2. Notes written by other agents with a controlled error rate: does the agent verify a claim
+   by intervention before relying on it?
+3. Villagers give testimony from their job (the smith knows the mine), some of it wrong:
+   testimony vs intervention as sources of causal knowledge.
+4. Several agents in one town: no sharing vs a shared library (stigmergy) vs direct messages.
+
 Suggested paper framing: run the main table on SeedVille, use the dungeon as the fully
 controlled replication, and (optionally) add one external benchmark (ScienceWorld/ALFWorld,
 or a Crafter/TextCraft Minecraft-style task with shuffled recipes) for outside validity.

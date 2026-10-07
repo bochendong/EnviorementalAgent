@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from worldseeds.town.library import LibraryArchive  # noqa: E402
 from worldseeds.town.replay import replay_trace  # noqa: E402
 
 
@@ -41,7 +42,8 @@ def main():
     traces = [json.loads(x) for x in (d / "traces.jsonl").open() if x.strip()]
     tr = next(t for t in traces if t["key"] == a.chain and t["episode"] == a.episode)
     title = f"{row['llm']} · {row['condition']} · episode {row['episode']}"
-    rep = replay_trace(row["seed"], tr["trace"], title=title)
+    lib = LibraryArchive.from_dict(row["library"]) if row.get("library") else None
+    rep = replay_trace(row["seed"], tr["trace"], title=title, library=lib)
     Path(a.out).write_text(json.dumps(rep))
     print(f"wrote {a.out}: {len(rep['frames'])} frames, success={rep['success']}")
 

@@ -50,7 +50,7 @@ def main():
     for r in rows:
         groups[tuple(r.get(k, "") for k in a.by)].append(r)
     hdr = a.by + ["n", "success", "95% CI", "actions", "act/oracle", "invalid", "zoom", "in_tok", "out_tok",
-                  "laws_ok/conf", "errors"]
+                  "laws_ok/conf", "reads", "errors"]
     print("| " + " | ".join(hdr) + " |")
     print("|" + "---|" * len(hdr))
     for key in sorted(groups, key=lambda k: tuple(str(x) for x in k)):
@@ -64,10 +64,15 @@ def main():
         if any("seed_laws_confident" in r for r in g):
             last = g[-1]
             laws = f"{last.get('seed_laws_correct', 0)}/{last.get('seed_laws_confident', 0)}"
+        elif any("library_claims" in r for r in g):  # library: correct/total claims on the shelves
+            last = g[-1]
+            laws = f"{last.get('library_claims_correct', 0)}/{last.get('library_claims', 0)} lib"
+        reads = mean([r["library_reads"] for r in g if "library_reads" in r])
         print("| " + " | ".join(str(x) for x in key) + f" | {n} | {k / n:.2f} | [{lo:.2f},{hi:.2f}] | "
               f"{mean([r['actions'] for r in g]):.1f} | {ratio:.2f} | {mean([r['invalid_actions'] for r in g]):.1f} | "
               f"{mean([r['zoom_ops'] for r in g]):.1f} | {mean([r['input_tokens'] for r in g]):.0f} | "
               f"{mean([r['output_tokens'] for r in g]):.0f} | {laws} | "
+              f"{'' if reads != reads else f'{reads:.1f}'} | "
               f"{sum(1 for r in g if r.get('status') == 'error')} |")
     if a.curve:
         print("\nLearning curves (success rate per block of 4 episodes, train phases):")
