@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+"""Summarise hive runs (protocol 'hive'): how much each sharing mode lets the agents know.
+
+    python scripts/analyze_hive.py results/hive [more dirs...] [--curve]
+
+Per variant (mode-nN[-fF]), at the last wave: laws an average agent can use (its view), laws in the
+global seed, laws the hive saw at all (collective), wrong laws, messages; then how a newcomer does
+with the shared memory on held-out test worlds. --curve adds known laws per wave.
+"""
+
+import argparse
+import json
+from collections import defaultdict
+from pathlib import Path
+
+
+def load(paths, name):
+    rows = []
+    for p in paths:
+        for f in Path(p).rglob(name):
+            rows += [json.loads(x) for x in f.open() if x.strip()]
+    return rows
+
+
+def mean(xs):
+    xs = list(xs)
+    return sum(xs) / len(xs) if xs else float("nan")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("paths", nargs="+")
+    ap.add_argument("--curve", action="store_true")
+    a = ap.parse_args()
+    waves = load(a.paths, "hive.jsonl")
+    eps = [r for r in load(a.paths, "episodes.jsonl") if r.get("protocol") == "hive"]
+    if not waves:
+        print("no hive rows")
+        return
+    by = defaultdict(list)
+    for r in waves:
+        by[(r["env"], r["hive_mode"], r["hive_n"], r["faulty"])].append(r)
+    test = defaultdict(list)
+    for r in eps:
+        if r["phase"] == "test":
+            test[(r["env"], r["hive_mode"], r["hive_n"], r["faulty"])].append(r)
+    hdr = ["env", "mode", "agents", "faulty", "waves", "laws", "known/agent", "wrong/agent", "known global",
+           "wrong global", "merged raw", "messages", "test success", "test board"]
+    print("| " + " | ".join(hdr) + " |")
+    print("|" + "---|" * len(hdr))
+    order = ["isolated", "groups", "hive", "sync", "hive_verified", "hive_directed", "hive_full"]
+    for key in sorted(by, key=lambda k: (k[0], k[3], order.index(k[1]) if k[1] in order else 99, k[2])):
+        rs = by[key]
+        last = max(r["wave"] for r in rs)
+        fin = [r for r in rs if r["wave"] == last]
+        t = test.get(key, [])
+        board = [r["board_done"] / r["board_total"] for r in t if r.get("board_total")]
+        print(f"| {key[0]} | {key[1]} | {key[2]} | {key[3]:g} | {last} | {fin[0]['total_laws']} | "
+              f"{mean(r['known_agents'] for r in fin):.1f} | {mean(r['wrong_agents'] for r in fin):.1f} | "
+              f"{mean(r['known_global'] for r in fin):.1f} | {mean(r['wrong_global'] for r in fin):.1f} | "
+              f"{mean(r['known_collective'] for r in fin):.1f} | {mean(r['messages'] for r in fin):.0f} | "
+              f"{mean(bool(r['success']) for r in t):.2f} | {mean(board):.2f} |")
+    if a.curve:
+        print("\nLaws an average agent knows, per wave:")
+        for key in sorted(by, key=lambda k: (k[0], k[3], order.index(k[1]) if k[1] in order else 99, k[2])):
+            per = defaultdict(list)
+            for r in by[key]:
+                per[r["wave"]].append(r["known_agents"])
+            print(f"  {key[1]:14s} n={key[2]:<4} f={key[3]:g}: " + " ".join(f"{mean(per[w]):5.1f}" for w in sorted(per)))
+
+
+if __name__ == "__main__":
+    main()

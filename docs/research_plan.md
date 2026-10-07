@@ -98,6 +98,11 @@ notes sit on topic shelves, and reading costs actions and game time. The planned
    intervention before relying on it, and does it learn whom to trust?
 4. Several agents in one town (implemented, `--protocol team`): solo vs independent vs a shared
    library (stigmergy) vs direct messages vs merged seeds.
+5. The hive (implemented, `--protocol hive`): many agents in parallel worlds of a big universe
+   (`--n-crops`, long-tailed laws) sharing one memory. Each element of large agent swarms
+   (groups, a consolidator, steering toward open questions, verification) is a switch; measured:
+   knowledge per agent and in the shared seed vs number of agents, messages, wrong laws with
+   faulty agents. Question: what makes many agents "know what all of them found"?
 
 Suggested paper framing: run the main table on SeedVille, use the dungeon as the fully
 controlled replication, and (optionally) add one external benchmark (ScienceWorld/ALFWorld,

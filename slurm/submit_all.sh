@@ -8,7 +8,8 @@
 #
 #   board    compgen (memory conditions), library, sources, team          4 jobs per universe
 #   town     compgen, persistence, law_shift, multiagent, curriculum,
-#            library                                                       6 jobs per universe
+#            library, hive (Qwen agents sharing one memory, 16 crops)      7 jobs per universe
+# Big heuristic hives (up to 1024 agents) need no GPU: sbatch slurm/hive_cpu.sh
 #   dungeon  compgen, persistence, law_shift, multiagent, curriculum       5 jobs per universe
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -76,6 +77,10 @@ for u in $UNIVERSES; do
     submit "ws-town-library-u$u" "$TIME" --protocol compgen \
       --conditions none seed library library_flat --universes "$u" --n-train 24 --n-test 16 "${R[@]}" \
       "${COMMON[@]}" --out "$OUT/town/library/u$u"
+    # many agents in parallel towns, one memory: sharing modes x hive size x faulty agents
+    submit "ws-town-hive-u$u" 1-00:00 --protocol hive --conditions seed --n-crops 16 \
+      --hive-sizes 1 4 16 --hive-faulty 0 0.25 --hive-waves 6 --n-test 8 \
+      --universes "$u" "${COMMON[@]}" --out "$OUT/town/hive/u$u"
   fi
 done
 done

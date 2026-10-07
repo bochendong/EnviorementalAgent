@@ -8,7 +8,17 @@ import json
 import random
 from dataclasses import asdict, dataclass, field, replace
 
-CROPS = ["turnip", "melon", "pumpkin", "berry"]
+CROPS = ["turnip", "melon", "pumpkin", "berry"]  # the four crops of every universe (and of the pixel UI)
+# more crops for large law spaces (``TownLaws.from_index(u, n_crops=...)``, hive experiments)
+EXTRA_CROPS = ["carrot", "potato", "onion", "garlic", "leek", "radish", "beet", "cabbage", "kale", "lettuce",
+               "spinach", "pea", "bean", "corn", "wheat", "barley", "oat", "rye", "rice", "squash", "zucchini",
+               "cucumber", "pepper", "tomato", "eggplant", "okra", "artichoke", "asparagus", "celery", "fennel",
+               "parsnip", "turnip_greens", "yam", "taro", "hops", "grape", "strawberry", "blueberry", "cranberry",
+               "raspberry", "gooseberry", "currant", "rhubarb", "sunflower", "poppy", "tulip_bulb", "saffron",
+               "ginger", "chili", "mint", "basil", "sage", "thyme", "lavender", "cotton", "flax", "tea", "coffee",
+               "cocoa", "vanilla"]
+MAX_CROPS = len(CROPS) + len(EXTRA_CROPS)
+TOWN_CROPS = 4  # crops (seed packets) present in one town
 SOILS = ["loam", "clay", "sand", "peat"]
 SEASONS = ["spring", "summer", "fall", "winter"]
 JOBS = ["baker", "smith", "florist", "miner", "fisher", "doctor", "librarian", "innkeeper"]
@@ -50,6 +60,10 @@ class TownLaws:
     midday_place: str = "plaza"  # where villagers spend middays (with the schedule block)
 
     @property
+    def crops(self) -> list[str]:
+        return [c for c, _ in self.crop_soil]
+
+    @property
     def soil_for(self) -> dict[str, str]:
         return dict(self.crop_soil)
 
@@ -62,26 +76,36 @@ class TownLaws:
         return dict(self.job_likes)
 
     @classmethod
-    def sample(cls, rng: random.Random) -> "TownLaws":
+    def sample(cls, rng: random.Random, n_crops: int = 4) -> "TownLaws":
         soils, seasons = SOILS[:], SEASONS[:]
         rng.shuffle(soils)
         rng.shuffle(seasons)
         cats = CATEGORIES * 2  # every category is liked by exactly two jobs
         rng.shuffle(cats)
-        return cls(
+        laws = cls(
             crop_soil=tuple(zip(CROPS, soils)),
             crop_season=tuple(zip(CROPS, seasons)),
             gift_attr=rng.choice(GIFT_ATTRS),
             job_likes=tuple(zip(JOBS, cats)),
             midday_place=rng.choice(MIDDAY_PLACES),
         )
+        return laws.with_crops(n_crops, rng)
+
+    def with_crops(self, n_crops: int, rng: random.Random) -> "TownLaws":
+        """Add ``n_crops - 4`` extra crops, each with its own random soil and season (a bigger law space)."""
+        if n_crops <= len(CROPS):
+            return self
+        extra = EXTRA_CROPS[:min(n_crops, MAX_CROPS) - len(CROPS)]
+        return replace(self, crop_soil=self.crop_soil + tuple((c, rng.choice(SOILS)) for c in extra),
+                       crop_season=self.crop_season + tuple((c, rng.choice(SEASONS)) for c in extra))
 
     @classmethod
-    def from_index(cls, idx: int) -> "TownLaws":
-        """Universe 0 is the 'common-sense' one (bakers like food, ...); others are shuffled."""
+    def from_index(cls, idx: int, n_crops: int = 4) -> "TownLaws":
+        """Universe 0 is the 'common-sense' one (bakers like food, ...); others are shuffled.
+        With ``n_crops > 4`` the universe also has that many crops (the extra ones always random)."""
         if idx == 0:
-            return cls()
-        return cls.sample(random.Random(20_000 + idx))
+            return cls().with_crops(n_crops, random.Random(30_000))
+        return cls.sample(random.Random(20_000 + idx), n_crops)
 
     def mutate(self, rng: random.Random, n: int = 1) -> "TownLaws":
         d = asdict(self)
@@ -143,6 +167,9 @@ class TownSeed:
     # (harvest / friendship / fetch / buy), to finish within ``days`` days, instead of one trophy
     board: int = 0
     days: int = 7
+    # crops in this town (seed packets); empty = drawn from the universe's crops (all four when it has four;
+    # otherwise TOWN_CROPS of them, common crops more often than rare ones: a long tail of laws)
+    crops: tuple[str, ...] = ()
 
     def __post_init__(self):
         bad = [b for b in self.blocks if b not in TOWN_BLOCKS]
@@ -159,17 +186,39 @@ class TownSeed:
     def season(self) -> str:
         return random.Random(self.surface_seed ^ 0x5EA5).choice(SEASONS)
 
+    def town_crops(self) -> list[str]:
+        """Crops (seed packets) present in this town: the long tail of a big universe."""
+        all_crops = self.laws.crops
+        rng = random.Random(self.surface_seed ^ 0xC0C0)
+        weights = [1.0 / (i + 1) for i in range(len(all_crops))]  # Zipf: crop i is seen ~1/(i+1) as often
+        if self.crops:  # chosen crops (e.g. by a hive director)
+            picked = [c for c in self.crops if c in all_crops][:TOWN_CROPS] or [all_crops[0]]
+        elif len(all_crops) <= TOWN_CROPS:
+            return list(all_crops)
+        else:
+            picked = []
+            while len(picked) < TOWN_CROPS:
+                c = rng.choices(all_crops, weights)[0]
+                if c not in picked:
+                    picked.append(c)
+        if not any(self.laws.season_for[c] == self.season for c in picked):  # one crop must be growable
+            fits = [c for c in all_crops if self.laws.season_for[c] == self.season and c not in picked]
+            picked[-1] = rng.choices(fits, [weights[all_crops.index(c)] for c in fits])[0]
+        return picked
+
     def to_dict(self) -> dict:
         return {"env": "town", "laws": self.laws.to_dict(), "blocks": list(self.blocks),
                 "n_villagers": self.n_villagers, "n_distractors": self.n_distractors,
                 "n_goals": self.n_goals, "surface_seed": self.surface_seed,
-                **({"board": self.board, "days": self.days} if self.board else {})}
+                **({"board": self.board, "days": self.days} if self.board else {}),
+                **({"crops": list(self.crops)} if self.crops else {})}
 
     @classmethod
     def from_dict(cls, d: dict) -> "TownSeed":
         d = {k: v for k, v in d.items() if k != "env"}
         d["laws"] = TownLaws.from_dict(d["laws"])
         d["blocks"] = tuple(d["blocks"])
+        d["crops"] = tuple(d.get("crops", ()))
         return cls(**d)
 
     @property

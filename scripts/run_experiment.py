@@ -48,6 +48,13 @@ def main():
     p.add_argument("--team-modes", nargs="+", default=["solo", "independent", "library", "messages", "merged"],
                    choices=["solo", "independent", "library", "messages", "merged"],
                    help="team protocol (board env): how teammates share what they learned")
+    p.add_argument("--n-crops", type=int, default=4, help="town/board: crops per universe (law space size)")
+    p.add_argument("--hive-modes", nargs="+", default=["isolated", "groups", "hive", "sync", "hive_verified",
+                                                       "hive_directed", "hive_full"],
+                   help="hive protocol: how the agents share memory (see worldseeds/hive.py)")
+    p.add_argument("--hive-sizes", nargs="+", type=int, default=[1, 4, 16], help="hive: numbers of agents")
+    p.add_argument("--hive-faulty", nargs="+", type=float, default=[0.0], help="hive: shares of faulty agents")
+    p.add_argument("--hive-waves", type=int, default=8, help="hive: worlds each agent plays")
     p.add_argument("--trusts", nargs="+", choices=["blind", "calibrated"], default=["blind", "calibrated"],
                    help="heuristic policy only: how the agent weighs second-hand claims")
     p.add_argument("--out", default="results/run")
@@ -58,6 +65,8 @@ def main():
         max_actions=a.max_actions, max_turns=a.max_turns, concurrency=a.concurrency, history_items=a.history_items, decay=a.decay,
         n_distractors=a.n_distractors, save_traces=a.save_traces, out_dir=a.out, rng_seed=a.rng_seed,
         source_errors=a.source_errors, trusts=a.trusts, team_modes=a.team_modes,
+        n_crops=a.n_crops, hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty,
+        hive_waves=a.hive_waves,
     )
     out = run_experiment(cfg)
     print(f"done -> {out}/episodes.jsonl")

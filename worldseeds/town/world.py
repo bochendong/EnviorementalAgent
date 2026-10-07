@@ -32,7 +32,6 @@ from .library import CATEGORIES as LIB_CATEGORIES, entry_line
 from .seed import (
     CATEGORIES,
     COLORS,
-    CROPS,
     FARMING,
     GIFTING,
     ITEM_NAMES,
@@ -89,6 +88,7 @@ class TownWorld:
         self.goals: list[dict] = []
         self.goal_index = 0
         self.requests: list[dict] = []  # town board mode (seed.board > 0)
+        self.town_crops = seed.town_crops()
         self.actions = self.invalid_actions = self.zoom_ops = self.nodes_grown = 0
         self.home_of: dict[str, str] = {}
         self.requirements: list[tuple] = []
@@ -178,21 +178,22 @@ class TownWorld:
                               location="farm", critical=True))
             self._add(Obj(self._new_id("t"), "tool", "watering can", rng.choice(COLORS), location="farm",
                           critical=True))
-            good = next(c for c in CROPS if L.season_for[c] == self.season)
-            self.crop_color = {c: rng.choice(COLORS) for c in CROPS}
+            crops = self.town_crops
+            good = next(c for c in crops if L.season_for[c] == self.season)
+            self.crop_color = {c: rng.choice(COLORS) for c in crops}
             packs = {}
-            for c in CROPS:
+            for c in crops:
                 packs[c] = self._add(Obj(self._new_id("s"), "seeds", f"{c} seeds", "", fine={"crop": c},
                                          state={"uses": max(1, s.n_goals, s.board) + 1}, location="farm", critical=True))
             if SHOP in s.blocks:
-                decoy = rng.choice([c for c in CROPS if c != good])
+                decoy = rng.choice([c for c in crops if c != good])
                 for c in (good, decoy):
                     packs[c].state.update(for_sale=True, price=SEED_PRICE)
                     packs[c].location = "shop"
                 shop_needed.append(packs[good])
             self.requirements.append(("grow", good, L.soil_for[good]))
         else:
-            self.crop_color = {c: rng.choice(COLORS) for c in CROPS}
+            self.crop_color = {c: rng.choice(COLORS) for c in self.town_crops}
 
         if s.board:
             self._build_board(villagers, found_spots, shop_needed)

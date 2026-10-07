@@ -15,7 +15,7 @@ so a careful agent can learn whom to trust by checking claims against its own ex
 from __future__ import annotations
 
 from ..world import _h
-from .seed import CATEGORIES, CROPS, GIFT_ATTRS, MIDDAY_PLACES, SEASONS, SOILS
+from .seed import CATEGORIES, GIFT_ATTRS, MIDDAY_PLACES, SEASONS, SOILS
 
 NOTE_AUTHORS = ["Ada", "Ben", "Cleo"]
 
@@ -73,7 +73,8 @@ def testimony(world, v, k: int) -> list[tuple[str, str]]:
         claims.append((f"likes.{job}", L.likes[job]))
     topic = JOB_TOPIC[job]
     for j in range(2):  # two crops per answer, a different pair each time you ask
-        crop = CROPS[(2 * k + j + _h(v.id)) % len(CROPS)]
+        crops = world.town_crops  # villagers talk about the crops grown around here
+        crop = crops[(2 * k + j + _h(v.id)) % len(crops)]
         if topic == "season":
             claims.append((f"season.{crop}", L.season_for[crop]))
         elif topic == "soil":

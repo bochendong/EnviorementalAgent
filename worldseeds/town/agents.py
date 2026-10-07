@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 
-from ..memory import LawSeed
+from ..memory import Hyp, LawSeed
 from .seed import CATEGORIES, CROPS, FARMING, GIFTING, JOBS, MIDDAY_PLACES, SCHEDULE, SEASONS, SHOP, SOILS, TownLaws
 from .world import TownWorld
 
@@ -59,7 +59,7 @@ class TownOracle:
 
     def grow_crop(self) -> str:
         w = self.w
-        good = next(c for c in CROPS if w.laws.season_for[c] == w.season)
+        good = next(c for c in w.town_crops if w.laws.season_for[c] == w.season)
         plot = next(o for o in w.objs.values() if o.kind == "plot" and o.fine["soil"] == w.laws.soil_for[good])
         seeds = next(o for o in w.objs.values() if o.kind == "seeds" and o.fine["crop"] == good)
         can = next(o for o in w.objs.values() if o.kind == "tool" and o.name == "watering can")
@@ -183,10 +183,84 @@ TOWN_SPACES = {
 }
 
 
+def _crop_space(sp: str):
+    if sp.startswith("soil."):
+        return SOILS
+    if sp.startswith("season."):
+        return SEASONS
+    return None
+
+
 class TownSeedMemory(LawSeed):
-    """Learned seed for SeedVille, consolidated only from perceived evidence."""
+    """Learned seed for SeedVille, consolidated only from perceived evidence.
+
+    The four standard crops have spaces from the start; a universe with more crops gets a soil and
+    a season space for each further crop the first time evidence (or a claim) about it arrives."""
 
     SPACES = TOWN_SPACES
+
+    def __init__(self, decay: float = 1.0):
+        self.SPACES = dict(TOWN_SPACES)  # per instance: grows with the crops this seed has met
+        super().__init__(decay)
+
+    def ensure(self, sp: str) -> bool:
+        """Make sure hypothesis space ``sp`` exists (creating crop spaces on demand)."""
+        if sp in self.hyps:
+            return True
+        vals = _crop_space(sp)
+        if vals is None:
+            return False
+        self.SPACES[sp] = vals
+        self.hyps[sp] = {h: Hyp() for h in vals}
+        return True
+
+    def _vote(self, space, hyp, ok, w=1.0):
+        if self.ensure(space):
+            super()._vote(space, hyp, ok, w)
+
+    def _vote_exclusive(self, space, hyp, w=1.0):
+        if self.ensure(space):
+            super()._vote_exclusive(space, hyp, w)
+
+    def confident(self, space, thresh=0.75, min_evidence=1.0):
+        if space not in self.hyps:
+            return None
+        return super().confident(space, thresh, min_evidence)
+
+    def recovery(self, laws) -> dict:
+        """Per law of ``laws`` (all crops included): recovered? (None = no confident belief)."""
+        truth = self.truth(laws)
+        return {sp: (None if self.confident(sp) is None else self.confident(sp) == truth[sp]) for sp in truth}
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        m = cls(decay=d.get("decay", 1.0))
+        for sp in d["hyps"]:
+            m.ensure(sp)
+        for sp, hs in d["hyps"].items():
+            for h, (sup, ag) in hs.items():
+                m.hyps[sp][h] = Hyp(sup, ag)
+        m.rules = list(d.get("rules", []))
+        m.worlds_seen = d.get("worlds_seen", 0)
+        m.events_seen = d.get("events_seen", 0)
+        return m
+
+    def merge(self, other: "LawSeed") -> None:
+        for sp in other.hyps:
+            self.ensure(sp)
+        super().merge(other)
+
+    @classmethod
+    def certain_of(cls, laws, strength: float = 50.0):
+        m = cls()
+        for sp, val in cls.truth(laws).items():
+            m.ensure(sp)
+            for h in m.hyps[sp]:
+                m.hyps[sp][h] = Hyp(strength, 0.0) if h == val else Hyp(0.0, strength)
+        return m
+
+    def crops(self) -> list[str]:
+        return [sp[5:] for sp in self.SPACES if sp.startswith("soil.")]
 
     @staticmethod
     def truth(laws: TownLaws) -> dict[str, str]:
@@ -248,10 +322,10 @@ class TownSeedMemory(LawSeed):
 
     def render_laws(self) -> list[str]:
         lines = []
-        soil = [f"{c}->{self.confident(f'soil.{c}')}" for c in CROPS if self.confident(f"soil.{c}")]
+        soil = [f"{c}->{self.confident(f'soil.{c}')}" for c in self.crops() if self.confident(f"soil.{c}")]
         if soil:
             lines.append("- [farming] Crops only survive in their soil: " + ", ".join(soil) + ".")
-        season = [f"{c}->{self.confident(f'season.{c}')}" for c in CROPS if self.confident(f"season.{c}")]
+        season = [f"{c}->{self.confident(f'season.{c}')}" for c in self.crops() if self.confident(f"season.{c}")]
         if season:
             lines.append("- [farming] Crops only grow in their season: " + ", ".join(season) + ".")
         ga = self.confident("gift_attr")
@@ -389,7 +463,7 @@ class TownHeuristicAgent:
             for e in ev.effects:
                 src = e.get("source", "note:?")
                 for sp, val in e.get("claims", []):
-                    if sp in TOWN_SPACES:
+                    if sp in TOWN_SPACES or _crop_space(sp) is not None:
                         self.heard.append((src, sp, val))
         self._n_absorbed = len(evs)
         self._refresh()

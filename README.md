@@ -90,7 +90,7 @@ python scripts/play.py --mode llm --condition oracle --blocks lockable powered -
           --universes 0 1 --views zoom flat --max-actions 60 --out $SCRATCH/worldseeds/results/try1
    tail -f logs/worldseeds-<jobid>.out     # vLLM log: logs/vllm-<jobid>.log
    ```
-4. **Pilot on the town board first** (3 jobs, a few hours): checks that Qwen is neither at 0 with
+4. **Pilot on the town board first** (4 jobs, a few hours): checks that Qwen is neither at 0 with
    the true laws nor at 1 without memory, how long a board episode takes, and how it handles
    wrong notes and testimony:
    ```bash
@@ -99,12 +99,13 @@ python scripts/play.py --mode llm --condition oracle --blocks lockable powered -
    ```
    If the true-laws condition stays near 0, make the board easier before the full study
    (fewer requests or more days: `board` / `days` in `worldseeds/envs.py`, `_board()`).
-5. **Full study** (75 GPU jobs over 5 universes; the board gets 24 h per job, the others 12 h):
+5. **Full study** (80 GPU jobs over 5 universes; board and hive jobs get 24 h, the others 12 h),
+   plus one CPU job for big heuristic hives (`sbatch slurm/hive_cpu.sh`):
 
    | env | jobs per universe |
    |---|---|
    | board | compgen (memory conditions), library, sources, team |
-   | town | compgen, persistence, law_shift, multiagent, curriculum, library |
+   | town | compgen, persistence, law_shift, multiagent, curriculum, library, hive |
    | dungeon | compgen, persistence, law_shift, multiagent, curriculum |
 
    ```bash
@@ -213,6 +214,57 @@ Heuristic agent, board, universes 1 and 3, 40 unseen towns (share of requests do
 
 At 50% error a library the agent believes blindly (0.37) is worse than no memory (0.49).
 
+### The hive: many agents, many worlds, one memory (`--protocol hive`)
+
+How should thousands of parallel agents share what they learn, so that each of them knows what
+all of them found? Large agent swarms (e.g. the ~10,000-agent Navier–Stokes run reported in
+September 2026) are organised as groups that talk internally, a consolidator that merges the
+groups' intermediate results and sends them back out, people steering agents toward open
+questions, and a final verifier. `worldseeds/hive.py` turns each of those into a switch:
+
+| mode | groups share | global consolidation | verify before accepting | director |
+|---|---|---|---|---|
+| isolated | - | never | - | - |
+| groups | within groups of 4 | never | - | - |
+| hive | within groups of 4 | every 2 waves | - | - |
+| sync | everyone, every wave | every wave | - | - |
+| hive_verified | within groups of 4 | every 2 waves | 2 agents agree, 2:1 majority | - |
+| hive_directed | within groups of 4 | every 2 waves | - | worlds chosen to cover the least-known laws |
+| hive_full | within groups of 4 | every 2 waves | yes | yes |
+
+Every agent plays its own world each *wave*. `--hive-faulty 0.25` makes a quarter of the agents
+report consistently wrong findings. A new agent is then tested with the hive's shared memory.
+Results go to `hive.jsonl` (one row per wave: laws known per agent, in the global seed, wrong
+laws, messages); summarise with `python scripts/analyze_hive.py <dir> --curve`.
+
+For the hive to have something to learn, universes can be made bigger: `--n-crops 64` gives 64
+crops, each with its own soil and season law (138 laws in all). Towns get 4 crops each, common
+crops far more often than rare ones (a long tail), so rare laws need many worlds to be found.
+The default universes (4 crops) are unchanged.
+
+Heuristic agents, board, 64 crops (138 laws), 10 waves, universe 1 (laws an average agent knows /
+wrong laws in the shared memory):
+
+| mode | 4 agents | 16 agents | 64 agents | 64 agents, 25% faulty |
+|---|---|---|---|---|
+| isolated | 18 | 17 | 15 | 11 |
+| groups | 38 | 37 | 36 | 24 |
+| hive | 38 | 78 | 126 / 0 wrong | 72 / 7 wrong |
+| sync | 38 | 78 | 126 / 0 wrong | 73 / 8 wrong |
+| hive_verified | 38 | 49 | 90 / 0 wrong | 65 / 2 wrong |
+| hive_directed | 66 | 115 | 132 / 0 wrong | 82 / 0 wrong |
+| hive_full | 71 | 92 | 138 / 0 wrong | 124 / 0 wrong |
+
+Without sharing, more agents do not make any agent wiser; with sharing, knowledge scales with
+the number of agents; directing exploration to what is still unknown is worth about 4x more
+agents; and with faulty agents only verification keeps the shared memory clean (at 1,024 agents
+with 25% faulty, `sync` stalls at 81 laws, `hive_full` reaches 137 of 138 with none wrong).
+
+```bash
+sbatch slurm/hive_cpu.sh        # heuristic hives of 1..1024 agents on CPU (~5 h)
+# Qwen hives (1, 4, 16 agents) are part of slurm/submit_all.sh (town env) and slurm/pilot_board.sh
+```
+
 ### Teams on one board (`--protocol team`)
 
 Several agents (Ana, Bo, Cy, Di) live in the same town at the same time
@@ -315,6 +367,7 @@ It renders the Python engine's state, so what you see is exactly what the agent 
 | `multiagent` | RQ9: 4 specialised agents | `shared` vs `independent` seed |
 | `curriculum` | RQ10: seed-mutation curriculum | `curriculum` vs `uniform` sampling |
 | `team` | several agents on one town board (board env) | `solo` / `independent` / `library` / `messages` / `merged` |
+| `hive` | many agents in parallel worlds sharing one memory (town/board) | hive modes × sizes × faulty share |
 
 ## Sanity results (heuristic agent, CPU)
 

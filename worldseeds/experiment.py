@@ -29,7 +29,7 @@ def _seed(parts) -> int:
     return int(hashlib.sha1(repr(parts).encode()).hexdigest()[:8], 16)
 
 
-PROTOCOLS = ["compgen", "persistence", "law_shift", "multiagent", "curriculum", "team"]
+PROTOCOLS = ["compgen", "persistence", "law_shift", "multiagent", "curriculum", "team", "hive"]
 
 
 @dataclass
@@ -59,6 +59,14 @@ class ExpConfig:
     trusts: list[str] = field(default_factory=lambda: ["blind", "calibrated"])  # heuristic policy only
     # team protocol (board env): how teammates share what they learned while specialising
     team_modes: list[str] = field(default_factory=lambda: ["solo", "independent", "library", "messages", "merged"])
+    # law space (town/board): crops per universe; > 4 adds crops with their own soil and season laws
+    n_crops: int = 4
+    # hive protocol: many agents in many worlds at once sharing one memory (worldseeds/hive.py)
+    hive_modes: list[str] = field(default_factory=lambda: ["isolated", "groups", "hive", "sync", "hive_verified",
+                                                           "hive_directed", "hive_full"])
+    hive_sizes: list[int] = field(default_factory=lambda: [1, 4, 16])
+    hive_faulty: list[float] = field(default_factory=lambda: [0.0])
+    hive_waves: int = 8
     out_dir: str = "results/run"
     rng_seed: int = 0
 
@@ -70,10 +78,15 @@ class Recorder:
         (self.dir / "config.json").write_text(json.dumps(asdict(cfg), indent=2))
         self._f = open(self.dir / "episodes.jsonl", "a")
         self._t = open(self.dir / "traces.jsonl", "a") if cfg.save_traces else None
+        self._h = open(self.dir / "hive.jsonl", "a") if cfg.protocol == "hive" else None
         self._lock = asyncio.Lock()
 
     async def write(self, row: dict, trace: list | None = None) -> None:
         async with self._lock:
+            if row.get("phase") == "wave":  # hive summaries go to their own file
+                self._h.write(json.dumps(row) + "\n")
+                self._h.flush()
+                return
             self._f.write(json.dumps(row) + "\n")
             self._f.flush()
             if self._t is not None and trace is not None:
@@ -142,12 +155,15 @@ class Runner:
 
     # ------------------------------------------------------------ one episode
     async def play(self, world, mem: Memories, chain: str, episode: int, phase: str,
-                   variant: str = "", learn: bool = True, extra: dict | None = None) -> dict:
+                   variant: str = "", learn: bool = True, extra: dict | None = None, oracle: bool = True,
+                   write: bool = True) -> dict:
         cond = mem.condition
-        try:
-            opt = self.env.oracle_steps(world)
-        except Exception:
-            opt = None
+        opt = None
+        if oracle:
+            try:
+                opt = self.env.oracle_steps(world)
+            except Exception:
+                opt = None
         reads0 = mem.library.reads if mem.library is not None else 0
         lib0 = mem.library.to_dict() if mem.library is not None else None  # shelves as the agent found them
         hkw = {"trust": mem.trust} if mem.trust else {}
@@ -197,7 +213,8 @@ class Runner:
             row["asks"] = len(asks)
             row["heard_claims"] = sum(len(e.effects[0]["claims"]) for e in asks)
             row["heard_wrong"] = sum(e.effects[0]["wrong"] for e in asks)
-        await self.rec.write(row, trace)
+        if write:
+            await self.rec.write(row, trace)
         return row
 
     async def consolidate(self, world, mem: Memories, chain: str, episode: int) -> None:
@@ -230,6 +247,11 @@ class Runner:
             kw["testimony"] = mem.source_error or 0.0
         return self.env.grow(s, eager=(view == "flat"), max_actions=self.cfg.max_actions, **kw)
 
+    def _laws(self, u: int):
+        if self.cfg.n_crops != 4:
+            return self.env.laws(u, n_crops=self.cfg.n_crops)
+        return self.env.laws(u)
+
     def _mem(self, cond, laws, decay=None, src=None) -> Memories:
         err, trust = src if src else (None, None)
         return Memories(cond, laws, self.env, self.cfg.decay if decay is None else decay, err, trust)
@@ -257,7 +279,7 @@ class Runner:
     # ------------------------------------------------------------ protocols
     async def compgen_chain(self, u, cond, view, r, src=None):
         c = self.cfg
-        laws = self.env.laws(u)
+        laws = self._laws(u)
         rng = random.Random(_seed((c.rng_seed, u, r)))
         train, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
         tr = self.env.seeds_for(train, laws, c.n_train, rng, n_distractors=c.n_distractors)
@@ -279,7 +301,7 @@ class Runner:
 
     async def persistence_chain(self, u, cond, view, r):
         c = self.cfg
-        laws = self.env.laws(u)
+        laws = self._laws(u)
         rng = random.Random(_seed(("persist", c.rng_seed, u, r)))
         combos = [tuple(rng.sample(self.env.blocks, 3)) for _ in range(c.n_test)]
         seeds = [self.env.make_seed(laws, cb, rng, n_goals=3, n_distractors=c.n_distractors, big=True)
@@ -301,7 +323,7 @@ class Runner:
 
     async def law_shift_chain(self, u, cond, view, r):
         c = self.cfg
-        laws_a = self.env.laws(u)
+        laws_a = self._laws(u)
         laws_b = laws_a.mutate(random.Random(u * 13 + 7), n=2)
         rng = random.Random(_seed(("shift", c.rng_seed, u, r)))
         train, _ = self.env.split(random.Random(u))
@@ -321,7 +343,7 @@ class Runner:
         c = self.cfg
         if cond not in ("seed", "seed_llm"):
             return
-        laws = self.env.laws(u)
+        laws = self._laws(u)
         rng = random.Random(_seed(("multi", c.rng_seed, u, r)))
         train, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
         rounds = max(1, c.n_train // c.n_agents)
@@ -357,7 +379,7 @@ class Runner:
 
     async def curriculum_chain(self, u, cond, view, r):
         c = self.cfg
-        laws = self.env.laws(u)
+        laws = self._laws(u)
         rng = random.Random(_seed(("curr", c.rng_seed, u, r)))
         _, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
         te = self.env.seeds_for(test, laws, c.n_test, random.Random(u * 31 + r), n_distractors=c.n_distractors)
@@ -399,7 +421,7 @@ class Runner:
             return
         from .town.team import TEAM_NAMES
 
-        laws = self.env.laws(u)
+        laws = self._laws(u)
         rng = random.Random(_seed(("team", c.rng_seed, u, r)))
         train, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
         n = max(2, min(c.n_agents, len(TEAM_NAMES)))
@@ -479,6 +501,83 @@ class Runner:
         }
         await self.rec.write(row, traces)
         return row
+
+    # ------------------------------------------------------------ hive
+    async def hive_chain(self, u, cond, view, r):
+        """Many agents, many worlds, one memory: every (mode, size, faulty share) is one hive run."""
+        c = self.cfg
+        if cond not in ("seed", "seed_llm") or self.env.name not in ("town", "board"):
+            return
+        laws = self._laws(u)
+        _, test = self.env.split(random.Random(c.rng_seed * 1000 + u))
+        te = self.env.seeds_for(test, laws, c.n_test, random.Random(_seed(("hive-test", c.rng_seed, u, r))),
+                                n_distractors=c.n_distractors)
+        runs = [(m, n, f) for m in c.hive_modes for n in c.hive_sizes for f in c.hive_faulty
+                if n > 1 or m == "isolated"]
+        await asyncio.gather(*[self.hive_run(u, view, r, laws, m, n, f, te) for m, n, f in runs])
+
+    async def hive_run(self, u, view, r, laws, mode, n, faulty, te) -> None:
+        import itertools
+        from dataclasses import replace
+
+        from .hive import HIVE_MODES, Hive
+
+        c = self.cfg
+        hv = Hive(self.env.seed_cls, HIVE_MODES[mode], n, faulty, rng_seed=_seed(("hive", c.rng_seed, u, r, n, faulty)))
+        combos = [cb for k in range(1, len(self.env.blocks) + 1) for cb in itertools.combinations(self.env.blocks, k)]
+        variant = f"{mode}-n{n}" + (f"-f{faulty:g}" if faulty else "")
+        chain = f"{self.env.name}-hive-u{u}-{variant}-{view}-r{r}"
+        total = len(self.env.seed_cls.truth(laws))
+        ep = 0
+        tag = {"hive_mode": mode, "hive_n": n, "faulty": faulty}
+        for wv in range(c.hive_waves):
+            seeds = []
+            for i in range(n):  # the same worlds for every mode (unless a director picks them)
+                rng = random.Random(_seed(("hive-world", c.rng_seed, u, r, wv, i)))
+                s = self.env.seeds_for([rng.choice(combos)], laws, 1, rng, n_distractors=c.n_distractors)[0]
+                if hv.mode.directed and laws.crops:
+                    blocks = tuple(b for b in self.env.blocks if b in set(s.blocks) | {"farming"})
+                    s = replace(s, blocks=blocks, crops=tuple(hv.least_known(laws.crops, 4, rng)))
+                seeds.append(s)
+            mems = []
+            for i in range(n):
+                m = self._mem("seed", laws)
+                m.seed = hv.view(i)
+                mems.append(m)
+            worlds = [self._grow(s, view) for s in seeds]
+            rows = await asyncio.gather(*[
+                self.play(w, mems[i], chain, ep + i, "train", variant=variant, learn=False, oracle=False,
+                          extra={**tag, "agent": i, "wave": wv, "agent_faulty": i in hv.faulty},
+                          write=c.policy == "llm" or n <= 16)  # big heuristic hives: wave summaries only
+                for i, w in enumerate(worlds)])
+            for i, w in enumerate(worlds):
+                hv.report(i, w.events)
+            hv.end_wave()
+            ep += n
+            known = [Hive.score(hv.view(i), laws) for i in range(0, n, max(1, n // 32))]  # sample of agents
+            await self.rec.write({
+                "protocol": "hive", "phase": "wave", "env": self.env.name, "policy": c.policy, "llm": self.llm_name,
+                "chain": chain, "variant": variant, "universe": u, "repeat": r, **tag, "wave": wv + 1,
+                "episodes": ep, "total_laws": total,
+                "known_agents": sum(k for k, _ in known) / len(known),
+                "wrong_agents": sum(x for _, x in known) / len(known),
+                "known_global": Hive.score(hv.glob, laws)[0], "wrong_global": Hive.score(hv.glob, laws)[1],
+                "known_collective": Hive.score(hv.collective(), laws)[0],
+                "wrong_collective": Hive.score(hv.collective(), laws)[1],
+                "messages": hv.messages, "syncs": hv.syncs,
+                "wave_success": sum(bool(x["success"]) for x in rows) / n,
+                **({"wave_board": sum(x["board_done"] / x["board_total"] for x in rows) / n}
+                   if rows and rows[0].get("board_total") else {}),
+            })
+        # what the hive hands to a newcomer: the global seed, or (never consolidated) one merge at the end
+        shared = hv.glob if hv.mode.sync_every else hv.collective()
+        m = self._mem("seed", laws)
+        m.seed = shared
+        for s in te:
+            await self.play(self._grow(s, view), m, chain, ep, "test", variant=variant, learn=False,
+                            extra={**tag, "shared_known": Hive.score(shared, laws)[0],
+                                   "shared_wrong": Hive.score(shared, laws)[1], "total_laws": total})
+            ep += 1
 
     async def run(self) -> Path:
         fn = getattr(self, f"{self.cfg.protocol}_chain")
