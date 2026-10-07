@@ -349,7 +349,7 @@ class TownWorld:
 
     def _label(self, o: Obj) -> str:
         if o.kind == "villager":
-            return f"{o.id} {o.name} (in a {o.color} shirt)"
+            return f"{o.id} {o.name} (in {'an' if o.color[0] in 'aeiou' else 'a'} {o.color} shirt)"
         if o.kind in ("item", "crop"):
             base = f"{o.id} {o.color} {o.name} ({o.fine['category']})"
         elif o.kind == "seeds":
@@ -640,6 +640,38 @@ class TownWorld:
         if reset_agent:
             self._enter("farm")
         return True
+
+    def snapshot(self) -> dict:
+        """JSON-able full state for the pixel UI (ui/seedville.html). Not shown to agents."""
+        objs = []
+        for o in self.objs.values():
+            d = {"id": o.id, "kind": o.kind, "name": o.name, "color": o.color, "location": o.location,
+                 "label": self._label(o), "seen": o.id in self.seen_fine}
+            if o.kind in ("item", "crop"):
+                d["category"] = o.fine["category"]
+            if o.kind == "seeds":
+                d.update(crop=o.fine["crop"], uses=o.state["uses"])
+            if o.kind == "plot":
+                d.update(soil=o.fine["soil"], crop=o.state["crop"], stage=o.state["stage"],
+                         status=o.state["status"], watered=o.state["watered"])
+            if o.kind == "villager":
+                d.update(job=o.fine["job"], friendship=o.state["friendship"], home=self.home_of[o.id],
+                         got_crop=o.state["got_crop"], request=o.state.get("request"),
+                         got_request=o.state["got_request"], needs=self.requirements_met(o)[1])
+            if o.state.get("for_sale"):
+                d.update(for_sale=True, price=o.state["price"])
+            if o.kind == "decor":
+                d["condition"] = o.fine["condition"]
+            objs.append(d)
+        g = self.goals[self.goal_index] if self.goal_index < len(self.goals) else None
+        return {
+            "day": self.day, "tick": self.tick, "ticks_per_day": TICKS_PER_DAY, "phase": self.phase,
+            "season": self.season, "coins": self.coins, "agent_room": self.agent_room,
+            "goal": self.goal, "goal_villager": g["villager"] if g else None, "done": self.done,
+            "actions": self.actions, "max_actions": self.max_actions, "blocks": list(self.seed.blocks),
+            "rooms": [{"id": r.id, "name": r.name, "visited": r.visited} for r in self.rooms.values()],
+            "objects": objs, "inventory": list(self.inventory),
+        }
 
     def clone(self) -> "TownWorld":
         return copy.deepcopy(self)

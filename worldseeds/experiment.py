@@ -141,7 +141,7 @@ class Runner:
             "protocol": self.cfg.protocol, "env": self.env.name, "policy": self.cfg.policy, "llm": self.llm_name,
             "chain": chain, "condition": cond, "view": "flat" if world.eager else "zoom",
             "variant": variant, "phase": phase, "episode": episode,
-            "seed_id": world.seed.id, "composition": world.seed.composition,
+            "seed_id": world.seed.id, "seed": world.seed.to_dict(), "composition": world.seed.composition,
             "n_blocks": len(world.seed.blocks), "n_rooms": world.seed.n_rooms,
             "goal_index": world.goal_index, "oracle_steps": opt, **metrics,
             "time": time.time(), **(extra or {}),

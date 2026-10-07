@@ -133,6 +133,22 @@ day: crops grow overnight and you wake at the farm. A plot's soil and a villager
 only visible after `zoom_in`. Universe 0 follows common sense (bakers like food); the
 others are shuffled, so the model can't rely on Stardew-style prior knowledge.
 
+### Pixel UI
+
+`ui/seedville.html` draws SeedVille in a Stardew-style pixel art. It only renders state
+produced by the Python engine, so what you see is exactly what the agent played.
+
+* **Replays:** `ui/seedville_demo.html` is a standalone page with three recorded runs on the
+  same town: an explorer with no memory, the same explorer with a learned seed, and the
+  oracle. Open it in any browser. Rebuild it with `python scripts/build_ui.py`.
+* **Play it yourself:** `python scripts/serve_ui.py`, then open http://localhost:8765 and
+  switch to Play. Click a place to walk there, click things to take, buy, plant, water,
+  harvest, give or talk. On Nibi, run it on a login node and use `ssh -L 8765:localhost:8765`.
+* **Watch Qwen:** for a run made with `--save-traces`, list its episodes with
+  `python scripts/export_replay.py <run_dir> --list`, export one with `--chain ... --episode N -o ep.json`,
+  then load `ep.json` with the page's "Load replay file" button (or bake it in with
+  `python scripts/build_ui.py --replay ep.json`).
+
 ## Protocols
 
 | protocol | tests | variants |
