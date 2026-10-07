@@ -25,13 +25,16 @@ class Recorder:
         world.act = self.act  # type: ignore[method-assign]
         world.zoom_in = self.zoom_in  # type: ignore[method-assign]
 
-    def _frame(self, kind: str, action: str, message: str) -> dict:
-        return {"kind": kind, "action": action, "message": message, "state": self.w.snapshot()}
+    def _frame(self, kind: str, action: str, message: str, ok: bool | None = None) -> dict:
+        f = {"kind": kind, "action": action, "message": message, "state": self.w.snapshot()}
+        if ok is not None:
+            f["ok"] = ok
+        return f
 
     def act(self, verb, target=None, instrument=None):
         msg, ok = self._act(verb, target, instrument)
         args = ", ".join(x for x in (target, instrument) if x)
-        self.frames.append(self._frame("act", f"{verb}({args})", msg))
+        self.frames.append(self._frame("act", f"{verb}({args})", msg, ok))
         return msg, ok
 
     def zoom_in(self, target):
@@ -72,8 +75,9 @@ def replay_trace(seed_dict: dict, trace: list[dict], title: str = "LLM agent", m
     frames = [{"kind": "start", "action": "", "message": w.observe(), "state": w.snapshot()}]
     for t in trace:
         tool, a = t["tool"], t.get("args", {})
+        ok = None
         if tool == "act":
-            w.act(a.get("verb"), a.get("target"), a.get("instrument"))
+            _, ok = w.act(a.get("verb"), a.get("target"), a.get("instrument"))
             kind, action = "act", f"{a.get('verb')}({', '.join(x for x in (a.get('target'), a.get('instrument')) if x)})"
         elif tool == "zoom_in":
             w.zoom_in(a.get("target"))
@@ -83,7 +87,8 @@ def replay_trace(seed_dict: dict, trace: list[dict], title: str = "LLM agent", m
             kind, action = "inspect", "zoom_out()"
         else:
             kind, action = "think", f"{tool}({', '.join(str(v) for v in a.values() if v)})"
-        frames.append({"kind": kind, "action": action, "message": t.get("out", ""), "state": w.snapshot()})
+        frames.append({"kind": kind, "action": action, "message": t.get("out", ""), "state": w.snapshot(),
+                       **({"ok": ok} if ok is not None else {})})
     out = _meta(w, title, "Re-simulated from an experiment trace.", memory_text)
     out["frames"] = frames
     out["success"] = w.done

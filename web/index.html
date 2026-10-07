@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--BODY-START-->
+<title>SeedVille</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=VT323&display=swap">
+<style>
+/* Layout: the game canvas is the page; a slim wooden control strip sits under it.
+   One committed look (dusk forest green + parchment-on-wood), like the game's own HUD. */
+:root {
+  --night: #1b271f;
+  --wood: #7a4a26;
+  --wood-dark: #4a2a14;
+  --parchment: #f1d9a7;
+  --parchment-2: #e5c588;
+  --ink: #3a2312;
+  --ink-soft: #6e4b2c;
+  --gold: #f2b632;
+  --cream: #fff6df;
+  --font-display: "Pixelify Sans", "Courier New", monospace;
+  --font-text: "VT323", "Courier New", monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--night); color: var(--cream); font-family: var(--font-text); font-size: 20px; padding-inline: 16px; padding-block: 12px 24px; }
+.wrap { max-width: 1200px; margin: 0 auto; display: grid; gap: 10px; }
+header { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 34px; margin: 0; color: var(--gold); text-shadow: 3px 3px 0 var(--wood-dark); letter-spacing: 1px; }
+.tag { margin: 0; color: var(--parchment-2); font-size: 20px; }
+.brand { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; }
+.modes { display: flex; gap: 6px; }
+#gamebox { position: relative; border: 4px solid var(--wood); border-radius: 6px; box-shadow: 0 4px 0 var(--wood-dark); background: #000; overflow: hidden; }
+#game { width: 100%; aspect-ratio: 16 / 9; max-width: 100%; }
+#game canvas { display: block; image-rendering: pixelated; }
+#tip { position: absolute; pointer-events: none; transform: translate(-50%, -135%); background: var(--parchment); color: var(--ink); border: 3px solid var(--wood); border-radius: 4px; padding: 0 8px; font-size: 19px; white-space: nowrap; }
+#menu { position: absolute; display: grid; gap: 3px; background: var(--parchment); border: 3px solid var(--wood); border-radius: 5px; padding: 5px; box-shadow: 0 4px 0 var(--wood-dark); z-index: 5; min-width: 170px; }
+#menu button { text-align: left; box-shadow: none; border-width: 2px; }
+#toast { position: absolute; left: 50%; top: 12px; transform: translateX(-50%); background: var(--parchment); color: var(--ink); border: 3px solid var(--wood); padding: 2px 10px; border-radius: 4px; }
+button, select, .filebtn {
+  font-family: var(--font-display); font-size: 15px; font-weight: 600; background: var(--parchment); color: var(--ink);
+  border: 3px solid var(--wood); border-radius: 4px; padding: 4px 10px; cursor: pointer; box-shadow: 0 3px 0 var(--wood-dark);
+}
+button:hover:not(:disabled), .filebtn:hover { background: var(--cream); }
+button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 var(--wood-dark); }
+button:disabled { opacity: .45; cursor: default; }
+button.on { background: var(--gold); }
+button:focus-visible, select:focus-visible, input:focus-visible, .filebtn:focus-within { outline: 3px solid var(--gold); outline-offset: 2px; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar select#runs { flex: 1 1 260px; min-width: 0; }
+.scrub { flex: 1 1 160px; min-width: 100px; accent-color: var(--gold); }
+.step { font-family: var(--font-display); font-size: 15px; color: var(--parchment); font-variant-numeric: tabular-nums; }
+.filebtn input { display: none; }
+.check { color: var(--parchment-2); font-size: 18px; display: inline-flex; gap: 4px; align-items: center; }
+.info { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.card { background: var(--parchment); color: var(--ink); border: 4px solid var(--wood); border-radius: 6px; box-shadow: inset 0 0 0 3px var(--parchment-2), 0 4px 0 var(--wood-dark); padding: 8px 12px; min-width: 0; }
+.card h2 { font-family: var(--font-display); font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ink-soft); margin: 0 0 4px; }
+.card p, .card ul { margin: 0; font-size: 19px; }
+.card ul { padding-left: 18px; }
+details summary { cursor: pointer; font-family: var(--font-display); font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-soft); }
+#memory { white-space: pre-wrap; font-size: 18px; margin-top: 4px; }
+.note { color: var(--parchment-2); font-size: 18px; margin: 0; }
+.keys { color: var(--parchment-2); font-size: 17px; }
+@media (prefers-reduced-motion: reduce) { button:active:not(:disabled) { transform: none; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>SeedVille</h1><p class="tag">A town grown from a seed. Watch an agent learn its hidden laws.</p></div>
+    <div class="modes">
+      <button id="modeReplay" class="on" aria-pressed="true">Replays</button>
+      <button id="modePlay" aria-pressed="false" disabled>Play</button>
+      <button id="bMap" title="Map overview (M)">Map</button>
+    </div>
+  </header>
+
+  <div id="gamebox">
+    <div id="game"></div>
+    <div id="tip" hidden></div>
+    <div id="menu" hidden></div>
+    <div id="toast" hidden></div>
+  </div>
+
+  <div class="bar" id="replayBar">
+    <select id="runs" aria-label="Run"></select>
+    <button id="bFirst" aria-label="First step">|&lt;</button>
+    <button id="bPrev" aria-label="Previous step">&lt;</button>
+    <button id="bPlay" aria-label="Play">Play</button>
+    <button id="bNext" aria-label="Next step">&gt;</button>
+    <button id="bLast" aria-label="Last step">&gt;|</button>
+    <input id="scrub" class="scrub" type="range" min="0" max="0" value="0" aria-label="Step">
+    <span class="step" id="stepLabel">0 / 0</span>
+    <select id="speed" aria-label="Speed">
+      <option value="0.6">Slow</option><option value="1" selected>Normal</option><option value="2">Fast</option><option value="4">Very fast</option>
+    </select>
+    <label class="check"><input type="checkbox" id="skipZooms"> skip inspections</label>
+    <label class="filebtn">Load replay<input type="file" id="fileIn" accept=".json,application/json"></label>
+  </div>
+
+  <div class="bar" id="playBar" hidden>
+    <button id="pWait">Wait</button>
+    <button id="pSleep">Sleep</button>
+    <button id="pOracle">Let the oracle finish</button>
+    <button id="pExplorer">Let the explorer try</button>
+    <label class="check" for="uni">Universe</label>
+    <select id="uni"><option>0</option><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select>
+    <label class="check"><input type="checkbox" id="blk-farming" checked> farming</label>
+    <label class="check"><input type="checkbox" id="blk-gifting" checked> gifting</label>
+    <label class="check"><input type="checkbox" id="blk-shop"> shop</label>
+    <label class="check"><input type="checkbox" id="blk-schedule" checked> schedule</label>
+    <button id="pNew">Grow a new town</button>
+  </div>
+
+  <div class="info">
+    <section class="card">
+      <h2>This run</h2>
+      <p id="runDesc">Loading…</p>
+    </section>
+    <section class="card">
+      <details>
+        <summary>What this agent remembers</summary>
+        <div id="memory"></div>
+      </details>
+    </section>
+    <section class="card">
+      <details>
+        <summary>Hidden laws (spoiler)</summary>
+        <ul id="laws"></ul>
+      </details>
+    </section>
+  </div>
+  <p class="keys">Space play/pause · ← → step · M map. Hover anything in the town to see what it is. In Play mode, click to act.</p>
+  <p class="note" id="note">Replays are recorded from the real Python engine. To play, run <code>python scripts/serve_ui.py</code> and open it on localhost.</p>
+</div>
+<script src="vendor/phaser.min.js"></script>
+<script src="game.js"></script>
+<!--BODY-END-->
+</html>

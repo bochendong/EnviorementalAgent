@@ -4,7 +4,8 @@
     python scripts/export_replay.py results/town_pilot --list            # show available episodes
     python scripts/export_replay.py results/town_pilot --chain town-compgen-u1-seed-zoom-r0 --episode 5 \\
         -o qwen_ep5.json
-    python scripts/build_ui.py --replay qwen_ep5.json --out ui/qwen_ep5.html
+    then open the SeedVille page and use "Load replay", or bake it in:
+    python scripts/build_web.py --replay qwen_ep5.json
 
 Needs a run made with --save-traces. Only town episodes that start from a fresh town
 (goal_index 0) can be re-simulated.

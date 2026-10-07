@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-"""Play SeedVille in the browser with the real game engine.
+"""Play SeedVille in the browser (Phaser client in web/) with the real game engine.
 
     python scripts/serve_ui.py            # then open http://localhost:8765
     python scripts/serve_ui.py --port 9000 --universe 3
 
 On Nibi, run it on a login node and forward the port:  ssh -L 8765:localhost:8765 nibi
-The page (ui/seedville.html) also works without this server, as a replay viewer.
+Without this server, web/ still works as a replay viewer (any static file server).
 """
 
 import argparse
@@ -37,7 +37,9 @@ class Game:
 
 
 GAME = None
-PAGE = ""
+WEB = ROOT / "web"
+TYPES = {".html": "text/html; charset=utf-8", ".js": "text/javascript", ".json": "application/json",
+         ".png": "image/png", ".md": "text/plain; charset=utf-8"}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -55,12 +57,16 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, json.dumps(obj).encode(), "application/json")
 
     def do_GET(self):
-        if self.path in ("/", "/index.html", "/seedville.html"):
-            self._send(200, PAGE.encode(), "text/html; charset=utf-8")
-        elif self.path == "/api/state":
+        path = self.path.split("?")[0]
+        if path == "/api/state":
             self._json(GAME.payload(GAME.world.observe()))
-        else:
+            return
+        rel = "index.html" if path in ("/", "") else path.lstrip("/")
+        f = (WEB / rel).resolve()
+        if WEB.resolve() not in f.parents or not f.is_file():
             self._send(404, b"not found", "text/plain")
+            return
+        self._send(200, f.read_bytes(), TYPES.get(f.suffix, "application/octet-stream"))
 
     def do_POST(self):
         global GAME
@@ -72,8 +78,8 @@ class Handler(BaseHTTPRequestHandler):
             GAME = Game(int(body.get("universe", 0)), blocks, int(body.get("surface_seed", random.randrange(1 << 30))))
             self._json(GAME.payload(GAME.world.observe()))
         elif self.path == "/api/act":
-            msg, _ = w.act(body.get("verb"), body.get("target"), body.get("instrument"))
-            self._json(GAME.payload(msg))
+            msg, ok = w.act(body.get("verb"), body.get("target"), body.get("instrument"))
+            self._json({**GAME.payload(msg), "ok": ok})
         elif self.path == "/api/inspect":
             t = body.get("target")
             loc = w.objs[t].location if t in w.objs else None
@@ -91,7 +97,7 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     TownHeuristicAgent(w, None, random.Random(0)).run()
             except Exception as e:  # the oracle may fail from a state the player messed up
-                rec.frames.append(rec._frame("act", "oracle", f"The oracle gave up: {e}"))
+                rec.frames.append(rec._frame("act", "oracle()", f"The oracle gave up: {e}"))
             rec.detach()
             self._json({**GAME.payload(), "frames": rec.frames[1:]})
         else:
@@ -99,7 +105,7 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    global GAME, PAGE
+    global GAME
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--universe", type=int, default=2)
@@ -107,8 +113,10 @@ def main():
     ap.add_argument("--surface-seed", type=int, default=11)
     a = ap.parse_args()
     GAME = Game(a.universe, a.blocks, a.surface_seed)
-    page = (ROOT / "ui" / "seedville.html").read_text()
-    PAGE = page.replace("/*__REPLAYS__*/null", json.dumps(demo_replays()))
+    demo = WEB / "replays" / "demo.json"
+    if not demo.exists():
+        demo.parent.mkdir(exist_ok=True)
+        demo.write_text(json.dumps(demo_replays(), separators=(",", ":")))
     print(f"SeedVille running at http://localhost:{a.port}  (Ctrl+C to stop)")
     ThreadingHTTPServer(("127.0.0.1", a.port), Handler).serve_forever()
 
