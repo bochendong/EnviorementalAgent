@@ -66,9 +66,9 @@ for u in $UNIVERSES; do
       H=(--protocol hive --conditions seed --env town --n-crops 16 --hive-sizes 8 --hive-waves 6 --universes "$u"
          --n-test 4 --max-actions 80 --max-turns 140 --concurrency 32 --save-traces)
       submit "ws-hive-liars-u$u" "${H[@]}" --hive-modes sync hive_verified hive_audit hive_provenance \
-        --hive-faulty 0.5 --hive-faulty-mode groups --out "$OUT/hive/liars/u$u"
-      submit "ws-hive-shift-u$u" "${H[@]}" --hive-modes sync hive_verified hive_recent \
-        --hive-shift-wave 3 --hive-shift-share 1 --out "$OUT/hive/shift/u$u" ;;
+        --hive-faulty 0.5 --hive-faulty-mode groups --hive-audit replicate --out "$OUT/hive/liars/u$u"
+      submit "ws-hive-shift-u$u" "${H[@]}" --hive-modes sync hive_verified hive_recent hive_regional \
+        --hive-shift-wave 3 --hive-shift-share 0.5 --out "$OUT/hive/shift/u$u" ;;
     *) echo "unknown study $study" >&2; exit 1 ;;
     esac
   done

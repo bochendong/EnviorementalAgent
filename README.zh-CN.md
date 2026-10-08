@@ -235,13 +235,13 @@ python scripts/export_replay.py <out> --list        # 把某一局 LLM 的过程
 | `solo_matched`（团队）、`serial`（hive） | 同样的算力下，团队真的比一个 agent 强吗？ | 并行的 agent 学到的规律和"一个 agent 依次玩同样的世界"一样多（127 vs 126 条）；团队的优势来自共享知识，以及必须两个人才能完成的任务 |
 | `--zoom-budget k` | 仔细看东西要花注意力，会怎样？ | 规则 agent 几乎不受影响；这个开关主要是给 LLM 的 |
 | `--context canvas` / `image` | 用固定大小的记忆画布（当前位置清晰，越早越模糊，外加 agent 自己改写的笔记）代替对话记录；给视觉语言模型时画成图片 | LLM 实验（`slurm/submit_frontier.sh`、`slurm/submit_vision.sh`） |
-| `--noise`、`--screen-error`、`--confounder`、`--publication-bias` | 实验有噪声、快速筛选便宜但会错、原因被混杂、只发表阳性结果时，agent 还能做好科研吗？ | 发表偏倚让图书馆自信地记下错误规律；快速筛选让学习变慢 |
+| `--noise`、`--screen-error`、`--confounder`、`--publication-bias` | 实验有噪声、快速筛选便宜但会错、原因被混杂、只发表阳性结果时，agent 还能做好科研吗？ | 发表偏倚让图书馆自信地记下错误规律；快速筛选拖慢学习，只是因为学习者把它当成了证据（权重为 0 时没有害处） |
 | `--skin drug` | 同一套规律讲成化合物、靶点和实验方案：换成科研的说法，agent 的行为会变吗？ | LLM 实验（规则 agent 不读文字） |
 | `--protocol evolve` | 继承"怎么学"能让 agent 一代比一代强吗？按自我评估选择会导致奖励作弊吗？能迁移吗？ | 按"自称知道多少"选择，错误的说法翻倍，真实成绩没有提高；进化后的学习者在没见过的宇宙里学得更快 |
 | `--festival`、`--roles` | 只有团队才能完成的任务（用新鲜作物做一道菜、两个人一起去拜访），以及各自只能感知一部分信息（土壤 / 人 / 货物） | 给了同样算力的单个 agent 也只完成 0.60，团队 0.91 |
-| `--hive-faulty-mode groups`、`hive_provenance`、`--hive-shift-wave` | 说谎的 agent 口径一致且占多数时，hive 还能找到真相吗？某个地区的规律变了，共享记忆会怎样？ | 溯源（provenance）把错误规律从 13 条降到 2 条；一份全局记忆没法同时对两个地区都正确 |
+| `--hive-faulty-mode groups`、`hive_provenance`、`--hive-audit replicate`、`--hive-shift-wave`、`hive_regional` | 说谎的 agent 口径一致且占多数时，hive 还能找到真相吗？某个地区的规律变了，共享记忆会怎样？ | 溯源加上由 agent 在真实世界里复现的抽查，把错误规律从 8.5 条降到 2 条；按地区分开的记忆让规律变化后的错误认知减半 |
 
-那一节最后还规划了一个迁移研究：种子镇上的分数，对不同 agent 配置的排名，和真实科研基准（例如 LAB-Bench、BixBench）的排名一致吗？
+那一节最后是一个已经可以直接跑的迁移研究：种子镇上的分数，对不同 agent 配置的排名，和真实科研基准的排名一致吗？`scripts/run_labbench.py` 用同一个服务器跑 LAB-Bench 选择题，其他基准（例如 BixBench）的分数直接填数字，`scripts/transfer_analysis.py` 给出排名相关系数、bootstrap 置信区间，以及控制协变量后的偏相关。
 
 ## 在 Nibi 上运行（Compute Canada / Alliance）
 
@@ -276,7 +276,8 @@ python scripts/export_replay.py <out> --list        # 把某一局 LLM 的过程
    MODEL_ID=Qwen/Qwen3-VL-8B-Instruct bash slurm/setup_nibi.sh && bash slurm/submit_vision.sh
    sbatch slurm/frontier_cpu.sh
    ```
-6. **在浏览器里看**：在登录节点上运行 `python scripts/serve_ui.py`，本地执行 `ssh -L 8765:localhost:8765 nibi`，然后打开 http://localhost:8765。
+6. **迁移研究**（每个模型一个 GPU 任务：一组种子镇实验加 LAB-Bench）：`bash slurm/submit_transfer.sh`，然后 `python scripts/transfer_analysis.py <study.json>`。
+7. **在浏览器里看**：在登录节点上运行 `python scripts/serve_ui.py`，本地执行 `ssh -L 8765:localhost:8765 nibi`，然后打开 http://localhost:8765。
 
 **换模型**：`MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 bash slurm/setup_nibi.sh`，提交时也用同一个 `MODEL_ID`。计算节点不能联网，所以模型权重必须先用 setup 脚本下载好。
 
@@ -285,12 +286,13 @@ python scripts/export_replay.py <out> --list        # 把某一局 LLM 的过程
 ```
 worldseeds/
   envs.py         环境注册：dungeon | town | board
-  experiment.py   所有实验协议（compgen ... team、hive、evolve）和结果记录
+  experiment/     实验：配置（按主题分组，命令行参数由它自动生成）、运行器、各实验协议（classic、team、hive、evolve）、记忆、结果记录
   agent.py        LLM agent（Agents SDK）：工具、提示词、单局循环、LLM 整理器
   canvas.py       画布记忆：固定大小、多分辨率的上下文，加上可改写的笔记
   render.py       给视觉语言模型的图片（随缩放层级变化的视图，画布渲染成页面）
   skin.py         同一个世界换一种讲法（药物研发）
   evolve.py       自进化：基因、策略手册、导师、存档
+  transfer.py     迁移研究：种子镇能力分数、LAB-Bench、排名统计
   llm.py          兼容 OpenAI 接口的模型配置（vLLM / Qwen3）
   memory.py       学到的种子（证据、predict），检索与轨迹两种基线记忆
   hive.py         多个 agent 共享一份记忆：分组、整合者、验证、调度、口径一致的说谎者、溯源与抽查、按新旧取舍
@@ -304,9 +306,10 @@ worldseeds/
     sources.py    带可控错误率的二手信息
     team.py       多个 agent 在同一个镇里（算力对齐的时钟、各自感知不同信息的角色）
     replay.py     给浏览器客户端的回放
-scripts/          run_experiment、analyze、analyze_hive、analyze_evolve、play、serve_ui、build_web、export_replay
+scripts/          run_experiment、analyze、analyze_hive、analyze_evolve、screen_study、run_labbench、
+                  transfer_analysis、play、serve_ui、build_web、export_replay
 slurm/            env、setup_nibi、serve_and_run、pilot_board、submit_all、hive_cpu、
-                  submit_frontier、submit_vision、frontier_cpu
+                  submit_frontier、submit_vision、frontier_cpu、submit_transfer、transfer_job、start_vllm
 web/              Phaser 3 客户端（game.js、index.html）、像素美术和地图、美术生成工具（web/tools）
 tests/            全部测试（不需要 GPU）
 docs/             研究计划、研究方案评审、详细实验说明

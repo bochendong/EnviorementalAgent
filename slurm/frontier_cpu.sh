@@ -50,9 +50,12 @@ for u in $UNIVERSES; do
   run --protocol hive --conditions seed --n-crops 64 --hive-sizes 16 64 256 --hive-waves 12 --universes "$u" \
     --n-test 16 --hive-faulty 0.3 0.6 --hive-faulty-mode groups \
     --hive-modes sync hive_verified hive_audit hive_provenance --out "$OUT/hive/liars/u$u"
+  run --protocol hive --conditions seed --n-crops 64 --hive-sizes 16 64 --hive-waves 12 --universes "$u" \
+    --n-test 16 --hive-faulty 0.6 --hive-faulty-mode groups --hive-audit replicate \
+    --hive-modes hive_audit hive_provenance --out "$OUT/hive/liars_replicated/u$u"
   for share in 1 0.5; do
     run --protocol hive --conditions seed --n-crops 64 --hive-sizes 16 64 --hive-waves 16 --universes "$u" \
-      --n-test 16 --hive-shift-wave 6 --hive-shift-share $share --hive-modes isolated sync hive_verified hive_recent \
+      --n-test 16 --hive-shift-wave 6 --hive-shift-share $share --hive-modes isolated sync hive_verified hive_recent hive_regional \
       --out "$OUT/hive/shift$share/u$u"
   done
 done
@@ -61,4 +64,6 @@ for d in "$OUT"/realism/* "$OUT/perception"; do echo "== $d"; python scripts/ana
 for d in "$OUT"/team/*; do echo "== $d"; python scripts/analyze.py "$d" --by variant; done
 python scripts/analyze_evolve.py "$OUT/evolve"
 python scripts/analyze_hive.py "$OUT"/hive/liars
+python scripts/analyze_hive.py "$OUT"/hive/liars_replicated
+python scripts/screen_study.py --out "$OUT/screen_study" --summary
 for share in 1 0.5; do python scripts/analyze_hive.py "$OUT"/hive/shift$share; done

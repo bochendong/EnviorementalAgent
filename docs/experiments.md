@@ -26,7 +26,10 @@ SeedMemory (learned causal seed) <------------- consolidate (perceived evidence 
 
 ## Layout
 
-See [Repository layout](../README.md#repository-layout) in the README.
+See [Repository layout](../README.md#repository-layout) in the README. Experiment options are
+declared once, in `worldseeds/experiment/config.py` (grouped: `llm`, `world`, `learner`, `team`,
+`hive`, `evolve`); `scripts/run_experiment.py --help` is generated from it, and `ExpConfig(**kw)`
+also takes the flat command-line names (`ExpConfig(hive_modes=["sync"], noise=0.2)`).
 
 ## Quick start (laptop, no GPU)
 
@@ -220,9 +223,9 @@ questions, and a final verifier. `worldseeds/hive.py` turns each of those into a
 | hive_verified | within groups of 4 | every 2 waves | 2 agents agree, 2:1 majority | - |
 | hive_directed | within groups of 4 | every 2 waves | - | worlds chosen to cover the least-known laws |
 | hive_full | within groups of 4 | every 2 waves | yes | yes |
-| hive_audit, hive_provenance, hive_recent | within groups of 4 | every 2 waves | yes, plus audits / provenance / recency | - |
+| hive_audit, hive_provenance, hive_recent, hive_regional | within groups of 4 | every 2 waves | yes, plus audits / provenance / recency / regions | - |
 
-(See [Robust hives](#robust-hives-liars-provenance-law-shifts) for the last three.)
+(See [Robust hives](#robust-hives-liars-provenance-law-shifts) for the last four.)
 
 Every agent plays its own world each *wave*. `--hive-faulty 0.25` makes a quarter of the agents
 report consistently wrong findings. A new agent is then tested with the hive's shared memory.
@@ -340,15 +343,23 @@ It renders the Python engine's state, so what you see is exactly what the agent 
   with autotiled edges, buildings, trees, crops by growth stage, items, villagers and portraits).
   Sheets use standard layouts (16x16 tiles, 16x32 characters, 4 rows x 4 frames), so a
   downloaded pack can replace them: keep the file names and frame order.
-* **Replays:** `python -m http.server -d web` and open it, or use the published page. Three demo
-  runs on the same town (explorer without memory, explorer with a learned seed, oracle).
-  Rebuild with `python scripts/build_web.py`.
+* **Replays:** `python -m http.server -d web` and open it, or use the published page. Demo runs on
+  the same town (explorer without memory, explorer with a learned seed, explorer reading the
+  library, oracle), on a town board (no memory, learned seed, asking villagers, rainy nights) and a
+  festival worked by a team of three with private perception. Rebuild with `python scripts/build_web.py`.
+* **New worlds on screen:** the quest panel lists festival requests (a dish and who cooks it, a visit
+  for two with how many are there), the team with roles and who is acting (the view cuts to the
+  acting teammate), rain on rainy days of a confounded town, and, for runs with `--skin drug`, every
+  text in the agent's words (compounds, wells, targets) while the animation follows the engine.
 * **Play it yourself:** `python scripts/serve_ui.py`, open http://localhost:8765 and press Play.
   Click places to walk, click things to act; "Let the oracle finish" hands over control. On Nibi
   run it on a login node and use `ssh -L 8765:localhost:8765`.
 * **Watch Qwen:** for a run made with `--save-traces`, list episodes with
   `python scripts/export_replay.py <run_dir> --list`, export one with
-  `--chain ... --episode N -o ep.json`, then press "Load replay" on the page.
+  `--chain ... --episode N -o ep.json` (team runs: add `--variant <mode>`), then press "Load replay"
+  on the page. Rows record the world's switches (`world_opts`), so noisy, rainy, festival or
+  budgeted runs replay exactly; team runs replay every teammate's calls in the order they reached
+  the world (checked against the runs' per-teammate action counts).
 
 ## Frontier studies
 
@@ -457,10 +468,28 @@ What it shows:
   libraries are corrected by the failures they also hear about).
 * Deconfounding is not free: setting rainy nights aside removes the confounder but also a third of
   the evidence, and within 30 towns that costs more than it saves.
-* Cheap screens hurt this learner. With a perfect seed, screening loses nothing (0 failed harvests
-  in 30 towns at error 0.1). But during training, screens replace real plantings and add only weak
-  votes, so the learned seed is less complete. It is a real trade-off of virtual screening, which an
-  LLM agent has to manage itself.
+* Cheap screens hurt this learner, and a dedicated study (`scripts/screen_study.py`) shows why. It
+  crosses the screen's error, how much a positive screen counts in the learned seed
+  (`--screen-weight`), and whether the agent plants where screens point (`--screen-policy use`), or
+  screens but ignores the result (`ignore`), or never screens (`off`). Seed agent, universes 1 and 3,
+  2 repeats, 30 training and 16 test towns:
+
+  | setting | plantings per town | laws learned | test success |
+  |---|---|---|---|
+  | no screens | 1.44 | 14.0 | 0.98 |
+  | error 0.1, screen votes weight 0 | 1.15 | 14.0 | 0.98 |
+  | error 0.1, weight 0.3 (default) | 1.61 | 13.2 | 0.73 |
+  | error 0.1, weight 1 | 1.73 | 12.5 | 0.47 |
+  | error 0.25, weight 0.3 | 2.53 | 12.0 | 0.36 |
+  | error 0.25, weight 1 | 2.62 | 9.5 | 0.33 |
+
+  Screens do not take away real experiments (agents plant more, not less), and whether the agent
+  plants where they point changes nothing (`use` and `ignore` give the same numbers). The damage
+  comes from counting them: a false positive casts an exclusive vote, which also counts against the
+  true value. Season laws are seen once per town, so two false positives push the true season below
+  the confidence threshold. Beliefs become uncertain, not wrong (every confident law is still
+  correct). With weight 0 screens are harmless. The lesson for an agent: use cheap noisy tests to
+  choose what to test properly, never as evidence.
 
 ### Self-evolving agents (`--protocol evolve`)
 
@@ -564,6 +593,22 @@ When liars agree and are the majority, verification makes things worse (13 wrong
 because the lie is well replicated). Checking claims one by one hardly helps (11). Provenance helps
 most (2): one failed audit withdraws everything its makers said.
 
+The audits above compare a claim with the true laws, a gold standard no real hive has. With
+`--hive-audit replicate` an honest auditor tests the claim instead, in `--hive-audit-worlds` (2) real
+episodes designed from the claim alone: the claimed crop in town, in the claimed season (or the one
+the hive believes), gifting towns for gift laws, towns with schedules for the midday law. It acts on
+the claim, so it tests it, and its own evidence confirms the claim, refutes it, or is inconclusive.
+Universes 1 and 3, 16 agents, 60% liars in whole groups, laws known / wrong in the global seed:
+
+| audits | hive_verified | hive_audit | hive_provenance |
+|---|---|---|---|
+| none | 5.5 / 8.5 | | |
+| against the true laws | | 7.5 / 5.5 | 8.0 / 1.0 |
+| replicated by an auditor (real episodes) | | 6.5 / 5.0 | 6.5 / 2.0 |
+
+Replication works almost as well as the gold standard (2 wrong laws instead of 1), at the price of 16
+audit episodes per run; 0–2 of 8 audits came back inconclusive.
+
 **Law shifts** (`--hive-shift-wave w --hive-shift-share s --hive-shift-laws n`): from wave w, the
 worlds of a share s of the agents follow changed laws (n law families change; with 16 crops, about
 13 laws). Waves report `stale_global` (changed laws the global seed still believes at their old
@@ -585,8 +630,25 @@ happens in the changed land. Universes 1 and 3, shift at wave 5 of 12:
 Raw evidence (`sync`) updates fastest when everyone moves. Verification keeps stale laws longest,
 because old claims stay well replicated. When only half the agents move, a single global memory
 cannot be right for both regions. Superseding by recency removes stale laws but forgets laws that
-are still true elsewhere. Regional truth needs regional memory: this is the open question this
-switch is for.
+are still true elsewhere.
+
+**Regional memory** (`hive_regional`): agents know their region. The consolidator keeps one seed per
+region. A law is shared by all regions unless the regions' own replicated evidence disagrees; then
+each region keeps its value. Laws change in families (all crops' seasons, say), so once one law of a
+family splits, its other laws are no longer borrowed across regions. A region never borrows a value
+its own recent claims contradict. With two regions, waves also report what moved and staying agents
+get right and wrong about their own region. Half moved, last wave:
+
+| | wrong laws per agent | moved agents, wrong | staying agents, wrong | newcomer in the changed land (board) |
+|---|---|---|---|---|
+| sync | 2.2 | 3.5 | 1.0 | 0.67 |
+| hive_verified | 1.5 | 2.0 | 1.0 | 0.53 |
+| hive_recent | 1.4 | 1.8 | 1.0 | 0.69 |
+| hive_regional | 0.8 | 1.5 | 0.0 | 0.83 |
+
+Regional memory halves the wrong beliefs and keeps the unchanged region clean. It cannot fix laws the
+moved region never re-tested (2.5 of 13 changed laws split by the end); finding which laws changed
+where, before testing them all, is still open.
 
 ### Running the frontier studies on Nibi
 
@@ -596,10 +658,11 @@ PILOT=1 bash slurm/submit_frontier.sh            # tiny versions first, to check
 STUDIES="realism skin" bash slurm/submit_frontier.sh
 MODEL_ID=Qwen/Qwen3-VL-8B-Instruct bash slurm/setup_nibi.sh && bash slurm/submit_vision.sh   # pictures
 sbatch slurm/frontier_cpu.sh                     # heuristic baselines and large sweeps (CPU, about 6 h)
+bash slurm/submit_transfer.sh                    # the transfer study (below)
 ```
 
 Every job kind was dry-run end to end against a mock OpenAI server (random tool calls, structured
-outputs for the consolidator and the mentor, image parts counted): 13 job kinds, no errors.
+outputs for the consolidator and the mentor, image parts counted): 14 job kinds, no errors.
 
 ### Does SeedVille predict real benchmarks? (a transfer study)
 
@@ -624,6 +687,27 @@ helps it on real scientific tasks**. The plan:
 If the rank correlation holds beyond the covariate, SeedVille is a cheap, controllable stand-in for
 expensive scientific evaluations: hidden laws with known ground truth, measured exactly. If it does
 not, the per-skill correlations show which part of the town is unlike real science.
+
+**What is implemented** (`worldseeds/transfer.py`):
+
+* SeedVille skills of a configuration, from all its runs: `test_score`, `test_score_none`,
+  `memory_gain`, `law_precision`, `reflection_precision`, `noise_drop`, `skin_gap`, `invalid_rate`.
+* LAB-Bench multiple choice (`scripts/run_labbench.py`): by default the configs answerable from the
+  question text (ProtocolQA, SeqQA, CloningScenarios). Choices are shuffled, the LAB-Bench refusal
+  option is added, and it reports accuracy, precision (of answered) and coverage, per config.
+* `scripts/transfer_analysis.py study.json`: Spearman and Kendall per (skill, benchmark) across
+  configurations, 95% bootstrap intervals, and Spearman with the covariate partialled out. Other
+  harnesses (BixBench, DiscoveryBench, ScienceAgentBench) enter as numbers in the study file
+  (`docs/transfer_study.example.json`).
+* On Nibi, `slurm/submit_transfer.sh` submits one GPU job per model (`slurm/transfer_job.sh`): a
+  SeedVille battery (plain with and without memory, LLM reflection, noise, drug skin) and LAB-Bench
+  against the same vLLM server. Download LAB-Bench once on a login node:
+  `hf download futurehouse/lab-bench --repo-type dataset --local-dir $SCRATCH/worldseeds/data/lab-bench`.
+
+Two limits to keep in mind. LAB-Bench multiple choice is not agentic: across memory conditions of
+one model it does not change, so it can only rank models; the memory and playbook configurations
+need an agentic benchmark (BixBench). And with a handful of models the intervals are wide: aim for
+8 or more configurations.
 
 ## Protocols
 

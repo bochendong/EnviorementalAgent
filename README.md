@@ -239,14 +239,17 @@ Details and the CPU results so far are in
 | `solo_matched` (team), `serial` (hive) | is a team better than one agent with the same compute? | parallel agents learn as much as one agent playing the same worlds in a row (127 vs 126 laws); teams win by sharing and by tasks that need two bodies |
 | `--zoom-budget k` | what if looking closely costs attention? | the heuristic barely notices; meant for LLMs |
 | `--context canvas` / `image` | a fixed-size memory canvas (sharp where you are, blurrier further back, notes you rewrite) instead of a transcript; as pictures for VLMs | LLM study (`slurm/submit_frontier.sh`, `slurm/submit_vision.sh`) |
-| `--noise`, `--screen-error`, `--confounder`, `--publication-bias` | can the agent still do science when experiments are noisy, screens cheap but wrong, causes confounded, and only positive results published? | publication bias makes the library confidently wrong; cheap screens make learning slower |
+| `--noise`, `--screen-error`, `--confounder`, `--publication-bias` | can the agent still do science when experiments are noisy, screens cheap but wrong, causes confounded, and only positive results published? | publication bias makes the library confidently wrong; cheap screens slow learning only because the learner counts them as evidence (weight 0: no harm) |
 | `--skin drug` | the same laws as compounds, targets and protocols: does a scientific story change behaviour? | LLM study (the heuristic does not read text) |
 | `--protocol evolve` | do agents improve by inheriting how to learn? Does selecting on self-assessment cause reward hacking? Does it transfer? | selecting on claimed knowledge doubles wrong claims with no gain; evolved learners learn faster in unseen universes |
 | `--festival`, `--roles` | tasks only a team can do (a dish cooked from a fresh crop, a visit for two) and private perception (soils / people / goods) | the compute-matched solo agent falls to 0.60 vs 0.91 for a team |
-| `--hive-faulty-mode groups`, `hive_provenance`, `--hive-shift-wave` | can a hive find the truth when the liars agree and are the majority? What happens to its memory when the laws change in one region? | provenance cuts wrong laws from 13 to 2; a single global memory cannot be right for two regions |
+| `--hive-faulty-mode groups`, `hive_provenance`, `--hive-audit replicate`, `--hive-shift-wave`, `hive_regional` | can a hive find the truth when the liars agree and are the majority? What happens to its memory when the laws change in one region? | provenance with audits an agent replicates in real worlds cuts wrong laws from 8.5 to 2; regional memory halves wrong beliefs after a regional shift |
 
-The last part of that section plans a transfer study: do SeedVille scores rank agent
-configurations the same way as real scientific benchmarks (e.g. LAB-Bench, BixBench)?
+The last part of that section is a transfer study, ready to run: do SeedVille scores rank agent
+configurations the same way as real scientific benchmarks? `scripts/run_labbench.py` runs LAB-Bench
+multiple choice against the same server, other benchmarks (e.g. BixBench) enter as numbers, and
+`scripts/transfer_analysis.py` reports rank correlations with bootstrap intervals and a covariate
+partialled out.
 
 ## Running on Nibi (Compute Canada / Alliance)
 
@@ -283,7 +286,9 @@ configurations the same way as real scientific benchmarks (e.g. LAB-Bench, BixBe
    MODEL_ID=Qwen/Qwen3-VL-8B-Instruct bash slurm/setup_nibi.sh && bash slurm/submit_vision.sh
    sbatch slurm/frontier_cpu.sh
    ```
-6. **Watch a run in the browser** from a login node: `python scripts/serve_ui.py`, then
+6. **Transfer study** (one GPU job per model: a SeedVille battery and LAB-Bench):
+   `bash slurm/submit_transfer.sh`, then `python scripts/transfer_analysis.py <study.json>`.
+7. **Watch a run in the browser** from a login node: `python scripts/serve_ui.py`, then
    `ssh -L 8765:localhost:8765 nibi` and open http://localhost:8765.
 
 Other models: `MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 bash slurm/setup_nibi.sh`, then submit with the
@@ -294,12 +299,14 @@ same `MODEL_ID`. Compute nodes run offline, so weights must be downloaded by the
 ```
 worldseeds/
   envs.py         environment registry: dungeon | town | board
-  experiment.py   all protocols (compgen ... team, hive, evolve) and the result recorder
+  experiment/     experiments: config (option groups; the command line is generated from it), runner,
+                  protocols (classic, team, hive, evolve), memories, recorder
   agent.py        the LLM agent (Agents SDK): tools, prompts, episode loop, LLM consolidator
   canvas.py       canvas memory: a fixed-size multi-resolution context with rewritable notes
   render.py       pictures for vision-language agents (views by zoom level, the canvas as pages)
   skin.py         the same world told as another story (drug discovery)
   evolve.py       self-evolving generations: genomes, playbooks, mentor, archive
+  transfer.py     the transfer study: SeedVille skill scores, LAB-Bench, rank statistics
   llm.py          OpenAI-compatible model factory (vLLM / Qwen3 settings)
   memory.py       learned seed (evidence, predict), retrieval and trajectory baselines
   hive.py         many agents sharing one memory: groups, consolidator, verification, director,
@@ -315,9 +322,10 @@ worldseeds/
     sources.py    second-hand claims with controlled error rates
     team.py       several agents in one town (compute-matched clock, private-perception roles)
     replay.py     replays for the browser client
-scripts/          run_experiment, analyze, analyze_hive, analyze_evolve, play, serve_ui, build_web, export_replay
+scripts/          run_experiment, analyze, analyze_hive, analyze_evolve, screen_study, run_labbench,
+                  transfer_analysis, play, serve_ui, build_web, export_replay
 slurm/            env, setup_nibi, serve_and_run, pilot_board, submit_all, hive_cpu,
-                  submit_frontier, submit_vision, frontier_cpu
+                  submit_frontier, submit_vision, frontier_cpu, submit_transfer, transfer_job, start_vllm
 web/              Phaser 3 client (game.js, index.html), pixel art and maps, art tools (web/tools)
 tests/            all tests (no GPU needed)
 docs/             research program, research plan, detailed experiment reference
