@@ -112,6 +112,7 @@ class TeamProtocol:
             "zoom_ops": 0, "nodes_grown": world.nodes_grown, "input_tokens": tokens[0], "output_tokens": tokens[1],
             "status": metrics.get("status", "finished"), "error": None, "time": time.time(),
             "library_reads": lib.reads if lib is not None else None, "festival": c.world.festival, "roles_on": c.team.roles,
+            "world_opts": self._env_kw(), "team_messages": mode == "messages", "skin": c.llm.skin, "max_actions": c.max_actions * matched,
             **metrics,
         }
         await self.rec.write(row, traces)

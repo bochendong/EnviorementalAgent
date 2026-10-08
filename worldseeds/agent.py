@@ -89,11 +89,12 @@ class _UsageHooks(RunHooks):
         context.context._run_usage = (u.requests, u.input_tokens, u.output_tokens)
 
 
-def _log(ctx: EpisodeCtx, tool: str, args: dict, out: str) -> str:
+def _log(ctx: EpisodeCtx, tool: str, args: dict, out: str, t: float | None = None) -> str:
     out = ctx.out(out)
     ctx.tool_calls += 1
     ctx.observed_chars += len(out)
-    ctx.trace.append({"tool": tool, "args": args, "out": out[:2000]})
+    # t (when the call reached the world) orders the calls of teammates acting at the same time (replays)
+    ctx.trace.append({"tool": tool, "args": args, "out": out[:2000], "t": time.monotonic() if t is None else t})
     return out
 
 
@@ -132,11 +133,12 @@ async def act(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instru
     """
     c = ctx.context
     w = c.world
+    t0 = time.monotonic()
     msg, _ = w.act(c.back(verb), c.back(target), c.back(instrument))
     if getattr(w, "team", None) is not None and w.asleep:  # in a team: wait in bed for the next morning
         await w.team.wait_morning(w.i)
         msg += "\n" + ("A new day begins.\n" + w.observe() if not w.done else "")
-    return _log(ctx.context, "act", {"verb": verb, "target": target, "instrument": instrument}, msg)
+    return _log(ctx.context, "act", {"verb": verb, "target": target, "instrument": instrument}, msg, t0)
 
 
 @function_tool

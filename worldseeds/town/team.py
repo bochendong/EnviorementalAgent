@@ -109,6 +109,17 @@ class Team:
                 return True
         return False
 
+    def roster(self) -> list[dict]:
+        """Where every teammate is and what it carries (for the pixel UI); ``me`` marks the acting one."""
+        out = []
+        for i, b in enumerate(self.bodies):
+            live = self.cur == i
+            out.append({"name": b.name, "role": b.role, "me": live, "asleep": b.asleep,
+                        "room": self.w.agent_room if live else b.agent_room,
+                        "actions": self.w.actions if live else b.actions,
+                        "inventory": list(self.w.inventory if live else b.inventory)})
+        return out
+
     def awake(self) -> list[int]:
         return [i for i, b in enumerate(self.bodies) if not b.asleep and not b.finished and not self._spent(i)]
 

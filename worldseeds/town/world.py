@@ -1136,6 +1136,10 @@ class TownWorld:
             **({"requests": [dict(r, text=self.request_text(r)) for r in self.requests], "days": self.seed.days}
                if self.requests else {}),
             **({"testimony": True, "liars": sorted(self.liars)} if self.testimony is not None else {}),
+            **({"weather": self.weather} if self.confounder else {}),
+            **({"festival": True} if self.festival else {}),
+            **({"perceives": sorted(self.perceives)} if self.perceives is not None else {}),
+            **({"team": self.team_ref.roster()} if self.team_ref is not None else {}),
         }
 
     def clone(self) -> "TownWorld":

@@ -28,6 +28,26 @@ const TILE_WALL = 144, WALLPAPERS = 4;
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+/* A replay can carry a skin (worldseeds/skin.py): the agent read the town as another story (drug
+   discovery). Texts are shown in its words; actions are translated back to drive the animation. */
+const Skin = {
+  fwd: null, rev: null, reF: null, reR: null,
+  set(skin) {
+    const words = skin && skin.words;
+    this.fwd = this.rev = this.reF = this.reR = null;
+    if (!words) return;
+    this.fwd = {}; this.rev = {};
+    for (const [k, v] of Object.entries(words)) { this.fwd[k.toLowerCase()] = v; this.rev[v.toLowerCase()] = k; }
+    const re = keys => new RegExp("(?<![A-Za-z])(" + keys.sort((a, b) => b.length - a.length)
+      .map(k => k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")(?![A-Za-z])", "gi");
+    this.reF = re(Object.keys(this.fwd)); this.reR = re(Object.keys(this.rev));
+  },
+  out(t) {
+    if (!this.reF || !t) return t;
+    return t.replace(this.reF, m => { const v = this.fwd[m.toLowerCase()]; return m[0] === m[0].toUpperCase() && m[0] !== m[0].toLowerCase() ? v[0].toUpperCase() + v.slice(1) : v; });
+  },
+  back(t) { return this.reR && t ? t.replace(this.reR, m => this.rev[m.toLowerCase()]) : t; },
+};
 
 /* ===================================================================== helpers */
 function frameFor(o) {
@@ -150,6 +170,7 @@ class BootScene extends Phaser.Scene {
     }));
     const tex = (key, w, h, color) => { const g = this.make.graphics({ add: false }); g.fillStyle(color); g.fillRect(0, 0, w, h); g.generateTexture(key, w, h); g.destroy(); };
     tex("px_petal", 2, 2, 0xf6b8d2); tex("px_leaf", 3, 2, 0xd9772e); tex("px_snow", 2, 2, 0xffffff);
+    tex("px_rain", 1, 5, 0x8fb4e8);
     tex("px_drop", 1, 2, 0x8fc7f0); tex("px_spark", 1, 1, 0xfff3b0); tex("px_pollen", 1, 1, 0xf6e27a);
     this.scene.start("world", { season: "spring", sceneId: "farm" });
     this.scene.launch("hud");
@@ -593,6 +614,7 @@ class HudScene extends Phaser.Scene {
       summer: ["px_pollen", { speedY: { min: -6, max: 6 }, speedX: { min: -8, max: 8 }, frequency: 300, scale: 3, alpha: { start: 1, end: 0 } }],
       fall: ["px_leaf", { speedY: { min: 18, max: 34 }, speedX: { min: -16, max: 12 }, frequency: 180, scale: 2, rotate: { min: 0, max: 360 } }],
       winter: ["px_snow", { speedY: { min: 16, max: 34 }, speedX: { min: -8, max: 8 }, frequency: 60, scale: { min: 1, max: 2 } }],
+      rain: ["px_rain", { speedY: { min: 220, max: 300 }, speedX: { min: -20, max: -10 }, frequency: 12, scale: 2, alpha: .8 }],
     }[season];
     if (!cfg || reduceMotion) return;
     this.weather = this.add.particles(0, 0, cfg[0], Object.assign({ x: { min: 0, max: GW }, y: season === "summer" ? { min: 0, max: GH } : -6, lifespan: 16000 }, cfg[1])).setDepth(-1);
@@ -602,9 +624,10 @@ class HudScene extends Phaser.Scene {
     if (!s) return;
     this.state = s;
     const w = Director.world;
-    this.setWeather(s.season, w && !w.indoor);
+    // a confounded town has weather: on a rainy day it rains (and one soil will flood tonight)
+    this.setWeather(s.weather === "rainy" ? "rain" : s.season, w && !w.indoor);
     const v = s.requests ? null : s.objects.find(o => o.id === s.goal_villager);
-    this.qTitle.setText(s.requests ? "TOWN BOARD" : "QUEST");
+    this.qTitle.setText(s.requests ? (s.festival ? "FESTIVAL BOARD" : "TOWN BOARD") : "QUEST");
     this.qText.setText(s.requests ? `${s.requests.filter(r => r.done).length} of ${s.requests.length} done · until day ${s.days}`
       : v ? `Get the trophy from ${v.name}` : "No quest");
     this.qNeeds.removeAll(true);
@@ -624,12 +647,26 @@ class HudScene extends Phaser.Scene {
     for (const r of s.requests || []) {
       const by = id => (s.objects.find(o => o.id === id) || {});
       const p = by(r.villager), it = r.item ? by(r.item) : null;
-      const what = r.kind === "harvest" ? "a fresh crop" : r.kind === "friends" ? "friendship"
-        : `${it.color} ${it.name}` + (r.kind === "fetch" ? ` (${by(r.holder).name})` : " (store)");
-      row(`${p.name}: ${what}`, r.done, r.kind === "friends" ? Math.min(2, p.friendship) : undefined);
+      let what;
+      if (r.kind === "harvest") what = "a fresh crop";
+      else if (r.kind === "friends") what = "friendship";
+      else if (r.kind === "dish") what = it ? `the ${it.name} (cooked)` : `a dish (${by(r.holder).name} cooks)`;
+      else if (r.kind === "together") {
+        const here = (s.team || []).filter(b => !b.asleep && b.room === p.location).length;
+        what = `visit with a friend (${here}/2)`;
+      } else what = `${it.color} ${it.name}` + (r.kind === "fetch" ? ` (${by(r.holder).name})` : " (store)");
+      row(Skin.out(`${p.name}: ${what}`), r.done, r.kind === "friends" ? Math.min(2, p.friendship) : undefined);
+    }
+    if (s.team) {  // who is where; the acting teammate is marked
+      y += 4;
+      for (const b of s.team) {
+        const t = `${b.me ? "▶ " : ""}${b.name}${b.role ? " (" + Skin.out(b.role) + ")" : ""} · ${Skin.out(b.room)}${b.asleep ? " · in bed" : ""}`;
+        this.qNeeds.add(this.add.text(0, y, t, { fontFamily: "VT323", fontSize: "17px", color: b.me ? "#3a2312" : "#8a6a4a" }).setResolution(2));
+        y += 16;
+      }
     }
     this.qPanel.height = Math.max(90, 70 + y);
-    this.cDay.setText(`Day ${s.day}, ${cap(s.season)}`);
+    this.cDay.setText(Skin.out(`Day ${s.day}, ${cap(s.season)}`) + (s.weather === "rainy" ? " · rain" : ""));
     this.cPhase.setText(cap(s.phase));
     this.cIcon.setFrame(s.phase === "evening" ? "moon" : "sun");
     this.ticks.forEach((t, i) => t.setFillStyle(i < s.tick ? 0xb08a5a : i === s.tick ? 0xf2b632 : (i < 4 ? 0xf6d89a : i < 8 ? 0xf2c46a : 0xc9a0c8)));
@@ -646,14 +683,14 @@ class HudScene extends Phaser.Scene {
     if (this.mapLayer.visible) this.drawTownMap();
   }
 
-  say({ action, message, who, kind }) {
+  say({ action, message, who, kind, actor }) {
     const text = cleanMessage(message, kind);
     if (!text && !action) { this.dlg.setVisible(false); return; }
     this.dlg.setVisible(!this.mapLayer.visible);
     this.dlgAct.setText(action || "");
     const key = who ? `pt_${who.name}_${who.color}` : "pt_player";
     this.portrait.setTexture(this.textures.exists(key) ? key : "pt_player");
-    this.dlgName.setText(who ? who.name : "You");
+    this.dlgName.setText(who ? who.name : actor || "You");
     // library shelves list many notes: drop provenance tags and keep what fits in four wrapped rows
     const lines = text.replace(/ \((consolidated|note by)[^)]*\)/g, "").split("\n");
     const rows = [];
@@ -732,6 +769,14 @@ const Director = {
     await done;
   },
   sceneIdOf(loc) { const sc = Graph.scene(loc); return sc ? sc.id : "farm"; },
+  /** the frame's action in the engine's words (a skinned replay shows the agent's words) */
+  raw(frame) { return Skin.back(frame.action); },
+  /** in a team replay: the acting teammate and its role */
+  actor(frame) {
+    if (!frame.who || frame.who === "team") return null;
+    const b = (frame.state.team || []).find(x => x.name === frame.who);
+    return b && b.role ? `${b.name} (${Skin.out(b.role)})` : frame.who;
+  },
   who(state, action) {
     const { args } = parseAction(action);
     return state.objects.find(o => o.kind === "villager" && args.includes(o.id));
@@ -747,8 +792,9 @@ const Director = {
     this.game.events.emit("state", s);
     const goal = s.requests ? `Goal: finish the ${s.requests.length} requests on the town board by the end of day ${s.days}.`
       : `Goal: get the trophy from ${(s.objects.find(o => o.id === s.goal_villager) || {}).name}.`;
-    const msg = frame.kind === "start" ? goal : frame.message;
-    this.game.events.emit("say", { action: frame.kind === "start" ? "" : frame.action, message: msg, kind: frame.kind, who: this.who(s, frame.action) });
+    const msg = frame.kind === "start" ? Skin.out(goal) : frame.message;
+    this._lastWho = frame.who;
+    this.game.events.emit("say", { action: frame.kind === "start" ? "" : frame.action, message: msg, kind: frame.kind, who: this.who(s, this.raw(frame)), actor: this.actor(frame) });
   },
 
   /** Walk the player through doors and exits until they reach ``loc``. */
@@ -772,14 +818,15 @@ const Director = {
   async animate(prev, frame) {
     const s = frame.state, sp = this.speed;
     if (!prev || prev.season !== s.season) return this.show(frame);
+    if (frame.who && frame.who !== this._lastWho) return this.show(frame);  // another teammate acts: cut to it
     let w = this.world;
     if (w.sceneId !== this.sceneIdOf(prev.agent_room)) { await this.show({ state: prev, message: "", action: "" }); w = this.world; }
-    const { verb, args } = parseAction(frame.action);
+    const { verb, args } = parseAction(this.raw(frame));
     const objPrev = id => prev.objects.find(o => o.id === id);
     const spriteOf = id => w.dyn.get(id) || (w.plotSprites[id] && w.plotSprites[id].base);
     const target = args[0], instr = args[1];
     const dayChanged = s.day !== prev.day;
-    this.game.events.emit("say", { action: frame.action, message: frame.message, kind: frame.kind, who: this.who(s, frame.action) || this.who(prev, frame.action) });
+    this.game.events.emit("say", { action: frame.action, message: frame.message, kind: frame.kind, who: this.who(s, this.raw(frame)) || this.who(prev, this.raw(frame)), actor: this.actor(frame) });
 
     // 1. move: travel between scenes, or walk up to the thing being used
     if (frame.kind === "act" && verb === "go" && target && !dayChanged) {
@@ -850,6 +897,7 @@ const Director = {
   load(replay) {
     this.stop();
     this.replay = replay; this.frames = replay.frames || []; this.idx = 0;
+    Skin.set(replay.skin);
     UI.onReplay(replay);
     return this.show(this.frames[0]).then(() => UI.onStep(0));
   },
@@ -917,8 +965,8 @@ const Director = {
       this.liveState = d.state; UI.onLive(d);
     } finally { this.busy = false; }
   },
-  async liveNew(universe, blocks, villagers, library, board, testimony) {
-    const d = await this.api("api/new", { universe, blocks, n_villagers: villagers, library, board, testimony });
+  async liveNew(universe, blocks, villagers, library, board, testimony, festival, rain) {
+    const d = await this.api("api/new", { universe, blocks, n_villagers: villagers, library, board, testimony, festival, rain });
     this.liveState = d.state; UI.onLive(d);
     await this.show({ state: d.state, message: d.goal_text, action: "", kind: "start" });
   },
@@ -960,7 +1008,7 @@ const UI = {
     $("pOracle").onclick = () => Director.liveAuto("oracle");
     $("pExplorer").onclick = () => Director.liveAuto("explorer");
     $("pGo").onclick = () => { const v = $("goTo").value; if (v) Director.liveAct("go", v); };
-    $("pNew").onclick = () => Director.liveNew(+$("uni").value, ["farming", "gifting", "shop", "schedule"].filter(b => $("blk-" + b).checked), +$("nVill").value, $("libMode").value, $("blk-board").checked ? 4 : 0, $("testi").value);
+    $("pNew").onclick = () => Director.liveNew(+$("uni").value, ["farming", "gifting", "shop", "schedule"].filter(b => $("blk-" + b).checked), +$("nVill").value, $("libMode").value, $("blk-board").checked ? 4 : 0, $("testi").value, $("festival").checked, $("rain").checked);
     document.addEventListener("keydown", e => {
       if (["INPUT", "SELECT", "TEXTAREA"].includes(e.target.tagName)) return;
       if (e.key === "m" || e.key === "M") Director.hud && Director.hud.toggleMap();
@@ -982,7 +1030,7 @@ const UI = {
     });
   },
   onReplay(r) {
-    this.$("runDesc").textContent = r.description || "";
+    this.$("runDesc").textContent = (r.description || "") + (r.skin ? ` The agent read this town as ${r.skin.name === "drug" ? "drug discovery" : r.skin.name}: texts are shown in its words (crops are compounds, soils targets, seasons protocols).` : "");
     const laws = this.$("laws"); laws.innerHTML = "";
     (r.laws || []).forEach(l => { const li = document.createElement("li"); li.textContent = l; laws.appendChild(li); });
     this.$("memory").textContent = r.memory || "Nothing. This agent starts from scratch.";
@@ -1021,7 +1069,7 @@ const UI = {
     if (o.kind === "board" && s.requests) t = `Town board · ${s.requests.filter(r => r.done).length}/${s.requests.length} requests done · until day ${s.days}`;
     if (o.kind === "shelf") t = (o.category === "pile" ? "Unsorted notes" : `${cap(o.category)} shelf`) + ` · ${o.entries} note${o.entries === 1 ? "" : "s"}` + (o.entries ? "" : " (empty)");
     if (o.kind === "plot") t = `Plot ${o.id}` + (o.seen ? ` · ${o.soil} soil` : " · soil unknown") + (o.crop ? ` · ${o.crop} (${o.status})` : "");
-    return t;
+    return Skin.out(t);
   },
   tip(hit, ev) {
     const el = this.$("tip"), t = this.describe(hit);

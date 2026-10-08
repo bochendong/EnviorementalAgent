@@ -47,11 +47,12 @@ def library_for(universe: int, mode: str) -> LibraryArchive | None:
 
 class Game:
     def __init__(self, universe: int, blocks, surface_seed: int, n_villagers: int = 8, library: str = "categorized",
-                 board: int = 4, testimony: float | None = None):
+                 board: int = 4, testimony: float | None = None, festival: bool = False, rain: bool = False):
         self.seed = TownSeed(laws=TownLaws.from_index(universe), blocks=tuple(blocks), surface_seed=surface_seed,
                              n_villagers=n_villagers, board=board)
         self.universe = universe
-        self.world = grow_town(self.seed, max_actions=200, library=library_for(universe, library), testimony=testimony)
+        self.world = grow_town(self.seed, max_actions=200, library=library_for(universe, library), testimony=testimony,
+                               festival=festival and board > 0, confounder=rain)
 
     def payload(self, message: str = "") -> dict:
         return {"live": True, "state": self.world.snapshot(), "message": message, "seed": self.seed.to_dict(),
@@ -101,7 +102,8 @@ class Handler(BaseHTTPRequestHandler):
             GAME = Game(int(body.get("universe", 0)), blocks, int(body.get("surface_seed", random.randrange(1 << 30))),
                         max(2, min(12, int(body.get("n_villagers", 8)))), str(body.get("library", "categorized")),
                         max(0, min(6, int(body.get("board", 4)))),
-                        None if body.get("testimony") in (None, "", "off") else float(body["testimony"]))
+                        None if body.get("testimony") in (None, "", "off") else float(body["testimony"]),
+                        bool(body.get("festival")), bool(body.get("rain")))
             self._json(GAME.payload(GAME.world.observe()))
         elif self.path == "/api/act":
             msg, ok = w.act(body.get("verb"), body.get("target"), body.get("instrument"))

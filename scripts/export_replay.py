@@ -8,7 +8,10 @@
     python scripts/build_web.py --replay qwen_ep5.json
 
 Needs a run made with --save-traces. Only town episodes that start from a fresh town
-(goal_index 0) can be re-simulated.
+(goal_index 0) can be re-simulated. The world's switches (noise, screens, weather, festival,
+perception budget) and the skin come from the row, so the replay follows the run exactly. Team
+episodes (protocol team) replay every teammate's calls in the order they happened; pick one with
+--chain and --episode plus --variant (the sharing mode).
 """
 
 import argparse
@@ -19,7 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from worldseeds.town.library import LibraryArchive  # noqa: E402
-from worldseeds.town.replay import replay_trace  # noqa: E402
+from worldseeds.town.replay import replay_team_trace, replay_trace  # noqa: E402
 
 
 def main():
@@ -27,6 +30,7 @@ def main():
     ap.add_argument("run_dir")
     ap.add_argument("--chain")
     ap.add_argument("--episode", type=int)
+    ap.add_argument("--variant", default=None, help="team episodes: the sharing mode (e.g. messages)")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("-o", "--out", default="replay.json")
     a = ap.parse_args()
@@ -35,17 +39,28 @@ def main():
     rows = [r for r in rows if r.get("env") in ("town", "board") and r.get("seed") and r.get("goal_index", 0) == 0]
     if a.list:
         for r in rows:
-            print(f"{r['chain']}  episode {r['episode']:3d}  {r['phase']:5s}  {r['composition']:35s} "
-                  f"success={r['success']} actions={r['actions']}")
+            print(f"{r['chain']}  episode {r['episode']:3d}  {r['phase']:5s}  {r.get('variant') or '':12s} "
+                  f"{r['composition']:35s} success={r['success']} actions={r['actions']}")
         return
-    row = next(r for r in rows if r["chain"] == a.chain and r["episode"] == a.episode)
+    row = next(r for r in rows if r["chain"] == a.chain and r["episode"] == a.episode
+               and (a.variant is None or r.get("variant") == a.variant))
     traces = [json.loads(x) for x in (d / "traces.jsonl").open() if x.strip()]
-    tr = next(t for t in traces if t["key"] == a.chain and t["episode"] == a.episode)
+    tr = next(t for t in traces if t["key"] == a.chain and t["episode"] == a.episode
+              and (a.variant is None or t.get("variant") == a.variant))
+    if row.get("protocol") == "team":
+        rep = replay_team_trace(row["seed"], tr["trace"], title=f"{row['llm']} · team {row['variant']} · "
+                                f"episode {row['episode']}", max_actions=row.get("max_actions", 200),
+                                world_opts=row.get("world_opts"), roles=bool(row.get("roles_on")),
+                                messages=bool(row.get("team_messages")), skin=row.get("skin"))
+        Path(a.out).write_text(json.dumps(rep))
+        print(f"wrote {a.out}: {len(rep['frames'])} frames, success={rep['success']}")
+        return
     title = f"{row['llm']} · {row['condition']} · episode {row['episode']}"
     lib = LibraryArchive.from_dict(row["library"]) if row.get("library") else None
     testimony = row.get("source_error", 0.0) if row.get("condition") == "testimony" else None
+    opts = {k: v for k, v in (row.get("world_opts") or {}).items() if k != "testimony"}
     rep = replay_trace(row["seed"], tr["trace"], title=title, library=lib, testimony=testimony,
-                       max_actions=200 if row.get("board_total") else 60)
+                       max_actions=200 if row.get("board_total") else 60, world_opts=opts, skin=row.get("skin"))
     Path(a.out).write_text(json.dumps(rep))
     print(f"wrote {a.out}: {len(rep['frames'])} frames, success={rep['success']}")
 

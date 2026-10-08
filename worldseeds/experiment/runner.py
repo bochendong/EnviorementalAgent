@@ -81,6 +81,10 @@ class CoreRunner:
             "seed_id": world.seed.id, "seed": world.seed.to_dict(), "composition": world.seed.composition,
             "n_blocks": len(world.seed.blocks), "n_rooms": world.seed.n_rooms,
             "goal_index": world.goal_index, "oracle_steps": opt, **metrics,
+            # the world's switches, so an episode can be re-simulated exactly (scripts/export_replay.py)
+            **({"world_opts": {**self._env_kw(), **({"testimony": world.testimony}
+                                                     if getattr(world, "testimony", None) is not None else {})}}
+               if self.env.name != "dungeon" else {}),
             **({"perception_spent": world.perception_spent, "zoom_budget": world.zoom_budget}
                if getattr(world, "zoom_budget", None) is not None else {}),
             **({"screens": world.screens, "screen_policy": self.cfg.learner.screen_policy,
