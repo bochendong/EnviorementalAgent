@@ -3,3 +3,4 @@ openai-agents>=0.23
 openai>=3.0
 pydantic>=2.7
 pytest>=8
+pillow>=10.1   # pictures for vision-language agents (--context image) and the art tools

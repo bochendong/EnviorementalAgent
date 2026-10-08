@@ -340,9 +340,9 @@ def _canvas_input(recent: int, image: bool = False):
             return data.model_data
         text = canvas.render()
         if image:
-            from .render import text_pages_content
+            from .render import canvas_content
 
-            msg = {"role": "user", "content": text_pages_content(text)}
+            msg = {"role": "user", "content": canvas_content(data.context.world, text)}
         else:
             msg = {"role": "user", "content": text}
         data.model_data.input = [items[0], msg] + tail

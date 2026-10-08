@@ -3,7 +3,7 @@ name = "worldseeds"
 version = "0.1.0"
 description = "World Seeds: growing, zoomable, memoryful agent environments (prototype)"
 requires-python = ">=3.10"
-dependencies = ["openai-agents>=0.23", "openai>=3.0", "pydantic>=2.7"]
+dependencies = ["openai-agents>=0.23", "openai>=3.0", "pydantic>=2.7", "pillow>=10.1"]
 
 [tool.setuptools]
 packages = ["worldseeds"]
