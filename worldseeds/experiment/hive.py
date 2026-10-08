@@ -35,6 +35,8 @@ class HiveProtocol:
         truth_b = self.env.seed_cls.truth(laws_b)
         hv = Hive(self.env.seed_cls, HIVE_MODES[mode], n, faulty, rng_seed=_seed(("hive", c.rng_seed, u, r, n, faulty)),
                   faulty_mode=c.hive.faulty_mode, truth=truth_a)
+        replicate = c.hive.audit == "replicate" and hv.mode.audit > 0
+        hv.external_audit = replicate
         # regional shift: the first ``share`` of the agents (whole groups, as groups are consecutive) live under
         # the new laws
         moved_agents = set(range(round(c.hive.shift_share * n))) if c.hive.shift_wave else set()
@@ -53,7 +55,7 @@ class HiveProtocol:
                "shift_wave": c.hive.shift_wave, "shift_share": c.hive.shift_share if c.hive.shift_wave else 0}
         for wv in range(c.hive.waves):
             if c.hive.shift_wave and wv + 1 == c.hive.shift_wave and c.hive.shift_share >= 1:
-                hv.truth, hv.checked = truth_b, set()  # audits now replicate under the new laws
+                hv.truth, hv.checked, hv.audited = truth_b, set(), set()  # audits now replicate under the new laws
             seeds = []
             for i in range(n):  # the same worlds for every mode (unless a director picks them)
                 rng = random.Random(_seed(("hive-world", c.rng_seed, u, r, wv, i)))
@@ -86,8 +88,19 @@ class HiveProtocol:
                 for i, w in enumerate(worlds):
                     hv.report(i, w.events)
             stats = hv.take_wave_stats()
+            syncs = hv.syncs
             hv.end_wave()
             ep += n
+            if replicate and hv.syncs > syncs:  # the auditor replicates the least replicated claims
+                audit_laws = laws_b if c.hive.shift_wave and wv + 1 >= c.hive.shift_wave and \
+                    c.hive.shift_share >= 0.5 else laws
+                for k in range(hv.mode.audit):
+                    cand = hv.next_audit()
+                    if cand is None:
+                        break
+                    verdict, ep = await self._replicate(hv, cand, audit_laws, view, chain, ep, variant,
+                                                        {**tag, "wave": wv, "audit": k}, write)
+                    hv.apply_audit(*cand, verdict)
             agents = [0] if hv.mode.serial else range(0, n, max(1, n // 32))  # a sample of agents
             known = [Hive.score(hv.view(i), region_laws(i, wv)) for i in agents]
             shift_stats = {}
@@ -113,6 +126,7 @@ class HiveProtocol:
                 "wrong_collective": Hive.score(hv.collective(), laws)[1],
                 "messages": hv.messages, "syncs": hv.syncs, **stats, **shift_stats,
                 "audits": hv.audits, "distrusted": len(hv.distrusted), "rejected": len(hv.rejected),
+                "audit_mode": c.hive.audit if hv.mode.audit else None, "audits_inconclusive": hv.inconclusive,
                 "wave_success": sum(bool(x["success"]) for x in rows) / n,
                 **({"wave_board": sum(x["board_done"] / x["board_total"] for x in rows) / n}
                    if rows and rows[0].get("board_total") else {}),
@@ -131,3 +145,49 @@ class HiveProtocol:
                             extra={**tag, "shared_known": Hive.score(shared, test_laws)[0],
                                    "shared_wrong": Hive.score(shared, test_laws)[1], "total_laws": total})
             ep += 1
+
+    async def _replicate(self, hv, claim, laws, view, chain, ep, variant, tag, write) -> tuple[bool | None, int]:
+        """An honest auditor tests one claim in worlds of its own, designed from the claim alone (never
+        from the true laws): the claimed crop in town (with one other crop), in the claimed season (or the
+        season the hive believes); gifting towns for gift laws; towns with schedules for the midday law. It
+        acts on the claim, so it tests it, and its verdict is what its own evidence there says about the
+        claim: confirmed, refuted, or inconclusive (no evidence either way). Each world is a real episode."""
+        from dataclasses import replace
+
+        c = self.cfg
+        sp, val = claim
+        rng = random.Random(_seed(("audit", c.rng_seed, chain, sp, val, hv.audits)))
+        kind, _, crop = sp.partition(".")
+        if kind in ("soil", "season"):
+            # the claimed crop first; a second crop lets the town keep one growable crop without dropping it
+            others = [x for x in laws.crops if x != crop]
+            blocks, crops = ("farming",), (crop, rng.choice(others)) if others else (crop,)
+            season = val if kind == "season" else hv.glob.confident(f"season.{crop}") if \
+                f"season.{crop}" in hv.glob.hyps else None
+        elif kind in ("likes", "gift_attr"):
+            blocks, crops, season = ("gifting",), (), None
+        else:
+            blocks, crops, season = ("schedule", "gifting"), (), None
+        blocks = tuple(b for b in blocks if b in self.env.blocks) or (self.env.blocks[0],)
+        # the auditor acts on the claim (so it tests it: plants the crop in the claimed soil, gives the claimed
+        # gift); the verdict uses only the evidence from its own replication worlds
+        m = self._mem("seed", laws)
+        m.seed._vote_exclusive(sp, val, 1.0)
+        events = []
+        for k in range(c.hive.audit_worlds):
+            s = self.env.seeds_for([blocks], laws, 1, rng, n_distractors=c.world.n_distractors)[0]
+            if crops:
+                s = replace(s, crops=crops)
+            if season:
+                s = replace(s, fixed_season=season)
+            w = self._grow(s, view)
+            await self.play(w, m, chain, ep, "audit", variant=variant, oracle=False,
+                            extra={**tag, "claim": f"{sp}={val}", "audit_world": k}, write=write)
+            events += w.events
+            ep += 1
+        own = self.env.seed_cls()
+        own.consolidate_events(events)
+        h = own.hyps.get(sp, {}).get(val)
+        if h is None or h.support == h.against:
+            return None, ep
+        return h.support > h.against, ep

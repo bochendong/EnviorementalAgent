@@ -90,6 +90,7 @@ class HiveOptions:
     audit: str = opt("oracle", "hive audits: 'oracle' checks a claim against the true laws (a gold standard), "
                      "'replicate' sends an agent to test it in a world of its own (costs real episodes)",
                      choices=["oracle", "replicate"])
+    audit_worlds: int = opt(2, "hive: worlds an auditor plays to replicate one claim (--hive-audit replicate)")
 
 
 @dataclass

@@ -14,8 +14,9 @@ sends them back out, people steering agents toward open questions, and a final v
     faulty      a share of agents report consistently wrong evidence (bad intermediate results); with
                 ``faulty_mode`` 'correlated' they all tell the same lie, with 'groups' they also sit together
                 in whole groups (a biased lab): when they outnumber the honest agents the truth is a minority
-    provenance  every claim keeps who made it and when. ``audit`` = claims per sync checked by a gold-standard
-                replication (it costs an audit episode each); a failed audit rejects that one claim, or, with
+    provenance  every claim keeps who made it and when. ``audit`` = claims per sync checked, either against
+                the true laws (a gold standard) or by an honest auditor replicating the claim in worlds of
+                its own (real episodes, possibly inconclusive); a failed audit rejects that one claim, or, with
                 ``provenance``, everything its makers ever claimed. ``window``: newer evidence supersedes
                 older; per law, only claims made within ``window`` waves of its latest claim count (so
                 stale claims age out after the laws shift, while laws nobody re-checks are kept)
@@ -84,7 +85,12 @@ class Hive:
         self.rejected: set[tuple[str, str]] = set()
         self.distrusted: set[int] = set()
         self.audits = 0
+        self.external_audit = False
         self.checked: set[str] = set()  # laws an audit confirmed
+        self.audited: set[tuple[str, str]] = set()  # claims audited already (whatever the verdict)
+        self.inconclusive = 0
+        # False: audits compare with ``truth`` (a gold standard). True: the caller replicates each claim in
+        # worlds of its own and reports the verdict (worldseeds/experiment/hive.py, --hive-audit replicate)
         self.accepted: set[tuple[str, str]] = set()
         self.wave = 0
         # redundancy: which laws some report has already found (any value), and per-wave tallies
@@ -170,10 +176,13 @@ class Hive:
         # the same value AND it has a clear majority (twice the support of any other value). Rebuilt at
         # every sync, so a law accepted early is withdrawn when contrary findings outnumber it.
         self._rebuild()
+        if self.external_audit:  # the caller replicates claims in real worlds (``next_audit`` / ``apply_audit``)
+            return
         for _ in range(self.mode.audit):
-            if not self._audit():
+            cand = self.next_audit()
+            if cand is None:
                 break
-            self._rebuild()
+            self.apply_audit(*cand, self.truth[cand[0]] == cand[1])
 
     def _support(self, sp: str) -> list[tuple[str, set[int]]]:
         """Values of ``sp`` with the agents whose claims still count, most supported first."""
@@ -202,21 +211,26 @@ class Hive:
                 self.accepted.add((sp, val))
                 self.glob._vote_exclusive(sp, val, 5.0)
 
-    def _audit(self) -> bool:
-        """Check one accepted claim (the least-replicated first) against a gold-standard replication."""
-        todo = sorted((x for x in self.accepted if x[0] in self.truth and x[0] not in self.checked),
+    def next_audit(self) -> tuple[str, str] | None:
+        """The accepted claim to audit next: the least replicated one not audited yet."""
+        todo = sorted((x for x in self.accepted if x not in self.audited and x[0] not in self.checked
+                       and (self.external_audit or x[0] in self.truth)),
                       key=lambda x: (len(self.claims[x[0]][x[1]]), x))
-        if not todo:
-            return False
-        sp, val = todo[0]
+        return todo[0] if todo else None
+
+    def apply_audit(self, sp: str, val: str, verdict: bool | None) -> None:
+        """The audit's verdict on claim (sp, val): confirmed, refuted, or inconclusive (None)."""
         self.audits += 1
-        if self.truth[sp] == val:
+        self.audited.add((sp, val))
+        if verdict is None:
+            self.inconclusive += 1
+        elif verdict:
             self.checked.add(sp)
-            return True
-        self.rejected.add((sp, val))
-        if self.mode.provenance:  # everything its makers ever claimed is discredited
-            self.distrusted |= set(self.claims[sp][val])
-        return True
+        else:
+            self.rejected.add((sp, val))
+            if self.mode.provenance:  # everything its makers ever claimed is discredited
+                self.distrusted |= set(self.claims[sp][val])
+        self._rebuild()
 
     # ------------------------------------------------------------ director
     def stale(self, seed, old: dict, new: dict) -> int:

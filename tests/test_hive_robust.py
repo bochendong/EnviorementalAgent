@@ -92,3 +92,31 @@ def test_shift_and_faulty_runs(tmp_path):
     assert all(r["faulty_mode"] == "groups" for r in waves)
     assert any(r["audits"] > 0 for r in waves if r["hive_mode"] == "hive_provenance")
     assert TownLaws.from_index(1) != TownLaws.from_index(1).mutate(__import__("random").Random(0), n=2)
+
+
+def test_replication_audits_play_real_worlds(tmp_path):
+    from worldseeds.experiment import ExpConfig, run_experiment
+
+    cfg = ExpConfig(env="board", protocol="hive", policy="heuristic", conditions=["seed"], universes=[1], n_test=1,
+                    max_actions=150, n_crops=8, hive_modes=["hive_provenance"], hive_sizes=[8], hive_waves=4,
+                    hive_faulty=[0.6], hive_faulty_mode="groups", hive_audit="replicate", out_dir=str(tmp_path))
+    run_experiment(cfg)
+    waves = [json.loads(x) for x in open(tmp_path / "hive.jsonl")]
+    eps = [json.loads(x) for x in open(tmp_path / "episodes.jsonl")]
+    audits = [r for r in eps if r["phase"] == "audit"]
+    last = max(waves, key=lambda r: r["wave"])
+    assert last["audit_mode"] == "replicate" and last["audits"] > 0
+    assert len(audits) == last["audits"] * cfg.hive.audit_worlds  # every audit costs real episodes
+    assert all("=" in r["claim"] for r in audits)
+    assert last["rejected"] + last["audits_inconclusive"] <= last["audits"]
+
+
+def test_fixed_season_keeps_ids():
+    from worldseeds.town import TownSeed
+
+    s = TownSeed(laws=TownLaws.from_index(1), surface_seed=5)
+    assert "fixed_season" not in s.to_dict()
+    from dataclasses import replace
+
+    t = replace(s, fixed_season="winter")
+    assert t.season == "winter" and t.id != s.id and TownSeed.from_dict(t.to_dict()).season == "winter"

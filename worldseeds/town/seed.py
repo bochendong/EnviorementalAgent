@@ -170,6 +170,8 @@ class TownSeed:
     # crops in this town (seed packets); empty = drawn from the universe's crops (all four when it has four;
     # otherwise TOWN_CROPS of them, common crops more often than rare ones: a long tail of laws)
     crops: tuple[str, ...] = ()
+    # the town's season; empty = drawn from the surface seed (an experiment can choose it, e.g. an auditor)
+    fixed_season: str = ""
 
     def __post_init__(self):
         bad = [b for b in self.blocks if b not in TOWN_BLOCKS]
@@ -184,6 +186,8 @@ class TownSeed:
 
     @property
     def season(self) -> str:
+        if self.fixed_season:
+            return self.fixed_season
         return random.Random(self.surface_seed ^ 0x5EA5).choice(SEASONS)
 
     def town_crops(self) -> list[str]:
@@ -211,7 +215,8 @@ class TownSeed:
                 "n_villagers": self.n_villagers, "n_distractors": self.n_distractors,
                 "n_goals": self.n_goals, "surface_seed": self.surface_seed,
                 **({"board": self.board, "days": self.days} if self.board else {}),
-                **({"crops": list(self.crops)} if self.crops else {})}
+                **({"crops": list(self.crops)} if self.crops else {}),
+                **({"fixed_season": self.fixed_season} if self.fixed_season else {})}
 
     @classmethod
     def from_dict(cls, d: dict) -> "TownSeed":
