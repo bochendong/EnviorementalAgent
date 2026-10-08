@@ -45,6 +45,9 @@ def main():
                  ("storm", "per outdoor map per sprint: walking there costs double"),
                  ("rumor", "expected rumours per sprint on the notice board")):
         ap.add_argument(f"--{k}", type=float, default=0.0, help=f"random events (town): {h}")
+    ap.add_argument("--goals", nargs="*", default=[], choices=["banquet", "prize", "recipe", "encyclopedia"],
+                    help="grand goals of the town (goals.py), worked on before the day's orders")
+    ap.add_argument("--goal-deadline", type=int, default=4, help="the last sprint the goals count in")
     ap.add_argument("--no-learn", action="store_true", help="developers never learn laws (just run functions)")
     ap.add_argument("--policy", choices=["heuristic", "llm"], default="heuristic",
                     help="llm: developers are LLM agents (WS_BASE_URL / WS_MODEL, see worldseeds/llm.py)")
@@ -58,7 +61,7 @@ def main():
                        projects_per_dev=a.projects_per_dev, budget=a.budget, learn=not a.no_learn, out_dir=a.out,
                        seed=a.seed, theme=a.theme, walk=a.walk, batch=a.batch, board=a.board, library=a.library,
                        post=a.post, post_delay=a.post_delay, shortcuts=a.shortcuts,
-                       breakdown=a.breakdown, drift=a.drift, festival=a.festival, storm=a.storm, rumor=a.rumor, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
+                       goals=a.goals, goal_deadline=a.goal_deadline, breakdown=a.breakdown, drift=a.drift, festival=a.festival, storm=a.storm, rumor=a.rumor, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
     print(f"done -> {out}/codeworld.jsonl ; summary: python scripts/analyze_codeworld.py {out}")
 
 

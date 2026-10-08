@@ -500,6 +500,18 @@ class Town extends Phaser.Scene {
     this.tweens.add({ targets: g, alpha: 0, duration: Math.max(ms * 1.6, 300), onComplete: () => g.destroy() });
   }
 
+  /* a goal's part done: a little burst of colour */
+  confetti(name, ms) {
+    if (!ms) return;
+    const s = this.sprites[name], cols = [0xf2b632, 0xe8584a, 0x3f6fc4, 0x5bb544, 0xffffff];
+    for (let k = 0; k < 18; k++) {
+      const r = this.add.rectangle(s.sp.x, s.sp.y - 30, 2, 2, cols[k % cols.length]).setDepth(TOP + 5);
+      const a = Math.PI * 2 * k / 18;
+      this.tweens.add({ targets: r, x: s.sp.x + Math.cos(a) * 22, y: s.sp.y - 30 + Math.sin(a) * 14 + 10, alpha: 0,
+        duration: Math.max(ms * 2, 700), ease: "Cubic.easeOut", onComplete: () => r.destroy() });
+    }
+  }
+
   /* a letter: an envelope flies to the master and back */
   letter(a, b, ms) {
     if (!ms) return;
@@ -574,6 +586,8 @@ function reset() {
   }
   for (const p of sp.projects) S.orders[p.id] = { p, state: "pending", by: p.dev };
   S.log = [];
+  const prev = S.sprint > 0 ? S.run.sprints[S.sprint - 1].goals : S.run.goals;
+  S.goals = JSON.parse(JSON.stringify(prev || []));
   S.worldEvents = sp.world_events || [];
   S.broken = new Set(sp.broken || []);
   S.drifted = new Set(S.worldEvents.filter(e => e.kind === "drift").map(e => e.fn));
@@ -587,7 +601,36 @@ function apply(e, ms) {
   if (e.budget !== undefined) S.budget[who] = e.budget;
   S.fresh[who] = null; S.gone[who] = [];
   switch (e.kind) {
+    case "goal_start": {
+      const g = S.goals.find(x => x.id === e.goal);
+      sc.emote(who, "emote_note", ms);
+      if (g && g.kind !== "encyclopedia") {
+        sc.float(who, `${g.title.replace(/^The /, "")}`, "#f2b632", ms);
+        say(`${nick(who)} works on ${g.title.toLowerCase()}: ${e.text}.`);
+      }
+      break;
+    }
+    case "goal_part": {
+      const g = S.goals.find(x => x.id === e.goal), p = g && g.parts.find(x => x.id === e.part);
+      if (p) { p.done = sprint().index; p.by = who; }
+      sc.emote(who, "emote_heart", ms); sc.confetti(who, ms);
+      say(`★ ${nick(who)} completes ${p ? p.text.split(" (")[0].split(":")[0] : e.part} for ${g ? g.title.toLowerCase() : e.goal}!`);
+      break;
+    }
+    case "goal_reissued": {
+      const g = S.goals.find(x => x.id === e.goal), p = g && g.parts.find(x => x.id === e.part);
+      if (p) p.text = e.text;
+      say(`The festival committee re-issues a part: a machine was re-tuned, so it is now “${e.text}”.`);
+      break;
+    }
+    case "goal_done": {
+      const g = S.goals.find(x => x.id === e.goal);
+      if (g) g.done_at = sprint().index;
+      say(`★★ ${g ? g.title : e.goal} is done!`);
+      break;
+    }
     case "start":
+      if (!S.orders[e.project]) break;  // a goal's part (see goal_start)
       S.orders[e.project].state = "working"; S.orders[e.project].by = who; S.active[who] = e.project;
       sc.emote(who, "emote_q", ms);
       say(`${nick(who)} takes order ${e.project}: ${orderText(S.orders[e.project].p)}.`);
@@ -631,11 +674,14 @@ function apply(e, ms) {
       sc.float(who, `library +${1 + (e.also || []).length}`, "#bfe6ff", ms);
       say(`${nick(who)} reads ${e.fn} at the library` + ((e.also || []).length ? ` and ${e.also.length} more rule${e.also.length > 1 ? "s" : ""}.` : "."));
       break;
-    case "deposit":
+    case "deposit": {
       t.wrote++;
+      const ency = S.goals.find(g => g.kind === "encyclopedia"), p = ency && ency.parts.find(x => x.fn === e.fn);
+      if (p) p.done = p.done || sprint().index;
       sc.float(who, "wrote it down", "#f2d27a", ms);
       say(`${nick(who)} writes ${e.fn} down at the library.`);
       break;
+    }
     case "board":
       t.board++;
       sc.emote(who, "emote_q", ms);
@@ -657,6 +703,11 @@ function apply(e, ms) {
       }
       break;
     case "submit":
+      if (!S.orders[e.project]) {  // a delivery for a goal
+        sc.emote(who, e.ok ? "emote_heart" : "emote_bang", ms);
+        if (!e.ok) say(`${nick(who)}'s try for a goal comes out wrong.`);
+        break;
+      }
       S.orders[e.project].state = e.ok ? "done" : "failed"; S.active[who] = null;
       t[e.ok ? "done" : "failed"]++;
       sc.emote(who, e.ok ? "emote_heart" : "emote_bang", ms);
@@ -665,6 +716,7 @@ function apply(e, ms) {
                : `${nick(who)} delivers ${e.project}, but it comes out wrong (a rule it knew was out of date).`);
       break;
     case "give_up":
+      if (!S.orders[e.project]) break;
       S.orders[e.project].state = "failed"; S.active[who] = null; t.failed++;
       sc.emote(who, "emote_zzz", ms);
       say(`${nick(who)} gives up on ${e.project}: ${e.reason}.`);
@@ -732,6 +784,23 @@ function machineText(w, m) {
   const state = S.broken && S.broken.has(m.name) ? " OUT OF ORDER." : S.drifted && S.drifted.has(m.name) ? " Re-tuned this sprint." : "";
   return `${KIND_TITLE[w.kind]} · ${m.title || verbOf(m.name)}: ${m.in} → ${m.out}.${state} ` +
     (k.length ? `Knows its rule: ${k.join(", ")}.` : "Nobody knows its rule yet.");
+}
+
+/* the town's grand goals: progress, parts, who did them */
+function renderGoals() {
+  const ended = S.pos >= sprint().events.length;
+  const gs = ended ? (sprint().goals || []) : (S.goals || []);
+  $("goalsPanel").hidden = !gs.length;
+  $("goals").innerHTML = gs.map(g => {
+    const done = g.parts.filter(p => p.done != null).length, pct = 100 * done / Math.max(1, g.parts.length);
+    const now = sprint().index, cls = g.done_at ? "won" : now > g.deadline || (ended && now >= g.deadline) ? "missed" : "";
+    const state = g.done_at ? `done in sprint ${g.done_at}` : cls === "missed" ? "missed" : `by sprint ${g.deadline}`;
+    const parts = g.kind === "encyclopedia" ? `<div class="part"><span></span><span>${done} of ${g.parts.length} machines written down correctly</span><span></span></div>` :
+      g.parts.map(p => `<div class="part"><span class="ok">${p.done != null ? "✓" : "·"}</span><span>${esc(p.text)}</span>` +
+        `<span class="who">${p.by ? nick(p.by) : ""}</span></div>`).join("");
+    return `<div class="goal ${cls}"><div class="gt">${esc(g.title)}<span>${state}</span></div>` +
+      `<div class="story">${esc(g.story)}</div><div class="bar"><i style="width:${pct}%"></i></div>${parts}</div>`;
+  }).join("");
 }
 
 /* the sprint's news (top of the map) and the notice board (rumours, masters' notices) */
@@ -805,6 +874,7 @@ function render(last) {
   }).join("");
   renderMaps();
   renderNews();
+  renderGoals();
   $("log").innerHTML = S.log.slice(0, 40).map(x => `<div>${esc(x)}</div>`).join("");
 }
 function esc(s) { return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }

@@ -277,3 +277,30 @@ def test_town_events_are_seeded_and_noticed():
     assert drifted not in master.notebook or master.notebook.laws[drifted].table == w.functions[drifted].law.table
     broken = [e["fn"] for e in ev if e["kind"] == "breakdown"]
     assert all(fn in org.owner[w.functions[fn].module].broken for fn in broken)  # masters know their machines
+
+
+def test_grand_goals():
+    from worldseeds.codeworld.goals import check, make_goals
+    from worldseeds.codeworld.replay import town_world
+
+    u = town_world(1)
+    gs = make_goals(u, ["banquet", "prize", "recipe", "encyclopedia"], seed=0, deadline=3)
+    banquet, prize, recipe, ency = gs
+    assert len(banquet.parts) == 4 and all(len(p["target"]) == 4 for p in banquet.parts)
+    assert all(check(u, banquet, p, p["target"]) for p in banquet.parts)  # the remembered recipe fits
+    p = prize.parts[0]  # an inverse problem: some recipe and some batch reach the grade
+    hits = [(c, x) for c in u.candidates(p["in"], p["out"]) for x in range(101) if u.run(c, x) == p["grade"]]
+    assert hits and check(u, prize, p, *hits[0]) and not check(u, prize, p, hits[0][0], (hits[0][1] + 1) % 101)
+    r = recipe.parts[0]
+    assert check(u, recipe, r, r["target"]) and len(ency.parts) == u.n_functions
+    org = Org(u, 4, 12, "owners", walk=True, batch=True, record=True)
+    rng = random.Random(0)
+    for _ in range(3):
+        m = org.sprint([u.project(rng) for _ in range(16)], 120, goals=gs)
+    assert m["goals_done"] == 4 and all(g.done_at is not None and g.done_at <= 3 for g in gs)
+    assert any(e["kind"] == "goal_part" for e in org.events) and org.lib  # the encyclopedia needs the library
+    lone = Org(u, 1, 12, "solo", walk=True, batch=True)
+    gs2 = make_goals(u, ["banquet", "prize", "recipe"], seed=0, deadline=3)
+    for _ in range(3):
+        lone.sprint([u.project(rng) for _ in range(16)], 120, goals=gs2)  # one head, a quarter of the time
+    assert sum(g.done_at is not None for g in gs2) < 3

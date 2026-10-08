@@ -82,6 +82,17 @@ input[type=range] { flex: 1 1 120px; min-width: 0; accent-color: var(--wood); }
 #boardPosts .post { background: #fff6df; border-left: 4px solid var(--wood); padding: 2px 6px; }
 #boardPosts .post.notice { border-left-color: var(--bad); }
 #boardPosts .post .truth { color: var(--ink-soft); font-size: 14px; }
+#goals { display: grid; gap: 8px; }
+.goal .gt { font-family: var(--font-display); font-size: 15px; display: flex; justify-content: space-between; gap: 6px; }
+.goal .gt span { color: var(--ink-soft); font-size: 14px; white-space: nowrap; }
+.goal .story { color: var(--ink-soft); font-size: 15px; line-height: 1.05; margin: 1px 0 3px; }
+.goal .bar { height: 7px; background: #d9bf8a; border-radius: 3px; overflow: hidden; }
+.goal .bar i { display: block; height: 100%; background: var(--gold); }
+.goal.won .bar i { background: var(--ok); }
+.goal.missed .bar i { background: var(--bad); }
+.goal .part { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 4px; font-size: 15px; line-height: 1.05; }
+.goal .part .ok { color: var(--ok); font-family: var(--font-display); }
+.goal .part .who { color: var(--ink-soft); font-size: 14px; }
 #toast { position: absolute; left: 12px; bottom: 12px; background: var(--parchment); color: var(--ink); border: 3px solid var(--wood); border-radius: 4px; padding: 4px 8px; }
 </style>
 </head>
@@ -129,6 +140,10 @@ input[type=range] { flex: 1 1 120px; min-width: 0; accent-color: var(--wood); }
       <div class="panel">
         <h2>This sprint</h2>
         <div class="stats" id="stats"></div>
+      </div>
+      <div class="panel" id="goalsPanel" hidden>
+        <h2>Goals</h2>
+        <div id="goals"></div>
       </div>
       <div class="panel" id="boardPanel" hidden>
         <h2>Notice board</h2>

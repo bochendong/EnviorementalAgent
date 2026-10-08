@@ -146,6 +146,24 @@ the board. First numbers (town, 4 apprentices, walking, one-visit questions, spr
 with breakdown and drift rates of 0, 0.03 and 0.08 per machine per sprint, a team without masters
 (`random`) delivers 0.63, 0.48 and 0.34 of its orders, a team of masters 1.00, 1.00 and 0.98.
 
+**Grand goals** (`goals.py`, `--goals banquet prize recipe encyclopedia --goal-deadline N`): what the whole
+town works towards, before the day's orders, each with a deadline and exactly scored parts.
+
+| goal | in the town | kind of problem |
+|---|---|---|
+| `banquet` | the harvest festival: a feast, hampers, a wagon for the parade, an elixir for the toast, each a four-machine recipe across three or more workshops, given by remembered grades | assembly (like editing a molecule towards target properties) |
+| `prize` | the judges' prize: a finished good of exactly a given grade from a given raw good; any recipe, any batch, so one must know a recipe's rules well enough to run it backwards | inverse problem (a maths problem) |
+| `recipe` | old Martha's lost recipe: only batch and result grades survive, not the raw good or the machines | decoding (breaking a code) |
+| `encyclopedia` | every machine's rule written correctly at the library, and kept right as machines get re-tuned | building shared knowledge (the network itself) |
+
+If re-tuned machines make an open part impossible, the town re-issues it with the grades the machines make
+now. Three districts (144 machines, 12 apprentices, 12 rules per head), breakdowns and re-tuning at 0.03 per
+machine per sprint, festival + prize + lost recipe due by sprint 4 (universes 1 and 2): one apprentice with
+the whole team's time finishes no goal (1 of 16 parts); a team asking at random finishes 1–2 goals (the prize;
+7 of 16 parts); masters or a roster finish all three (16 of 16). With the encyclopedia as well, the library
+becomes a shared memory without a capacity limit: everyone does better once it is written, but only masters
+keep it right as machines change (92% of the entries correct after eight sprints, against 81–83%).
+
 **Watching it.** `web/codeworld.html` (SeedVille Workshops) plays back sprints recorded by the engine, so
 the picture is exactly what happened: the maps drawn as small isometric scenes, workshops as rooms without
 a roof where you see apprentices step up to the machine they study, a light over every machine whose rule
@@ -208,6 +226,8 @@ PILOT=1 bash slurm/submit_codeworld.sh && bash slurm/submit_codeworld.sh && sbat
 结果（稳定期完成率）：标准小镇（4 张地图、48 台机器、每人记 12 条、4 个学徒）单人（等算力）0.46，要走路时 0.32；有路由的网络 1.00。三个街区（12 张地图、144 台机器、12 人）：单人 0.01–0.02；一次只问一台机器的网络 0.39，要走路时只剩 0.12–0.14（沟通税）；一次问全的网络 0.97–1.00。每条消息说什么、说多少，是 agent 网络的核心变量。
 
 **建筑与事件（都是开关，默认关闭）。** 公告板（谁懂什么）、图书馆（师傅把规律写下来，任何人都能去读）、邮局（写信提问，不用走路但要等回信）、林间近路。随机事件由种子决定，每种组织遇到的完全一样：机器故障、规律漂移（机器被重新调校，记着旧规律的人就记错了）、节日（某种成品需求翻四倍）、暴风雨（户外地图走路成本翻倍）、谣言（公告板上真假难辨的消息）。师傅能察觉自己机器的变化并贴出告示；其他人要么走过去发现故障，要么订单怎么都对不上时开始怀疑自己记的规律、重新查看。故障和漂移率为 0、0.03、0.08 时，没有师傅的团队完成率 0.63、0.48、0.34，师傅团队 1.00、1.00、0.98。
+
+**终极目标**（`--goals banquet prize recipe encyclopedia`）：全镇在日常订单之前共同追求的目标，各有截止冲刺和可精确打分的子任务。丰收节（盛宴、礼篮、游行马车、祝酒灵药，每样都是跨三个以上工坊的四步配方，对应"分子编辑"式的组装问题）；评审大奖（指定原料做出恰好某个等级的成品，配方和批次自选，必须把一条配方的规律弄清到能反推，对应数学题式的逆问题）；失传配方（只剩批次与成品的等级记录，原料和机器都不知道，对应破译）；全镇百科（把每台机器的规律正确地写进图书馆，并在机器被重新调校后保持正确，对应建立共享知识网络）。若机器被调校导致某个子任务无解，镇上会按现在的机器重新发布它。三个街区（144 台机器、12 人、每人记 12 条）、故障与漂移各 0.03、丰收节+大奖+失传配方在第 4 冲刺前完成：单人（全队时间）一个目标也没完成（16 个子任务完成 1 个）；随机提问的团队完成 1–2 个（主要是大奖，16 个完成 7 个）；师傅制或名册三个全部完成。加上百科后，图书馆成了没有容量上限的共享记忆，所有人都受益，但只有师傅制能在机器变化时保持它正确（八个冲刺后 92% 正确，其他 81–83%）。
 
 **界面。** `web/codeworld.html`（SeedVille Workshops）回放引擎记录下来的冲刺：每张地图是一个小小的等距场景，工坊是掀掉屋顶的房间，能看到学徒走到要研究的机器前；有人记得规律的机器上方会亮灯（灯的颜色是那个人的颜色）；提问有连线，每次行走会画出路线；每张订单有一位顾客在广场排队、完成后离开，镇民在路上走动；镜头跟着正在行动的学徒在地图之间切换，也可以手动选任意一张地图或看全部。运行 `python scripts/build_codeworld_web.py` 生成回放，再 `python -m http.server -d web 8000` 打开 `codeworld.html`；`python web/tools/kairoart.py` 重新绘制地图素材。
 

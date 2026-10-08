@@ -105,7 +105,10 @@ class Org:
         self.board, self.library, self.post, self.post_delay = board, library, post, post_delay
         self.lib: dict = {}  # the library's shelves: function -> law as written down
         self.notices = {"broken": set(), "repaired": set(), "changed": set()}  # what masters have posted
-        self.stats = {"broken_found": 0, "wrong_deliveries": 0}
+        self.stats = {"broken_found": 0, "wrong_deliveries": 0, "goal_actions": 0}
+        self.goals: list = []  # grand goals (goals.py), worked on before the day's orders
+        self.sprint_no = 0
+        self.ency = False  # the town encyclopedia is a goal: everyone writes down what is missing
         self.record = record
         self.events: list[dict] = []
         self._project: str | None = None
@@ -147,7 +150,8 @@ class Org:
         gone = dev.notebook.put(fn, law)
         self._ev("learn", dev, fn=fn, law=law.describe(), correct=law.table == self.u.functions[fn].law.table,
                  forgot=gone)
-        if self.library and self.u.functions[fn].module in dev.owns and (fn not in self.lib or self.lib[fn].table != law.table):
+        mine = self.u.functions[fn].module in dev.owns
+        if self.library and (mine or self.ency) and (fn not in self.lib or (mine and self.lib[fn].table != law.table)):
             self._go(dev, self._nearest(dev, "library"))  # a master writes its machines down for everyone
             dev.spend("write")
             self.lib[fn] = law
@@ -346,10 +350,10 @@ class Org:
                 c += STUDY_COST
         return c
 
-    def _deliver(self, dev: Dev, project: Project, prog, tried: int, before: int) -> dict:
+    def _deliver(self, dev: Dev, project: Project, prog, tried: int, before: int, verify=None) -> dict:
         dev.spend("submit")
         down = [fn for fn in prog if fn in self.u.broken]
-        ok = not down and self.u.table(prog) == self.u.table(project.target)
+        ok = not down and (verify(prog) if verify else self.u.table(prog) == self.u.table(project.target))
         why = {}
         if down:  # the order could not be made: a machine is out of order
             dev.broken.update(down)
@@ -363,9 +367,9 @@ class Org:
         self._ev("submit", dev, program=list(prog), ok=ok, tried=tried, **why)
         return {"done": ok, "tried": tried, "actions": sum(dev.spent.values()) - before}
 
-    def solve(self, dev: Dev, project: Project) -> dict:
+    def solve(self, dev: Dev, project: Project, cands=None, verify=None) -> dict:
         """Search programs (cheapest first) until one fits the examples, then submit it."""
-        cands = self.u.candidates(project.in_type, project.out_type)
+        cands = list(cands) if cands is not None else self.u.candidates(project.in_type, project.out_type)
         self._relevant = {fn for c in cands for fn in c}
         cands.sort(key=lambda p: (self._cost(dev, p), p))
         xs = [x for x, _ in project.examples]
@@ -401,7 +405,7 @@ class Org:
                     except Broken:
                         continue
                     if vals == want:
-                        return self._deliver(dev, project, prog, tried, before)
+                        return self._deliver(dev, project, prog, tried, before, verify)
             self._ev("give_up", dev, reason="no program fits", tried=tried)
             return {"done": False, "tried": tried, "actions": sum(dev.spent.values()) - before, "stuck": True}
         except OutOfBudget:
@@ -415,10 +419,124 @@ class Org:
                     dev.loc = dev.home  # the day is over: home anyway
             self._project = None
 
+    # ------------------------------------------------------------ grand goals
+    def _goal_tasks(self) -> list:
+        """This sprint's goal work: one task per open part (round robin over the team), and for the
+        encyclopedia, machines whose rule is missing from the library (or, for their master, re-tuned)."""
+        tasks = []
+        for g in self.goals:
+            if g.done_at is not None or self.sprint_no > g.deadline:
+                continue
+            if g.kind == "encyclopedia":
+                for p in g.parts:
+                    fn = p["fn"]
+                    changed = fn in self.notices["changed"] and self.mode in ("owners", "directory")
+                    if fn not in self.lib or changed:
+                        tasks.append(("ency", g, p))
+                continue
+            tasks += [("goal", g, p) for p in g.parts if p.get("done") is None]
+        return tasks
+
+    def _assign(self, tasks: list) -> list[list]:
+        """Who does which goal task: the master of the machine (encyclopedia), else round robin."""
+        out = [[] for _ in self.devs]
+        k = 0
+        for t in tasks:
+            if t[0] == "ency" and self.mode in ("owners", "directory"):
+                d = self.owner[self.u.functions[t[2]["fn"]].module]
+                out[self.devs.index(d)].append(t)
+            else:
+                out[k % len(self.devs)].append(t)
+                k += 1
+        return out
+
+    def work_goal(self, dev: Dev, task) -> None:
+        kind, g, part = task
+        from .goals import check
+
+        self._project = part["id"]
+        self._ev("goal_start", dev, goal=g.id, part=part["id"], text=part["text"])
+        try:
+            if kind == "ency":
+                fn = part["fn"]
+                law = dev.notebook.get(fn)
+                if law is None or fn in self.notices["changed"]:
+                    self._study(dev, fn)  # studying deposits it (see _study)
+                elif fn not in self.lib:
+                    self._go(dev, self._nearest(dev, "library"))
+                    dev.spend("write")
+                    self.lib[fn] = law
+                    self._ev("deposit", dev, fn=fn)
+                return
+            if g.kind == "prize":
+                ok = self._prize(dev, g, part)
+            else:
+                pr = part["project"]
+                cands = None
+                if g.kind == "recipe":  # any raw good may have been used
+                    from .goals import _all_candidates
+                    cands = _all_candidates(self.u, pr.out_type)
+                res = self.solve(dev, pr, cands=cands, verify=lambda prog: check(self.u, g, part, prog))
+                ok = res["done"]
+            if ok:
+                part["done"] = self.sprint_no
+                part["by"] = dev.name
+                self._ev("goal_part", dev, goal=g.id, part=part["id"])
+        except (OutOfBudget, Broken):
+            pass
+        finally:
+            self._project = None
+
+    def _prize(self, dev: Dev, g, part) -> bool:
+        """Find a recipe whose rules it knows (or can learn), run it backwards to the grade the judges want."""
+        from .goals import check
+
+        cands = self.u.candidates(part["in"], part["out"])
+        cands.sort(key=lambda p: (self._cost(dev, p), p))
+        everything = list(range(len(self.u.functions[next(iter(self.u.functions))].law.table)))
+        cache: dict = {}
+        for prog in cands:
+            if dev.broken and any(fn in dev.broken for fn in prog):
+                continue
+            try:
+                vals = everything
+                for fn in prog:
+                    vals = self.values(dev, fn, vals, cache)
+            except Broken:
+                continue
+            xs = [x for x, y in zip(everything, vals) if y == part["grade"]]
+            if xs:
+                dev.spend("submit")
+                ok = check(self.u, g, part, prog, xs[0])
+                self._ev("submit", dev, program=list(prog), ok=ok, tried=1, batch_grade=xs[0])
+                if not ok:  # it came out wrong: what it believed was out of date
+                    for fn in prog:
+                        if fn in dev.notebook:
+                            del dev.notebook.laws[fn]
+                return ok
+        return False
+
+    def _score_goals(self) -> None:
+        for g in self.goals:
+            if g.kind == "encyclopedia":
+                for p in g.parts:
+                    fn = p["fn"]
+                    right = fn in self.lib and self.lib[fn].table == self.u.functions[fn].law.table
+                    p["done"] = (p.get("done") or self.sprint_no) if right else None
+            if g.done_at is None and self.sprint_no <= g.deadline and all(p.get("done") is not None for p in g.parts):
+                g.done_at = self.sprint_no
+                self._ev("goal_done", self.devs[0], goal=g.id)
+
     # ------------------------------------------------------------ sprints
-    def sprint(self, projects: list[Project], budget: int, events: list[dict] | None = None) -> dict:
+    def sprint(self, projects: list[Project], budget: int, events: list[dict] | None = None, goals=None) -> dict:
         """Every developer gets ``budget`` actions; projects are handed out round robin and worked on in
-        turns (one project per developer per turn) until done or nobody has budget left."""
+        turns (one project per developer per turn) until done or nobody has budget left. Grand goals
+        (``goals``, shared across sprints) come first: their open parts are handed out before the orders."""
+        self.sprint_no += 1
+        if goals is not None:
+            self.goals = goals
+            self.ency = any(g.kind == "encyclopedia" for g in goals)
+            self.library = self.library or self.ency  # an encyclopedia needs a library
         for d in self.devs:
             d.budget = budget
             d.board = None
@@ -431,6 +549,19 @@ class Org:
         for d in self.devs:  # who is not the master cannot tell whether it has been repaired since
             d.broken = {fn for fn in d.broken if masters and self.u.functions[fn].module in d.owns}
         self.apply_events(events or [])
+        if self.goals:
+            from .goals import reissue
+
+            for e in reissue(self.u, self.goals):
+                self._ev("goal_reissued", self.devs[0], **{k: v for k, v in e.items() if k != "kind"})
+        gq = self._assign(self._goal_tasks()) if self.goals else [[] for _ in self.devs]
+        for d, tasks in zip(self.devs, gq):  # goal work first, while there is time for it
+            for t in tasks:
+                if d.budget <= 0:
+                    break
+                before = sum(d.spent.values())
+                self.work_goal(d, t)
+                self.stats["goal_actions"] = self.stats.get("goal_actions", 0) + sum(d.spent.values()) - before
         queues = [projects[i::len(self.devs)] for i in range(len(self.devs))]
         results = []
         while any(queues):
@@ -444,6 +575,8 @@ class Org:
                     q.clear()
             if not progressed:
                 break
+        if self.goals:
+            self._score_goals()
         return self.metrics(results)
 
     def metrics(self, results: list[dict]) -> dict:
@@ -468,4 +601,8 @@ class Org:
             "relearned": sum(nb.relearned for nb in books), "evictions": sum(nb.evictions for nb in books),
             "routes_known": sum(len(d.routes) for d in self.devs) // 2,
             **self.stats,
+            **({"goal_parts_done": sum(p.get("done") is not None for g in self.goals for p in g.parts),
+                "goal_parts": sum(len(g.parts) for g in self.goals),
+                "goals_done": sum(g.done_at is not None for g in self.goals),
+                "goal_progress": {g.id: round(g.progress, 3) for g in self.goals}} if self.goals else {}),
         }

@@ -50,6 +50,9 @@ class CWConfig:
     festival: float = 0.0  # chance of a festival (one finished good four times as wanted)
     storm: float = 0.0  # per outdoor map: walking there costs double
     rumor: float = 0.0  # expected rumours per sprint on the notice board
+    # grand goals (goals.py): banquet, prize, recipe, encyclopedia; worked on before the day's orders
+    goals: list = field(default_factory=list)
+    goal_deadline: int = 4
     policy: str = "heuristic"  # heuristic | llm (worldseeds/codeworld/llm_agent.py)
     max_turns: int = 200  # llm: model turns per developer per sprint
     save_traces: bool = False
@@ -134,6 +137,10 @@ def run(cfg: CWConfig) -> Path:
                             org = Org(wv, n, cap, v, cfg.learn, cfg.seed, walk=cfg.walk, batch=cfg.batch,
                                       **_buildings(cfg))
                             budget = cfg.budget
+                        goals = None
+                        if cfg.goals:
+                            from .goals import make_goals
+                            goals = make_goals(wv, cfg.goals, cfg.seed, deadline=cfg.goal_deadline)
                         for s, (projects, events) in enumerate(plan):
                             if cfg.policy == "llm":
                                 org.apply_events(events or [])
@@ -143,13 +150,13 @@ def run(cfg: CWConfig) -> Path:
                                     tf.write(json.dumps({"universe": u, "modules": mods, "capacity": cap, "team": n,
                                                          "variant": v, "sprint": s + 1, "traces": res["traces"]}) + "\n")
                             else:
-                                m = org.sprint(projects, budget, events)
+                                m = org.sprint(projects, budget, events, goals=goals)
                             row = {"universe": u, "modules": mods, "functions": world.n_functions, "capacity": cap,
                                    "team": n, "variant": v, "sprint": s + 1, "budget_total": budget * len(org.devs),
                                    "policy": cfg.policy, "llm": llm_name, "theme": cfg.theme, "walk": cfg.walk, "batch": cfg.batch,
                                    "board": cfg.board, "library": cfg.library, "post": cfg.post, "shortcuts": cfg.shortcuts,
                                    **{k: getattr(cfg, k) for k in ("breakdown", "drift", "festival", "storm", "rumor")},
-                                   "events": len(events or []),
+                                   "events": len(events or []), "goals": "+".join(cfg.goals),
                                    "districts": world.n_districts,
                                    "world_over_capacity": world.n_functions / cap, **m, "time": time.time()}
                             f.write(json.dumps(row) + "\n")

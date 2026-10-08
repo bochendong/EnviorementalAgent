@@ -32,9 +32,10 @@ def town_world(index: int = 1, districts: int = 1, machines: int = 6, shortcuts:
 
 def record(world: Universe, mode: str, team: int, capacity: int | None, sprints: int = 3, budget: int = 120,
            projects_per_dev: int = 4, walk: bool = True, batch: bool = True, seed: int = 0, title: str = "",
-           description: str = "", events=None, **buildings) -> dict:
+           description: str = "", events=None, goals=None, goal_deadline: int = 4, **buildings) -> dict:
     """Run ``sprints`` sprints of one organisation and record everything. ``solo`` gets the team's budget.
-    ``events`` (an EventRates) makes the town change: a copy of the world meets seeded events each sprint."""
+    ``events`` (an EventRates) makes the town change: a copy of the world meets seeded events each sprint.
+    ``goals`` (kinds, see goals.py) gives the town grand goals, worked on before the day's orders."""
     rng = random.Random(f"replay/{seed}/{world.index}/{world.n_functions}/{team}")
     sched = None
     if events is not None and events.any:
@@ -46,6 +47,11 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
         plan = [None] * sprints
     else:
         plan = [[world.project(rng) for _ in range(projects_per_dev * team)] for _ in range(sprints)]
+    gl = None
+    if goals:
+        from .goals import make_goals
+
+        gl = make_goals(world, goals, seed, deadline=goal_deadline)
     solo = mode in ("solo", "solo_unbounded")
     org = Org(world, 1 if solo else team, None if mode == "solo_unbounded" else capacity,
               "solo" if solo else mode, seed=seed, walk=walk, record=True, batch=batch, **buildings)
@@ -55,6 +61,7 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
            **{k: bool(v) for k, v in buildings.items() if k in ("board", "library", "post")},
            "shortcuts": bool(world.map and world.map.shortcuts),
            "budget": per_dev, "world": world.layout(),
+           "goals": [{**g.to_dict(), "parts": [{**p, "done": None} for p in g.to_dict()["parts"]]} for g in gl] if gl else [],
            "devs": [{"name": d.name, "owns": sorted(d.owns, key=world.modules.index), "home": d.home,
                      "look": list(LOOKS[i % len(LOOKS)])} for i, d in enumerate(org.devs)],
            "sprints": []}
@@ -65,7 +72,7 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
             projects = [world.project(rng) for _ in range(projects_per_dev * team)]
         start = len(org.events)
         books = {d.name: list(d.notebook.laws) for d in org.devs}
-        m = org.sprint(projects, per_dev, happened)
+        m = org.sprint(projects, per_dev, happened, goals=gl)
         n = len(org.devs)
         out["sprints"].append({
             "index": s + 1, "budget": per_dev,
@@ -73,7 +80,7 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
                           "target": list(p.target), "dev": org.devs[k % n].name} for k, p in enumerate(projects)],
             "start_notebooks": books, "events": org.events[start:], "metrics": m,
             "world_events": happened, "broken": sorted(world.broken), "storm": sorted(world.storm),
-            "demand": world.demand})
+            "demand": world.demand, "goals": [g.to_dict() for g in gl] if gl else []})
     return out
 
 
@@ -105,18 +112,27 @@ def demo_replays(index: int = 1) -> list[dict]:
             ("random", "Four apprentices without masters in a changing town",
              "The same events, but nobody looks after a workshop: old rules go stale until an order fails.")):
         reps.append(record(town, mode, 4, 12, sprints=4, events=weather, title=title, description=desc))
+    reps.append(record(town, "owners", 4, 12, sprints=4, events=EventRates(drift=.05), goals=["encyclopedia", "prize"],
+                       goal_deadline=4, title="Four masters write the town encyclopedia",
+                       description="Every machine's rule, written correctly at the library, and kept right as machines "
+                                   "get re-tuned; and the judges' prize."))
     roads = town_world(index, districts=3, shortcuts=True)
     reps.append(record(roads, "owners", 12, 12, sprints=5, projects_per_dev=3, library=True, post=True,
                        title="Three districts with libraries, post offices and forest trails",
                        description="Masters write their machines down at the library; far questions go by letter; "
                                    "trails through the woods join each farm to its mountain and beach."))
     big = town_world(index, districts=3)
-    for mode, title, desc in (
-            ("solo", "Three districts, one apprentice", "144 machines for one head of 12 laws."),
-            ("owners", "Three districts, twelve masters",
-             "Each apprentice masters two workshops; asking across districts means a long walk, so one visit "
-             "covers every machine of that master the order might need."),
-            ("directory", "Three districts and a roster",
-             "The roster sends each question to the nearest apprentice who knows.")):
-        reps.append(record(big, mode, 12, 12, sprints=5, projects_per_dev=3, title=title, description=desc))
+    festival = ["banquet", "prize", "recipe"]
+    change = EventRates(breakdown=.03, drift=.03)
+    for mode, team, title, desc in (
+            ("owners", 12, "Three districts and the festival: twelve masters",
+             "Grand goals: the harvest festival (four long recipes), the judges' prize (exact grades: run a recipe "
+             "backwards) and old Martha's lost recipe (which raw good, which machines?). Machines break and get "
+             "re-tuned now and then."),
+            ("random", 12, "Three districts and the festival: twelve apprentices without masters",
+             "The same goals and events, but nobody knows who knows what."),
+            ("solo", 12, "Three districts and the festival: one apprentice",
+             "The same goals and events for one head with the whole team's time.")):
+        reps.append(record(big, mode, team, 12, sprints=5, projects_per_dev=3, events=change, goals=festival,
+                           goal_deadline=4, title=title, description=desc))
     return reps
