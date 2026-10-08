@@ -42,7 +42,7 @@ sprints in a town of several connected maps (town, farm, beach, mountain): works
 whose machines (functions) you see apprentices study, masters (owners) answer questions, and apprentices
 walk the shortest way from map to map. In the standard town (48 machines, 12 rules per head, 4 apprentices) masters
 deliver every order and one apprentice with the team's time 46%; across three districts (144 machines, 12
-apprentices) one head manages 4%.
+apprentices on twelve maps) one head manages 2%.
 
 ```bash
 python scripts/build_codeworld_web.py && python -m http.server -d web 8000   # http://localhost:8000/codeworld.html
