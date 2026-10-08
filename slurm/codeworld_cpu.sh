@@ -20,3 +20,12 @@ python scripts/run_codeworld.py --universes 1 2 3 4 5 --modules 32 --capacities 
   --sprints 10 --variants solo owners directory random pooled --out "$OUT/scale"
 python scripts/analyze_codeworld.py "$OUT/phase" --costs
 python scripts/analyze_codeworld.py "$OUT/scale" --costs
+# the town (8 workshops x 6 machines) and three districts, with and without walking / one-visit questions
+for W in "" "--walk"; do
+  python scripts/run_codeworld.py --theme town $W --universes 1 2 3 4 5 --modules 8 --fns-per-module 6 --capacities 12 \
+    --team-sizes 4 --sprints 10 --variants solo random owners directory pooled --out "$OUT/town$W"
+  for B in "" "--batch"; do
+    python scripts/run_codeworld.py --theme town $W $B --universes 1 2 3 4 5 --modules 24 --fns-per-module 6 --capacities 12 \
+      --team-sizes 12 --projects-per-dev 3 --sprints 10 --variants solo random owners directory pooled --out "$OUT/districts$W$B"
+  done
+done

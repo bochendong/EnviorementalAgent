@@ -1,28 +1,25 @@
 /* SeedVille Workshops: plays back CodeWorld replays recorded by the engine
    (worldseeds/codeworld/replay.py), so the picture is always what the engine did.
 
-   A district is a block of eight workshops on two streets around a plaza; districts tile into a town.
-   Apprentices walk to a workshop to study its machines, walk to a master to ask, and deliver orders. */
+   An isometric city. A district is 8 x 8 tiles with a road every 4 tiles; its eight workshops are
+   towers on the streets, two in each block, and districts join into one road grid. Apprentices walk
+   the roads to a workshop to study its machines, to a master to ask, and deliver orders. */
 "use strict";
 
 const A = "assets/";
 const GW = 1280, GH = 800;            // canvas size
-const DW = 640, DH = 470;             // one district, in world pixels
-const COLS_X = [85, 235, 405, 555];   // workshop x in a row
-const ROW_BASE = [150, 420];          // building base (door) y of the two rows
-const STREET_Y = [170, 440], STREET_X = 320;
-const PLAZA = { x: 320, y: 270 };
+const TW = 64, TH = 32;               // isometric tile
+const BLOCK = 8;                      // tiles per district side
+const QUADS = [[1, 1], [5, 1], [1, 5], [5, 5]];
 const DIRS = ["down", "left", "right", "up"];
 const COLORS = { red: "#c8463a", blue: "#3f6fc4", green: "#3d8a3a", yellow: "#c9a227", purple: "#8a4fb0", orange: "#d8782e" };
-const FRAME = { bakery: "bakery", smithy: "smithy", florist: "florist", mine: "mine", clinic: "clinic", inn: "inn",
-                shop: "shop", farm: "farmhouse" };
-const KIND_COLOR = { bakery: "#b8743a", smithy: "#5a6270", florist: "#b4558a", mine: "#6e6a64", clinic: "#3e8c8c",
-                     inn: "#8a4a2a", shop: "#3f6fc4", farm: "#6a8a2a" };
+const KIND_COLOR = { bakery: "#c98a3a", smithy: "#4c5262", florist: "#b0563e", mine: "#9a7a5a", clinic: "#8a8f9c",
+                     inn: "#a0503a", shop: "#4a8a8a", farm: "#5a8a42" };
 const KIND_TITLE = { bakery: "Bakery", smithy: "Smithy", florist: "Florist", mine: "Mine", clinic: "Clinic", inn: "Inn",
                      shop: "Shop", farm: "Farm" };
+const TOP = 1e5;                      // depth of labels and speech above the city
 
 const $ = id => document.getElementById(id);
-const hex = c => parseInt(c.slice(1), 16);
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
 /* ===================================================================== state */
@@ -54,21 +51,57 @@ function verbOf(fn) { return fn.split(".")[1]; }
 /* ===================================================================== geometry */
 function grid() {
   const n = S.run.world.districts.length;
-  const cols = Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
-  return { cols, rows, W: cols * DW, H: rows * DH };
+  const cols = n <= 3 ? n : Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
+  return { cols, rows, GX: cols * BLOCK, GY: rows * BLOCK };
 }
-function origin(index) { const { cols } = grid(); return { x: (index % cols) * DW, y: Math.floor(index / cols) * DH }; }
-function shopSpot(district, slot) {
-  const o = origin(district);
-  return { x: o.x + COLS_X[slot % 4], y: o.y + ROW_BASE[Math.floor(slot / 4)] };
+function corner(index) { const { cols } = grid(); return [(index % cols) * BLOCK, Math.floor(index / cols) * BLOCK]; }
+const isRoad = (gx, gy) => gx % 4 === 0 || gy % 4 === 0;
+let ORIGIN = { x: 0, y: 0 };
+/* top vertex of tile (gx, gy) in world pixels; the tile's centre is 16 px lower */
+function iso(gx, gy) { return { x: ORIGIN.x + (gx - gy) * TW / 2, y: ORIGIN.y + (gx + gy) * TH / 2 }; }
+function centre(gx, gy) { const p = iso(gx, gy); return { x: p.x, y: p.y + TH / 2 }; }
+function slotTile(district, slot) {
+  const [cx, cy] = corner(district), [qx, qy] = QUADS[slot >> 1];
+  return slot % 2 ? [cx + qx, cy + qy + 2] : [cx + qx + 2, cy + qy];
 }
-function spot(module, devName) {
-  const k = S.run.devs.findIndex(d => d.name === devName);
-  const dx = ((k % 4) - 1.5) * 13, dy = (Math.floor(k / 4) % 3) * 5;
-  if (!module) { const o = origin(0); return { x: o.x + PLAZA.x + dx * 2, y: o.y + PLAZA.y + 18 + dy }; }
+function doorTile(district, slot) {
+  const [gx, gy] = slotTile(district, slot);
+  return slot % 2 ? [gx, gy + 1] : [gx + 1, gy];
+}
+function plazaTile() { const [cx, cy] = corner(0); return [cx + 4, cy + 4]; }
+function tileOfPlace(module) {
+  if (!module) return plazaTile();
   const { d, w } = workshop(module);
-  const p = shopSpot(d.index, d.workshops.indexOf(w));
-  return { x: p.x + dx, y: p.y + 14 + dy };
+  return doorTile(d.index, d.workshops.indexOf(w));
+}
+function devOffset(name) {
+  const k = S.run.devs.findIndex(d => d.name === name);
+  return { x: ((k % 4) - 1.5) * 7, y: (Math.floor(k / 4) % 3) * 4 - 4 };
+}
+function spot(module, name) {
+  const [gx, gy] = tileOfPlace(module), c = centre(gx, gy), o = devOffset(name);
+  return { x: c.x + o.x, y: c.y + o.y };
+}
+/* shortest way along the roads, as a list of road tiles */
+function route(from, to) {
+  const { GX, GY } = grid(), key = (x, y) => x * 1000 + y;
+  const prev = new Map([[key(...from), null]]), q = [from];
+  while (q.length) {
+    const [x, y] = q.shift();
+    if (x === to[0] && y === to[1]) break;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const nx = x + dx, ny = y + dy;
+      if (nx < 0 || ny < 0 || nx > GX || ny > GY || !isRoad(nx, ny) || prev.has(key(nx, ny))) continue;
+      prev.set(key(nx, ny), [x, y]); q.push([nx, ny]);
+    }
+  }
+  if (!prev.has(key(...to))) return [to];
+  const out = []; let c = to;
+  while (c) { out.push(c); c = prev.get(key(...c)); }
+  out.reverse();
+  // keep only the corners
+  return out.filter((p, i) => i === 0 || i === out.length - 1 ||
+    (out[i - 1][0] - p[0]) !== (p[0] - out[i + 1][0]) || (out[i - 1][1] - p[1]) !== (p[1] - out[i + 1][1]));
 }
 
 /* ===================================================================== Phaser */
@@ -78,9 +111,7 @@ class Boot extends Phaser.Scene {
     const bar = this.add.rectangle(GW / 2 - 150, GH / 2, 0, 10, 0xf2b632).setOrigin(0, .5);
     this.add.rectangle(GW / 2, GH / 2, 304, 14).setStrokeStyle(2, 0x7a4a26);
     this.load.on("progress", p => bar.width = 300 * p);
-    this.load.atlas("bld", `${A}buildings_summer.png`, `${A}buildings_summer.json`);
-    this.load.atlas("props", `${A}props_summer.png`, `${A}props_summer.json`);
-    this.load.atlas("obj", `${A}objects.png`, `${A}objects.json`);
+    this.load.atlas("iso", `${A}iso.png`, `${A}iso.json`);
     this.load.atlas("ui", `${A}ui.png`, `${A}ui.json`);
     const looks = new Set();
     for (const r of S.runs) for (const d of r.devs) looks.add(d.look.join("_"));
@@ -99,7 +130,6 @@ class Town extends Phaser.Scene {
   create() {
     S.scene = this;
     this.sprites = {}; this.shops = {};
-    this.layer = this.add.container(0, 0);
     this.build();
     const cam = this.cameras.main;
     this.input.on("wheel", (p, o, dx, dy) => {
@@ -118,125 +148,160 @@ class Town extends Phaser.Scene {
   }
 
   build() {
+    this.tweens.killAll(); this.time.removeAllEvents();
     this.children.removeAll(true);
     this.sprites = {}; this.shops = {};
-    const { cols, rows, W, H } = grid();
-    const g = this.add.graphics().setDepth(-10);
-    g.fillStyle(0x5f9a3c).fillRect(-200, -200, W + 400, H + 400);
+    const { GX, GY } = grid();
+    ORIGIN = { x: (GY + 2) * TW / 2, y: 130 };
+    this.cameras.main.setBackgroundColor("#2c4a2a");
     const rnd = new Phaser.Math.RandomDataGenerator(["seedville"]);
-    for (let k = 0; k < (W * H) / 900; k++) {
-      g.fillStyle(rnd.pick([0x548c34, 0x6aa845, 0x4f8530]));
-      g.fillRect(rnd.between(-200, W + 200), rnd.between(-200, H + 200), 3, 2);
+    const taken = new Set();
+    // ground: a ring of grass around the road grid
+    for (let gx = -1; gx <= GX + 1; gx++) for (let gy = -1; gy <= GY + 1; gy++) {
+      const inside = gx >= 0 && gy >= 0 && gx <= GX && gy <= GY;
+      let f = "t_grass";
+      if (inside && isRoad(gx, gy)) f = gx % 4 === 0 && gy % 4 === 0 ? "t_cross" : gx % 4 === 0 ? "t_road_y" : "t_road_x";
+      const p = iso(gx, gy);
+      this.add.image(p.x, p.y, "iso", f).setOrigin(.5, 0).setDepth(-1e4);
+      if (!inside && rnd.frac() < .35) this.prop(gx, gy, rnd.pick(["tree0", "tree1", "tree2"]));
     }
-    // streets: two per row of districts, one per column, all connected
-    const street = (x, y, w, h) => { g.fillStyle(0xa9844a).fillRect(x - 2, y - 2, w + 4, h + 4); g.fillStyle(0xd2ae72).fillRect(x, y, w, h); };
-    for (let r = 0; r < rows; r++) for (const y of STREET_Y) street(0, r * DH + y - 8, W, 16);
-    for (let c = 0; c < cols; c++) street(c * DW + STREET_X - 8, 0, 16, H);
-    for (const d of S.run.world.districts) this.district(d, g, rnd);
-    // empty slots of the grid are meadow with trees
-    for (let k = S.run.world.districts.length; k < cols * rows; k++) {
-      const o = origin(k);
-      for (let t = 0; t < 14; t++) this.tree(o.x + rnd.between(30, DW - 30), o.y + rnd.between(60, DH - 20), rnd);
-    }
-    this.links = this.add.graphics().setDepth(5000);
+    for (const d of S.run.world.districts) this.district(d, rnd, taken);
+    const pl = plazaTile(), pp = iso(...pl);
+    this.add.image(pp.x, pp.y, "iso", "t_plaza").setOrigin(.5, 0).setDepth(-9e3);
+    this.prop(pl[0], pl[1], "fountain", -8);
+    this.cars(rnd);
     for (const d of S.run.devs) this.dev(d);
     this.fit();
   }
 
-  district(d, g, rnd) {
-    const o = origin(d.index);
-    // plaza with fountain and the order board
-    g.fillStyle(0xa9844a).fillCircle(o.x + PLAZA.x, o.y + PLAZA.y - 10, 44);
-    g.fillStyle(0xdcbf86).fillCircle(o.x + PLAZA.x, o.y + PLAZA.y - 10, 41);
-    const f = this.add.sprite(o.x + PLAZA.x, o.y + PLAZA.y, "obj", "fountain0").setOrigin(.5, 1);
-    f.setDepth(f.y);
-    this.time.addEvent({ delay: 250, loop: true, callback: () => f.setFrame(`fountain${(this.time.now / 250 | 0) % 3}`) });
-    const board = this.add.image(o.x + PLAZA.x + 52, o.y + PLAZA.y - 14, "obj", "board").setOrigin(.5, 1);
-    board.setDepth(board.y);
+  /* a building or prop standing on tile (gx, gy); its frame has the tile diamond in its bottom 32 rows */
+  prop(gx, gy, frame, depthShift = 0) {
+    const p = iso(gx, gy), f = this.textures.getFrame("iso", frame);
+    const img = this.add.image(p.x, p.y + TH, "iso", frame);
+    if (frame.startsWith("tree")) img.setOrigin(.5, 1).setY(p.y + TH / 2 + 4);
+    else img.setOrigin(.5, 1);
+    img.setDepth(p.y + TH / 2 + 8 + depthShift);
+    return img;
+  }
+
+  district(d, rnd, taken) {
+    const [cx, cy] = corner(d.index);
     const title = S.run.world.districts.length > 1 ? `${cap(d.name)} district` : "SeedVille";
-    this.add.text(o.x + PLAZA.x, o.y + PLAZA.y + 36, title, {
-      fontFamily: "Pixelify Sans", fontSize: "13px", color: "#fff6df", backgroundColor: "#7a4a26",
-      padding: { x: 5, y: 1 } }).setOrigin(.5).setResolution(4).setDepth(4000);
-    // workshops
-    const blocked = [];
     d.workshops.forEach((w, slot) => {
-      const p = shopSpot(d.index, slot);
-      const img = this.add.image(p.x, p.y, "bld", FRAME[w.kind] || "house0").setOrigin(.5, 1);
-      img.setDepth(p.y);
-      blocked.push(new Phaser.Geom.Rectangle(p.x - img.width / 2 - 6, p.y - img.height - 6, img.width + 12, img.height + 30));
-      g.fillStyle(0xd2ae72).fillRect(p.x - 7, p.y, 14, STREET_Y[Math.floor(slot / 4)] - p.y);
+      const [gx, gy] = slotTile(d.index, slot);
+      taken.add(`${gx},${gy}`);
+      const img = this.prop(gx, gy, `w_${w.kind}`);
       const own = owner(w.module);
-      const label = this.add.text(p.x, p.y - img.height - 4,
+      const label = this.add.text(img.x, img.y - img.height + 12,
         `${KIND_TITLE[w.kind] || w.kind}${own ? " · " + nick(own) : ""}`, {
           fontFamily: "Pixelify Sans", fontSize: "10px", color: "#fff6df",
-          backgroundColor: own ? colorOf(own) : "#4a2a14", padding: { x: 3, y: 1 } })
-        .setOrigin(.5, 1).setResolution(4).setDepth(4001);
-      img.setInteractive({ useHandCursor: true });
+          backgroundColor: own ? colorOf(own) : "#3a3f4c", padding: { x: 3, y: 1 } })
+        .setOrigin(.5, 1).setResolution(4).setDepth(TOP);
+      img.setInteractive({ useHandCursor: true, pixelPerfect: true });
       img.on("pointerover", () => showMachines(w));
       img.on("pointerout", () => toast(null));
       this.shops[w.module] = { img, label };
     });
-    for (const y of STREET_Y) blocked.push(new Phaser.Geom.Rectangle(o.x, o.y + y - 14, DW, 26));
-    blocked.push(new Phaser.Geom.Rectangle(o.x + STREET_X - 14, o.y, 28, DH));
-    blocked.push(new Phaser.Geom.Rectangle(o.x + PLAZA.x - 70, o.y + PLAZA.y - 60, 140, 110));
-    for (let t = 0, tries = 0; t < 10 && tries < 300; tries++) {
-      const x = o.x + rnd.between(14, DW - 14), y = o.y + rnd.between(40, DH - 4);
-      if (blocked.some(r => r.contains(x, y) || r.contains(x, y - 30))) continue;
-      this.tree(x, y, rnd); blocked.push(new Phaser.Geom.Rectangle(x - 20, y - 20, 40, 30)); t++;
+    // fill each block: a tall office at the back, low buildings and parks in front of the workshops
+    for (const [qx, qy] of QUADS) {
+      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
+        const gx = cx + qx + i, gy = cy + qy + j;
+        if (taken.has(`${gx},${gy}`)) continue;
+        const back = i + j <= 1, front = i + j >= 3 || (i === 2 && j === 1) || (i === 1 && j === 2);
+        const r = rnd.frac();
+        if (back && i + j === 0) this.prop(gx, gy, rnd.pick(["f_tower0", "f_tower3", "f_tower2"]));
+        else if (front) {
+          if (r < .35) this.prop(gx, gy, `f_house${rnd.between(0, 2)}`);
+          else if (r < .55) { const p = iso(gx, gy); this.add.image(p.x, p.y, "iso", "t_lot").setOrigin(.5, 0).setDepth(-9e3);
+            if (rnd.frac() < .7) this.prop(gx, gy, rnd.pick(["car_red_x", "car_blue_y", "van_x"]), -4); }
+          else this.prop(gx, gy, rnd.pick(["tree0", "tree1", "tree2"]));
+        } else if (r < .45) this.prop(gx, gy, rnd.pick(["f_low0", "f_low1", "f_tower2", "f_tower5"]));
+        else { const p = iso(gx, gy); this.add.image(p.x, p.y, "iso", "t_park").setOrigin(.5, 0).setDepth(-9e3);
+          this.prop(gx, gy, rnd.pick(["tree0", "tree1", "tree2"])); }
+      }
     }
-    for (const [dx, dy] of [[-60, -30], [60, -30]]) {
-      const l = this.add.image(o.x + PLAZA.x + dx, o.y + PLAZA.y + dy, "obj", "lamppost").setOrigin(.5, 1);
-      l.setDepth(l.y);
-    }
+    const sign = centre(cx + 4, cy + 4);
+    this.add.text(sign.x, sign.y + 14, title, { fontFamily: "Pixelify Sans", fontSize: "12px", color: "#fff6df",
+      backgroundColor: "#7a4a26", padding: { x: 5, y: 1 } }).setOrigin(.5, 0).setResolution(4).setDepth(TOP - 1);
   }
 
-  tree(x, y, rnd) {
-    const k = rnd.pick(["oak0", "oak1", "oak2", "pine0", "pine1", "bush0", "bush1", "rock0"]);
-    this.add.image(x, y, "props", k).setOrigin(.5, 1).setDepth(y);
+  /* traffic: a few cars driving along the roads, just for life */
+  cars(rnd) {
+    const { GX, GY } = grid();
+    const n = 2 * S.run.world.districts.length;
+    for (let k = 0; k < n; k++) {
+      const kind = rnd.pick(["car_red", "car_blue", "van", "truck"]);
+      const img = this.add.image(0, 0, "iso", `${kind}_x`).setOrigin(.5, .75);
+      const drive = () => {
+        const alongX = rnd.frac() < .5, line = 4 * rnd.between(0, (alongX ? GY : GX) / 4);
+        const a = alongX ? [0, line] : [line, 0], b = alongX ? [GX, line] : [line, GY];
+        const [s, e] = rnd.frac() < .5 ? [a, b] : [b, a];
+        img.setFrame(`${kind}_${alongX ? "x" : "y"}`).setFlipX(false);
+        const lane = alongX ? { x: 4, y: -2 } : { x: -4, y: -2 };
+        const o = { t: 0 }, cs = centre(...s), ce = centre(...e);
+        this.tweens.add({ targets: o, t: 1, duration: 9000 + rnd.between(0, 6000), delay: rnd.between(0, 2500),
+          onUpdate: () => { const x = cs.x + (ce.x - cs.x) * o.t + lane.x, y = cs.y + (ce.y - cs.y) * o.t + lane.y;
+            img.setPosition(x, y).setDepth(y + 2); },
+          onComplete: drive });
+      };
+      drive();
+    }
   }
 
   dev(d) {
     const key = `ch_${d.look.join("_")}`;
     const p = spot(d.home, d.name);
-    const sh = this.add.image(p.x, p.y, "obj", "shadow").setAlpha(.5);
+    const sh = this.add.ellipse(p.x, p.y, 12, 5, 0x000000, .3);
     const sp = this.add.sprite(p.x, p.y, key, 0).setOrigin(.5, 1);
     const tag = this.add.text(p.x, p.y - 33, d.look[0], { fontFamily: "Pixelify Sans", fontSize: "9px", color: "#fff6df",
       backgroundColor: COLORS[d.look[1]], padding: { x: 2, y: 0 } }).setOrigin(.5, 1).setResolution(4);
     const k = S.run.devs.indexOf(d);
-    this.sprites[d.name] = { sp, sh, tag, key, tween: null, lift: (k % 2) * 9 };
+    this.sprites[d.name] = { sp, sh, tag, key, tween: null, lift: (k % 2) * 9, tile: tileOfPlace(d.home) };
     this.put(d.name, p);
   }
 
   put(name, p) {
     const s = this.sprites[name];
-    s.sp.setPosition(p.x, p.y).setDepth(p.y + .5);
-    s.sh.setPosition(p.x, p.y - 1).setDepth(p.y);
-    s.tag.setPosition(p.x, p.y - 33 - s.lift).setDepth(6000);
+    s.sp.setPosition(p.x, p.y).setDepth(p.y + 1);
+    s.sh.setPosition(p.x, p.y - 1).setDepth(p.y + .5);
+    s.tag.setPosition(p.x, p.y - 33 - s.lift).setDepth(TOP + 1);
   }
 
   fit() {
-    const { W, H } = grid(), cam = this.cameras.main;
-    this.fitZoom = Math.min(GW / W, GH / H);
-    cam.setZoom(this.fitZoom).centerOn(W / 2, H / 2);
+    const { GX, GY } = grid(), cam = this.cameras.main;
+    const l = iso(-1, GY + 1).x - TW / 2, r = iso(GX + 1, -1).x + TW / 2;
+    const t = iso(-1, -1).y - 70, b = iso(GX + 1, GY + 1).y + TH;
+    this.fitZoom = Math.min(GW / (r - l), GH / (b - t));
+    cam.setZoom(this.fitZoom).centerOn((l + r) / 2, (t + b) / 2);
   }
 
   walk(name, to, ms) {
-    const s = this.sprites[name], p = spot(to, name);
+    const s = this.sprites[name], target = tileOfPlace(to), o = devOffset(name);
     if (s.tween) { s.tween.stop(); s.tween = null; }
-    if (!ms) { this.put(name, p); s.sp.anims.stop(); return; }
-    const dx = p.x - s.sp.x, dy = p.y - s.sp.y;
-    const dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : (dy < 0 ? "up" : "down");
-    s.sp.play(`${s.key}_${dir}`, true);
-    const o = { x: s.sp.x, y: s.sp.y };
-    s.tween = this.tweens.add({ targets: o, x: p.x, y: p.y, duration: ms,
-      onUpdate: () => this.put(name, o),
+    const path = route(s.tile, target);
+    s.tile = target;
+    if (!ms) { this.put(name, spot(to, name)); s.sp.anims.stop(); s.sp.setFrame(0); return; }
+    const pts = path.map(t => centre(...t)).map((c, i, a) => i === a.length - 1 ? { x: c.x + o.x, y: c.y + o.y } : c);
+    pts.unshift({ x: s.sp.x, y: s.sp.y });
+    const legs = []; let total = 0;
+    for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); legs.push(d); total += d; }
+    const pos = { d: 0 };
+    s.tween = this.tweens.add({ targets: pos, d: total, duration: ms,
+      onUpdate: () => {
+        let d = pos.d, i = 0;
+        while (i < legs.length - 1 && d > legs[i]) { d -= legs[i]; i++; }
+        const a = pts[i], b = pts[i + 1] || a, f = legs[i] ? Math.min(1, d / legs[i]) : 1;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dir = dy < 0 ? (dx < 0 ? "left" : "up") : (dx < 0 ? "down" : "right");
+        s.sp.play(`${s.key}_${dir}`, true);
+        this.put(name, { x: a.x + dx * f, y: a.y + dy * f });
+      },
       onComplete: () => { s.sp.anims.stop(); s.sp.setFrame(0); s.tween = null; } });
   }
-
   emote(name, frame, ms) {
     if (!ms) return;
     const s = this.sprites[name];
-    const e = this.add.image(s.sp.x, s.sp.y - 40, "ui", frame).setDepth(7000);
+    const e = this.add.image(s.sp.x, s.sp.y - 40, "ui", frame).setDepth(TOP + 2);
     this.tweens.add({ targets: e, y: e.y - 6, alpha: { from: 1, to: 0 }, duration: Math.max(ms * 1.6, 300),
       ease: "Cubic.easeIn", onComplete: () => e.destroy() });
   }
@@ -245,7 +310,7 @@ class Town extends Phaser.Scene {
     if (!ms) return;
     const s = this.sprites[name];
     const t = this.add.text(s.sp.x, s.sp.y - 46, text, { fontFamily: "VT323", fontSize: "11px", color,
-      stroke: "#1b271f", strokeThickness: 3 }).setOrigin(.5, 1).setResolution(4).setDepth(7001);
+      stroke: "#1b271f", strokeThickness: 3 }).setOrigin(.5, 1).setResolution(4).setDepth(TOP + 3);
     this.tweens.add({ targets: t, y: t.y - 14, alpha: { from: 1, to: 0 }, duration: Math.max(ms * 2, 500),
       onComplete: () => t.destroy() });
   }
@@ -253,7 +318,7 @@ class Town extends Phaser.Scene {
   link(a, b, ok, ms) {
     if (!ms) return;
     const A1 = this.sprites[a].sp, B1 = this.sprites[b].sp;
-    const g = this.add.graphics().setDepth(5000);
+    const g = this.add.graphics().setDepth(TOP);
     g.lineStyle(2, ok ? 0xf2b632 : 0xb23a2a, 1).lineBetween(A1.x, A1.y - 18, B1.x, B1.y - 18);
     this.tweens.add({ targets: g, alpha: 0, duration: Math.max(ms * 1.6, 300), onComplete: () => g.destroy() });
   }

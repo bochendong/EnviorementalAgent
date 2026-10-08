@@ -37,6 +37,18 @@ the same team asking at random 0.27.
 python scripts/run_codeworld.py --out results/codeworld/core && python scripts/analyze_codeworld.py results/codeworld/core
 ```
 
+The same world as a city you can watch: **SeedVille Workshops** (`web/codeworld.html`) replays recorded
+sprints in an isometric town of workshops (modules), machines (functions), masters (owners) and
+apprentices walking the roads. In the standard town (48 machines, 12 rules per head, 4 apprentices) masters
+deliver every order and one apprentice with the team's time 46%; across three districts (144 machines, 12
+apprentices) one head manages 4%.
+
+```bash
+python scripts/build_codeworld_web.py && python -m http.server -d web 8000   # http://localhost:8000/codeworld.html
+```
+
+![SeedVille Workshops](docs/images/workshops_town.png)
+
 ## The environments
 
 **SeedVille** is a small Stardew-style town: your farm, a plaza, a general store, eight

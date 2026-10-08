@@ -92,12 +92,60 @@ What it shows:
   question per foreign function per project). What to communicate, and when to delegate a sub-problem
   instead of asking for facts, is the open question for agent networks that this world measures.
 
+## The town: CodeWorld you can watch
+
+The same world, told as a city (`--theme town`, `worldseeds/codeworld/replay.py`): modules are
+**workshops** (bakery, smithy, florist, mine, clinic, inn, shop, farm) with **machines** (functions such as
+`bakery.spin_herb: wheat -> herb`), types are goods, a project is an **order**, a developer is an
+**apprentice**, and the owner of a module is its **master**. A town has 8 workshops; bigger worlds are
+several **districts** of 8 (`oak_bakery`, `river_inn`, ...), joined by roads.
+
+* `--walk`: studying a machine or asking someone means going there: 1 action next door, 3 to another
+  district. Distance makes the cost of a question visible.
+* `--batch`: one visit to a master explains every machine of theirs the order may need, not just the one
+  asked about.
+
+The standard town is 8 workshops x 6 machines (48 rules), apprentices who keep 12 rules in mind, teams of
+4 (so the world fits the team but not one head). Share of orders delivered in steady state (sprints 5–8):
+
+| world | questions | solo (same compute) | random | owners | directory | pooled |
+|---|---|---|---|---|---|---|
+| town, 48 machines, team of 4 | per machine | 0.46 | 0.50 | 1.00 | 1.00 | 1.00 |
+| town, walking | per machine | 0.34 | 0.40 | 1.00 | 1.00 | 1.00 |
+| 3 districts, 144 machines, team of 12 | per machine | 0.04 | 0.11 | 0.43 | 0.43 | 1.00 |
+| 3 districts, walking | per machine | 0.04 | 0.05 | 0.17 | 0.16 | 1.00 |
+| 3 districts | one visit | 0.04 | 0.14 | 1.00 | 1.00 | 1.00 |
+| 3 districts, walking | one visit | 0.04 | 0.09 | 1.00 | 1.00 | 1.00 |
+
+At town scale the network already doubles what one apprentice does with the same time. With three
+districts, one head is hopeless (4%), a routed network that asks one machine at a time pays a heavy
+coordination tax (43%, 17% once questions cost a walk), and asking for everything a master knows that the
+order might need removes the tax (100%). What and how much to say per message is a first-class variable.
+
+**Watching it.** `web/codeworld.html` (SeedVille Workshops) plays back sprints recorded by the engine, so
+the picture is exactly what happened: an isometric city of workshops, apprentices walking the roads,
+questions drawn between asker and master, what each one keeps in mind (and forgets), the orders and the
+time left.
+
+```bash
+python scripts/build_codeworld_web.py      # writes web/replays/codeworld.json (7 recorded runs)
+python -m http.server -d web 8000          # open http://localhost:8000/codeworld.html
+python web/tools/isoart.py                 # (re)draws the isometric sprites, web/assets/iso.png
+```
+
+![SeedVille Workshops: one town, four masters](images/workshops_town.png)
+![Three districts, twelve masters](images/workshops_districts.png)
+
 ## Running
 
 ```bash
 python scripts/run_codeworld.py --out results/codeworld/core                 # heuristic, ~10 s
 python scripts/run_codeworld.py --modules 32 --capacities 16 --team-sizes 2 4 8 16 --out results/codeworld/scale
 python scripts/analyze_codeworld.py results/codeworld/core --costs
+# the town (8 workshops x 6 machines) and three districts, walking, one-visit questions
+python scripts/run_codeworld.py --theme town --walk --modules 8 --fns-per-module 6 --capacities 12 --team-sizes 4 --out results/codeworld/town
+python scripts/run_codeworld.py --theme town --walk --batch --modules 24 --fns-per-module 6 --capacities 12 --team-sizes 12 \
+    --projects-per-dev 3 --out results/codeworld/districts
 # LLM developers (any OpenAI-compatible server)
 WS_BASE_URL=http://localhost:8000/v1 WS_MODEL=qwen3-8b python scripts/run_codeworld.py --policy llm \
     --modules 8 --capacities 8 --team-sizes 4 --sprints 2 --projects-per-dev 2 --budget 100 --save-traces --out results/cw_llm
@@ -127,5 +175,9 @@ PILOT=1 bash slurm/submit_codeworld.sh && bash slurm/submit_codeworld.sh && sbat
 **开发者与组织。** 每个开发者有容量有限的笔记本（记得住的规律数，最久没用的先忘）和每个冲刺的行动预算。研究一个函数要 8 个行动；问同事双方各花 1 个行动，同事讲解规律，讲解只在当前项目里有效。组织方式：单人（拿全队的预算）、单人无限记忆、各干各的、按模块负责人提问（owners）、目录（知道谁会什么）、随机问、共享笔记本（上限）。LLM 开发者通过工具使用同一个世界，写下的规律逐条对照真值打分。
 
 **初步结果（规则开发者，CPU）：** 见上面两张表。三种情况：世界装得进一个人的脑子时，组织方式无所谓；装不进一个人、但装得进全队时，有路由的网络（owners、directory）达到 0.96–1.00，和完美共享一样，是等算力单人（0.32–0.40）的约三倍；随机提问的团队和单干一样差，没有"谁知道什么"的网络不算网络；世界大到全队都装不下时，所有人都失败。最大世界里 8 个人的网络完成 0.45，单人 0.07，共享记忆 1.00，中间的差距就是"沟通税"：该传什么、什么时候直接委派子问题而不是问事实，这正是 agent 网络要研究的问题。
+
+**小镇：看得见的 CodeWorld。** 同一个世界换成城市的说法（`--theme town`）：模块是工坊（面包房、铁匠铺、花店、矿场、诊所、旅店、商店、农场），函数是工坊里的机器，类型是货物，项目是订单，开发者是学徒，模块负责人是师傅。一个镇 8 个工坊；更大的世界由多个 8 工坊的街区组成，用道路连起来。`--walk`：研究机器或问人都要走过去，隔壁 1 个行动，跨街区 3 个；`--batch`：去一次师傅那里，师傅把订单可能用到的他的所有机器都讲了。标准小镇是 8 工坊 × 6 机器（48 条规律），每个学徒记得住 12 条，4 人一队：单人（等算力）完成 0.46（要走路时 0.34），有路由的网络 1.00。三个街区（144 台机器、12 人）：单人 0.04；一次只问一台机器的网络 0.43，要走路时只剩 0.17（沟通税）；一次问全的网络 1.00。每条消息说什么、说多少，是 agent 网络的核心变量。
+
+**界面。** `web/codeworld.html`（SeedVille Workshops）回放引擎记录下来的冲刺，画面就是实际发生的事：等距视角的城市、沿路走动的学徒、提问的连线、每个人脑子里的规律（以及忘掉的）、订单和剩余时间。运行 `python scripts/build_codeworld_web.py` 生成回放，再 `python -m http.server -d web 8000` 打开 `codeworld.html`；`python web/tools/isoart.py` 重新绘制等距素材。
 
 **下一步：** 委派子问题、把讲解写进笔记本的"教学"、会漂移的专家（版本更新、负责人离开、讲解出错）、异构 agent、两个参数的函数、带状态的函数、跨模块的配置依赖。
