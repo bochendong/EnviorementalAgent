@@ -75,6 +75,11 @@ class ExpConfig:
     publication_bias: bool = False
     # LLM agents: tell the same world as another story ("drug": compounds, targets, protocols; worldseeds.skin)
     skin: str = "none"
+    # festival (board; team protocol): interdependent requests (a dish cooked from a fresh crop, a visit two
+    # farmers must make together) and 'drop' to hand things over; ``roles``: each teammate perceives only
+    # soils (farmer), people (socialite) or goods (merchant), in training and in the team towns
+    festival: bool = False
+    roles: bool = False
     # law space (town/board): crops per universe; > 4 adds crops with their own soil and season laws
     n_crops: int = 4
     # hive protocol: many agents in many worlds at once sharing one memory (worldseeds/hive.py)
@@ -297,6 +302,8 @@ class Runner:
         kw = {"zoom_budget": c.zoom_budget} if c.zoom_budget is not None else {}
         if c.noise:
             kw["noise"] = c.noise
+        if c.festival and self.env.name == "board":
+            kw["festival"] = True
         if c.screen_error is not None:
             kw["screen_error"] = c.screen_error
         if c.confounder:
@@ -509,10 +516,16 @@ class Runner:
                 home = self.env.blocks[a % len(self.env.blocks)]
                 combo = rng.choice([cb for cb in train if home in cb])
                 seeds += self.env.seeds_for([combo], laws, 1, rng, n_distractors=c.n_distractors)
+            worlds = [self._grow(s, view) for s in seeds]
+            if c.roles:  # each specialist only perceives its own kind of detail, in its own towns too
+                from .town.team import PERCEIVES, ROLES
+
+                for a, w in enumerate(worlds):
+                    w.perceives = PERCEIVES[ROLES[a % len(ROLES)]]
             await asyncio.gather(*[
-                self.play(self._grow(s, view), mems[a], chain, ep + a, "train", variant=f"agent{a}",
-                          extra={"agent": a, "round": rd})
-                for a, s in enumerate(seeds)])
+                self.play(w, mems[a], chain, ep + a, "train", variant=f"agent{a}",
+                          extra={"agent": a, "round": rd, **({"role": ROLES[a % len(ROLES)]} if c.roles else {})})
+                for a, w in enumerate(worlds)])
             ep += n
         for a, m in enumerate(mems):
             self.rec.save_seed(f"{chain}-agent{a}", m.seed)
@@ -541,7 +554,7 @@ class Runner:
                 lib.write_notes(seeds[a], ep, {TEAM_NAMES[a]: 0.0})
         world = self.env.grow(s, eager=(view == "flat"), max_actions=c.max_actions * matched, library=lib,
                               **self._env_kw())
-        team = Team(world, n, messages=(mode == "messages"), speed=matched if matched > 1 else 0)
+        team = Team(world, n, messages=(mode == "messages"), speed=matched if matched > 1 else 0, roles=c.roles)
         carried = [merged] * n if mode == "merged" else seeds[:n]
         try:
             opt = self.env.oracle_steps(world.clone())
@@ -575,7 +588,8 @@ class Runner:
             "actions": metrics["team_actions"], "invalid_actions": metrics["team_invalid_actions"],
             "zoom_ops": 0, "nodes_grown": world.nodes_grown, "input_tokens": tokens[0], "output_tokens": tokens[1],
             "status": metrics.get("status", "finished"), "error": None, "time": time.time(),
-            "library_reads": lib.reads if lib is not None else None, **metrics,
+            "library_reads": lib.reads if lib is not None else None, "festival": c.festival, "roles_on": c.roles,
+            **metrics,
         }
         await self.rec.write(row, traces)
         return row

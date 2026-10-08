@@ -26,7 +26,13 @@ from .world import TownWorld
 
 TEAM_NAMES = ["Ana", "Bo", "Cy", "Di"]
 _BODY = ("agent_room", "inventory", "focus", "seen_fine", "actions", "invalid_actions", "zoom_ops", "pile_page",
-         "zoom_left", "perception_spent", "visit_log")
+         "zoom_left", "perception_spent", "visit_log", "perceives")
+# private perception (``Team(..., roles=True)``): each teammate perceives one kind of fine detail
+ROLES = ["farmer", "socialite", "merchant"]
+PERCEIVES = {"farmer": frozenset({"soil"}), "socialite": frozenset({"people"}), "merchant": frozenset({"goods"})}
+ROLE_TEXT = {"farmer": "you can tell soils apart, but not people's trades or moods, nor what goods are",
+             "socialite": "you can read people (their trade and how much they like you), but not soils or goods",
+             "merchant": "you can tell what category goods belong to, but not soils, nor people's trades or moods"}
 
 
 @dataclass
@@ -43,6 +49,8 @@ class Body:
     visit_log: list = field(default_factory=lambda: ["farm"])
     zoom_ops: int = 0
     pile_page: int = 0
+    role: str | None = None
+    perceives: frozenset | None = None
     asleep: bool = False
     finished: bool = False
     inbox: list = field(default_factory=list)  # [{"from", "text", "claims"}]
@@ -50,13 +58,16 @@ class Body:
 
 
 class Team:
-    def __init__(self, world: TownWorld, n: int, messages: bool = False, speed: int = 0):
+    def __init__(self, world: TownWorld, n: int, messages: bool = False, speed: int = 0, roles: bool = False):
         self.w = world
+        world.team_ref = self
         self.messages = messages  # may teammates message each other (tell)?
         # speed > 0: the clock moves one tick per ``speed`` actions whatever the team size. A lone agent
         # with speed N and N times the budget is the compute-matched baseline for a team of N.
         self.speed = speed
-        self.bodies = [Body(TEAM_NAMES[i], focus=["farm"], zoom_left=world.zoom_budget) for i in range(n)]
+        self.bodies = [Body(TEAM_NAMES[i], focus=["farm"], zoom_left=world.zoom_budget,
+                            role=ROLES[i % len(ROLES)] if roles else None,
+                            perceives=PERCEIVES[ROLES[i % len(ROLES)]] if roles else None) for i in range(n)]
         self.cur: int | None = None
         self._morning: asyncio.Event | None = None
         self.nights = 0
@@ -83,6 +94,20 @@ class Team:
             b = self.bodies[self.cur]
             for k in _BODY:
                 setattr(b, k, getattr(self.w, k))
+
+    def present(self, room: str) -> int:
+        """Teammates (not in bed) standing in ``room`` now."""
+        return sum(1 for i, b in enumerate(self.bodies) if not b.asleep and not b.finished
+                   and (self.w.agent_room if self.cur == i else b.agent_room) == room)
+
+    def anyone_sees(self, oid: str, what: str) -> bool:
+        """Has some teammate who can perceive ``what`` looked closely at ``oid``?"""
+        for i, b in enumerate(self.bodies):
+            seen = self.w.seen_fine if self.cur == i else b.seen_fine
+            perc = self.w.perceives if self.cur == i else b.perceives
+            if oid in seen and (perc is None or what in perc):
+                return True
+        return False
 
     def awake(self) -> list[int]:
         return [i for i, b in enumerate(self.bodies) if not b.asleep and not b.finished and not self._spent(i)]
@@ -204,6 +229,7 @@ class Team:
         self.save()
         acts = [b.actions for b in self.bodies]
         return {**self.w.board_metrics(), "success": self.w.done, "team_size": len(self.bodies),
+                "roles": [b.role for b in self.bodies] if self.bodies[0].role else None,
                 "team_actions": sum(acts), "agent_actions": acts,
                 "messages": sum(b.sent for b in self.bodies),
                 "team_invalid_actions": sum(b.invalid_actions for b in self.bodies)}
@@ -268,6 +294,10 @@ class Teammate:
         p["notes"] += (" Your teammates act in the same town at the same time: the farm, the coins and the board "
                        "are shared, each of you carries your own things. The clock moves one tick per round of "
                        "everyone's moves. 'sleep' puts you to bed until the day ends for the whole team.")
+        role = self.team.bodies[self.i].role
+        if role:
+            p["notes"] += (f" You are the team's {role}: {ROLE_TEXT[role]}. What you cannot perceive yourself, "
+                           "your teammates can: share what you notice.")
         return p
 
 
@@ -282,7 +312,8 @@ def _heuristic_team_agent():
         def __init__(self, mate: Teammate, seed=None, rng=None, trust="calibrated", prefer=(), message=False):
             super().__init__(mate, seed, rng, trust=trust, prefer=prefer)
             self.message = message
-            self.told: set[str] = set()
+            self.told: dict[str, set] = {}  # teammate -> claims already told
+            self.told_day: dict[str, int] = {}
             if message:
                 self.sourced = True
             self._n_inbox = 0
@@ -300,14 +331,19 @@ def _heuristic_team_agent():
 
         def step(self) -> None:
             self._absorb_messages()
-            if self.message and self.carried is not None:
-                for k, b in enumerate(self.w.team.bodies):
-                    if k != self.w.i and b.name not in self.told:
-                        self.told.add(b.name)
-                        claims = [(sp, self.carried.confident(sp)) for sp in self.carried.SPACES
-                                  if self.carried.confident(sp)]
-                        self.w.tell(b.name, f"here is what I know ({len(claims)} laws)", claims)
-                        return
+            if self.message:  # tell each teammate what I newly know: at the start, then at most once a day
+                know = self.seed if self.seed is not None else self.carried
+                if know is not None:
+                    mine = {(sp, know.confident(sp)) for sp in know.SPACES if know.confident(sp)}
+                    for k, b in enumerate(self.w.team.bodies):
+                        if k == self.w.i or self.told_day.get(b.name) == self.w.day:
+                            continue
+                        new = mine - self.told.get(b.name, set())
+                        if new and (b.name not in self.told or self.w.tick >= 8):
+                            self.told.setdefault(b.name, set()).update(new)
+                            self.told_day[b.name] = self.w.day
+                            self.w.tell(b.name, f"here is what I know ({len(new)} new laws)", sorted(new))
+                            return
             super().step()
 
     return TeamHeuristicAgent

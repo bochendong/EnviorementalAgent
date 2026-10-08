@@ -51,6 +51,7 @@ JOB_LOOK = {"fisher": "rubber boots smelling of the sea", "doctor": "a stethosco
             "miner": "a dented helmet with a lamp"}
 DECOR = ["bench", "lamppost", "barrel", "signpost", "flowerbed", "cart"]
 HARVEST_YIELD = 3
+REQUEST_KINDS = ("harvest", "friends", "fetch", "buy", "dish", "together")
 REQUEST_REWARD = 4
 ITEM_PRICE = 4
 SEED_PRICE = 3
@@ -63,8 +64,16 @@ def phase_of(tick: int) -> str:
 class TownWorld:
     def __init__(self, seed: TownSeed, eager: bool = False, max_actions: int = 60, library=None,
                  testimony: float | None = None, zoom_budget: int | None = None, noise: float = 0.0,
-                 screen_error: float | None = None, confounder: bool = False):
+                 screen_error: float | None = None, confounder: bool = False, festival: bool = False):
         self.seed = seed
+        # festival (board mode): interdependent requests on top of the board. A 'dish' needs a fresh crop
+        # carried to a cook who bakes it, then the dish carried to whoever asked; 'together' needs two
+        # farmers in the same place at once (a team). Teams can also lend things with 'drop'.
+        self.festival = festival
+        # private perception (teams with roles): which fine details this body can perceive
+        # (None = all; else a subset of {"soil", "people", "goods"})
+        self.perceives: frozenset | None = None
+        self.team_ref = None  # the Team working this town, if any (worldseeds.town.team)
         self.library = library  # LibraryArchive or None: memory that lives in the town library
         # testimony: None = villagers do not answer questions; else the share of villagers who are
         # consistently wrong when you ``ask`` them what they know
@@ -85,6 +94,7 @@ class TownWorld:
         self.screen_error = screen_error
         self.confounder = confounder
         self.screens = 0
+        self.drops = 0
         self.pile_page = 0
         self.laws = seed.laws
         self.eager = eager
@@ -298,8 +308,37 @@ class TownWorld:
                 r["item"] = it.id
                 v.state["request"] = it.id
             self.requests.append(r)
+        if self.festival:
+            self._festival_requests(villagers, [r["villager"] for r in self.requests])
         # start with enough for the seeds; buys are funded by rewards (or one buy, if buys are all there is)
         self.coins = sum(o.state["price"] for o in shop_needed) + (ITEM_PRICE if all(r["kind"] == "buy" for r in self.requests) else 0)
+
+    def _festival_requests(self, villagers: list[Obj], taken: list[str]) -> None:
+        rng = self._rng
+        pool = [v for v in villagers if v.id not in taken]
+        rng.shuffle(pool)
+        n = len(self.requests)
+        if FARMING in self.seed.blocks and len(pool) >= 2:
+            want = pool.pop()
+            cook = next((v for v in pool if v.fine["job"] == "baker"), pool[-1])
+            pool.remove(cook)
+            n += 1
+            self.requests.append({"id": f"r{n}", "kind": "dish", "villager": want.id, "item": None,
+                                  "holder": cook.id, "done": False, "reward": 2 * REQUEST_REWARD})
+        if pool:
+            n += 1
+            self.requests.append({"id": f"r{n}", "kind": "together", "villager": pool.pop().id, "item": None,
+                                  "holder": None, "done": False, "reward": 2 * REQUEST_REWARD})
+
+    def present(self, room: str) -> int:
+        """Farmers (awake team members) standing in ``room`` right now."""
+        if self.team_ref is None:
+            return int(self.agent_room == room)
+        return self.team_ref.present(room)
+
+    def sees(self, what: str) -> bool:
+        """Can this body perceive ``what`` (soil, people, goods)? Teams with roles split perception."""
+        return self.perceives is None or what in self.perceives
 
     # ================================================================ board
     @property
@@ -316,8 +355,18 @@ class TownWorld:
         if r["kind"] == "friends":
             f = v.state["friendship"]
             return (True, "") if f >= 2 else (False, f"'We hardly know each other yet.' (friendship {f}/2)")
+        if r["kind"] == "together":
+            n = self.present(v.location)
+            return (True, "") if n >= 2 else (False, "'Come back with a friend: I want two of you here at once.' "
+                                                      f"({n}/2 here)")
         if v.state["got_request"]:
             return True, ""
+        if r["kind"] == "dish":
+            cook = self.objs[r["holder"]]
+            if r["item"] is None:
+                return False, (f"'I'd love a festival dish: bring a fresh crop to {cook.name} ({cook.id}) to cook it, "
+                               "then bring me the dish.'")
+            return False, f"'Please bring me the {self.objs[r['item']].name} ({r['item']}) {cook.name} cooked.'"
         it = self.objs[r["item"]]
         where = (f"{self.objs[r['holder']].name} ({r['holder']}) keeps one" if r["kind"] == "fetch"
                  else "the general store sells it")
@@ -330,6 +379,13 @@ class TownWorld:
             what = "wants something fresh from your farm"
         elif r["kind"] == "friends":
             what = "wants to become friends (friendship 2)"
+        elif r["kind"] == "dish":
+            cook = self.objs[r["holder"]]
+            what = (f"wants a festival dish: a fresh crop cooked by {cook.name} ({cook.id}, lives in "
+                    f"{self.home_of[cook.id]})" + (f" -- {self.objs[r['item']].name} {r['item']} is ready"
+                                                    if r["item"] else ""))
+        elif r["kind"] == "together":
+            what = "wants two of you to visit at the same time"
         else:
             it = self.objs[r["item"]]
             src = (f"which {self.objs[r['holder']].name} ({r['holder']}) keeps" if r["kind"] == "fetch"
@@ -459,6 +515,10 @@ class TownWorld:
             crop = p.state["crop"]
             watered = p.state["watered"] or rainy  # rain waters every plot
             attrs = dict(self.visible_attrs(p.id), crop=crop, season=self.season, watered=watered)
+            if self.team_ref is not None:  # the morning report: soil known if anyone who can tell soils looked
+                attrs.pop("soil", None)
+                if self.team_ref.anyone_sees(p.id, "soil"):
+                    attrs["soil"] = p.fine["soil"]
             if self.confounder:
                 attrs["weather"] = self.weather
             if p.fine["soil"] != self.laws.soil_for[crop]:
@@ -528,9 +588,10 @@ class TownWorld:
         return {"board_done": sum(r["done"] for r in self.requests), "board_total": len(self.requests),
                 "days_used": min(self.day, self.seed.days), "coins": self.coins,
                 **{f"board_{k}_done": sum(r["done"] for r in self.requests if r["kind"] == k)
-                   for k in ("harvest", "friends", "fetch", "buy")},
+                   for k in REQUEST_KINDS},
                 **{f"board_{k}_total": sum(1 for r in self.requests if r["kind"] == k)
-                   for k in ("harvest", "friends", "fetch", "buy")}}
+                   for k in REQUEST_KINDS},
+                **({"drops": self.drops} if self.festival else {})}
 
     def visible_attrs(self, oid: str | None) -> dict:
         if not oid or oid not in self.objs:
@@ -539,8 +600,8 @@ class TownWorld:
         d = {"id": o.id, "kind": o.kind, "name": o.name}
         if o.color:
             d["color"] = o.color
-        if o.kind in ("item", "crop") and not (self.zoom_budget is not None and oid not in self.seen_fine
-                                                and o.location != "inv"):
+        if o.kind in ("item", "crop") and self.sees("goods") and not (
+                self.zoom_budget is not None and oid not in self.seen_fine and o.location != "inv"):
             d["category"] = o.fine["category"]
         if o.kind == "seeds":
             d["crop"] = o.fine["crop"]
@@ -549,9 +610,9 @@ class TownWorld:
         if o.kind == "shelf":
             d["category"] = o.fine["category"]
         if oid in self.seen_fine:
-            if o.kind == "villager":
+            if o.kind == "villager" and self.sees("people"):
                 d["job"] = o.fine["job"]
-            if o.kind == "plot":
+            if o.kind == "plot" and self.sees("soil"):
                 d["soil"] = o.fine["soil"]
         return d
 
@@ -577,6 +638,8 @@ class TownWorld:
             v += ", read board (in the plaza)"
         if self.testimony is not None:
             v += ", ask <villager> (they tell you what their trade has taught them)"
+        if self.festival:
+            v += ", drop <item> (put it down here, e.g. for a teammate)"
         if self.screen_error is not None:
             v += (", screen <plot> with <seeds> (a quick test kit: takes no time, uses an action, and is wrong "
                   "about one time in " + f"{round(1 / self.screen_error) if self.screen_error else 'never'})")
@@ -609,7 +672,8 @@ class TownWorld:
             return f"{o.id} {o.name} (in {'an' if o.color[0] in 'aeiou' else 'a'} {o.color} shirt)"
         if o.kind in ("item", "crop"):
             # with a perception budget an item's category is a fine detail: look closer to see it
-            hidden = self.zoom_budget is not None and o.id not in self.seen_fine and o.location != "inv"
+            hidden = (self.zoom_budget is not None and o.id not in self.seen_fine and o.location != "inv") or \
+                not self.sees("goods")
             base = f"{o.id} {o.color} {o.name}" + ("" if hidden else f" ({o.fine['category']})")
         elif o.kind == "seeds":
             base = f"{o.id} packet of {o.name} ({o.state['uses']} left)"
@@ -628,9 +692,11 @@ class TownWorld:
     def _fine_str(self, o: Obj) -> str:
         self.seen_fine.add(o.id)
         if o.kind == "villager":
+            if not self.sees("people"):
+                return " {you are no judge of people: ask a teammate with an eye for them}"
             return f" {{wears {JOB_LOOK[o.fine['job']]} -> {o.fine['job']}; friendship {o.state['friendship']}}}"
         if o.kind == "plot":
-            return f" {{soil: {o.fine['soil']}}}"
+            return f" {{soil: {o.fine['soil'] if self.sees('soil') else 'you cannot tell soils apart'}}}"
         if o.kind == "decor":
             return f" {{{o.fine['condition']}}}"
         return ""
@@ -678,17 +744,22 @@ class TownWorld:
             need = []
             if GIFTING in self.seed.blocks:
                 need.append(f"friendship {o.state['friendship']}/2")
-            lines += [f"  wears {JOB_LOOK[o.fine['job']]} (a {o.fine['job']})", f"  shirt: {o.color}",
-                      "  " + (", ".join(need) or "seems approachable")]
+            if self.sees("people"):
+                lines += [f"  wears {JOB_LOOK[o.fine['job']]} (a {o.fine['job']})", f"  shirt: {o.color}",
+                          "  " + (", ".join(need) or "seems approachable")]
+            else:
+                lines += [f"  shirt: {o.color}", "  you cannot tell what they do or what they think of you "
+                                                  "(a teammate with an eye for people can)"]
             r = self.request_of(o.id) if self.requests else None
             if r is not None:
                 lines.append(f"  posted board request {r['id']} ({r['kind']})")
         elif o.kind == "plot":
-            lines.append(f"  soil: {o.fine['soil']}")
+            lines.append(f"  soil: {o.fine['soil'] if self.sees('soil') else 'you cannot tell soils apart'}")
             if o.state["crop"]:
                 lines.append(f"  growth stage {o.state['stage']}/2, {'watered today' if o.state['watered'] else 'dry'}")
         elif o.kind in ("item", "crop"):
-            lines.append(f"  colour: {o.color}, category: {o.fine['category']}")
+            lines.append(f"  colour: {o.color}, category: "
+                         f"{o.fine['category'] if self.sees('goods') else 'you cannot tell (a merchant could)'}")
         elif o.kind == "seeds":
             lines.append(f"  label: '{o.fine['crop']}' -- no planting instructions")
         elif o.kind == "decor":
@@ -834,6 +905,13 @@ class TownWorld:
             o.location = "inv"
             self.inventory.append(o.id)
             return f"You take {self._label(o)}.", True, True
+        if verb == "drop":
+            if o.id not in self.inventory:
+                return f"You do not hold {o.id}.", False, False
+            self.inventory.remove(o.id)
+            o.location = self.agent_room
+            self.drops += 1
+            return f"You put down {self._label(o)} here in {self.agent_room}.", True, True
         if verb == "buy":
             if not o.state.get("for_sale"):
                 return f"{o.id} is not for sale.", False, False
@@ -867,6 +945,20 @@ class TownWorld:
                 return "Give what? Use give <villager> with <item>.", False, False
             if tool.kind not in ("item", "crop"):
                 return f"{o.name} has no use for that.", False, False
+            dish = next((r for r in self.requests if r["kind"] == "dish" and r["holder"] == o.id and not r["done"]
+                         and r["item"] is None), None)
+            if dish is not None and tool.kind == "crop":  # the cook turns a fresh crop into the festival dish
+                self.inventory.remove(tool.id)
+                tool.location = o.id
+                d = self._add(Obj(self._new_id("i"), "item", f"{tool.name} pie", tool.color,
+                                  fine={"category": "food"}, location="inv", critical=True))
+                self.inventory.append(d.id)
+                dish["item"] = d.id
+                want = self.objs[dish["villager"]]
+                want.state["request"] = d.id
+                ev.effects = [{"cooked": d.id}]
+                return (f"{o.name} cooks your {tool.name} into a {d.name} ({d.id}) for {want.name} ({want.id}) "
+                        "and hands it to you."), True, True
             liked = self.liked(o, tool)
             self.inventory.remove(tool.id)
             tool.location = o.id

@@ -311,7 +311,8 @@ class TownSeedMemory(LawSeed):
                 else:
                     self._vote_exclusive(f"season.{crop}", season, w_ok)
                 used += 1
-            elif ev.verb == "give" and ev.effects and t.get("kind") == "villager" and "color" in i:
+            elif ev.verb == "give" and ev.effects and "liked" in ev.effects[0] and t.get("kind") == "villager" \
+                    and "color" in i:
                 liked = ev.effects[0]["liked"]
                 color_pred = i.get("color") == t.get("color")
                 self._vote("gift_attr", "color", color_pred == liked)
@@ -762,7 +763,12 @@ class BoardHeuristicAgent(TownHeuristicAgent):
     def _need_crop(self, v=None) -> bool:
         w = self.w
         want = sum(1 for r in self._undone("harvest") if not w.objs[r["villager"]].state["got_crop"])
+        want += sum(1 for r in self._undone("dish") if r["item"] is None)  # festival: a crop for the cook
         return want > len(self._held("crop"))
+
+    def _teamwork(self) -> bool:
+        team = getattr(self.w, "team_ref", None)
+        return team is not None and len(team.bodies) > 1
 
     def _reserved(self) -> set[str]:
         return {r["item"] for r in self._undone() if r["item"]}
@@ -798,6 +804,10 @@ class BoardHeuristicAgent(TownHeuristicAgent):
             if w.request_met(r)[0]:
                 self._act("talk", v.id)
                 return True
+        for q in self._undone("dish"):
+            if q["holder"] == v.id and q["item"] is None and self._held("crop"):
+                self._act("give", v.id, self._held("crop")[0])
+                return True
         for q in self._undone("fetch"):
             if q["holder"] == v.id and q["item"] not in w.inventory and w.objs[q["item"]].location == v.id:
                 if GIFTING in w.seed.blocks and v.state["friendship"] < 1:
@@ -822,6 +832,10 @@ class BoardHeuristicAgent(TownHeuristicAgent):
                 out.append((0, v))
             elif r["kind"] == "friends" and self._gift_for(v) is not None:
                 out.append((1, v))
+            elif r["kind"] == "dish" and r["item"] is None and self._held("crop"):
+                out.append((0, w.objs[r["holder"]]))
+            elif r["kind"] == "together" and self._teamwork():
+                out.append((2, v))  # meet there; whoever is second makes it count
             elif r["kind"] == "fetch" and w.objs[r["item"]].location == r["holder"]:
                 h = w.objs[r["holder"]]
                 if GIFTING not in w.seed.blocks or h.state["friendship"] >= 1 or self._gift_for(h) is not None:

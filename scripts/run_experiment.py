@@ -63,6 +63,10 @@ def main():
                    help="LLM agents: the same hidden laws told as another story (drug: compounds, targets, protocols)")
     p.add_argument("--publication-bias", action="store_true",
                    help="library notes only from successful towns and successful events")
+    p.add_argument("--festival", action="store_true",
+                   help="board/team: interdependent festival requests (a cooked dish, a visit for two) and 'drop'")
+    p.add_argument("--roles", action="store_true",
+                   help="team: private perception, each teammate sees only soils, people or goods")
     p.add_argument("--n-crops", type=int, default=4, help="town/board: crops per universe (law space size)")
     p.add_argument("--hive-modes", nargs="+", default=["isolated", "serial", "groups", "hive", "sync",
                                                        "hive_verified", "hive_directed", "hive_full"],
@@ -93,6 +97,7 @@ def main():
         source_errors=a.source_errors, trusts=a.trusts, team_modes=a.team_modes,
         n_crops=a.n_crops, zoom_budget=a.zoom_budget, noise=a.noise, screen_error=a.screen_error,
         confounder=a.confounder, deconfound=a.deconfound, publication_bias=a.publication_bias, skin=a.skin,
+        festival=a.festival, roles=a.roles,
         hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty, hive_waves=a.hive_waves,
         evolve_generations=a.evolve_generations, evolve_pop=a.evolve_pop, evolve_archive=a.evolve_archive,
         evolve_evaluators=a.evolve_evaluators, evolve_benchmark=not a.no_evolve_benchmark,
