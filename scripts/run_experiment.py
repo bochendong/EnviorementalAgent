@@ -70,6 +70,16 @@ def main():
     p.add_argument("--hive-sizes", nargs="+", type=int, default=[1, 4, 16], help="hive: numbers of agents")
     p.add_argument("--hive-faulty", nargs="+", type=float, default=[0.0], help="hive: shares of faulty agents")
     p.add_argument("--hive-waves", type=int, default=8, help="hive: worlds each agent plays")
+    p.add_argument("--evolve-generations", type=int, default=8, help="evolve: generations")
+    p.add_argument("--evolve-pop", type=int, default=8, help="evolve: lives per generation")
+    p.add_argument("--evolve-archive", type=int, default=6, help="evolve: best lives kept as parents")
+    p.add_argument("--evolve-evaluators", nargs="+", choices=["true", "proxy"], default=["true", "proxy"],
+                   help="evolve: select on test success (true) or on claims / self-grade (proxy, the weak evaluator)")
+    p.add_argument("--no-evolve-benchmark", action="store_true", help="evolve: skip the per-generation benchmark")
+    p.add_argument("--transfer-universes", nargs="*", type=int, default=[],
+                   help="evolve: unseen universes for the initial-vs-evolved learner comparison")
+    p.add_argument("--transfer-curve", nargs="+", type=int, default=[1, 2, 4, 8],
+                   help="evolve: training towns before the transfer test")
     p.add_argument("--trusts", nargs="+", choices=["blind", "calibrated"], default=["blind", "calibrated"],
                    help="heuristic policy only: how the agent weighs second-hand claims")
     p.add_argument("--out", default="results/run")
@@ -82,8 +92,11 @@ def main():
         n_distractors=a.n_distractors, save_traces=a.save_traces, out_dir=a.out, rng_seed=a.rng_seed,
         source_errors=a.source_errors, trusts=a.trusts, team_modes=a.team_modes,
         n_crops=a.n_crops, zoom_budget=a.zoom_budget, noise=a.noise, screen_error=a.screen_error,
-        confounder=a.confounder, deconfound=a.deconfound, publication_bias=a.publication_bias, skin=a.skin, hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty,
-        hive_waves=a.hive_waves,
+        confounder=a.confounder, deconfound=a.deconfound, publication_bias=a.publication_bias, skin=a.skin,
+        hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty, hive_waves=a.hive_waves,
+        evolve_generations=a.evolve_generations, evolve_pop=a.evolve_pop, evolve_archive=a.evolve_archive,
+        evolve_evaluators=a.evolve_evaluators, evolve_benchmark=not a.no_evolve_benchmark,
+        transfer_universes=a.transfer_universes, transfer_curve=a.transfer_curve,
     )
     out = run_experiment(cfg)
     print(f"done -> {out}/episodes.jsonl")

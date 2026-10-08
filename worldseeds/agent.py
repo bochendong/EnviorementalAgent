@@ -66,6 +66,7 @@ class EpisodeCtx:
     output_tokens: int = 0
     _run_usage: tuple[int, int, int] = (0, 0, 0)
     canvas: Any = None  # worldseeds.canvas.Canvas when the context is a canvas instead of a transcript
+    strategy: str | None = None  # an inherited playbook (evolve protocol)
     skin: Any = None  # worldseeds.skin.Skin: the same world told as another story (e.g. drug discovery)
 
     def out(self, text: str) -> str:
@@ -281,6 +282,9 @@ def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: O
                 "older places only in outline, the recent events, and your NOTES. Older detail is still in the "
                 "world: go back and look again when you need it. Keep plans, open questions and lessons in your "
                 "notes with rewrite_notes(text); it replaces them, so write the full notes each time.")
+    if ctx.strategy:
+        mem += ("\nPLAYBOOK (how agents before you learned to work in a new town; advice, not law):\n"
+                + ctx.strategy)
     p = w.prompt_spec()
     view_help = FLAT_HELP if flat else ZOOM_HELP.format(details=p["details"])
     return ctx.out(BASE_INSTRUCTIONS.format(view_help=view_help, budget=w.max_actions, memory=mem,
@@ -390,6 +394,7 @@ async def run_episode(
     context: str = "transcript",
     canvas_chars: int = 3000,
     skin: str | None = None,
+    strategy: str | None = None,
 ) -> tuple[dict[str, Any], EpisodeCtx]:
     flat = world.eager
     if library is not None and getattr(world, "library", None) is None:
@@ -397,7 +402,8 @@ async def run_episode(
     team = getattr(world, "team", None)
     from .skin import make_skin
 
-    ctx = EpisodeCtx(world=world, condition=condition, seed=seed, retrieval=retrieval, skin=make_skin(skin))
+    ctx = EpisodeCtx(world=world, condition=condition, seed=seed, retrieval=retrieval, skin=make_skin(skin),
+                     strategy=strategy)
     if context in ("canvas", "image"):
         from .canvas import Canvas
 

@@ -198,6 +198,8 @@ class TownSeedMemory(LawSeed):
     a season space for each further crop the first time evidence (or a claim) about it arrives."""
 
     SPACES = TOWN_SPACES
+    # evidence weights: a crop that grew, a crop that withered, a positive quick test
+    TUNING = {**LawSeed.TUNING, "w_ok": 1.0, "w_fail": 1.0, "w_screen": 0.3}
 
     def __init__(self, decay: float = 1.0):
         self.SPACES = dict(TOWN_SPACES)  # per instance: grows with the crops this seed has met
@@ -226,7 +228,7 @@ class TownSeedMemory(LawSeed):
         if self.ensure(space):
             super()._vote_exclusive(space, hyp, w)
 
-    def confident(self, space, thresh=0.75, min_evidence=1.0):
+    def confident(self, space, thresh=None, min_evidence=None):
         if space not in self.hyps:
             return None
         return super().confident(space, thresh, min_evidence)
@@ -248,7 +250,12 @@ class TownSeedMemory(LawSeed):
         m.reflected = [tuple(c) for c in d.get("reflected", [])]
         m.worlds_seen = d.get("worlds_seen", 0)
         m.events_seen = d.get("events_seen", 0)
+        m.tuning.update(d.get("tuning", {}))
+        m.deconfound = d.get("deconfound", False)
         return m
+
+    def to_dict(self) -> dict:
+        return {**super().to_dict(), **({"deconfound": True} if self.deconfound else {})}
 
     def merge(self, other: "LawSeed") -> None:
         for sp in other.hyps:
@@ -291,17 +298,18 @@ class TownSeedMemory(LawSeed):
                     continue  # a learner that knows rain is a confounder sets these nights aside
                 if crop is None or outcome == "dry":
                     continue
+                w_ok, w_fail = self.tuning["w_ok"], self.tuning["w_fail"]
                 if outcome == "withered":
                     if soil:
-                        self._vote(f"soil.{crop}", soil, False)
+                        self._vote(f"soil.{crop}", soil, False, w_fail)
                         used += 1
                     continue
                 if soil:
-                    self._vote_exclusive(f"soil.{crop}", soil)
+                    self._vote_exclusive(f"soil.{crop}", soil, w_ok)
                 if outcome == "dormant":
-                    self._vote(f"season.{crop}", season, False)
+                    self._vote(f"season.{crop}", season, False, w_fail)
                 else:
-                    self._vote_exclusive(f"season.{crop}", season)
+                    self._vote_exclusive(f"season.{crop}", season, w_ok)
                 used += 1
             elif ev.verb == "give" and ev.effects and t.get("kind") == "villager" and "color" in i:
                 liked = ev.effects[0]["liked"]
@@ -320,9 +328,10 @@ class TownSeedMemory(LawSeed):
             elif ev.verb == "screen" and ev.effects and ev.effects[0].get("screen"):
                 # a positive quick test: weak evidence for the crop's soil and season (tests are sometimes wrong)
                 e = ev.effects[0]
+                ws = self.tuning["w_screen"]
                 if t.get("soil"):
-                    self._vote_exclusive(f"soil.{e['crop']}", t["soil"], 0.3)
-                self._vote_exclusive(f"season.{e['crop']}", e["season"], 0.3)
+                    self._vote_exclusive(f"soil.{e['crop']}", t["soil"], ws)
+                self._vote_exclusive(f"season.{e['crop']}", e["season"], ws)
                 used += 1
             elif ev.verb == "see":
                 for e in ev.effects:

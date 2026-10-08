@@ -59,9 +59,12 @@ class LawSeed:
     its tiny world model (``predict``) and the ground truth for scoring (``truth``)."""
 
     SPACES: dict[str, list[str]] = {}
+    # how the learner weighs evidence; the evolve protocol tunes these (worldseeds/evolve.py)
+    TUNING: dict[str, float] = {"thresh": 0.75, "min_evidence": 1.0}
 
     def __init__(self, decay: float = 1.0):
         self.decay = decay  # <1.0 = recency weighting (helps when laws shift)
+        self.tuning = dict(self.TUNING)
         self.hyps: dict[str, dict[str, Hyp]] = {s: {h: Hyp() for h in hs} for s, hs in self.SPACES.items()}
         self.rules: list[str] = []  # free-text rules (LLM consolidator)
         self.reflected: list[tuple[str, str]] = []  # (law, value) the LLM consolidator claims; scored, not used
@@ -96,7 +99,9 @@ class LawSeed:
         h, v = max(items.items(), key=lambda kv: (kv[1].belief(), kv[1].support))
         return h, v.belief(), v.support + v.against
 
-    def confident(self, space: str, thresh: float = 0.75, min_evidence: float = 1.0) -> str | None:
+    def confident(self, space: str, thresh: float | None = None, min_evidence: float | None = None) -> str | None:
+        thresh = self.tuning["thresh"] if thresh is None else thresh
+        min_evidence = self.tuning["min_evidence"] if min_evidence is None else min_evidence
         h, b, n = self.best(space)
         others = [x.belief() for k, x in self.hyps[space].items() if k != h]
         margin = b - (max(others) if others else 0.0)
@@ -147,6 +152,7 @@ class LawSeed:
             "reflected": [list(c) for c in self.reflected],
             "worlds_seen": self.worlds_seen,
             "events_seen": self.events_seen,
+            **({"tuning": self.tuning} if self.tuning != self.TUNING else {}),
         }
 
     @classmethod
@@ -159,6 +165,7 @@ class LawSeed:
         m.reflected = [tuple(c) for c in d.get("reflected", [])]
         m.worlds_seen = d.get("worlds_seen", 0)
         m.events_seen = d.get("events_seen", 0)
+        m.tuning.update(d.get("tuning", {}))
         return m
 
     def merge(self, other: "LawSeed") -> None:
