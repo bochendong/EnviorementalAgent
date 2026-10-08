@@ -53,6 +53,8 @@ class CoreRunner:
         reads0 = mem.library.reads if mem.library is not None else 0
         lib0 = mem.library.to_dict() if mem.library is not None else None  # shelves as the agent found them
         hkw = {"trust": mem.trust} if mem.trust else {}
+        if getattr(world, "screen_error", None) is not None:
+            hkw["screen_policy"] = self.cfg.learner.screen_policy
         async with self.sem:
             if self.cfg.policy == "heuristic":
                 sd = mem.seed if cond in ("seed", "seed_llm") else (
@@ -81,7 +83,10 @@ class CoreRunner:
             "goal_index": world.goal_index, "oracle_steps": opt, **metrics,
             **({"perception_spent": world.perception_spent, "zoom_budget": world.zoom_budget}
                if getattr(world, "zoom_budget", None) is not None else {}),
-            **({"screens": world.screens} if getattr(world, "screen_error", None) is not None else {}),
+            **({"screens": world.screens, "screen_policy": self.cfg.learner.screen_policy,
+                "plantings": sum(1 for e in world.events if e.verb == "plant" and e.success),
+                "outcomes": sum(1 for e in world.events if e.verb == "night" and e.valid)}
+               if getattr(world, "screen_error", None) is not None else {}),
             "time": time.time(), **(extra or {}),
         }
         if mem.seed is not None:
@@ -175,6 +180,8 @@ class CoreRunner:
         for sd in (m.seed, m.lib_seed):
             if sd is not None and hasattr(sd, "deconfound"):
                 sd.deconfound = self.cfg.learner.deconfound
+            if sd is not None and self.cfg.learner.screen_weight is not None and "w_screen" in sd.tuning:
+                sd.tuning["w_screen"] = self.cfg.learner.screen_weight
         return m
 
     def _chains(self):

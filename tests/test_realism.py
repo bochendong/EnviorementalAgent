@@ -166,3 +166,20 @@ def test_scripted_llm_in_the_drug_skin():
     assert all("turnip" not in t["out"] and "plot" not in t["out"] for t in ctx.trace)
     instr = build_instructions(ctx, None, None, False)
     assert "PharmaVille" in instr and "SeedVille" not in instr
+
+
+def test_screen_policy_and_weight_options(tmp_path):
+    from worldseeds.experiment import ExpConfig, run_experiment
+
+    rows = {}
+    for pol, w in (("off", None), ("use", 0.0), ("ignore", 0.3)):
+        out = tmp_path / f"{pol}{w}"
+        run_experiment(ExpConfig(env="board", protocol="compgen", policy="heuristic", conditions=["seed"],
+                                 universes=[1], n_train=3, n_test=1, max_actions=150, screen_error=0.25,
+                                 screen_policy=pol, screen_weight=w, out_dir=str(out)))
+        rows[pol] = [json.loads(x) for x in open(out / "episodes.jsonl")]
+        seed = json.load(open(next((out / "seeds").glob("*.json"))))
+        if w is not None:  # a default weight (0.3) is not written out
+            assert seed.get("tuning", {}).get("w_screen", 0.3) == w
+    assert all(r["screens"] == 0 and r["screen_policy"] == "off" for r in rows["off"])
+    assert any(r["screens"] > 0 for r in rows["use"]) and all("plantings" in r for r in rows["use"])

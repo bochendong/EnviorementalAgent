@@ -58,6 +58,10 @@ class LearnerOptions:
     decay: float = opt(1.0, "learned seeds: evidence decay per world (< 1 forgets; law_shift)")
     deconfound: bool = opt(False, "learned seeds set rainy nights aside (the weather confounder)")
     publication_bias: bool = opt(False, "the library hears only from towns that finished, and only successes")
+    screen_weight: float | None = opt(None, "learned seeds: weight of a positive quick test (default 0.3)",
+                                      type=float)
+    screen_policy: str = opt("use", "heuristic with quick tests: plant where screens say (use), screen but ignore "
+                             "the result (ignore), or never screen (off)", choices=["use", "ignore", "off"])
     trusts: list = opt(["blind", "calibrated"], "heuristic policy only: how the agent weighs second-hand claims",
                        nargs="+", choices=["blind", "calibrated"])
 

@@ -462,8 +462,11 @@ class TownHeuristicAgent:
     """Explores, collects, farms and gifts by simple rules; uses a seed's predict() if given."""
 
     def __init__(self, world: TownWorld, seed: TownSeedMemory | None = None, rng: random.Random | None = None,
-                 read_library: bool | None = None, trust: str = "blind"):
+                 read_library: bool | None = None, trust: str = "blind", screen_policy: str = "use"):
         self.w = world
+        # quick tests (worlds with screen_error): "use" = screen unsure options and plant the promising ones,
+        # "ignore" = screen but plant as if it had not, "off" = never screen
+        self.screen_policy = screen_policy
         self.seed = seed
         # with a library, the agent's head starts empty and it fills ``seed`` by reading shelves
         self.read_library = (world.library is not None) if read_library is None else read_library
@@ -734,7 +737,7 @@ class TownHeuristicAgent:
                     options = [p for p in options if preds[p.id] is True]
                 elif options and all(v is False for v in preds.values()):
                     continue
-            if options and getattr(w, "screen_error", None) is not None:
+            if options and getattr(w, "screen_error", None) is not None and self.screen_policy != "off":
                 # a quick test kit: screen each (crop, plot) the agent cannot predict, once, before committing
                 # a plot for nights (screening what it already knows would only waste actions)
                 unsure = [p for p in options if self.seed is None or self._pred("plant", p.id, s) is None]
@@ -747,7 +750,8 @@ class TownHeuristicAgent:
                         self.screened[(crop, p.id)] = bool(ev.verb == "screen" and ev.effects and ev.effects[0]["screen"])
                         return True
                 promising = [p for p in options if self.screened.get((crop, p.id))]
-                options = promising or options
+                if self.screen_policy == "use":
+                    options = promising or options
             if options:
                 self._act("plant", self.rng.choice(options).id, s)
                 return True

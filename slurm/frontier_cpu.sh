@@ -31,6 +31,8 @@ done
 run "${C[@]}" --conditions seed --confounder --out "$OUT/realism/confounder"
 run "${C[@]}" --conditions seed --confounder --deconfound --out "$OUT/realism/deconfound"
 run "${C[@]}" --conditions none seed --zoom-budget 4 --out "$OUT/perception"
+# why quick tests slow learning: evidence vs noisy votes vs planting policy
+python scripts/screen_study.py --universes $UNIVERSES --repeats "${REPEATS:-3}" --out "$OUT/screen_study"
 
 # teams on the festival board, with and without private perception
 for roles in "" --roles; do
