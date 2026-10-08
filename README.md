@@ -97,6 +97,9 @@ laws hold in every town of a universe, so what you learn in one town pays off in
 | **Trust**: using other agents' memories when some are wrong | notes and villager testimony with controlled error rates (`--source-errors`) |
 | **Cooperation and memory sharing** among many agents | a team on one board (`team`) and a hive of up to 1,024 agents in parallel towns with groups, consolidation, verification and faulty agents (`hive`) |
 | **Exploration and curricula** | growing new worlds by mutating seeds (`curriculum`), a director that sends agents to the least-known laws (hive) |
+| **Self-evolving agents and reward hacking** | generations that inherit how to learn (a genome or an LLM-written playbook), selected on the true score or on self-assessment, then tested in unseen universes (`evolve`) |
+| **Memory as a picture**: context for long-horizon and vision-language agents | a fixed-size multi-resolution canvas instead of a transcript, as text or as images (`--context canvas / image`) |
+| **Science under realistic conditions** | noisy experiments, cheap noisy screens, a confounder, publication bias, and the same laws told as drug discovery (`--noise`, `--screen-error`, `--confounder`, `--publication-bias`, `--skin drug`) |
 
 ## Why it is new
 
@@ -194,7 +197,8 @@ condition, `predict` (ask the learned seed before acting), `recall` (episodic me
 | `multiagent` | do agents that pool their seeds learn faster than alone? |
 | `curriculum` | does growing new worlds by mutating seeds beat uniform sampling? |
 | `team` | several agents on one board: alone, independent, library, messages, merged seeds |
-| `hive` | many agents in parallel towns sharing one memory: groups, consolidation, verification, a director, faulty agents |
+| `hive` | many agents in parallel towns sharing one memory: groups, consolidation, verification, a director, faulty agents, provenance, law shifts |
+| `evolve` | generations of agents inheriting how to learn; true vs self-assessed selection; transfer to unseen universes |
 
 | condition | what the agent carries from one world to the next |
 |---|---|
@@ -209,7 +213,9 @@ condition, `predict` (ask the learned seed before acting), `recall` (episodic me
 
 Useful options: `--source-errors 0 0.25 0.5` (wrong notes and testimony), `--n-crops 64` (a
 bigger universe with 138 laws and a long tail of rare crops), `--hive-sizes 1 4 16 64`,
-`--hive-faulty 0 0.25`, `--views zoom flat`, `--repeats`, `--save-traces`.
+`--hive-faulty 0 0.25`, `--views zoom flat`, `--repeats`, `--save-traces`, and the frontier
+switches above (`--context`, `--zoom-budget`, `--noise`, `--screen-error`, `--confounder`,
+`--publication-bias`, `--skin`, `--festival`, `--roles`, `--hive-faulty-mode`, `--hive-shift-wave`).
 
 Results are written to `<out>/episodes.jsonl` (one row per episode), `traces.jsonl` (tool
 calls, with `--save-traces`), `seeds/` (learned seeds) and, for the hive, `hive.jsonl` (one
@@ -218,8 +224,29 @@ row per wave). Summaries:
 ```bash
 python scripts/analyze.py <out> --by condition variant phase --curve
 python scripts/analyze_hive.py <out> --curve
+python scripts/analyze_evolve.py <out>              # evolve: generations, hacking gap, transfer
 python scripts/export_replay.py <out> --list        # turn an LLM episode into a browser replay
 ```
+
+## Frontier studies
+
+Each of these turns one open question in agent research into a switch on the same environment.
+Details and the CPU results so far are in
+[docs/experiments.md#frontier-studies](docs/experiments.md#frontier-studies).
+
+| switch | question | heuristic agent (CPU) so far |
+|---|---|---|
+| `solo_matched` (team), `serial` (hive) | is a team better than one agent with the same compute? | parallel agents learn as much as one agent playing the same worlds in a row (127 vs 126 laws); teams win by sharing and by tasks that need two bodies |
+| `--zoom-budget k` | what if looking closely costs attention? | the heuristic barely notices; meant for LLMs |
+| `--context canvas` / `image` | a fixed-size memory canvas (sharp where you are, blurrier further back, notes you rewrite) instead of a transcript; as pictures for VLMs | LLM study (`slurm/submit_frontier.sh`, `slurm/submit_vision.sh`) |
+| `--noise`, `--screen-error`, `--confounder`, `--publication-bias` | can the agent still do science when experiments are noisy, screens cheap but wrong, causes confounded, and only positive results published? | publication bias makes the library confidently wrong; cheap screens make learning slower |
+| `--skin drug` | the same laws as compounds, targets and protocols: does a scientific story change behaviour? | LLM study (the heuristic does not read text) |
+| `--protocol evolve` | do agents improve by inheriting how to learn? Does selecting on self-assessment cause reward hacking? Does it transfer? | selecting on claimed knowledge doubles wrong claims with no gain; evolved learners learn faster in unseen universes |
+| `--festival`, `--roles` | tasks only a team can do (a dish cooked from a fresh crop, a visit for two) and private perception (soils / people / goods) | the compute-matched solo agent falls to 0.60 vs 0.91 for a team |
+| `--hive-faulty-mode groups`, `hive_provenance`, `--hive-shift-wave` | can a hive find the truth when the liars agree and are the majority? What happens to its memory when the laws change in one region? | provenance cuts wrong laws from 13 to 2; a single global memory cannot be right for two regions |
+
+The last part of that section plans a transfer study: do SeedVille scores rank agent
+configurations the same way as real scientific benchmarks (e.g. LAB-Bench, BixBench)?
 
 ## Running on Nibi (Compute Canada / Alliance)
 
@@ -231,7 +258,7 @@ python scripts/export_replay.py <out> --list        # turn an LLM episode into a
    ```
    If the pip-installed vLLM gives trouble, use the official container:
    `SERVER_MODE=apptainer bash slurm/setup_nibi.sh` (and submit with `SERVER_MODE=apptainer`).
-2. **Set your allocation**: replace `def-CHANGE_ME` in `slurm/serve_and_run.sh` and
+2. **Set your allocation**: replace `def-CHANGE_ME` in `slurm/serve_and_run.sh`, `slurm/frontier_cpu.sh` and
    `slurm/hive_cpu.sh`.
 3. **Pilot first** (4 GPU jobs, a few hours): difficulty of the town board, wrong notes and
    testimony, a two-agent team and a small hive.
@@ -249,7 +276,14 @@ python scripts/export_replay.py <out> --list        # turn an LLM episode into a
    sbatch slurm/hive_cpu.sh                     # 1..1024 agents, about 5 h
    python scripts/analyze.py $SCRATCH/worldseeds/results/qwen3-8b --curve
    ```
-5. **Watch a run in the browser** from a login node: `python scripts/serve_ui.py`, then
+5. **Frontier studies** (LLM jobs, a vision-language job set and a CPU sweep):
+   ```bash
+   PILOT=1 bash slurm/submit_frontier.sh        # tiny versions first
+   bash slurm/submit_frontier.sh                # STUDIES="context realism skin team evolve hive perception"
+   MODEL_ID=Qwen/Qwen3-VL-8B-Instruct bash slurm/setup_nibi.sh && bash slurm/submit_vision.sh
+   sbatch slurm/frontier_cpu.sh
+   ```
+6. **Watch a run in the browser** from a login node: `python scripts/serve_ui.py`, then
    `ssh -L 8765:localhost:8765 nibi` and open http://localhost:8765.
 
 Other models: `MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 bash slurm/setup_nibi.sh`, then submit with the
@@ -260,23 +294,30 @@ same `MODEL_ID`. Compute nodes run offline, so weights must be downloaded by the
 ```
 worldseeds/
   envs.py         environment registry: dungeon | town | board
-  experiment.py   all protocols (compgen ... team, hive) and the result recorder
+  experiment.py   all protocols (compgen ... team, hive, evolve) and the result recorder
   agent.py        the LLM agent (Agents SDK): tools, prompts, episode loop, LLM consolidator
+  canvas.py       canvas memory: a fixed-size multi-resolution context with rewritable notes
+  render.py       pictures for vision-language agents (views by zoom level, the canvas as pages)
+  skin.py         the same world told as another story (drug discovery)
+  evolve.py       self-evolving generations: genomes, playbooks, mentor, archive
   llm.py          OpenAI-compatible model factory (vLLM / Qwen3 settings)
   memory.py       learned seed (evidence, predict), retrieval and trajectory baselines
-  hive.py         many agents sharing one memory: groups, consolidator, verification, director
+  hive.py         many agents sharing one memory: groups, consolidator, verification, director,
+                  correlated liars, provenance and audits, recency
   similarity.py   interventional vs appearance-based similarity between worlds
   laws.py seed.py world.py oracle.py heuristic.py     the dungeon
   town/           SeedVille
     seed.py       universe laws, town seeds, crops (big universes, long tail)
-    world.py      the town: clock, crops, villagers, board, library shelves, testimony
+    world.py      the town: clock, crops, villagers, board, library shelves, testimony,
+                  noise, screens, weather, perception budget, festival requests, roles
     agents.py     oracle solver, learned TownSeedMemory, heuristic agents
     library.py    the library archive (topic shelves, authored notes)
     sources.py    second-hand claims with controlled error rates
-    team.py       several agents in one town
+    team.py       several agents in one town (compute-matched clock, private-perception roles)
     replay.py     replays for the browser client
-scripts/          run_experiment, analyze, analyze_hive, play, serve_ui, build_web, export_replay
-slurm/            env, setup_nibi, serve_and_run, pilot_board, submit_all, hive_cpu
+scripts/          run_experiment, analyze, analyze_hive, analyze_evolve, play, serve_ui, build_web, export_replay
+slurm/            env, setup_nibi, serve_and_run, pilot_board, submit_all, hive_cpu,
+                  submit_frontier, submit_vision, frontier_cpu
 web/              Phaser 3 client (game.js, index.html), pixel art and maps, art tools (web/tools)
 tests/            all tests (no GPU needed)
 docs/             research program, research plan, detailed experiment reference

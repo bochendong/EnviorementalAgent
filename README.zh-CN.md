@@ -93,6 +93,9 @@ SLURM 脚本，可以直接在 Nibi 集群（Compute Canada / Alliance）上跑�
 | **信任**：别的 agent 的记忆有一部分是错的，怎么用 | 错误率可控的笔记和村民证词（`--source-errors`） |
 | 多个 agent 的**协作与记忆共享** | 同一块告示板上的团队（`team`）；最多 1,024 个 agent 在并行小镇里组成 hive，带分组、整合、验证和出错的 agent（`hive`） |
 | **探索与课程学习** | 通过变异种子生成新世界（`curriculum`）；hive 里的调度者把 agent 派去探索最不确定的规律 |
+| **自进化 agent 与奖励作弊（reward hacking）** | 一代代 agent 继承的是"怎么学"（一组基因，或由 LLM 写的策略手册），按真实成绩或按自我评估选择，再到没见过的宇宙里测试（`evolve`） |
+| **把记忆画成一张图**：长任务和视觉语言模型的上下文 | 用固定大小、多分辨率的"画布"代替对话记录，可以是文字，也可以是图片（`--context canvas / image`） |
+| **现实条件下做科研** | 有噪声的实验、便宜但会错的快速筛选、混杂因素、发表偏倚，以及把同一套规律讲成药物研发（`--noise`、`--screen-error`、`--confounder`、`--publication-bias`、`--skin drug`） |
 
 ## 它新在哪里
 
@@ -183,7 +186,8 @@ agent 的基本工具是 `observe`、`zoom_in`、`zoom_out`、`act`。按实验�
 | `multiagent` | 多个 agent 合并种子，是否比各自学更快？ |
 | `curriculum` | 通过变异种子生成新世界，是否比均匀随机采样更好？ |
 | `team` | 多个 agent 合作完成同一块告示板：单人、各自干、图书馆、发消息、合并种子 |
-| `hive` | 很多 agent 在并行的多个小镇里共享同一份记忆：分组、整合、验证、调度、出错的 agent |
+| `hive` | 很多 agent 在并行的多个小镇里共享同一份记忆：分组、整合、验证、调度、出错的 agent、溯源、规律变化 |
+| `evolve` | 一代代 agent 继承"怎么学"；按真实成绩还是自我评估选择；迁移到没见过的宇宙 |
 
 | 记忆条件（condition） | agent 从一个世界带到下一个世界的东西 |
 |---|---|
@@ -203,6 +207,7 @@ agent 的基本工具是 `observe`、`zoom_in`、`zoom_out`、`act`。按实验�
 - `--hive-sizes 1 4 16 64`：hive 的 agent 数量。
 - `--hive-faulty 0 0.25`：hive 里出错 agent 的比例。
 - `--views zoom flat`、`--repeats`、`--save-traces`。
+- 前沿研究的开关：`--context`、`--zoom-budget`、`--noise`、`--screen-error`、`--confounder`、`--publication-bias`、`--skin`、`--festival`、`--roles`、`--hive-faulty-mode`、`--hive-shift-wave`。
 
 结果写在 `<out>/` 目录下：
 
@@ -216,8 +221,27 @@ agent 的基本工具是 `observe`、`zoom_in`、`zoom_out`、`act`。按实验�
 ```bash
 python scripts/analyze.py <out> --by condition variant phase --curve
 python scripts/analyze_hive.py <out> --curve
+python scripts/analyze_evolve.py <out>              # evolve：每一代的成绩、作弊差距、迁移
 python scripts/export_replay.py <out> --list        # 把某一局 LLM 的过程导出成浏览器回放
 ```
+
+## 前沿研究（frontier studies）
+
+下面每一项都把 agent 研究里的一个开放问题变成同一个环境上的一个开关。详细说明和目前 CPU 上的结果见
+[docs/experiments.md#frontier-studies](docs/experiments.md#frontier-studies)（英文）。
+
+| 开关 | 研究的问题 | 目前规则 agent（CPU）的结果 |
+|---|---|---|
+| `solo_matched`（团队）、`serial`（hive） | 同样的算力下，团队真的比一个 agent 强吗？ | 并行的 agent 学到的规律和"一个 agent 依次玩同样的世界"一样多（127 vs 126 条）；团队的优势来自共享知识，以及必须两个人才能完成的任务 |
+| `--zoom-budget k` | 仔细看东西要花注意力，会怎样？ | 规则 agent 几乎不受影响；这个开关主要是给 LLM 的 |
+| `--context canvas` / `image` | 用固定大小的记忆画布（当前位置清晰，越早越模糊，外加 agent 自己改写的笔记）代替对话记录；给视觉语言模型时画成图片 | LLM 实验（`slurm/submit_frontier.sh`、`slurm/submit_vision.sh`） |
+| `--noise`、`--screen-error`、`--confounder`、`--publication-bias` | 实验有噪声、快速筛选便宜但会错、原因被混杂、只发表阳性结果时，agent 还能做好科研吗？ | 发表偏倚让图书馆自信地记下错误规律；快速筛选让学习变慢 |
+| `--skin drug` | 同一套规律讲成化合物、靶点和实验方案：换成科研的说法，agent 的行为会变吗？ | LLM 实验（规则 agent 不读文字） |
+| `--protocol evolve` | 继承"怎么学"能让 agent 一代比一代强吗？按自我评估选择会导致奖励作弊吗？能迁移吗？ | 按"自称知道多少"选择，错误的说法翻倍，真实成绩没有提高；进化后的学习者在没见过的宇宙里学得更快 |
+| `--festival`、`--roles` | 只有团队才能完成的任务（用新鲜作物做一道菜、两个人一起去拜访），以及各自只能感知一部分信息（土壤 / 人 / 货物） | 给了同样算力的单个 agent 也只完成 0.60，团队 0.91 |
+| `--hive-faulty-mode groups`、`hive_provenance`、`--hive-shift-wave` | 说谎的 agent 口径一致且占多数时，hive 还能找到真相吗？某个地区的规律变了，共享记忆会怎样？ | 溯源（provenance）把错误规律从 13 条降到 2 条；一份全局记忆没法同时对两个地区都正确 |
+
+那一节最后还规划了一个迁移研究：种子镇上的分数，对不同 agent 配置的排名，和真实科研基准（例如 LAB-Bench、BixBench）的排名一致吗？
 
 ## 在 Nibi 上运行（Compute Canada / Alliance）
 
@@ -227,7 +251,7 @@ python scripts/export_replay.py <out> --list        # 把某一局 LLM 的过程
    cd ~/EnviorementalAgent && bash slurm/setup_nibi.sh
    ```
    如果 pip 装的 vLLM 有问题，可以改用官方容器：`SERVER_MODE=apptainer bash slurm/setup_nibi.sh`，之后提交任务时也加上 `SERVER_MODE=apptainer`。
-2. **填你的账号**：把 `slurm/serve_and_run.sh` 和 `slurm/hive_cpu.sh` 里的 `def-CHANGE_ME` 改成你的 allocation。
+2. **填你的账号**：把 `slurm/serve_and_run.sh`、`slurm/frontier_cpu.sh` 和 `slurm/hive_cpu.sh` 里的 `def-CHANGE_ME` 改成你的 allocation。
 3. **先跑试点**（4 个 GPU 任务，几个小时）：
    - 告示板难度；
    - 有错误的笔记和证词；
@@ -245,7 +269,14 @@ python scripts/export_replay.py <out> --list        # 把某一局 LLM 的过程
    sbatch slurm/hive_cpu.sh                     # 1 到 1024 个 agent，约 5 小时
    python scripts/analyze.py $SCRATCH/worldseeds/results/qwen3-8b --curve
    ```
-5. **在浏览器里看**：在登录节点上运行 `python scripts/serve_ui.py`，本地执行 `ssh -L 8765:localhost:8765 nibi`，然后打开 http://localhost:8765。
+5. **前沿研究**（LLM 任务、视觉语言模型任务和一个 CPU 扫描任务）：
+   ```bash
+   PILOT=1 bash slurm/submit_frontier.sh        # 先跑小规模版本
+   bash slurm/submit_frontier.sh                # 可用 STUDIES="context realism skin team evolve hive perception" 选择
+   MODEL_ID=Qwen/Qwen3-VL-8B-Instruct bash slurm/setup_nibi.sh && bash slurm/submit_vision.sh
+   sbatch slurm/frontier_cpu.sh
+   ```
+6. **在浏览器里看**：在登录节点上运行 `python scripts/serve_ui.py`，本地执行 `ssh -L 8765:localhost:8765 nibi`，然后打开 http://localhost:8765。
 
 **换模型**：`MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 bash slurm/setup_nibi.sh`，提交时也用同一个 `MODEL_ID`。计算节点不能联网，所以模型权重必须先用 setup 脚本下载好。
 
@@ -254,23 +285,28 @@ python scripts/export_replay.py <out> --list        # 把某一局 LLM 的过程
 ```
 worldseeds/
   envs.py         环境注册：dungeon | town | board
-  experiment.py   所有实验协议（compgen ... team、hive）和结果记录
+  experiment.py   所有实验协议（compgen ... team、hive、evolve）和结果记录
   agent.py        LLM agent（Agents SDK）：工具、提示词、单局循环、LLM 整理器
+  canvas.py       画布记忆：固定大小、多分辨率的上下文，加上可改写的笔记
+  render.py       给视觉语言模型的图片（随缩放层级变化的视图，画布渲染成页面）
+  skin.py         同一个世界换一种讲法（药物研发）
+  evolve.py       自进化：基因、策略手册、导师、存档
   llm.py          兼容 OpenAI 接口的模型配置（vLLM / Qwen3）
   memory.py       学到的种子（证据、predict），检索与轨迹两种基线记忆
-  hive.py         多个 agent 共享一份记忆：分组、整合者、验证、调度
+  hive.py         多个 agent 共享一份记忆：分组、整合者、验证、调度、口径一致的说谎者、溯源与抽查、按新旧取舍
   similarity.py   世界之间按干预的相似度 vs 按外观的相似度
   laws.py seed.py world.py oracle.py heuristic.py     dungeon 环境
   town/           种子镇
     seed.py       宇宙规律、小镇种子、作物（大宇宙、长尾）
-    world.py      小镇本体：时钟、作物、村民、告示板、图书馆书架、村民证词
+    world.py      小镇本体：时钟、作物、村民、告示板、图书馆书架、村民证词、噪声、快速筛选、天气、注意力预算、节日请求、角色
     agents.py     oracle 求解器、学到的 TownSeedMemory、规则 agent
     library.py    图书馆（主题书架、署名笔记）
     sources.py    带可控错误率的二手信息
-    team.py       多个 agent 在同一个镇里
+    team.py       多个 agent 在同一个镇里（算力对齐的时钟、各自感知不同信息的角色）
     replay.py     给浏览器客户端的回放
-scripts/          run_experiment、analyze、analyze_hive、play、serve_ui、build_web、export_replay
-slurm/            env、setup_nibi、serve_and_run、pilot_board、submit_all、hive_cpu
+scripts/          run_experiment、analyze、analyze_hive、analyze_evolve、play、serve_ui、build_web、export_replay
+slurm/            env、setup_nibi、serve_and_run、pilot_board、submit_all、hive_cpu、
+                  submit_frontier、submit_vision、frontier_cpu
 web/              Phaser 3 客户端（game.js、index.html）、像素美术和地图、美术生成工具（web/tools）
 tests/            全部测试（不需要 GPU）
 docs/             研究计划、研究方案评审、详细实验说明
