@@ -39,6 +39,18 @@ TYPE_NAMES = ["UserId", "Email", "Token", "Session", "Order", "Cart", "Price", "
 VERBS = ["to", "make", "get", "parse", "quote", "hash", "map", "lookup", "encode", "rank", "route", "sign",
          "resolve", "build", "check", "derive"]
 
+# the town theme: modules are workshops (in districts of 8), types are goods, functions are machines
+WORKSHOPS = ["bakery", "smithy", "florist", "mine", "clinic", "inn", "shop", "farm"]
+DISTRICTS = ["oak", "river", "hill", "sea", "pine", "stone", "fern", "moss", "lake", "dune", "ash", "elm",
+             "glen", "cove", "peak", "vale"]
+GOODS = ["wheat", "ore", "petal", "herb", "milk", "clay", "wool", "fish", "flour", "ingot", "dye", "salve",
+         "cheese", "brick", "yarn", "salt", "dough", "horseshoe", "ribbon", "tonic", "butter", "tile", "cloth",
+         "jerky", "bread", "bell", "bouquet", "potion", "pie", "lamp", "coat", "stew", "feast", "carriage",
+         "festoon", "elixir", "banquet", "tower", "tapestry", "voyage"]
+TOWN_VERBS = ["knead", "bake", "forge", "smelt", "press", "dye", "weave", "brew", "grind", "polish", "mix",
+              "cut", "boil", "carve", "spin", "cure"]
+PER_DISTRICT = len(WORKSHOPS)
+
 
 @dataclass(frozen=True)
 class Law:
@@ -104,15 +116,30 @@ class Universe:
     """One software ecosystem: modules, functions with hidden laws, and a stream of projects."""
 
     def __init__(self, index: int = 0, n_modules: int = 8, fns_per_module: int = 4, levels: int = 5,
-                 types_per_level: int = 2, branch_share: float = 0.3, popularity: float = 1.0):
-        self.index, self.levels = index, levels
-        rng = random.Random(f"codeworld/{index}/{n_modules}/{fns_per_module}/{levels}/{types_per_level}")
-        names = [MODULE_NAMES[i % len(MODULE_NAMES)] + (str(i // len(MODULE_NAMES) + 1) if i >= len(MODULE_NAMES)
-                                                        else "") for i in range(n_modules)]
+                 types_per_level: int = 2, branch_share: float = 0.3, popularity: float = 1.0,
+                 theme: str = "software"):
+        self.index, self.levels, self.theme = index, levels, theme
+        rng = random.Random(f"codeworld/{index}/{n_modules}/{fns_per_module}/{levels}/{types_per_level}"
+                            + ("" if theme == "software" else f"/{theme}"))
+        town = theme == "town"
+        if town:  # workshops grouped in districts of 8 (a single district keeps the plain names)
+            names = [WORKSHOPS[i % PER_DISTRICT] if n_modules <= PER_DISTRICT else
+                     f"{DISTRICTS[(i // PER_DISTRICT) % len(DISTRICTS)]}"
+                     f"{'' if i // PER_DISTRICT < len(DISTRICTS) else i // PER_DISTRICT}_{WORKSHOPS[i % PER_DISTRICT]}"
+                     for i in range(n_modules)]
+            self.kind_of = {m: WORKSHOPS[i % PER_DISTRICT] for i, m in enumerate(names)}
+            self.district_of = {m: i // PER_DISTRICT for i, m in enumerate(names)}
+        else:
+            names = [MODULE_NAMES[i % len(MODULE_NAMES)] + (str(i // len(MODULE_NAMES) + 1)
+                                                            if i >= len(MODULE_NAMES) else "") for i in range(n_modules)]
+            self.kind_of = {m: m for m in names}
+            self.district_of = {m: 0 for m in names}
         self.modules = names
-        tnames = [TYPE_NAMES[i % len(TYPE_NAMES)] + (str(i // len(TYPE_NAMES) + 1) if i >= len(TYPE_NAMES) else "")
+        pool, verbs = (GOODS, TOWN_VERBS) if town else (TYPE_NAMES, VERBS)
+        tnames = [pool[i % len(pool)] + (str(i // len(pool) + 1) if i >= len(pool) else "")
                   for i in range(levels * types_per_level)]
-        rng.shuffle(tnames)
+        if not town:
+            rng.shuffle(tnames)  # (town goods are listed raw materials first, so they keep their order)
         self.type_level = {t: i // types_per_level for i, t in enumerate(tnames)}
         self.types_at = {lv: [t for t in tnames if self.type_level[t] == lv] for lv in range(levels)}
         # module popularity: some modules are used far more than others (a long tail, like real code)
@@ -123,7 +150,7 @@ class Universe:
             for _ in range(fns_per_module):
                 lv = rng.randrange(levels - 1)
                 t_in, t_out = rng.choice(self.types_at[lv]), rng.choice(self.types_at[lv + 1])
-                base = f"{m}.{rng.choice(VERBS)}_{t_out.lower()}"
+                base = f"{m}.{rng.choice(verbs)}_{t_out.lower()}"
                 name, k = base, 2
                 while name in self.functions or name in used:
                     name, k = f"{base}{k}", k + 1
@@ -237,3 +264,27 @@ class Universe:
     @property
     def n_functions(self) -> int:
         return len(self.functions)
+
+    @property
+    def n_districts(self) -> int:
+        return max(self.district_of.values()) + 1
+
+    def distance(self, a: str | None, b: str | None) -> int:
+        """Walking cost between two places (workshops, or None for the plaza of district 0): next door 1,
+        another district 3, the same place 0."""
+        if a == b:
+            return 0
+        da = self.district_of.get(a, 0) if a else 0
+        db = self.district_of.get(b, 0) if b else 0
+        return 1 if da == db else 3
+
+    def layout(self) -> dict:
+        """Districts, workshops and machines (public), for the pixel client."""
+        out = []
+        for d in range(self.n_districts):
+            mods = [m for m in self.modules if self.district_of[m] == d]
+            out.append({"index": d, "name": DISTRICTS[d % len(DISTRICTS)] if self.n_districts > 1 else "town",
+                        "workshops": [{"module": m, "kind": self.kind_of[m], "machines": [
+                            {"name": f.name, "in": f.in_type, "out": f.out_type}
+                            for f in self.functions.values() if f.module == m]} for m in mods]})
+        return {"theme": self.theme, "districts": out, "levels": [self.types_at[lv] for lv in range(self.levels)]}

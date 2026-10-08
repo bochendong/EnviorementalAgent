@@ -29,6 +29,11 @@ def main():
     ap.add_argument("--sprints", type=int, default=d.sprints)
     ap.add_argument("--projects-per-dev", type=int, default=d.projects_per_dev)
     ap.add_argument("--budget", type=int, default=d.budget, help="actions per developer per sprint")
+    ap.add_argument("--theme", choices=["software", "town"], default="software",
+                    help="town: workshops in districts of 8 (--modules 8 = one district, 24 = three)")
+    ap.add_argument("--walk", action="store_true", help="town: walking to a workshop or a teammate costs actions")
+    ap.add_argument("--batch", action="store_true",
+                    help="whoever is asked also explains every other law they know that the project needs")
     ap.add_argument("--no-learn", action="store_true", help="developers never learn laws (just run functions)")
     ap.add_argument("--policy", choices=["heuristic", "llm"], default="heuristic",
                     help="llm: developers are LLM agents (WS_BASE_URL / WS_MODEL, see worldseeds/llm.py)")
@@ -40,7 +45,7 @@ def main():
     out = run(CWConfig(universes=a.universes, modules=a.modules, fns_per_module=a.fns_per_module,
                        capacities=a.capacities, team_sizes=a.team_sizes, variants=a.variants, sprints=a.sprints,
                        projects_per_dev=a.projects_per_dev, budget=a.budget, learn=not a.no_learn, out_dir=a.out,
-                       seed=a.seed, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
+                       seed=a.seed, theme=a.theme, walk=a.walk, batch=a.batch, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
     print(f"done -> {out}/codeworld.jsonl ; summary: python scripts/analyze_codeworld.py {out}")
 
 

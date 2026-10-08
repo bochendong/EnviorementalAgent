@@ -43,7 +43,9 @@ class Dev:
     notebook: Notebook
     owns: set[str] = field(default_factory=set)  # modules
     budget: int = 0
-    spent: dict = field(default_factory=lambda: {"study": 0, "ask": 0, "answer": 0, "submit": 0})
+    spent: dict = field(default_factory=lambda: {"study": 0, "ask": 0, "answer": 0, "submit": 0, "walk": 0})
+    home: str | None = None  # the workshop (module) it works in; None = the plaza
+    loc: str | None = None
 
     def spend(self, kind: str, n: int = 1) -> None:
         if self.budget < n:
@@ -54,7 +56,7 @@ class Dev:
 
 class Org:
     def __init__(self, universe: Universe, n: int, capacity: int | None, mode: str, learn: bool = True,
-                 seed: int = 0):
+                 seed: int = 0, walk: bool = False, record: bool = False, batch: bool = False):
         if mode not in MODES:
             raise ValueError(f"unknown mode {mode!r}; one of {MODES}")
         self.u, self.mode, self.learn = universe, mode, learn
@@ -67,13 +69,41 @@ class Org:
             for d in self.devs:
                 d.notebook.keep = (lambda name, owns=d.owns: name.split(".", 1)[0] in owns)
         self.owner = {m: d for d in self.devs for m in d.owns}
-        self.log: list[dict] = []
+        for d in self.devs:  # everyone starts in its first workshop (a lone developer: on the plaza)
+            d.home = d.loc = next((m for m in universe.modules if m in d.owns), None) if n > 1 else None
+        # walk: studying a machine means going to its workshop, asking someone means going to them
+        # (next door 1 action, another district 3); without it moves are recorded but free
+        self.walk = walk
+        # batch: whoever is asked also explains every other law they know that matters for this project
+        # (one visit, many answers) instead of only the one asked about
+        self.batch = batch
+        self._relevant: set[str] = set()
+        self.record = record
+        self.events: list[dict] = []
+        self._project: str | None = None
+
+    def _ev(self, kind: str, dev: Dev, **kw) -> None:
+        if self.record:
+            self.events.append({"i": len(self.events), "kind": kind, "dev": dev.name, "loc": dev.loc,
+                                "budget": dev.budget, "project": self._project, **kw})
+
+    def _go(self, dev: Dev, place: str | None) -> None:
+        if dev.loc == place:
+            return
+        cost = self.u.distance(dev.loc, place) if self.walk else 0
+        if cost:
+            dev.spend("walk", cost)
+        self._ev("walk", dev, to=place, frm=dev.loc, cost=cost)
+        dev.loc = place
 
     # ------------------------------------------------------------ knowledge
     def _study(self, dev: Dev, fn: str):
+        self._go(dev, self.u.functions[fn].module)
         dev.spend("study", STUDY_COST)
         law = fit({x: self.u.functions[fn].law(x) for x in study_inputs()})
-        dev.notebook.put(fn, law)
+        gone = dev.notebook.put(fn, law)
+        self._ev("learn", dev, fn=fn, law=law.describe(), correct=law.table == self.u.functions[fn].law.table,
+                 forgot=gone)
         return law
 
     def _helper(self, dev: Dev, fn: str):
@@ -83,14 +113,18 @@ class Org:
             return None
         if self.mode == "random":
             for d in self.rng.sample(others, min(2, len(others))):
+                self._go(dev, d.loc)
                 dev.spend("ask")
                 if d.budget >= 1 and fn in d.notebook:
                     return d
+                self._ev("ask", dev, to=d.name, fn=fn, answered=False)
                 if d.budget >= 1:
                     d.spend("answer")  # "sorry, no idea"
             return None
         if self.mode == "directory":
             holders = [d for d in others if fn in d.notebook and d.budget >= 1]
+            if self.walk:  # the nearest one who knows
+                holders.sort(key=lambda d: self.u.distance(dev.loc, d.loc))
             if holders:
                 return holders[0]
         owner = self.owner[self.u.functions[fn].module]
@@ -116,10 +150,18 @@ class Org:
             helper = self._helper(dev, fn)
             if helper is not None:  # the teammate explains what the function does (one question, one answer)
                 if self.mode != "random":
+                    self._go(dev, helper.loc)
                     dev.spend("ask")
                 helper.spend("answer")
                 law = helper.notebook.get(fn)
                 cache[("law", fn)] = law
+                extra = []
+                if self.batch:
+                    for g in sorted(self._relevant):
+                        if g != fn and g in helper.notebook.laws and ("law", g) not in cache and g not in dev.notebook:
+                            cache[("law", g)] = helper.notebook.laws[g]
+                            extra.append(g)
+                self._ev("ask", dev, to=helper.name, fn=fn, answered=True, law=law.describe(), also=extra)
                 return [law(x) for x in xs]
             if self.learn:
                 law = self._study(dev, fn)
@@ -145,6 +187,7 @@ class Org:
     def solve(self, dev: Dev, project: Project) -> dict:
         """Search programs (cheapest first) until one fits the examples, then submit it."""
         cands = self.u.candidates(project.in_type, project.out_type)
+        self._relevant = {fn for c in cands for fn in c}
         cands.sort(key=lambda p: (self._cost(dev, p), p))
         xs = [x for x, _ in project.examples]
         want = [y for _, y in project.examples]
@@ -152,6 +195,8 @@ class Org:
         prefix: dict[tuple, list[int]] = {(): xs}
         before = sum(dev.spent.values())
         tried = 0
+        self._project = project.id
+        self._ev("start", dev, text=project.text())
         try:
             for prog in cands:
                 tried += 1
@@ -164,10 +209,15 @@ class Org:
                 if vals == want:
                     dev.spend("submit")
                     ok = self.u.table(prog) == self.u.table(project.target)
+                    self._ev("submit", dev, program=list(prog), ok=ok, tried=tried)
                     return {"done": ok, "tried": tried, "actions": sum(dev.spent.values()) - before}
+            self._ev("give_up", dev, reason="no program fits", tried=tried)
             return {"done": False, "tried": tried, "actions": sum(dev.spent.values()) - before, "stuck": True}
         except OutOfBudget:
+            self._ev("give_up", dev, reason="out of budget", tried=tried)
             return {"done": False, "tried": tried, "actions": sum(dev.spent.values()) - before, "out_of_budget": True}
+        finally:
+            self._project = None
 
     # ------------------------------------------------------------ sprints
     def sprint(self, projects: list[Project], budget: int) -> dict:
