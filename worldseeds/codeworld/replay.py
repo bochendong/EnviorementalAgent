@@ -32,7 +32,8 @@ def town_world(index: int = 1, districts: int = 1, machines: int = 6, shortcuts:
 
 def record(world: Universe, mode: str, team: int, capacity: int | None, sprints: int = 3, budget: int = 120,
            projects_per_dev: int = 4, walk: bool = True, batch: bool = True, seed: int = 0, title: str = "",
-           description: str = "", events=None, goals=None, goal_deadline: int = 4, **buildings) -> dict:
+           description: str = "", events=None, goals=None, goal_deadline: int = 4, fund: int | None = None,
+           econ=None, **buildings) -> dict:
     """Run ``sprints`` sprints of one organisation and record everything. ``solo`` gets the team's budget.
     ``events`` (an EventRates) makes the town change: a copy of the world meets seeded events each sprint.
     ``goals`` (kinds, see goals.py) gives the town grand goals, worked on before the day's orders."""
@@ -51,19 +52,21 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
     if goals:
         from .goals import make_goals
 
-        gl = make_goals(world, goals, seed, deadline=goal_deadline)
+        gl = make_goals(world, goals, seed, deadline=goal_deadline, fund=fund)
     solo = mode in ("solo", "solo_unbounded")
     org = Org(world, 1 if solo else team, None if mode == "solo_unbounded" else capacity,
-              "solo" if solo else mode, seed=seed, walk=walk, record=True, batch=batch, **buildings)
+              "solo" if solo else mode, seed=seed, walk=walk, record=True, batch=batch, econ=econ, **buildings)
     per_dev = budget * (team if solo else 1)
     out = {"kind": "codeworld", "title": title or f"{mode}: {team if not solo else 1} apprentice(s)",
            "description": description, "mode": mode, "team": len(org.devs), "capacity": capacity, "walk": walk, "batch": batch,
            **{k: bool(v) for k, v in buildings.items() if k in ("board", "library", "post")},
            "shortcuts": bool(world.map and world.map.shortcuts),
+           "money": org.econ is not None,
            "budget": per_dev, "world": world.layout(),
            "goals": [{**g.to_dict(), "parts": [{**p, "done": None} for p in g.to_dict()["parts"]]} for g in gl] if gl else [],
            "devs": [{"name": d.name, "owns": sorted(d.owns, key=world.modules.index), "home": d.home,
-                     "look": list(LOOKS[i % len(LOOKS)])} for i, d in enumerate(org.devs)],
+                     "look": list(LOOKS[i % len(LOOKS)]),
+                     "generosity": org.generosity.get(d.name)} for i, d in enumerate(org.devs)],
            "sprints": []}
     for s, projects in enumerate(plan):
         happened = []
@@ -72,6 +75,9 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
             projects = [world.project(rng) for _ in range(projects_per_dev * team)]
         start = len(org.events)
         books = {d.name: list(d.notebook.laws) for d in org.devs}
+        purses = {d.name: d.coins for d in org.devs}
+        reps = {d.name: d.rep for d in org.devs}
+        treasury = org.treasury
         m = org.sprint(projects, per_dev, happened, goals=gl)
         n = len(org.devs)
         out["sprints"].append({
@@ -80,7 +86,8 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
                           "target": list(p.target), "dev": org.devs[k % n].name} for k, p in enumerate(projects)],
             "start_notebooks": books, "events": org.events[start:], "metrics": m,
             "world_events": happened, "broken": sorted(world.broken), "storm": sorted(world.storm),
-            "demand": world.demand, "goals": [g.to_dict() for g in gl] if gl else []})
+            "demand": world.demand, "start_coins": purses, "start_rep": reps, "start_treasury": treasury,
+            "goals": [g.to_dict() for g in gl] if gl else []})
     return out
 
 
@@ -112,6 +119,17 @@ def demo_replays(index: int = 1) -> list[dict]:
             ("random", "Four apprentices without masters in a changing town",
              "The same events, but nobody looks after a workshop: old rules go stale until an order fails.")):
         reps.append(record(town, mode, 4, 12, sprints=4, events=weather, title=title, description=desc))
+    from .economy import EconConfig
+
+    for mode, title, desc in (
+            ("owners", "A town with money: four masters",
+             "Customers pay for orders; masters earn a royalty when their machines are used; the treasury takes a "
+             "tax and pays bounties for goal parts. Money buys overtime for goal work and wages for help. Goals: "
+             "the harvest festival, the judges' prize and a clock tower the treasury must pay for."),
+            ("random", "A town with money: four apprentices without masters",
+             "The same money, goals and prices, but nobody knows who knows what.")):
+        reps.append(record(town, mode, 4, 12, sprints=5, goals=["banquet", "prize", "fund"], goal_deadline=4,
+                           econ=EconConfig(upkeep=10), title=title, description=desc))
     reps.append(record(town, "owners", 4, 12, sprints=4, events=EventRates(drift=.05), goals=["encyclopedia", "prize"],
                        goal_deadline=4, title="Four masters write the town encyclopedia",
                        description="Every machine's rule, written correctly at the library, and kept right as machines "

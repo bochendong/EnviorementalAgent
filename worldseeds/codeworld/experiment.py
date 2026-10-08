@@ -53,6 +53,13 @@ class CWConfig:
     # grand goals (goals.py): banquet, prize, recipe, encyclopedia; worked on before the day's orders
     goals: list = field(default_factory=list)
     goal_deadline: int = 4
+    fund: int = 0  # the clock tower's price (0: 400 per district)
+    # money (economy.py): purses, treasury, order pay, royalties, tax, bounties, overtime, hiring
+    money: bool = False
+    answer_price: int = 0  # coins per explanation (0: free)
+    upkeep: int = 0  # coins per sprint for food and lodging (0: none)
+    bounty: int = 25
+    hiring: bool = True
     policy: str = "heuristic"  # heuristic | llm (worldseeds/codeworld/llm_agent.py)
     max_turns: int = 200  # llm: model turns per developer per sprint
     save_traces: bool = False
@@ -97,7 +104,12 @@ def _plan(cfg: CWConfig, world: Universe, sprints: list, u: int, mods: int, n: i
 
 
 def _buildings(cfg: CWConfig) -> dict:
-    return {"board": cfg.board, "library": cfg.library, "post": cfg.post, "post_delay": cfg.post_delay}
+    econ = None
+    if cfg.money:
+        from .economy import EconConfig
+        econ = EconConfig(answer_price=cfg.answer_price, upkeep=cfg.upkeep, bounty=cfg.bounty, hiring=cfg.hiring,
+                          seed=cfg.seed)
+    return {"board": cfg.board, "library": cfg.library, "post": cfg.post, "post_delay": cfg.post_delay, "econ": econ}
 
 
 def run(cfg: CWConfig) -> Path:
@@ -140,7 +152,7 @@ def run(cfg: CWConfig) -> Path:
                         goals = None
                         if cfg.goals:
                             from .goals import make_goals
-                            goals = make_goals(wv, cfg.goals, cfg.seed, deadline=cfg.goal_deadline)
+                            goals = make_goals(wv, cfg.goals, cfg.seed, deadline=cfg.goal_deadline, fund=cfg.fund or None)
                         for s, (projects, events) in enumerate(plan):
                             if cfg.policy == "llm":
                                 org.apply_events(events or [])
@@ -157,6 +169,7 @@ def run(cfg: CWConfig) -> Path:
                                    "board": cfg.board, "library": cfg.library, "post": cfg.post, "shortcuts": cfg.shortcuts,
                                    **{k: getattr(cfg, k) for k in ("breakdown", "drift", "festival", "storm", "rumor")},
                                    "events": len(events or []), "goals": "+".join(cfg.goals),
+                                   "money": cfg.money, "answer_price": cfg.answer_price, "upkeep": cfg.upkeep,
                                    "districts": world.n_districts,
                                    "world_over_capacity": world.n_functions / cap, **m, "time": time.time()}
                             f.write(json.dumps(row) + "\n")

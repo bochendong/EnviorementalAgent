@@ -588,6 +588,10 @@ function reset() {
   S.log = [];
   const prev = S.sprint > 0 ? S.run.sprints[S.sprint - 1].goals : S.run.goals;
   S.goals = JSON.parse(JSON.stringify(prev || []));
+  S.coins = { ...(sp.start_coins || {}) };
+  S.rep = { ...(sp.start_rep || {}) };
+  S.treasury = sp.start_treasury || 0;
+  S.flows = {};
   S.worldEvents = sp.world_events || [];
   S.broken = new Set(sp.broken || []);
   S.drifted = new Set(S.worldEvents.filter(e => e.kind === "drift").map(e => e.fn));
@@ -613,6 +617,7 @@ function apply(e, ms) {
     case "goal_part": {
       const g = S.goals.find(x => x.id === e.goal), p = g && g.parts.find(x => x.id === e.part);
       if (p) { p.done = sprint().index; p.by = who; }
+      if (who in S.rep) S.rep[who] += 3;
       sc.emote(who, "emote_heart", ms); sc.confetti(who, ms);
       say(`★ ${nick(who)} completes ${p ? p.text.split(" (")[0].split(":")[0] : e.part} for ${g ? g.title.toLowerCase() : e.goal}!`);
       break;
@@ -658,6 +663,28 @@ function apply(e, ms) {
     }
     case "events":
       break;
+    case "pay": {
+      const amt = e.amount;
+      if (e.frm in S.coins) S.coins[e.frm] -= amt;
+      if (e.to in S.coins) S.coins[e.to] += amt;
+      S.treasury = e.treasury;
+      S.flows[e.why] = (S.flows[e.why] || 0) + amt;
+      if (e.to in S.coins && ms) sc.float(e.to, `+${amt} coins`, "#ffd24a", ms);
+      if (e.frm in S.coins && e.to === "treasury" && ms && e.why !== "tax") sc.float(e.frm, `−${amt} coins`, "#ffb08a", ms);
+      if (e.why === "gift") say(`${nick(e.frm)} gives ${amt} coins to the treasury for the clock tower.`);
+      if (e.why === "bounty" && amt >= 10) say(`The treasury pays ${nick(e.to)} a bounty of ${amt} coins.`);
+      if (e.why === "overtime") say(`${nick(e.frm)} pays ${amt} coins for overtime.`, true);
+      if (e.why === "answer") say(`${nick(e.frm)} pays ${nick(e.to)} ${amt} coins for the explanation.`, true);
+      break;
+    }
+    case "hire":
+      sc.link(who, e.to, true, ms);
+      say(`${nick(who)} has no time left and hires ${nick(e.to)} to make order ${e.project}.`);
+      break;
+    case "tired":
+      sc.emote(who, "emote_zzz", ms);
+      say(`${nick(who)} could not pay for food and lodging: tired, a quarter less time this sprint.`);
+      break;
     case "broken_found":
       sc.emote(who, "emote_bang", ms);
       sc.float(who, "out of order!", "#ff8a7a", ms);
@@ -676,6 +703,7 @@ function apply(e, ms) {
       break;
     case "deposit": {
       t.wrote++;
+      if (who in S.rep) S.rep[who] += 1;
       const ency = S.goals.find(g => g.kind === "encyclopedia"), p = ency && ency.parts.find(x => x.fn === e.fn);
       if (p) p.done = p.done || sprint().index;
       sc.float(who, "wrote it down", "#f2d27a", ms);
@@ -693,6 +721,7 @@ function apply(e, ms) {
       if (e.by === "post") { t.letters++; sc.letter(who, e.to, ms); } else sc.link(who, e.to, e.answered, ms);
       sc.emote(who, "emote_q", ms);
       if (e.answered) {
+        if (e.law !== "out of order" && e.to in S.rep) S.rep[e.to] += 1;
         sc.time.delayedCall(ms * .4, () => sc.emote(e.to, "emote_note", ms));
         const also = (e.also || []).length;
         say(`${nick(who)} ${e.by === "post" ? "writes to" : "asks"} ${nick(e.to)} about ${e.fn}${also ? ` and gets ${also} more rule${also > 1 ? "s" : ""} ${e.by === "post" ? "in the reply" : "on the same visit"}` : ""}.`);
@@ -786,6 +815,23 @@ function machineText(w, m) {
     (k.length ? `Knows its rule: ${k.join(", ")}.` : "Nobody knows its rule yet.");
 }
 
+/* purses, the treasury, who is richest and who is most respected */
+function renderMoney() {
+  $("moneyPanel").hidden = !S.run.money;
+  if (!S.run.money) return;
+  const devs = [...S.run.devs].sort((a, b) => (S.coins[b.name] || 0) - (S.coins[a.name] || 0));
+  const vals = devs.map(d => Math.max(0, S.coins[d.name] || 0)).sort((a, b) => a - b), n = vals.length;
+  const sum = vals.reduce((a, b) => a + b, 0);
+  const gini = sum ? vals.reduce((g, x, i) => g + (2 * i - n + 1) * x, 0) / (n * sum) : 0;
+  const best = [...S.run.devs].sort((a, b) => (S.rep[b.name] || 0) - (S.rep[a.name] || 0))[0];
+  const flow = Object.entries(S.flows).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(" · ");
+  $("money").innerHTML = `<div class="tre"><span>Treasury <i class="coin"></i>${S.treasury}</span><span>inequality (Gini) ${gini.toFixed(2)}</span></div>` +
+    devs.map((d, i) => `<div class="row"><img alt="" src="${A}portraits/${d.look.join("_")}.png"><span>${i === 0 ? "♛ " : ""}${d.look[0]}` +
+      `${d.generosity != null ? ` <span>gives ${Math.round(d.generosity * 100)}%</span>` : ""}</span>` +
+      `<b><i class="coin"></i>${S.coins[d.name] || 0}</b><span>★${S.rep[d.name] || 0}${best && best.name === d.name ? " best" : ""}</span></div>`).join("") +
+    (flow ? `<div class="legend">This sprint: ${esc(flow)}</div>` : "");
+}
+
 /* the town's grand goals: progress, parts, who did them */
 function renderGoals() {
   const ended = S.pos >= sprint().events.length;
@@ -867,7 +913,7 @@ function render(last) {
     const pct = Math.max(0, 100 * S.budget[d.name] / sp.budget);
     const doing = S.active[d.name] ? ` · on ${S.active[d.name]}` : "";
     return `<div class="dev${last && last.dev === d.name ? " active" : ""}"><img alt="" src="${A}portraits/${d.look.join("_")}.png">` +
-      `<div><div class="nm">${d.look[0]} <span class="role">${role}${doing}</span></div>` +
+      `<div><div class="nm">${d.look[0]} ${S.run.money ? `<span class="coins"><i class="coin"></i>${S.coins[d.name] || 0} ★${S.rep[d.name] || 0}</span> ` : ""}<span class="role">${role}${doing}</span></div>` +
       `<div class="budget" title="${S.budget[d.name]} of ${sp.budget} actions left"><i style="width:${pct}%"></i></div>` +
       `<div class="chips">${chips || '<span class="cap">nothing in mind yet</span>'}</div>` +
       `<div class="cap">${book.length}${capacity ? " / " + capacity : ""} rules in mind · ${S.budget[d.name]} actions left</div></div></div>`;
@@ -875,6 +921,7 @@ function render(last) {
   renderMaps();
   renderNews();
   renderGoals();
+  renderMoney();
   $("log").innerHTML = S.log.slice(0, 40).map(x => `<div>${esc(x)}</div>`).join("");
 }
 function esc(s) { return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }

@@ -12,6 +12,8 @@ Each goal is a story of the town, a deadline (a sprint), and parts that are scor
                   not which raw good or which machines were used                              (decoding)
     encyclopedia  every machine's rule written correctly in the library (and kept correct as machines are
                   re-tuned)                                                                   (collective knowledge)
+    fund          the clock tower: the treasury must hold ``fund`` coins by the deadline; it grows by taxes and
+                  gifts and shrinks by bounties                                 (a public good paid for privately)
 
 ``make_goals`` draws them from the world with a seed; ``Goal.check`` says whether a delivered answer is right.
 """
@@ -23,9 +25,9 @@ from dataclasses import dataclass, field
 
 from .world import P, Project, Universe
 
-KINDS = ["banquet", "prize", "recipe", "encyclopedia"]
+KINDS = ["banquet", "prize", "recipe", "encyclopedia", "fund"]
 TITLES = {"banquet": "The harvest festival", "prize": "The judges' prize", "recipe": "The lost recipe",
-          "encyclopedia": "The town encyclopedia"}
+          "encyclopedia": "The town encyclopedia", "fund": "The clock tower"}
 
 
 @dataclass
@@ -59,7 +61,7 @@ def _reachable(u: Universe, prog, grade: int) -> list[int]:
 
 
 def make_goals(u: Universe, kinds: list[str], seed: int | str = 0, deadline: int = 4, dishes: int = 4,
-               prizes: int = 3) -> list[Goal]:
+               prizes: int = 3, fund: int | None = None) -> list[Goal]:
     rng = random.Random(f"goals/{seed}/{u.index}/{u.n_functions}")
     top = u.types_at[u.levels - 1]
     goals = []
@@ -123,6 +125,12 @@ def make_goals(u: Universe, kinds: list[str], seed: int | str = 0, deadline: int
                               "so that anyone can look it up (and keep it right when machines are re-tuned).",
                               deadline, [{"id": f"{gid}.{i + 1}", "text": fn, "fn": fn} for i, fn in
                                          enumerate(sorted(u.functions))]))
+        elif kind == "fund":
+            target = fund or 400 * u.n_districts
+            goals.append(Goal(gid, kind, TITLES[kind], f"The town wants a clock tower on the plaza. It costs {target} "
+                              "coins: the treasury must have them by the deadline (taxes, and gifts from anyone "
+                              "who can spare them).", deadline,
+                              [{"id": f"{gid}.1", "text": f"{target} coins in the treasury", "target": target}]))
         else:
             raise ValueError(f"unknown goal {kind!r}; one of {KINDS}")
     return goals

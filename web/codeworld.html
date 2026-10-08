@@ -82,6 +82,14 @@ input[type=range] { flex: 1 1 120px; min-width: 0; accent-color: var(--wood); }
 #boardPosts .post { background: #fff6df; border-left: 4px solid var(--wood); padding: 2px 6px; }
 #boardPosts .post.notice { border-left-color: var(--bad); }
 #boardPosts .post .truth { color: var(--ink-soft); font-size: 14px; }
+#money { display: grid; gap: 4px; font-variant-numeric: tabular-nums; }
+#money .row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; gap: 6px; align-items: center; font-size: 16px; }
+#money .row img { width: 20px; height: 20px; image-rendering: pixelated; }
+#money .row b { font-family: var(--font-display); font-size: 15px; color: #8a5a12; }
+#money .row span { color: var(--ink-soft); font-size: 15px; }
+#money .tre { display: flex; justify-content: space-between; font-family: var(--font-display); font-size: 15px; }
+i.coin { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f2b632; border: 1px solid #8a5a12; margin-right: 2px; vertical-align: -1px; }
+.coins { color: #8a5a12; font-family: var(--font-display); font-size: 13px; }
 #goals { display: grid; gap: 8px; }
 .goal .gt { font-family: var(--font-display); font-size: 15px; display: flex; justify-content: space-between; gap: 6px; }
 .goal .gt span { color: var(--ink-soft); font-size: 14px; white-space: nowrap; }
@@ -140,6 +148,10 @@ input[type=range] { flex: 1 1 120px; min-width: 0; accent-color: var(--wood); }
       <div class="panel">
         <h2>This sprint</h2>
         <div class="stats" id="stats"></div>
+      </div>
+      <div class="panel" id="moneyPanel" hidden>
+        <h2>Money</h2>
+        <div id="money"></div>
       </div>
       <div class="panel" id="goalsPanel" hidden>
         <h2>Goals</h2>

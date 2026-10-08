@@ -36,6 +36,7 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass, field
 
+from .economy import gini
 from .knowledge import Notebook, fit, study_inputs
 from .world import Project, Universe
 
@@ -64,9 +65,13 @@ class Dev:
     routes: dict = field(default_factory=dict)  # (from, to) -> the shortest way there, once walked
     board: dict | None = None  # what the notice board said (function -> who knew it) when last read
     broken: set = field(default_factory=set)  # machines it believes are out of order
+    coins: int = 0
+    _ot: int = 0  # overtime bought this sprint
+    rep: int = 0  # reputation: goal parts done, questions answered, rules written down
+    buy: object = None  # callable(n) -> bool: buys n actions of overtime if allowed (see economy.py)
 
     def spend(self, kind: str, n: int = 1) -> None:
-        if self.budget < n:
+        if self.budget < n and not (self.buy and self.buy(n - self.budget)):
             raise OutOfBudget(self.name)
         self.budget -= n
         self.spent[kind] += n
@@ -75,7 +80,8 @@ class Dev:
 class Org:
     def __init__(self, universe: Universe, n: int, capacity: int | None, mode: str, learn: bool = True,
                  seed: int = 0, walk: bool = False, record: bool = False, batch: bool = False,
-                 board: bool = False, library: bool = False, post: bool = False, post_delay: int = 3):
+                 board: bool = False, library: bool = False, post: bool = False, post_delay: int = 3,
+                 econ=None):
         if mode not in MODES:
             raise ValueError(f"unknown mode {mode!r}; one of {MODES}")
         self.u, self.mode, self.learn = universe, mode, learn
@@ -106,6 +112,15 @@ class Org:
         self.lib: dict = {}  # the library's shelves: function -> law as written down
         self.notices = {"broken": set(), "repaired": set(), "changed": set()}  # what masters have posted
         self.stats = {"broken_found": 0, "wrong_deliveries": 0, "goal_actions": 0}
+        # money (economy.py): purses, the treasury, what money buys; None = no money in this town
+        self.econ = econ
+        self.treasury = econ.treasury if econ else 0
+        self.money = {}
+        self._payee: dict[str, Dev] = {}  # order -> who hired someone else to make it
+        self.generosity = econ.generosity([d.name for d in self.devs]) if econ else {}
+        if econ:
+            for d in self.devs:
+                d.coins = econ.start
         self.goals: list = []  # grand goals (goals.py), worked on before the day's orders
         self.sprint_no = 0
         self.ency = False  # the town encyclopedia is a goal: everyone writes down what is missing
@@ -155,8 +170,58 @@ class Org:
             self._go(dev, self._nearest(dev, "library"))  # a master writes its machines down for everyone
             dev.spend("write")
             self.lib[fn] = law
+            dev.rep += 1
             self._ev("deposit", dev, fn=fn)
+            if self.econ and self.ency:
+                self.pay("treasury", dev, max(1, self.econ.bounty // 5), "bounty")
         return law
+
+    # ------------------------------------------------------------ money
+    def pay(self, frm, to, amount: int, why: str) -> int:
+        """Move coins: frm/to are a Dev, "treasury" or "customer" (money from outside). Returns what moved."""
+        if amount <= 0:
+            return 0
+        if isinstance(frm, Dev):
+            amount = min(amount, frm.coins)
+            frm.coins -= amount
+        elif frm == "treasury":
+            amount = min(amount, self.treasury)
+            self.treasury -= amount
+        if amount <= 0:
+            return 0
+        if isinstance(to, Dev):
+            to.coins += amount
+        elif to == "treasury":
+            self.treasury += amount
+        self.money[why] = self.money.get(why, 0) + amount
+        who = to if isinstance(to, Dev) else frm if isinstance(frm, Dev) else self.devs[0]
+        self._ev("pay", who, frm=frm.name if isinstance(frm, Dev) else frm, to=to.name if isinstance(to, Dev) else to,
+                 amount=amount, why=why, treasury=self.treasury)
+        return amount
+
+    def _overtime(self, dev: Dev):
+        """While working for a goal: buy actions with coins, up to the sprint's cap."""
+        def buy(n: int) -> bool:
+            e = self.econ
+            if dev._ot + n > e.overtime_cap or dev.coins < n * e.overtime_price:
+                return False
+            dev._ot += n
+            self.pay(dev, "treasury", n * e.overtime_price, "overtime")
+            dev.budget += n
+            return True
+        return buy
+
+    def _paid_order(self, dev: Dev, project: Project, prog) -> None:
+        e = self.econ
+        price = e.price(len(prog), self.u.demand.get(project.out_type, 1.0))
+        payee = self._payee.pop(project.id, dev)
+        self.pay("customer", payee, round(price * e.deliverer), "order")
+        per = price * e.royalty / len(prog)
+        for fn in prog:
+            master = self.owner.get(self.u.functions[fn].module)
+            if master is not None:
+                self.pay("customer", master, round(per), "royalty")
+        self.pay("customer", "treasury", price - round(price * e.deliverer) - round(per) * len(prog), "tax")
 
     def _mine(self, dev: Dev) -> set:
         """Laws a master trusts without doubt: its own machines (it would have noticed a change)."""
@@ -308,6 +373,9 @@ class Org:
                 dev.broken.add(fn)
                 self._ev("ask", dev, to=helper.name, fn=fn, answered=True, law="out of order", also=[])
                 raise Broken(fn)
+            price = self.econ.answer_price if self.econ else 0
+            if helper is not None and price and dev.coins < price and not asked:
+                helper = None  # cannot pay for the explanation: find it out oneself
             if helper is not None:  # the teammate explains what the function does (one question, one answer)
                 by_post = (not asked and self.post and self.walk and self.u.map is not None
                            and self._dist(dev.loc, helper.loc) > self.post_delay)
@@ -328,6 +396,9 @@ class Org:
                             extra.append(g)
                 self._ev("ask", dev, to=helper.name, fn=fn, answered=True, law=law.describe(), also=extra,
                          **({"by": "post", "delay": self.post_delay} if by_post else {}))
+                helper.rep += 1
+                if price:
+                    self.pay(dev, helper, price, "answer")
                 return [law(x) for x in xs]
             if self.learn:
                 law = self._study(dev, fn)
@@ -365,6 +436,8 @@ class Org:
                     del dev.notebook.laws[fn]
             why = {"why": "came out wrong"}
         self._ev("submit", dev, program=list(prog), ok=ok, tried=tried, **why)
+        if ok and self.econ and verify is None:  # an order (goal parts are paid by bounty)
+            self._paid_order(dev, project, prog)
         return {"done": ok, "tried": tried, "actions": sum(dev.spent.values()) - before}
 
     def solve(self, dev: Dev, project: Project, cands=None, verify=None) -> dict:
@@ -427,6 +500,8 @@ class Org:
         for g in self.goals:
             if g.done_at is not None or self.sprint_no > g.deadline:
                 continue
+            if g.kind == "fund":
+                continue  # raised by taxes and gifts, not by a task
             if g.kind == "encyclopedia":
                 for p in g.parts:
                     fn = p["fn"]
@@ -456,6 +531,8 @@ class Org:
 
         self._project = part["id"]
         self._ev("goal_start", dev, goal=g.id, part=part["id"], text=part["text"])
+        if self.econ:
+            dev.buy = self._overtime(dev)
         try:
             if kind == "ency":
                 fn = part["fn"]
@@ -481,10 +558,14 @@ class Org:
             if ok:
                 part["done"] = self.sprint_no
                 part["by"] = dev.name
+                dev.rep += 3
                 self._ev("goal_part", dev, goal=g.id, part=part["id"])
+                if self.econ:
+                    self.pay("treasury", dev, self.econ.bounty, "bounty")
         except (OutOfBudget, Broken):
             pass
         finally:
+            dev.buy = None
             self._project = None
 
     def _prize(self, dev: Dev, g, part) -> bool:
@@ -518,6 +599,10 @@ class Org:
 
     def _score_goals(self) -> None:
         for g in self.goals:
+            if g.kind == "fund":
+                for p in g.parts:
+                    if p.get("done") is None and self.treasury >= p["target"]:
+                        p["done"] = self.sprint_no
             if g.kind == "encyclopedia":
                 for p in g.parts:
                     fn = p["fn"]
@@ -544,11 +629,14 @@ class Org:
                 d.spent[k] = 0
         for k in self.stats:
             self.stats[k] = 0
+        self.money = {}
         self.notices["changed"], self.notices["repaired"] = set(), set()
         masters = self.mode in ("owners", "directory")
         for d in self.devs:  # who is not the master cannot tell whether it has been repaired since
             d.broken = {fn for fn in d.broken if masters and self.u.functions[fn].module in d.owns}
         self.apply_events(events or [])
+        if self.econ:
+            self._upkeep()
         if self.goals:
             from .goals import reissue
 
@@ -570,14 +658,59 @@ class Org:
                 if q and d.budget > 0:
                     results.append(self.solve(d, q.pop(0)))
                     progressed = True
+                elif q and self._hire(d, q, queues, results):
+                    progressed = True
                 elif q:
                     results += [{"done": False, "out_of_budget": True, "actions": 0, "tried": 0} for _ in q]
                     q.clear()
             if not progressed:
                 break
+        if self.econ and any(g.kind == "fund" and g.done_at is None and self.sprint_no <= g.deadline for g in self.goals):
+            for d in self.devs:  # gifts for the clock tower, each as generous as it is
+                self.pay(d, "treasury", int(max(0, d.coins - self.econ.reserve) * self.generosity[d.name]), "gift")
         if self.goals:
             self._score_goals()
         return self.metrics(results)
+
+    def _upkeep(self) -> None:
+        """Food and lodging: paid to the masters of the bakery, inn, farm and shop; who cannot pay is tired."""
+        from .economy import FOOD
+
+        e = self.econ
+        for d in self.devs:
+            d._ot = 0
+        if not e.upkeep:
+            return
+        sellers = [self.owner[m] for m in self.u.modules if self.u.kind_of.get(m) in FOOD and m in self.owner]
+        for d in self.devs:
+            if d.coins >= e.upkeep:
+                share = e.upkeep // max(1, len(sellers))
+                for s in sellers:
+                    if s is not d:
+                        self.pay(d, s, share, "upkeep")
+                self.pay(d, "treasury", e.upkeep - share * len([s for s in sellers if s is not d]), "upkeep")
+            else:
+                d.budget = int(d.budget * 0.75)
+                self.stats["tired"] = self.stats.get("tired", 0) + 1
+                self._ev("tired", d)
+
+    def _hire(self, d: Dev, q: list, queues: list, results: list) -> bool:
+        """Out of time with orders left: pay an idle teammate to make the next one (the pay stays with d)."""
+        e = self.econ
+        if not e or not e.hiring or d.coins < 10 * e.wage:
+            return False
+        idle = [h for h, hq in zip(self.devs, queues) if h is not d and not hq and h.budget > 5]
+        if not idle:
+            return False
+        h = max(idle, key=lambda x: (x.budget, x.name))
+        project = q.pop(0)
+        self._payee[project.id] = d
+        self._ev("hire", d, to=h.name, project=project.id)
+        before = sum(h.spent.values())
+        results.append(self.solve(h, project))
+        self.pay(d, h, (sum(h.spent.values()) - before) * e.wage, "wage")
+        self._payee.pop(project.id, None)
+        return True
 
     def metrics(self, results: list[dict]) -> dict:
         spent = {k: sum(d.spent[k] for d in self.devs) for k in self.devs[0].spent}
@@ -601,6 +734,9 @@ class Org:
             "relearned": sum(nb.relearned for nb in books), "evictions": sum(nb.evictions for nb in books),
             "routes_known": sum(len(d.routes) for d in self.devs) // 2,
             **self.stats,
+            **({"treasury": self.treasury, "coins": {d.name: d.coins for d in self.devs},
+                "wealth_gini": round(gini([d.coins for d in self.devs]), 3), "rep": {d.name: d.rep for d in self.devs},
+                **{f"money_{k}": v for k, v in self.money.items()}} if self.econ else {}),
             **({"goal_parts_done": sum(p.get("done") is not None for g in self.goals for p in g.parts),
                 "goal_parts": sum(len(g.parts) for g in self.goals),
                 "goals_done": sum(g.done_at is not None for g in self.goals),

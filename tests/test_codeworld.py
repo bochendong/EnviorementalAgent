@@ -304,3 +304,31 @@ def test_grand_goals():
     for _ in range(3):
         lone.sprint([u.project(rng) for _ in range(16)], 120, goals=gs2)  # one head, a quarter of the time
     assert sum(g.done_at is not None for g in gs2) < 3
+
+
+def test_money():
+    from worldseeds.codeworld.economy import EconConfig, gini
+    from worldseeds.codeworld.goals import make_goals
+    from worldseeds.codeworld.replay import town_world
+
+    assert gini([5, 5, 5]) == 0 and gini([0, 0, 9]) > .6
+    u = town_world(1)
+    rng = random.Random(3)
+    orders = [[u.project(rng) for _ in range(16)] for _ in range(4)]
+
+    def run(**kw):
+        gs = make_goals(u, ["banquet", "prize", "fund"], seed=0, deadline=4, fund=300)
+        org = Org(u, 4, 12, "owners", walk=True, batch=True, record=True, econ=EconConfig(**kw))
+        total0 = sum(d.coins for d in org.devs) + org.treasury
+        ms = [org.sprint(o, 120, goals=gs) for o in orders]
+        return org, gs, ms, total0
+
+    org, gs, ms, total0 = run(upkeep=10)
+    pays = [e for e in org.events if e["kind"] == "pay"]
+    outside = sum(e["amount"] for e in pays if e["frm"] == "customer")
+    assert sum(d.coins for d in org.devs) + org.treasury == total0 + outside  # money is only made by customers
+    assert {e["why"] for e in pays} >= {"order", "royalty", "tax", "bounty", "upkeep"}
+    assert next(g for g in gs if g.kind == "fund").done_at is not None  # the clock tower got paid for
+    assert all(d.coins >= 0 for d in org.devs) and org.treasury >= 0
+    paid = run(answer_price=5)[0]
+    assert any(e["why"] == "answer" for e in paid.events if e["kind"] == "pay")

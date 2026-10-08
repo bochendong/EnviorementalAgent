@@ -45,9 +45,16 @@ def main():
                  ("storm", "per outdoor map per sprint: walking there costs double"),
                  ("rumor", "expected rumours per sprint on the notice board")):
         ap.add_argument(f"--{k}", type=float, default=0.0, help=f"random events (town): {h}")
-    ap.add_argument("--goals", nargs="*", default=[], choices=["banquet", "prize", "recipe", "encyclopedia"],
+    ap.add_argument("--goals", nargs="*", default=[], choices=["banquet", "prize", "recipe", "encyclopedia", "fund"],
                     help="grand goals of the town (goals.py), worked on before the day's orders")
     ap.add_argument("--goal-deadline", type=int, default=4, help="the last sprint the goals count in")
+    ap.add_argument("--fund", type=int, default=0, help="the clock tower's price in coins (default 400 per district)")
+    ap.add_argument("--money", action="store_true",
+                    help="purses and a treasury: order pay, royalties, tax, bounties, overtime, hiring (economy.py)")
+    ap.add_argument("--answer-price", type=int, default=0, help="money: coins per explanation (0 = free)")
+    ap.add_argument("--upkeep", type=int, default=0, help="money: coins per sprint for food and lodging")
+    ap.add_argument("--bounty", type=int, default=25, help="money: coins from the treasury per goal part")
+    ap.add_argument("--no-hiring", action="store_true", help="money: nobody can hire a teammate")
     ap.add_argument("--no-learn", action="store_true", help="developers never learn laws (just run functions)")
     ap.add_argument("--policy", choices=["heuristic", "llm"], default="heuristic",
                     help="llm: developers are LLM agents (WS_BASE_URL / WS_MODEL, see worldseeds/llm.py)")
@@ -61,7 +68,8 @@ def main():
                        projects_per_dev=a.projects_per_dev, budget=a.budget, learn=not a.no_learn, out_dir=a.out,
                        seed=a.seed, theme=a.theme, walk=a.walk, batch=a.batch, board=a.board, library=a.library,
                        post=a.post, post_delay=a.post_delay, shortcuts=a.shortcuts,
-                       goals=a.goals, goal_deadline=a.goal_deadline, breakdown=a.breakdown, drift=a.drift, festival=a.festival, storm=a.storm, rumor=a.rumor, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
+                       goals=a.goals, goal_deadline=a.goal_deadline, fund=a.fund, money=a.money,
+                       answer_price=a.answer_price, upkeep=a.upkeep, bounty=a.bounty, hiring=not a.no_hiring, breakdown=a.breakdown, drift=a.drift, festival=a.festival, storm=a.storm, rumor=a.rumor, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
     print(f"done -> {out}/codeworld.jsonl ; summary: python scripts/analyze_codeworld.py {out}")
 
 
