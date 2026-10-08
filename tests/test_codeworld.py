@@ -132,3 +132,50 @@ def test_scripted_llm_developers():
     assert s1.trace[0]["out"].startswith(f"dev0: {fn} is ")
     assert f"on 5: {u.functions[fn].law(5)}" in s1.trace[1]["out"]  # the explained law works for this project
     assert org.devs[0].spent["answer"] == 1 and org.devs[1].spent["ask"] == 1 and out["dev"] == "dev1"
+
+
+def test_town_districts_walking_and_batched_questions():
+    from worldseeds.codeworld.replay import town_world
+
+    town = town_world(1)
+    assert town.n_functions == 48 and town.modules[:2] == ["bakery", "smithy"] and town.n_districts == 1
+    big = town_world(1, districts=3)
+    assert big.n_functions == 144 and big.n_districts == 3 and big.modules[0] == "oak_bakery"
+    a, b, c = big.modules[0], big.modules[1], big.modules[8]
+    assert big.distance(a, a) == 0 and big.distance(a, b) == 1 and big.distance(a, c) == 3
+    rng = random.Random(2)
+    projects = [big.project(rng) for _ in range(24)]
+    asks = {}
+    for batch in (False, True):
+        org = Org(big, 12, 12, "owners", walk=True, batch=batch)
+        m = org.sprint(projects, 120)
+        assert m["spent_walk"] > 0
+        asks[batch] = m["spent_ask"] / max(1, m["done"])
+    assert asks[True] < asks[False]  # one visit explains every relevant machine of that master
+
+
+def test_replay_is_what_the_engine_did():
+    """The web client (web/codeworld.js) replays these fields; keep them in sync with it."""
+    from worldseeds.codeworld.replay import record, town_world
+
+    town = town_world(1)
+    rep = json.loads(json.dumps(record(town, "owners", 4, 12, sprints=2)))
+    assert rep["kind"] == "codeworld" and rep["team"] == 4 and len(rep["sprints"]) == 2
+    assert [w["module"] for w in rep["world"]["districts"][0]["workshops"]] == town.modules
+    assert all({"name", "owns", "home", "look"} <= set(d) for d in rep["devs"])
+    for sp in rep["sprints"]:
+        books = {k: list(v) for k, v in sp["start_notebooks"].items()}
+        done = 0
+        for e in sp["events"]:
+            assert {"kind", "dev", "loc", "budget", "project"} <= set(e)
+            if e["kind"] == "learn":  # the client rebuilds notebooks from learn events
+                books[e["dev"]] = [f for f in books[e["dev"]] if f != e["fn"] and f not in e["forgot"]] + [e["fn"]]
+            if e["kind"] == "walk":
+                assert e["to"] in town.modules
+            if e["kind"] == "ask":
+                assert e["to"] in books and "answered" in e
+            done += e["kind"] == "submit" and e["ok"]
+        assert done == sp["metrics"]["done"]
+        assert sum(map(len, books.values())) == round(sp["metrics"]["known_per_dev"] * 4)
+    solo = record(town, "solo", 4, 12, sprints=1)
+    assert solo["team"] == 1 and solo["budget"] == 4 * 120  # the same compute as the team
