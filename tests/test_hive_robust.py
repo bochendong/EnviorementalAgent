@@ -120,3 +120,26 @@ def test_fixed_season_keeps_ids():
 
     t = replace(s, fixed_season="winter")
     assert t.season == "winter" and t.id != s.id and TownSeed.from_dict(t.to_dict()).season == "winter"
+
+
+def test_regional_memory_splits_a_family():
+    hv = Hive(TownSeedMemory, HIVE_MODES["hive_regional"], 8)
+    hv.region_of = [1, 1, 1, 1, 0, 0, 0, 0]
+    for i in range(8):  # region 1: melon grows in spring; region 0: in fall. Turnip's season only seen in region 0
+        hv.report(i, _evidence("melon", "clay", "spring" if i < 4 else "fall")
+                  + ([] if i < 4 else _evidence("turnip", "loam", "summer")))
+    hv.end_wave()
+    hv.end_wave()
+    assert hv.split_laws == {"season.melon"}
+    r1, r0 = hv.glob_by_region[1], hv.glob_by_region[0]
+    assert r1.confident("season.melon") == "spring" and r0.confident("season.melon") == "fall"
+    assert r1.confident("soil.melon") == r0.confident("soil.melon") == "clay"  # agreed laws are shared
+    assert r0.confident("season.turnip") == "summer"
+    assert r1.confident("season.turnip") is None  # seasons differ here: not borrowed across regions
+    assert hv.view(0).confident("season.melon") == "spring" and hv.view(7).confident("season.melon") == "fall"
+    plain = Hive(TownSeedMemory, HIVE_MODES["hive_recent"], 8)
+    for i in range(8):
+        plain.report(i, _evidence("melon", "clay", "spring" if i < 4 else "fall"))
+    plain.end_wave()
+    plain.end_wave()
+    assert plain.glob.confident("season.melon") is None  # one memory cannot hold both

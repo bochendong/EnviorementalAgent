@@ -36,6 +36,8 @@ class HiveProtocol:
         hv = Hive(self.env.seed_cls, HIVE_MODES[mode], n, faulty, rng_seed=_seed(("hive", c.rng_seed, u, r, n, faulty)),
                   faulty_mode=c.hive.faulty_mode, truth=truth_a)
         replicate = c.hive.audit == "replicate" and hv.mode.audit > 0
+        if c.hive.shift_wave:  # agents know their region (whether or not its laws change)
+            hv.region_of = [1 if i < round(c.hive.shift_share * n) else 0 for i in range(n)]
         hv.external_audit = replicate
         # regional shift: the first ``share`` of the agents (whole groups, as groups are consecutive) live under
         # the new laws
@@ -106,7 +108,7 @@ class HiveProtocol:
             shift_stats = {}
             if c.hive.shift_wave and wv + 1 >= c.hive.shift_wave:
                 moved = [i for i in agents if region_laws(i, wv) is laws_b and laws_b is not laws]
-                cur = truth_b if c.hive.shift_share >= 1 and wv + 1 >= c.hive.shift_wave else truth_a
+                cur = self.env.seed_cls.truth(region_laws(0, wv))
                 shift_stats = {
                     "stale_global": hv.stale(hv.glob, truth_a, truth_b),
                     "stale_agents": (sum(hv.stale(hv.view(i), truth_a, truth_b) for i in moved) / len(moved)
@@ -114,16 +116,24 @@ class HiveProtocol:
                     "changed_laws": sum(1 for sp in truth_a if truth_a[sp] != truth_b.get(sp)),
                     "known_global_now": sum(1 for sp, v in cur.items() if sp in hv.glob.hyps
                                             and hv.glob.confident(sp) == v),
+                    "split_laws": len(hv.split_laws),
                 }
+                if 0 < c.hive.shift_share < 1:  # two regions: is each agent's memory right for its own region?
+                    for name, group in (("moved", moved), ("stay", [i for i in agents if i not in moved])):
+                        sc = [Hive.score(hv.view(i), region_laws(i, wv)) for i in group]
+                        shift_stats[f"right_{name}"] = sum(k for k, _ in sc) / len(sc) if sc else 0.0
+                        shift_stats[f"wrong_{name}"] = sum(x for _, x in sc) / len(sc) if sc else 0.0
             await self.rec.write({
                 "protocol": "hive", "phase": "wave", "env": self.env.name, "policy": c.policy, "llm": self.llm_name,
                 "chain": chain, "variant": variant, "universe": u, "repeat": r, **tag, "wave": wv + 1,
                 "episodes": ep, "total_laws": total,
                 "known_agents": sum(k for k, _ in known) / len(known),
                 "wrong_agents": sum(x for _, x in known) / len(known),
-                "known_global": Hive.score(hv.glob, laws)[0], "wrong_global": Hive.score(hv.glob, laws)[1],
-                "known_collective": Hive.score(hv.collective(), laws)[0],
-                "wrong_collective": Hive.score(hv.collective(), laws)[1],
+                # "global" is scored against the laws of agent 0's region (the moved one when laws shift)
+                "known_global": Hive.score(hv.glob, region_laws(0, wv))[0],
+                "wrong_global": Hive.score(hv.glob, region_laws(0, wv))[1],
+                "known_collective": Hive.score(hv.collective(), region_laws(0, wv))[0],
+                "wrong_collective": Hive.score(hv.collective(), region_laws(0, wv))[1],
                 "messages": hv.messages, "syncs": hv.syncs, **stats, **shift_stats,
                 "audits": hv.audits, "distrusted": len(hv.distrusted), "rejected": len(hv.rejected),
                 "audit_mode": c.hive.audit if hv.mode.audit else None, "audits_inconclusive": hv.inconclusive,

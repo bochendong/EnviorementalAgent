@@ -77,15 +77,21 @@ def main():
     shifted = [k for k in by if k[5]]
     if shifted:
         print("\nFrom the law shift on, per wave: stale laws in the global seed / in a moved agent's view "
-              "(changed laws still believed at their old value), and laws the global seed gets right now:")
+              "(changed laws still believed at their old value), laws the global seed gets right now (for a regional "
+              "hive: the seed of agent 0's region), and with two regions what moved and staying agents know "
+              "right and wrong about their own region:")
         for key in sorted(shifted, key=sort_key):
             per = defaultdict(list)
             for r in by[key]:
                 per[r["wave"]].append(r)
             ws = sorted(per)
             print(f"  {key[1]:16s} n={key[2]:<3} shift {key[5]} (changed {max(x.get('changed_laws', 0) for x in by[key])}):")
-            for name, col in (("stale global", "stale_global"), ("stale agent", "stale_agents"),
-                              ("right global", "known_global_now")):
+            cols = [("stale global", "stale_global"), ("stale agent", "stale_agents"),
+                    ("right global", "known_global_now")]
+            if any("right_moved" in x for x in by[key]):  # two regions: each agent against its own region
+                cols += [("right moved", "right_moved"), ("wrong moved", "wrong_moved"),
+                         ("right stay", "right_stay"), ("wrong stay", "wrong_stay"), ("split laws", "split_laws")]
+            for name, col in cols:
                 cells = [mean(x[col] for x in per[w] if col in x) for w in ws]
                 print(f"    {name:12s} " + " ".join("    -" if c != c else f"{c:5.1f}" for c in cells))
     if a.curve:

@@ -20,6 +20,9 @@ sends them back out, people steering agents toward open questions, and a final v
                 ``provenance``, everything its makers ever claimed. ``window``: newer evidence supersedes
                 older; per law, only claims made within ``window`` waves of its latest claim count (so
                 stale claims age out after the laws shift, while laws nobody re-checks are kept)
+    regions     agents know which region they work in (``region_of``). With ``regional`` the consolidator
+                keeps one seed per region: a law is shared by all regions unless their own replicated
+                evidence disagrees, then each region keeps its own value (the truth can differ by region)
 
 An agent's view = global seed + its group's evidence that has not been consolidated yet. The
 module only handles memory flow; worlds, agents and scoring come from the caller.
@@ -43,6 +46,7 @@ class HiveMode:
     audit: int = 0  # claims checked per sync against a gold-standard replication (needs verify)
     provenance: bool = False  # a failed audit discredits every claim of the agents who made it
     window: int = 0  # per law, only claims within ``window`` waves of its newest claim count (0 = all)
+    regional: bool = False  # one seed per region: a law is shared unless the regions' evidence disagrees
 
 
 HIVE_MODES = {
@@ -57,6 +61,7 @@ HIVE_MODES = {
     "hive_audit": HiveMode("hive_audit", group_size=4, sync_every=2, verify=2, audit=2),
     "hive_provenance": HiveMode("hive_provenance", group_size=4, sync_every=2, verify=2, audit=2, provenance=True),
     "hive_recent": HiveMode("hive_recent", group_size=4, sync_every=2, verify=2, window=2),
+    "hive_regional": HiveMode("hive_regional", group_size=4, sync_every=2, verify=2, window=2, regional=True),
 }
 FAULTY_MODES = ["scattered", "correlated", "groups"]
 
@@ -86,6 +91,9 @@ class Hive:
         self.distrusted: set[int] = set()
         self.audits = 0
         self.external_audit = False
+        self.region_of = [0] * n_agents  # set by the caller when the worlds differ by region
+        self.glob_by_region: dict[int, object] = {}
+        self.split_laws: set[str] = set()  # laws whose value differs between regions (regional mode)
         self.checked: set[str] = set()  # laws an audit confirmed
         self.audited: set[tuple[str, str]] = set()  # claims audited already (whatever the verdict)
         self.inconclusive = 0
@@ -104,7 +112,8 @@ class Hive:
     # ------------------------------------------------------------ reading
     def view(self, i: int):
         """What agent ``i`` knows at the start of a wave."""
-        v = self.seed_cls.from_dict(self.glob.to_dict())
+        base = self.glob_by_region.get(self.region_of[i], self.glob) if self.mode.regional else self.glob
+        v = self.seed_cls.from_dict(base.to_dict())
         v.merge(self.local[self.group_of[i]])
         return v
 
@@ -184,10 +193,12 @@ class Hive:
                 break
             self.apply_audit(*cand, self.truth[cand[0]] == cand[1])
 
-    def _support(self, sp: str) -> list[tuple[str, set[int]]]:
-        """Values of ``sp`` with the agents whose claims still count, most supported first."""
+    def _support(self, sp: str, region: int | None = None) -> list[tuple[str, set[int]]]:
+        """Values of ``sp`` with the agents whose claims still count (in ``region``, if given), most
+        supported first."""
         out = []
-        vals = self.claims.get(sp, {})
+        vals = {v: {i: wv for i, wv in who.items() if region is None or self.region_of[i] == region}
+                for v, who in self.claims.get(sp, {}).items()}
         newest = max((wv for who in vals.values() for wv in who.values()), default=0)
         for val, who in vals.items():
             if (sp, val) in self.rejected:
@@ -198,18 +209,49 @@ class Hive:
                 out.append((val, agents))
         return sorted(out, key=lambda kv: -len(kv[1]))
 
+    def _winner(self, ranked) -> str | None:
+        if not ranked:
+            return None
+        val, agents = ranked[0]
+        runner_up = len(ranked[1][1]) if len(ranked) > 1 else 0
+        return val if len(agents) >= self.mode.verify and len(agents) >= 2 * runner_up else None
+
     def _rebuild(self) -> None:
         self.glob = self.seed_cls()
         self.accepted = set()
+        if self.mode.regional:
+            self._rebuild_regional()
+            return
         for sp in self.claims:
-            ranked = self._support(sp)
-            if not ranked:
-                continue
-            val, agents = ranked[0]
-            runner_up = len(ranked[1][1]) if len(ranked) > 1 else 0
-            if len(agents) >= self.mode.verify and len(agents) >= 2 * runner_up:
+            val = self._winner(self._support(sp))
+            if val is not None:
                 self.accepted.add((sp, val))
                 self.glob._vote_exclusive(sp, val, 5.0)
+
+    def _rebuild_regional(self) -> None:
+        regions = sorted(set(self.region_of))
+        seeds = {r: self.seed_cls() for r in regions}
+        pooled = {sp: self._winner(self._support(sp)) for sp in self.claims}
+        own = {sp: {r: self._winner(self._support(sp, r)) for r in regions} for sp in self.claims}
+        # a law splits when the regions disagree, each with replicated evidence; laws change in families
+        # (all crops' seasons, say), so once one law of a family splits, its other laws are not borrowed
+        # across regions either
+        self.split_laws = {sp for sp, o in own.items() if len({v for v in o.values() if v is not None}) > 1}
+        split_families = {sp.split(".")[0] for sp in self.split_laws}
+        for sp in self.claims:
+            for r in regions:
+                if own[sp][r] is not None or sp in self.split_laws:
+                    val = own[sp][r]
+                elif sp.split(".")[0] in split_families:
+                    val = None
+                else:  # nothing replicated here: borrow the pooled value unless a claim from here contradicts it
+                    local = {v for v, _ in self._support(sp, r)}
+                    val = pooled[sp] if not (local - {pooled[sp]}) else None
+                if val is not None:
+                    self.accepted.add((sp, val))
+                    seeds[r]._vote_exclusive(sp, val, 5.0)
+        self.glob_by_region = seeds
+        self.glob = seeds[self.region_of[0]]  # reported as "global": the seed of agent 0's region
 
     def next_audit(self) -> tuple[str, str] | None:
         """The accepted claim to audit next: the least replicated one not audited yet."""
