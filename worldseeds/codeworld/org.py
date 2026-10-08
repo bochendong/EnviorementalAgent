@@ -1,0 +1,215 @@
+"""Developers and how they are organised: alone, as a team without contact, or as a network.
+
+A developer has a notebook of limited capacity and an action budget per sprint. To build a project it
+searches the programs that type-check (cheapest to evaluate first) until one reproduces the examples, then
+submits it. To know what a function does on some input it can
+
+    use its notebook (free)        if it knows the function's law
+    study the function (8 actions) probe it on a fixed design, learn its law, keep it in the notebook
+    ask a teammate (1 + 1 actions) who explains the law from what they know (an owner studies first if
+                                   needed); the explanation stays in working memory for this project only
+
+Organisations (``MODES``):
+
+    solo         one developer (give it the team's budget for a compute-matched baseline)
+    independent  several developers, each on their own projects, never talking
+    owners       every module has an owner (like CODEOWNERS); questions about a function go to its owner,
+                 who learns its own module's laws when first asked
+    directory    a live registry of who knows which law; questions go to someone who knows (else the owner)
+    random       no idea who knows what: ask up to two random teammates, then study yourself
+    pooled       one shared notebook for everyone, as big as all notebooks together (no message cost):
+                 an upper bound for sharing
+"""
+
+from __future__ import annotations
+
+import random
+from dataclasses import dataclass, field
+
+from .knowledge import Notebook, fit, study_inputs
+from .world import Project, Universe
+
+MODES = ["solo", "independent", "owners", "directory", "random", "pooled"]
+STUDY_COST = len(study_inputs())
+
+
+class OutOfBudget(Exception):
+    pass
+
+
+@dataclass
+class Dev:
+    name: str
+    notebook: Notebook
+    owns: set[str] = field(default_factory=set)  # modules
+    budget: int = 0
+    spent: dict = field(default_factory=lambda: {"study": 0, "ask": 0, "answer": 0, "submit": 0})
+
+    def spend(self, kind: str, n: int = 1) -> None:
+        if self.budget < n:
+            raise OutOfBudget(self.name)
+        self.budget -= n
+        self.spent[kind] += n
+
+
+class Org:
+    def __init__(self, universe: Universe, n: int, capacity: int | None, mode: str, learn: bool = True,
+                 seed: int = 0):
+        if mode not in MODES:
+            raise ValueError(f"unknown mode {mode!r}; one of {MODES}")
+        self.u, self.mode, self.learn = universe, mode, learn
+        self.rng = random.Random(seed)
+        pool = Notebook(None if capacity is None else capacity * n) if mode == "pooled" else None
+        self.devs = [Dev(f"dev{i}", pool if pool is not None else Notebook(capacity)) for i in range(n)]
+        for k, m in enumerate(universe.modules):  # module owners, round robin
+            self.devs[k % n].owns.add(m)
+        if mode in ("owners", "directory"):  # specialists forget foreign laws before their own modules' laws
+            for d in self.devs:
+                d.notebook.keep = (lambda name, owns=d.owns: name.split(".", 1)[0] in owns)
+        self.owner = {m: d for d in self.devs for m in d.owns}
+        self.log: list[dict] = []
+
+    # ------------------------------------------------------------ knowledge
+    def _study(self, dev: Dev, fn: str):
+        dev.spend("study", STUDY_COST)
+        law = fit({x: self.u.functions[fn].law(x) for x in study_inputs()})
+        dev.notebook.put(fn, law)
+        return law
+
+    def _helper(self, dev: Dev, fn: str):
+        """Who to ask about ``fn`` (and whether they must study it first), per the organisation."""
+        others = [d for d in self.devs if d is not dev]
+        if not others or self.mode in ("solo", "independent", "pooled"):
+            return None
+        if self.mode == "random":
+            for d in self.rng.sample(others, min(2, len(others))):
+                dev.spend("ask")
+                if d.budget >= 1 and fn in d.notebook:
+                    return d
+                if d.budget >= 1:
+                    d.spend("answer")  # "sorry, no idea"
+            return None
+        if self.mode == "directory":
+            holders = [d for d in others if fn in d.notebook and d.budget >= 1]
+            if holders:
+                return holders[0]
+        owner = self.owner[self.u.functions[fn].module]
+        if owner is dev:
+            return None
+        if fn in owner.notebook and owner.budget >= 1:
+            return owner
+        if owner.budget >= 1 + STUDY_COST:  # the owner learns its own module's function first
+            self._study(owner, fn)
+            return owner
+        return None
+
+    def values(self, dev: Dev, fn: str, xs: list[int], cache: dict) -> list[int]:
+        """What ``fn`` gives on ``xs``, at the cheapest available price for ``dev``. ``cache`` is the working
+        memory of the current project: what teammates explained (laws) and what was run (values). It does
+        not use notebook capacity and is gone after the project."""
+        law = dev.notebook.get(fn) or cache.get(("law", fn))
+        if law is not None:
+            return [law(x) for x in xs]
+        known = cache.setdefault(fn, {})
+        need = [x for x in xs if x not in known]
+        if need:
+            helper = self._helper(dev, fn)
+            if helper is not None:  # the teammate explains what the function does (one question, one answer)
+                if self.mode != "random":
+                    dev.spend("ask")
+                helper.spend("answer")
+                law = helper.notebook.get(fn)
+                cache[("law", fn)] = law
+                return [law(x) for x in xs]
+            if self.learn:
+                law = self._study(dev, fn)
+                return [law(x) for x in xs]
+            dev.spend("study", len(need))  # no memory: just run it on what is needed now
+            known.update({x: self.u.functions[fn].law(x) for x in need})
+        return [known[x] for x in xs]
+
+    # ------------------------------------------------------------ projects
+    def _cost(self, dev: Dev, program) -> int:
+        """Estimated price of evaluating a program: functions the developer would still have to find out."""
+        c = 0
+        for fn in program:
+            if fn in dev.notebook:
+                continue
+            owner = self.owner[self.u.functions[fn].module]
+            if self.mode in ("owners", "directory") and owner is not dev:
+                c += 2
+            else:
+                c += STUDY_COST
+        return c
+
+    def solve(self, dev: Dev, project: Project) -> dict:
+        """Search programs (cheapest first) until one fits the examples, then submit it."""
+        cands = self.u.candidates(project.in_type, project.out_type)
+        cands.sort(key=lambda p: (self._cost(dev, p), p))
+        xs = [x for x, _ in project.examples]
+        want = [y for _, y in project.examples]
+        cache: dict = {}
+        prefix: dict[tuple, list[int]] = {(): xs}
+        before = sum(dev.spent.values())
+        tried = 0
+        try:
+            for prog in cands:
+                tried += 1
+                vals = xs
+                for k in range(1, len(prog) + 1):
+                    key = prog[:k]
+                    if key not in prefix:
+                        prefix[key] = self.values(dev, prog[k - 1], prefix[prog[:k - 1]], cache)
+                    vals = prefix[key]
+                if vals == want:
+                    dev.spend("submit")
+                    ok = self.u.table(prog) == self.u.table(project.target)
+                    return {"done": ok, "tried": tried, "actions": sum(dev.spent.values()) - before}
+            return {"done": False, "tried": tried, "actions": sum(dev.spent.values()) - before, "stuck": True}
+        except OutOfBudget:
+            return {"done": False, "tried": tried, "actions": sum(dev.spent.values()) - before, "out_of_budget": True}
+
+    # ------------------------------------------------------------ sprints
+    def sprint(self, projects: list[Project], budget: int) -> dict:
+        """Every developer gets ``budget`` actions; projects are handed out round robin and worked on in
+        turns (one project per developer per turn) until done or nobody has budget left."""
+        for d in self.devs:
+            d.budget = budget
+            for k in d.spent:
+                d.spent[k] = 0
+        queues = [projects[i::len(self.devs)] for i in range(len(self.devs))]
+        results = []
+        while any(queues):
+            progressed = False
+            for d, q in zip(self.devs, queues):
+                if q and d.budget > 0:
+                    results.append(self.solve(d, q.pop(0)))
+                    progressed = True
+                elif q:
+                    results += [{"done": False, "out_of_budget": True, "actions": 0, "tried": 0} for _ in q]
+                    q.clear()
+            if not progressed:
+                break
+        return self.metrics(results)
+
+    def metrics(self, results: list[dict]) -> dict:
+        spent = {k: sum(d.spent[k] for d in self.devs) for k in self.devs[0].spent}
+        books = {id(d.notebook): d.notebook for d in self.devs}.values()
+        correct = set()
+        wrong = 0
+        for nb in books:
+            for n, law in nb.laws.items():
+                if law.table == self.u.functions[n].law.table:
+                    correct.add(n)
+                else:
+                    wrong += 1
+        return {
+            "projects": len(results), "done": sum(r["done"] for r in results),
+            "out_of_budget": sum(bool(r.get("out_of_budget")) for r in results),
+            "actions": sum(spent.values()), **{f"spent_{k}": v for k, v in spent.items()},
+            "known_union": len(correct), "known_share": len(correct) / self.u.n_functions,
+            "wrong_laws": wrong,
+            "known_per_dev": sum(len(nb) for nb in books) / len(self.devs) if self.mode != "pooled"
+            else len(next(iter(books))),
+            "relearned": sum(nb.relearned for nb in books), "evictions": sum(nb.evictions for nb in books),
+        }
