@@ -88,6 +88,13 @@ class ExpConfig:
     hive_sizes: list[int] = field(default_factory=lambda: [1, 4, 16])
     hive_faulty: list[float] = field(default_factory=lambda: [0.0])
     hive_waves: int = 8
+    # faulty agents: scattered (each its own lie) | correlated (all the same lie) | groups (same lie, whole groups)
+    hive_faulty_mode: str = "scattered"
+    # regional law shift: from wave ``hive_shift_wave`` (0 = never) the worlds of this share of the groups
+    # follow changed laws (``hive_shift_laws`` law families mutate); the test towns follow the new laws
+    hive_shift_wave: int = 0
+    hive_shift_share: float = 1.0
+    hive_shift_laws: int = 2
     # evolve protocol: generations of agents that inherit how to learn (worldseeds/evolve.py). A life is
     # n_train training towns then n_test test towns, from an empty head. Selection by the true evaluator
     # (test success) or the weak one (proxy: claimed knowledge / self-grade); then fresh lives in
@@ -615,18 +622,36 @@ class Runner:
         from .hive import HIVE_MODES, Hive
 
         c = self.cfg
-        hv = Hive(self.env.seed_cls, HIVE_MODES[mode], n, faulty, rng_seed=_seed(("hive", c.rng_seed, u, r, n, faulty)))
+        truth_a = self.env.seed_cls.truth(laws)
+        laws_b = laws.mutate(random.Random(_seed(("hive-shift", c.rng_seed, u))), n=c.hive_shift_laws) \
+            if c.hive_shift_wave else laws
+        truth_b = self.env.seed_cls.truth(laws_b)
+        hv = Hive(self.env.seed_cls, HIVE_MODES[mode], n, faulty, rng_seed=_seed(("hive", c.rng_seed, u, r, n, faulty)),
+                  faulty_mode=c.hive_faulty_mode, truth=truth_a)
+        # regional shift: the first ``share`` of the agents (whole groups, as groups are consecutive) live under
+        # the new laws
+        moved_agents = set(range(round(c.hive_shift_share * n))) if c.hive_shift_wave else set()
+
+        def region_laws(i: int, wv: int):
+            shifted = c.hive_shift_wave and wv + 1 >= c.hive_shift_wave and i in moved_agents
+            return laws_b if shifted else laws
         combos = [cb for k in range(1, len(self.env.blocks) + 1) for cb in itertools.combinations(self.env.blocks, k)]
-        variant = f"{mode}-n{n}" + (f"-f{faulty:g}" if faulty else "")
+        variant = f"{mode}-n{n}" + (f"-f{faulty:g}" if faulty else "") + (
+            f"-{c.hive_faulty_mode}" if faulty and c.hive_faulty_mode != "scattered" else "") + (
+            f"-shift{c.hive_shift_wave}x{c.hive_shift_share:g}" if c.hive_shift_wave else "")
         chain = f"{self.env.name}-hive-u{u}-{variant}-{view}-r{r}"
         total = len(self.env.seed_cls.truth(laws))
         ep = 0
-        tag = {"hive_mode": mode, "hive_n": n, "faulty": faulty}
+        tag = {"hive_mode": mode, "hive_n": n, "faulty": faulty, "faulty_mode": c.hive_faulty_mode,
+               "shift_wave": c.hive_shift_wave, "shift_share": c.hive_shift_share if c.hive_shift_wave else 0}
         for wv in range(c.hive_waves):
+            if c.hive_shift_wave and wv + 1 == c.hive_shift_wave and c.hive_shift_share >= 1:
+                hv.truth, hv.checked = truth_b, set()  # audits now replicate under the new laws
             seeds = []
             for i in range(n):  # the same worlds for every mode (unless a director picks them)
                 rng = random.Random(_seed(("hive-world", c.rng_seed, u, r, wv, i)))
-                s = self.env.seeds_for([rng.choice(combos)], laws, 1, rng, n_distractors=c.n_distractors)[0]
+                s = self.env.seeds_for([rng.choice(combos)], region_laws(i, wv), 1, rng,
+                                       n_distractors=c.n_distractors)[0]
                 if hv.mode.directed and laws.crops:
                     blocks = tuple(b for b in self.env.blocks if b in set(s.blocks) | {"farming"})
                     s = replace(s, blocks=blocks, crops=tuple(hv.least_known(laws.crops, 4, rng)))
@@ -657,7 +682,19 @@ class Runner:
             hv.end_wave()
             ep += n
             agents = [0] if hv.mode.serial else range(0, n, max(1, n // 32))  # a sample of agents
-            known = [Hive.score(hv.view(i), laws) for i in agents]
+            known = [Hive.score(hv.view(i), region_laws(i, wv)) for i in agents]
+            shift_stats = {}
+            if c.hive_shift_wave and wv + 1 >= c.hive_shift_wave:
+                moved = [i for i in agents if region_laws(i, wv) is laws_b and laws_b is not laws]
+                cur = truth_b if c.hive_shift_share >= 1 and wv + 1 >= c.hive_shift_wave else truth_a
+                shift_stats = {
+                    "stale_global": hv.stale(hv.glob, truth_a, truth_b),
+                    "stale_agents": (sum(hv.stale(hv.view(i), truth_a, truth_b) for i in moved) / len(moved)
+                                     if moved else 0.0),
+                    "changed_laws": sum(1 for sp in truth_a if truth_a[sp] != truth_b.get(sp)),
+                    "known_global_now": sum(1 for sp, v in cur.items() if sp in hv.glob.hyps
+                                            and hv.glob.confident(sp) == v),
+                }
             await self.rec.write({
                 "protocol": "hive", "phase": "wave", "env": self.env.name, "policy": c.policy, "llm": self.llm_name,
                 "chain": chain, "variant": variant, "universe": u, "repeat": r, **tag, "wave": wv + 1,
@@ -667,19 +704,25 @@ class Runner:
                 "known_global": Hive.score(hv.glob, laws)[0], "wrong_global": Hive.score(hv.glob, laws)[1],
                 "known_collective": Hive.score(hv.collective(), laws)[0],
                 "wrong_collective": Hive.score(hv.collective(), laws)[1],
-                "messages": hv.messages, "syncs": hv.syncs, **stats,
+                "messages": hv.messages, "syncs": hv.syncs, **stats, **shift_stats,
+                "audits": hv.audits, "distrusted": len(hv.distrusted), "rejected": len(hv.rejected),
                 "wave_success": sum(bool(x["success"]) for x in rows) / n,
                 **({"wave_board": sum(x["board_done"] / x["board_total"] for x in rows) / n}
                    if rows and rows[0].get("board_total") else {}),
             })
         # what the hive hands to a newcomer: the global seed, or (never consolidated) one merge at the end
         shared = hv.glob if hv.mode.sync_every else hv.collective()
-        m = self._mem("seed", laws)
+        test_laws = laws_b if c.hive_shift_wave else laws
+        m = self._mem("seed", test_laws)
         m.seed = shared
+        if c.hive_shift_wave:  # the newcomer arrives in the changed land
+            te = self.env.seeds_for(self.env.split(random.Random(c.rng_seed * 1000 + u))[1], laws_b, c.n_test,
+                                    random.Random(_seed(("hive-test", c.rng_seed, u, r))),
+                                    n_distractors=c.n_distractors)
         for s in te:
             await self.play(self._grow(s, view), m, chain, ep, "test", variant=variant, learn=False,
-                            extra={**tag, "shared_known": Hive.score(shared, laws)[0],
-                                   "shared_wrong": Hive.score(shared, laws)[1], "total_laws": total})
+                            extra={**tag, "shared_known": Hive.score(shared, test_laws)[0],
+                                   "shared_wrong": Hive.score(shared, test_laws)[1], "total_laws": total})
             ep += 1
 
     # ------------------------------------------------------------ evolve

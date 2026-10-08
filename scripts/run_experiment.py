@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from worldseeds.agent import CONDITIONS  # noqa: E402
 from worldseeds.envs import ENV_NAMES  # noqa: E402
 from worldseeds.experiment import PROTOCOLS, ExpConfig, run_experiment  # noqa: E402
+from worldseeds.hive import HIVE_MODES  # noqa: E402
 
 
 def main():
@@ -70,10 +71,15 @@ def main():
     p.add_argument("--n-crops", type=int, default=4, help="town/board: crops per universe (law space size)")
     p.add_argument("--hive-modes", nargs="+", default=["isolated", "serial", "groups", "hive", "sync",
                                                        "hive_verified", "hive_directed", "hive_full"],
-                   help="hive protocol: how the agents share memory (see worldseeds/hive.py)")
+                   choices=list(HIVE_MODES), help="hive protocol: how the agents share memory (see worldseeds/hive.py)")
     p.add_argument("--hive-sizes", nargs="+", type=int, default=[1, 4, 16], help="hive: numbers of agents")
     p.add_argument("--hive-faulty", nargs="+", type=float, default=[0.0], help="hive: shares of faulty agents")
     p.add_argument("--hive-waves", type=int, default=8, help="hive: worlds each agent plays")
+    p.add_argument("--hive-faulty-mode", choices=["scattered", "correlated", "groups"], default="scattered",
+                   help="hive: faulty agents each tell their own lie, all the same lie, or sit in whole groups")
+    p.add_argument("--hive-shift-wave", type=int, default=0, help="hive: wave from which laws change (0 = never)")
+    p.add_argument("--hive-shift-share", type=float, default=1.0, help="hive: share of the groups whose laws change")
+    p.add_argument("--hive-shift-laws", type=int, default=2, help="hive: law families that change")
     p.add_argument("--evolve-generations", type=int, default=8, help="evolve: generations")
     p.add_argument("--evolve-pop", type=int, default=8, help="evolve: lives per generation")
     p.add_argument("--evolve-archive", type=int, default=6, help="evolve: best lives kept as parents")
@@ -99,6 +105,8 @@ def main():
         confounder=a.confounder, deconfound=a.deconfound, publication_bias=a.publication_bias, skin=a.skin,
         festival=a.festival, roles=a.roles,
         hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty, hive_waves=a.hive_waves,
+        hive_faulty_mode=a.hive_faulty_mode, hive_shift_wave=a.hive_shift_wave, hive_shift_share=a.hive_shift_share,
+        hive_shift_laws=a.hive_shift_laws,
         evolve_generations=a.evolve_generations, evolve_pop=a.evolve_pop, evolve_archive=a.evolve_archive,
         evolve_evaluators=a.evolve_evaluators, evolve_benchmark=not a.no_evolve_benchmark,
         transfer_universes=a.transfer_universes, transfer_curve=a.transfer_curve,
