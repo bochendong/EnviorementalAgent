@@ -1,0 +1,18 @@
+{
+  "description": "Example study file for scripts/transfer_analysis.py. Paths are relative to this file. slurm/submit_transfer.sh writes results to $SCRATCH/worldseeds/results/transfer/<model>/; copy this file there and point it at them. static_qa is a covariate: a score that measures raw model strength without agency (e.g. a knowledge benchmark), so the partial correlation asks whether SeedVille predicts more than 'a bigger model is better'.",
+  "covariate": "static_qa",
+  "configs": [
+    {"name": "qwen3-8b",
+     "seedville": ["qwen3-8b/seedville"],
+     "labbench": "qwen3-8b/labbench.json",
+     "benchmarks": {"bixbench": null, "static_qa": null}},
+    {"name": "qwen3-14b",
+     "seedville": ["qwen3-14b/seedville"],
+     "labbench": "qwen3-14b/labbench.json",
+     "benchmarks": {"bixbench": null, "static_qa": null}},
+    {"name": "qwen3-30b-a3b-fp8",
+     "seedville": ["qwen3-30b-a3b-fp8/seedville"],
+     "labbench": "qwen3-30b-a3b-fp8/labbench.json",
+     "benchmarks": {"bixbench": null, "static_qa": null}}
+  ]
+}
