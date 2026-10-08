@@ -201,6 +201,7 @@ class TownSeedMemory(LawSeed):
 
     def __init__(self, decay: float = 1.0):
         self.SPACES = dict(TOWN_SPACES)  # per instance: grows with the crops this seed has met
+        self.deconfound = False  # True: ignore crop outcomes from rainy nights (the weather confounder)
         super().__init__(decay)
 
     def allowed(self, space: str) -> list[str]:
@@ -286,6 +287,8 @@ class TownSeedMemory(LawSeed):
             if ev.verb == "night":
                 crop, soil, season = t.get("crop"), t.get("soil"), t.get("season")
                 outcome = ev.effects[0]["outcome"] if ev.effects else None
+                if self.deconfound and t.get("weather") == "rainy":
+                    continue  # a learner that knows rain is a confounder sets these nights aside
                 if crop is None or outcome == "dry":
                     continue
                 if outcome == "withered":
@@ -313,6 +316,13 @@ class TownSeedMemory(LawSeed):
                             self._vote_exclusive(f"likes.{job}", cat)
                         else:
                             self._vote(f"likes.{job}", cat, False)
+                used += 1
+            elif ev.verb == "screen" and ev.effects and ev.effects[0].get("screen"):
+                # a positive quick test: weak evidence for the crop's soil and season (tests are sometimes wrong)
+                e = ev.effects[0]
+                if t.get("soil"):
+                    self._vote_exclusive(f"soil.{e['crop']}", t["soil"], 0.3)
+                self._vote_exclusive(f"season.{e['crop']}", e["season"], 0.3)
                 used += 1
             elif ev.verb == "see":
                 for e in ev.effects:
@@ -420,6 +430,7 @@ class TownHeuristicAgent:
         self.pages_read = 0
         self.rng = rng or random.Random(0)
         self.failed_plant: set[tuple] = set()  # (crop, plot)
+        self.screened: dict[tuple, bool] = {}  # (crop, plot) -> quick-test result
         self.given: set[str] = set()
         self.talked = False
         self.wander = 0
@@ -670,6 +681,20 @@ class TownHeuristicAgent:
                     options = [p for p in options if preds[p.id] is True]
                 elif options and all(v is False for v in preds.values()):
                     continue
+            if options and getattr(w, "screen_error", None) is not None:
+                # a quick test kit: screen each (crop, plot) the agent cannot predict, once, before committing
+                # a plot for nights (screening what it already knows would only waste actions)
+                unsure = [p for p in options if self.seed is None or self._pred("plant", p.id, s) is None]
+                for p in unsure:
+                    if (crop, p.id) not in self.screened:
+                        if p.id not in w.seen_fine:
+                            self._zoom(p.id)
+                        self._act("screen", p.id, s)
+                        ev = w.events[-1]
+                        self.screened[(crop, p.id)] = bool(ev.verb == "screen" and ev.effects and ev.effects[0]["screen"])
+                        return True
+                promising = [p for p in options if self.screened.get((crop, p.id))]
+                options = promising or options
             if options:
                 self._act("plant", self.rng.choice(options).id, s)
                 return True

@@ -54,6 +54,15 @@ def main():
                    help="team protocol (board env): how teammates share what they learned")
     p.add_argument("--zoom-budget", type=int, default=None,
                    help="town/board: attention per day for looking closely at new objects (default: free)")
+    p.add_argument("--noise", type=float, default=0.0, help="town/board: chance a crop's night outcome flips")
+    p.add_argument("--screen-error", type=float, default=None,
+                   help="town/board: enable the quick 'screen' test, wrong with this probability")
+    p.add_argument("--confounder", action="store_true", help="town/board: rainy nights flood one soil")
+    p.add_argument("--deconfound", action="store_true", help="learned seeds set rainy nights aside")
+    p.add_argument("--skin", default="none", choices=["none", "drug"],
+                   help="LLM agents: the same hidden laws told as another story (drug: compounds, targets, protocols)")
+    p.add_argument("--publication-bias", action="store_true",
+                   help="library notes only from successful towns and successful events")
     p.add_argument("--n-crops", type=int, default=4, help="town/board: crops per universe (law space size)")
     p.add_argument("--hive-modes", nargs="+", default=["isolated", "serial", "groups", "hive", "sync",
                                                        "hive_verified", "hive_directed", "hive_full"],
@@ -72,7 +81,8 @@ def main():
         context=a.context, canvas_chars=a.canvas_chars,
         n_distractors=a.n_distractors, save_traces=a.save_traces, out_dir=a.out, rng_seed=a.rng_seed,
         source_errors=a.source_errors, trusts=a.trusts, team_modes=a.team_modes,
-        n_crops=a.n_crops, zoom_budget=a.zoom_budget, hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty,
+        n_crops=a.n_crops, zoom_budget=a.zoom_budget, noise=a.noise, screen_error=a.screen_error,
+        confounder=a.confounder, deconfound=a.deconfound, publication_bias=a.publication_bias, skin=a.skin, hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty,
         hive_waves=a.hive_waves,
     )
     out = run_experiment(cfg)

@@ -66,6 +66,13 @@ class EpisodeCtx:
     output_tokens: int = 0
     _run_usage: tuple[int, int, int] = (0, 0, 0)
     canvas: Any = None  # worldseeds.canvas.Canvas when the context is a canvas instead of a transcript
+    skin: Any = None  # worldseeds.skin.Skin: the same world told as another story (e.g. drug discovery)
+
+    def out(self, text: str) -> str:
+        return self.skin.out(text) if self.skin is not None else text
+
+    def back(self, text: str | None) -> str | None:
+        return self.skin.back(text) if self.skin is not None else text
 
     def commit_usage(self) -> None:
         r, i, o = self._run_usage
@@ -82,6 +89,7 @@ class _UsageHooks(RunHooks):
 
 
 def _log(ctx: EpisodeCtx, tool: str, args: dict, out: str) -> str:
+    out = ctx.out(out)
     ctx.tool_calls += 1
     ctx.observed_chars += len(out)
     ctx.trace.append({"tool": tool, "args": args, "out": out[:2000]})
@@ -103,7 +111,7 @@ def zoom_in(ctx: RunContextWrapper[EpisodeCtx], target: str) -> str:
     Args:
         target: id of a location, object or component visible at the current focus.
     """
-    return _log(ctx.context, "zoom_in", {"target": target}, ctx.context.world.zoom_in(target))
+    return _log(ctx.context, "zoom_in", {"target": target}, ctx.context.world.zoom_in(ctx.context.back(target)))
 
 
 @function_tool
@@ -121,8 +129,9 @@ async def act(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instru
         target: location id for 'go', otherwise an object or person id shown in your view.
         instrument: id of a held item used as instrument (a key, a tool, seeds, a gift); omit otherwise.
     """
-    w = ctx.context.world
-    msg, _ = w.act(verb, target, instrument)
+    c = ctx.context
+    w = c.world
+    msg, _ = w.act(c.back(verb), c.back(target), c.back(instrument))
     if getattr(w, "team", None) is not None and w.asleep:  # in a team: wait in bed for the next morning
         await w.team.wait_morning(w.i)
         msg += "\n" + ("A new day begins.\n" + w.observe() if not w.done else "")
@@ -153,7 +162,8 @@ def predict(ctx: RunContextWrapper[EpisodeCtx], verb: str, target: str, instrume
     """
     c = ctx.context
     c.predict_calls += 1
-    out = c.seed.predict(c.world, verb, target, instrument) if c.seed else "No world model available."
+    out = c.seed.predict(c.world, c.back(verb), c.back(target), c.back(instrument)) if c.seed else \
+        "No world model available."
     return _log(c, "predict", {"verb": verb, "target": target, "instrument": instrument}, out)
 
 
@@ -166,7 +176,7 @@ def recall(ctx: RunContextWrapper[EpisodeCtx], query: str) -> str:
     """
     c = ctx.context
     c.recall_calls += 1
-    hits = c.retrieval.recall(query) if c.retrieval else []
+    hits = c.retrieval.recall(c.back(query)) if c.retrieval else []
     return _log(c, "recall", {"query": query}, "\n".join(hits) if hits else "(nothing relevant remembered)")
 
 
@@ -180,7 +190,7 @@ def write_note(ctx: RunContextWrapper[EpisodeCtx], shelf: str, text: str) -> str
         text: one short, general lesson about the laws (not about this town's ids).
     """
     w = ctx.context.world
-    msg, _ = w.act("write", shelf, text)
+    msg, _ = w.act("write", ctx.context.back(shelf), text)
     return _log(ctx.context, "write_note", {"shelf": shelf, "text": text}, msg)
 
 
@@ -273,8 +283,8 @@ def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: O
                 "notes with rewrite_notes(text); it replaces them, so write the full notes each time.")
     p = w.prompt_spec()
     view_help = FLAT_HELP if flat else ZOOM_HELP.format(details=p["details"])
-    return BASE_INSTRUCTIONS.format(view_help=view_help, budget=w.max_actions, memory=mem,
-                                    **{k: v for k, v in p.items() if k != "details"})
+    return ctx.out(BASE_INSTRUCTIONS.format(view_help=view_help, budget=w.max_actions, memory=mem,
+                                            **{k: v for k, v in p.items() if k != "details"}))
 
 
 def build_agent(ctx: EpisodeCtx, model, settings, traj=None, oracle=None, flat: bool = False) -> Agent:
@@ -338,7 +348,7 @@ def _canvas_input(recent: int, image: bool = False):
         canvas = data.context.canvas if data.context is not None else None
         if canvas is None:
             return data.model_data
-        text = canvas.render()
+        text = data.context.out(canvas.render())
         if image:
             from .render import canvas_content
 
@@ -379,18 +389,21 @@ async def run_episode(
     max_nudges: int = 3,
     context: str = "transcript",
     canvas_chars: int = 3000,
+    skin: str | None = None,
 ) -> tuple[dict[str, Any], EpisodeCtx]:
     flat = world.eager
     if library is not None and getattr(world, "library", None) is None:
         raise ValueError("library condition: grow the world with library=<LibraryArchive>")
     team = getattr(world, "team", None)
-    ctx = EpisodeCtx(world=world, condition=condition, seed=seed, retrieval=retrieval)
+    from .skin import make_skin
+
+    ctx = EpisodeCtx(world=world, condition=condition, seed=seed, retrieval=retrieval, skin=make_skin(skin))
     if context in ("canvas", "image"):
         from .canvas import Canvas
 
         ctx.canvas = Canvas(world, chars=canvas_chars)
     agent = build_agent(ctx, model, settings, traj=traj, oracle=oracle, flat=flat)
-    run_input: Any = "Begin. Current view:\n" + world.observe()
+    run_input: Any = "Begin. Current view:\n" + ctx.out(world.observe())
     t0 = time.time()
     status, error, nudges, turns_left = "finished", None, 0, max_turns
     hooks, rc = _UsageHooks(), _run_config(history_items, context)
@@ -434,6 +447,7 @@ async def run_episode(
         "notes_written": sum(1 for t in ctx.trace if t["tool"] == "write_note"),
         "observed_tokens": ctx.observed_chars // 4,
         "context": context,
+        "skin": skin or "none",
         **({"canvas_mean_chars": ctx.canvas.rendered_chars // max(1, ctx.canvas.renders),
             "notes_chars": len(ctx.canvas.notes)} if ctx.canvas is not None else {}),
         "llm_requests": ctx.llm_requests,

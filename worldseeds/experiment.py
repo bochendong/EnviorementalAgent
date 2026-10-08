@@ -66,6 +66,15 @@ class ExpConfig:
                                                            "messages", "merged"])
     # perception (town/board): looking closely at a new object costs attention, this much per day (None = free)
     zoom_budget: int | None = None
+    # science realism (town/board): noisy experiments, a cheap noisy screen, a weather confounder, a learner
+    # that sets rainy nights aside, and a library that only publishes successes from successful projects
+    noise: float = 0.0
+    screen_error: float | None = None
+    confounder: bool = False
+    deconfound: bool = False
+    publication_bias: bool = False
+    # LLM agents: tell the same world as another story ("drug": compounds, targets, protocols; worldseeds.skin)
+    skin: str = "none"
     # law space (town/board): crops per universe; > 4 adds crops with their own soil and season laws
     n_crops: int = 4
     # hive protocol: many agents in many worlds at once sharing one memory (worldseeds/hive.py)
@@ -187,14 +196,14 @@ class Runner:
                     world, cond, self.model, self.settings, seed=mem.seed, retrieval=mem.retrieval,
                     traj=mem.traj, oracle=mem.oracle, library=mem.library, max_turns=self.cfg.max_turns,
                     history_items=self.cfg.history_items, context=self.cfg.context,
-                    canvas_chars=self.cfg.canvas_chars,
+                    canvas_chars=self.cfg.canvas_chars, skin=self.cfg.skin,
                 )
                 trace = ctx.trace
         if learn:
             await self.consolidate(world, mem, chain, episode)
         row = {
             "protocol": self.cfg.protocol, "env": self.env.name, "policy": self.cfg.policy, "llm": self.llm_name,
-            "context": self.cfg.context,
+            "context": self.cfg.context, "skin": self.cfg.skin,
             "chain": chain, "condition": cond, "view": "flat" if world.eager else "zoom",
             "variant": variant, "phase": phase, "episode": episode,
             "seed_id": world.seed.id, "seed": world.seed.to_dict(), "composition": world.seed.composition,
@@ -202,6 +211,7 @@ class Runner:
             "goal_index": world.goal_index, "oracle_steps": opt, **metrics,
             **({"perception_spent": world.perception_spent, "zoom_budget": world.zoom_budget}
                if getattr(world, "zoom_budget", None) is not None else {}),
+            **({"screens": world.screens} if getattr(world, "screen_error", None) is not None else {}),
             "time": time.time(), **(extra or {}),
         }
         if mem.seed is not None:
@@ -242,7 +252,11 @@ class Runner:
                 lines = "\n".join(ev.line() for ev in world.events if ev.valid)[-6000:]
                 await llm_consolidate(mem.seed, lines, self.model, self.cons_settings)
         if mem.library is not None:
-            mem.lib_seed.consolidate_events(world.events)
+            if self.cfg.publication_bias:  # only successful projects publish, and only their positive results
+                if world.done:
+                    mem.lib_seed.consolidate_events([e for e in world.events if e.success])
+            else:
+                mem.lib_seed.consolidate_events(world.events)
             mem.lib_seed.worlds_seen += 1
             if mem.source_error is None:
                 mem.library.update_from_seed(mem.lib_seed, episode, author="librarian")
@@ -260,7 +274,14 @@ class Runner:
         c = self.cfg
         if self.env.name == "dungeon":
             return {}
-        return {"zoom_budget": c.zoom_budget} if c.zoom_budget is not None else {}
+        kw = {"zoom_budget": c.zoom_budget} if c.zoom_budget is not None else {}
+        if c.noise:
+            kw["noise"] = c.noise
+        if c.screen_error is not None:
+            kw["screen_error"] = c.screen_error
+        if c.confounder:
+            kw["confounder"] = True
+        return kw
 
     def _grow(self, s, view: str, mem: Memories | None = None):
         kw = {"library": mem.library} if mem is not None and mem.library is not None else {}
@@ -276,7 +297,11 @@ class Runner:
 
     def _mem(self, cond, laws, decay=None, src=None) -> Memories:
         err, trust = src if src else (None, None)
-        return Memories(cond, laws, self.env, self.cfg.decay if decay is None else decay, err, trust)
+        m = Memories(cond, laws, self.env, self.cfg.decay if decay is None else decay, err, trust)
+        for sd in (m.seed, m.lib_seed):
+            if sd is not None and hasattr(sd, "deconfound"):
+                sd.deconfound = self.cfg.deconfound
+        return m
 
     def _chains(self):
         c = self.cfg
@@ -508,7 +533,7 @@ class Runner:
                 outs = await asyncio.gather(*[
                     run_episode(Teammate(team, i), "seed", self.model, self.settings, seed=carried[i],
                                 max_turns=c.max_turns * matched, history_items=c.history_items,
-                                context=c.context, canvas_chars=c.canvas_chars)
+                                context=c.context, canvas_chars=c.canvas_chars, skin=c.skin)
                     for i in range(n)])
                 metrics = team.metrics()
                 for m, _ in outs:

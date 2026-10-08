@@ -62,7 +62,8 @@ def phase_of(tick: int) -> str:
 
 class TownWorld:
     def __init__(self, seed: TownSeed, eager: bool = False, max_actions: int = 60, library=None,
-                 testimony: float | None = None, zoom_budget: int | None = None):
+                 testimony: float | None = None, zoom_budget: int | None = None, noise: float = 0.0,
+                 screen_error: float | None = None, confounder: bool = False):
         self.seed = seed
         self.library = library  # LibraryArchive or None: memory that lives in the town library
         # testimony: None = villagers do not answer questions; else the share of villagers who are
@@ -75,6 +76,15 @@ class TownWorld:
         self.zoom_budget = zoom_budget
         self.zoom_left = zoom_budget
         self.perception_spent = 0
+        # science realism (all off by default):
+        #   noise         each night a crop's outcome flips with this probability (pests, lucky sprouts)
+        #   screen_error  enables 'screen <plot> with <seeds>': a quick test that takes no time but is
+        #                 wrong this often (a cheap in-silico screen vs the slow, exact real experiment)
+        #   confounder    daily weather; on rainy nights one soil floods and kills what grows in it
+        self.noise = noise
+        self.screen_error = screen_error
+        self.confounder = confounder
+        self.screens = 0
         self.pile_page = 0
         self.laws = seed.laws
         self.eager = eager
@@ -429,23 +439,46 @@ class TownWorld:
                 self._sighting()
         return msg
 
+    @property
+    def weather(self) -> str:
+        if not self.confounder:
+            return "fair"
+        return "rainy" if random.Random(_h(self.seed.surface_seed, "weather", self.day)).random() < 0.35 else "sunny"
+
+    @property
+    def flood_soil(self) -> str:
+        """The soil that floods on rainy nights (fixed per universe, hidden)."""
+        return SOILS[_h("flood", *sorted(self.laws.soil_for.items())) % len(SOILS)]
+
     def _night(self, forced: bool = False) -> str:
         reports = []
+        rainy = self.weather == "rainy"
         for p in self.objs.values():
             if p.kind != "plot" or p.state["status"] not in ("planted", "growing"):
                 continue
             crop = p.state["crop"]
-            attrs = dict(self.visible_attrs(p.id), crop=crop, season=self.season, watered=p.state["watered"])
+            watered = p.state["watered"] or rainy  # rain waters every plot
+            attrs = dict(self.visible_attrs(p.id), crop=crop, season=self.season, watered=watered)
+            if self.confounder:
+                attrs["weather"] = self.weather
             if p.fine["soil"] != self.laws.soil_for[crop]:
-                p.state["status"], outcome = "withered", "withered"
-            elif not p.state["watered"]:
+                outcome = "withered"
+            elif not watered:
                 outcome = "dry"
             elif self.laws.season_for[crop] != self.season:
-                p.state["status"], outcome = "dormant", "dormant"
+                outcome = "dormant"
             else:
+                outcome = "ripe" if p.state["stage"] + 1 >= 2 else "growing"
+            if rainy and p.fine["soil"] == self.flood_soil and outcome != "dry":
+                outcome = "withered"  # waterlogged: the confounder
+            if self.noise and outcome != "dry" and \
+                    random.Random(_h(self.seed.surface_seed, "noise", self.day, p.id)).random() < self.noise:
+                outcome = "withered" if outcome in ("growing", "ripe") else (
+                    "ripe" if p.state["stage"] + 1 >= 2 else "growing")
+            if outcome in ("growing", "ripe"):
                 p.state["stage"] += 1
-                p.state["status"] = "ripe" if p.state["stage"] >= 2 else "growing"
-                outcome = p.state["status"]
+            if outcome != "dry":
+                p.state["status"] = outcome
             p.state["watered"] = False
             text = {"withered": f"the {crop} in {p.id} withered", "dry": f"the {crop} in {p.id} was too dry to grow",
                     "dormant": f"the {crop} in {p.id} lies dormant", "growing": f"the {crop} in {p.id} sprouted",
@@ -458,7 +491,7 @@ class TownWorld:
         self.zoom_left = self.zoom_budget
         self._update_schedule()
         self._enter("farm")
-        lead = "Exhausted, you stumble home." if forced else "You sleep."
+        lead = ("Exhausted, you stumble home." if forced else "You sleep.") + (" It rained in the night." if rainy else "")
         return f"{lead} Day {self.day} begins at your farm." + (" Overnight: " + "; ".join(reports) + "." if reports else "")
 
     # ================================================================ queries
@@ -544,6 +577,9 @@ class TownWorld:
             v += ", read board (in the plaza)"
         if self.testimony is not None:
             v += ", ask <villager> (they tell you what their trade has taught them)"
+        if self.screen_error is not None:
+            v += (", screen <plot> with <seeds> (a quick test kit: takes no time, uses an action, and is wrong "
+                  "about one time in " + f"{round(1 / self.screen_error) if self.screen_error else 'never'})")
         return v
 
     def prompt_spec(self) -> dict:
@@ -605,6 +641,7 @@ class TownWorld:
                 f"| holding: {inv} | goal: {self._goal_status()} | actions used {self.actions}/{self.max_actions} "
                 f"| zoom: {'/'.join(['town'] + self.focus)}"
                 + (f" | attention left today {self.zoom_left}/{self.zoom_budget}" if self.zoom_budget is not None else "")
+                + (f" | weather: {self.weather}" if self.confounder else "")
                 + ")")
 
     def _goal_status(self) -> str:
@@ -741,7 +778,7 @@ class TownWorld:
         self.events.append(ev)
         if not valid:
             self.invalid_actions += 1
-        elif verb != "sleep":
+        elif verb not in ("sleep", "screen"):  # a quick screen takes no game time
             # with a team in town (worldseeds.town.team) the clock moves one tick per round of moves
             self._clock_acc += 1
             if self._clock_acc >= self.clock_divisor:
@@ -847,6 +884,19 @@ class TownWorld:
                 parts.append(f"{o.name} accepts the {tool.color} {tool.name} politely, but seems unmoved.")
             ev.effects = [{"liked": liked}]
             return " ".join(parts), liked, True
+        if verb == "screen":
+            if self.screen_error is None:
+                return "You have no test kit.", False, False
+            if o.kind != "plot" or tool is None or tool.kind != "seeds":
+                return "Screen what? Use screen <plot> with <seeds>.", False, False
+            crop = tool.fine["crop"]
+            good = o.fine["soil"] == self.laws.soil_for[crop] and self.laws.season_for[crop] == self.season
+            self.screens += 1
+            r = random.Random(_h(self.seed.surface_seed, "screen", self.screens, o.id, crop)).random()
+            says = good if r >= self.screen_error else not good
+            ev.effects = [{"screen": says, "crop": crop, "season": self.season}]
+            return (f"The quick test suggests {crop} would {'do well' if says else 'not grow'} in {o.id} now. "
+                    "(Quick tests are sometimes wrong.)"), True, True
         if verb == "plant":
             if o.kind != "plot":
                 return "You can only plant in a plot.", False, False
