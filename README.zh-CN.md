@@ -22,6 +22,14 @@ World Seeds 是一个研究环境，研究的是 agent 能不能**弄懂一个�
 实现，可以接任何兼容 OpenAI 接口的模型服务。默认用免费的 **Qwen3-8B，由 vLLM 提供服务**。仓库里有现成的
 SLURM 脚本，可以直接在 Nibi 集群（Compute Canada / Alliance）上跑完整实验。
 
+## 新方向：CodeWorld，开发者 agent 网络
+
+详见 [docs/codeworld.md](docs/codeworld.md)（含中文）。目标是一个 agent 网络：整体知识量超过任何单个 agent 能装下的量，为以后多 agent 并行、跨领域开发打基础。CodeWorld 是一个程序化生成的软件生态：模块暴露函数，签名公开、行为隐藏；项目是功能需求，要用到多个模块的函数；开发者的笔记本容量有限，靠实验或问同事来学规律。它检验一个命题：只有当世界大到一个人装不下时，网络才会胜过等算力的单个 agent，而且前提是网络知道"谁知道什么"。规则开发者的结果：64 个函数、每人能记 16 条规律时，按模块负责人提问的 4 人团队完成 0.96 的项目，拿全队算力的单人 0.32，同一团队随机提问 0.27。
+
+```bash
+python scripts/run_codeworld.py --out results/codeworld/core && python scripts/analyze_codeworld.py results/codeworld/core
+```
+
 ## 环境介绍
 
 **SeedVille（种子镇）** 是一个星露谷风格的小镇：

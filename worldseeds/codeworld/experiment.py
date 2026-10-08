@@ -21,6 +21,7 @@ from .org import Org
 from .world import Universe
 
 VARIANTS = ["solo", "solo_unbounded", "independent", "owners", "directory", "random", "pooled"]
+LLM_VARIANTS = ["solo", "solo_unbounded", "independent", "owners", "directory", "random"]  # no pooled notebook
 
 
 @dataclass
@@ -35,6 +36,9 @@ class CWConfig:
     projects_per_dev: int = 4  # per sprint
     budget: int = 120  # actions per developer per sprint
     learn: bool = True
+    policy: str = "heuristic"  # heuristic | llm (worldseeds/codeworld/llm_agent.py)
+    max_turns: int = 200  # llm: model turns per developer per sprint
+    save_traces: bool = False
     out_dir: str = "results/codeworld"
     seed: int = 0
 
@@ -50,6 +54,17 @@ def run(cfg: CWConfig) -> Path:
     out.mkdir(parents=True, exist_ok=True)
     (out / "config.json").write_text(json.dumps(asdict(cfg), indent=1))
     f = open(out / "codeworld.jsonl", "a")
+    tf = open(out / "traces.jsonl", "a") if cfg.save_traces else None
+    model = settings = None
+    llm_name = "heuristic"
+    if cfg.policy == "llm":
+        import asyncio
+
+        from ..llm import LLMConfig, make_model, make_settings
+        from .llm_agent import llm_sprint
+
+        lc = LLMConfig()
+        model, settings, llm_name = make_model(lc), make_settings(lc), lc.model
     for u in cfg.universes:
         for mods in cfg.modules:
             world = _universe(u, mods, cfg.fns_per_module)
@@ -58,6 +73,8 @@ def run(cfg: CWConfig) -> Path:
                 sprints = [[world.project(rng) for _ in range(cfg.projects_per_dev * n)] for _ in range(cfg.sprints)]
                 for cap in cfg.capacities:
                     for v in cfg.variants:
+                        if cfg.policy == "llm" and v not in LLM_VARIANTS:
+                            continue
                         if v.startswith("solo"):
                             org = Org(world, 1, None if v == "solo_unbounded" else cap, "solo", cfg.learn, cfg.seed)
                             budget = cfg.budget * n  # the team's compute, in one head
@@ -67,11 +84,21 @@ def run(cfg: CWConfig) -> Path:
                             org = Org(world, n, cap, v, cfg.learn, cfg.seed)
                             budget = cfg.budget
                         for s, projects in enumerate(sprints):
-                            m = org.sprint(projects, budget)
+                            if cfg.policy == "llm":
+                                res = asyncio.run(llm_sprint(org, projects, budget, model, settings, cfg.max_turns))
+                                m = res["metrics"]
+                                if tf is not None:
+                                    tf.write(json.dumps({"universe": u, "modules": mods, "capacity": cap, "team": n,
+                                                         "variant": v, "sprint": s + 1, "traces": res["traces"]}) + "\n")
+                            else:
+                                m = org.sprint(projects, budget)
                             row = {"universe": u, "modules": mods, "functions": world.n_functions, "capacity": cap,
                                    "team": n, "variant": v, "sprint": s + 1, "budget_total": budget * len(org.devs),
+                                   "policy": cfg.policy, "llm": llm_name,
                                    "world_over_capacity": world.n_functions / cap, **m, "time": time.time()}
                             f.write(json.dumps(row) + "\n")
                     f.flush()
     f.close()
+    if tf is not None:
+        tf.close()
     return out

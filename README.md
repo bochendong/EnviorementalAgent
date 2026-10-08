@@ -21,6 +21,22 @@ Everything runs on a laptop CPU. LLM agents use the
 OpenAI-compatible server; the default is the free model **Qwen3-8B on vLLM**, and ready-made
 SLURM scripts run the full study on the Nibi cluster (Compute Canada / Alliance).
 
+## New direction: CodeWorld, networks of developer agents
+
+[docs/codeworld.md](docs/codeworld.md). The goal is an agent network whose collective knowledge exceeds
+what one agent can hold, as a base for many agents developing in parallel and across domains. CodeWorld is a
+procedurally generated software ecosystem: modules expose functions with public signatures and hidden
+behaviour, projects are feature requests that need functions of several modules, developers have notebooks
+of limited capacity and learn laws by experiment or by asking teammates. It tests one claim: a network beats
+one agent with the same compute exactly when the world is too big for one head, and only if it knows who
+knows what. With heuristic developers: at 64 functions and notebooks of 16 laws, a team of 4 routing
+questions to module owners finishes 0.96 of its projects, one developer with the team's compute 0.32, and
+the same team asking at random 0.27.
+
+```bash
+python scripts/run_codeworld.py --out results/codeworld/core && python scripts/analyze_codeworld.py results/codeworld/core
+```
+
 ## The environments
 
 **SeedVille** is a small Stardew-style town: your farm, a plaza, a general store, eight

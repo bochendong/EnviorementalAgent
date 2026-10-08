@@ -231,7 +231,7 @@ class Universe:
         lines = []
         for m in modules or self.modules:
             fs = [f for f in self.functions.values() if f.module == m]
-            lines.append(f"{m}: " + "; ".join(f"{f.name.split('.', 1)[1]}: {f.in_type} -> {f.out_type}" for f in fs))
+            lines.append(f"{m}: " + "; ".join(f"{f.name}: {f.in_type} -> {f.out_type}" for f in fs))
         return "\n".join(lines)
 
     @property

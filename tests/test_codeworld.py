@@ -82,3 +82,53 @@ def test_core_experiment_network_beats_equal_compute_solo(tmp_path):
     assert late["owners"] > late["solo"] and late["owners"] >= late["random"]
     assert late["solo_unbounded"] >= late["owners"]
     assert all(r["budget_total"] == 4 * 120 for r in rows)  # every organisation spends the same compute
+
+
+def test_law_parser():
+    from worldseeds.codeworld.llm_agent import parse_law
+
+    assert parse_law("3*x + 5") == Law("affine", 3, 5) and parse_law("7x+1 (mod 101)") == Law("affine", 7, 1)
+    assert parse_law("12*x - 3") == Law("affine", 12, P - 3) and parse_law("x + 4") == Law("affine", 1, 4)
+    assert parse_law("7*x + 1 if x % 3 == 0 else 2*x + 9") == Law("branch", 2, 9, 3, 7, 1)
+    assert parse_law("nonsense") is None and parse_law("4*x if x % 1 == 0 else x") is None
+
+
+def test_scripted_llm_developers():
+    import asyncio
+
+    pytest.importorskip("agents")
+    testing = pytest.importorskip("agents.testing")
+    from agents import ModelSettings
+
+    from worldseeds.codeworld.llm_agent import llm_sprint
+
+    u = Universe(1, n_modules=8, fns_per_module=4)
+    p = u.project(random.Random(3))
+    calls = []
+    for fn in p.target:  # study each function of the answer, write its law down, check, submit
+        calls.append(("study", {"function": fn}))
+        calls.append(("remember", {"function": fn, "law": u.functions[fn].law.describe().replace(" (mod 101)", "")}))
+    x, y = p.examples[0]
+    calls += [("compute", {"program": list(p.target), "x": x}), ("submit", {"program": list(p.target)})]
+    model = testing.ScriptedModel([[testing.function_call(t, a, call_id=f"c{k}")] for k, (t, a) in enumerate(calls)])
+    org = Org(u, 1, 8, "solo")
+    res = asyncio.run(llm_sprint(org, [p], 200, model, ModelSettings(), max_turns=len(calls) + 2))
+    m, trace = res["metrics"], res["traces"][0]["trace"]
+    assert m["done"] == 1 and m["known_union"] == len(set(p.target)) and m["wrong_laws"] == 0
+    assert trace[-2]["out"].startswith(f"{' -> '.join(p.target)} on {x}: {y}") and "Accepted" in trace[-1]["out"]
+    assert m["spent_study"] == 8 * len(p.target) and m["spent_submit"] == 1
+
+    # a team with owners: dev1 asks dev0 about a function dev0 has in its notebook
+    org = Org(u, 2, 8, "owners")
+    fn = p.target[0]
+    org.devs[0].notebook.put(fn, u.functions[fn].law)
+    model = testing.ScriptedModel([[testing.function_call("ask", {"teammate": "dev0", "function": fn}, call_id="a")],
+                                   [testing.function_call("compute", {"program": [fn], "x": 5}, call_id="b")]])
+    from worldseeds.codeworld.llm_agent import Session, run_dev
+
+    org.devs[0].budget = org.devs[1].budget = 50
+    s1 = Session(org, org.devs[1], [p])
+    out = asyncio.run(run_dev(s1, model, ModelSettings(), max_turns=2))
+    assert s1.trace[0]["out"].startswith(f"dev0: {fn} is ")
+    assert f"on 5: {u.functions[fn].law(5)}" in s1.trace[1]["out"]  # the explained law works for this project
+    assert org.devs[0].spent["answer"] == 1 and org.devs[1].spent["ask"] == 1 and out["dev"] == "dev1"
