@@ -39,6 +39,9 @@ def main():
     p.add_argument("--max-turns", type=int, default=120)
     p.add_argument("--concurrency", type=int, default=16)
     p.add_argument("--history-items", type=int, default=40, help="trim agent context to last N items (0=off)")
+    p.add_argument("--context", choices=["transcript", "canvas", "image"], default="transcript",
+                   help="LLM context: trimmed transcript, a multi-resolution memory canvas, or the canvas as images")
+    p.add_argument("--canvas-chars", type=int, default=3000, help="size budget of the memory canvas")
     p.add_argument("--decay", type=float, default=1.0)
     p.add_argument("--n-distractors", type=int, default=2)
     p.add_argument("--save-traces", action="store_true")
@@ -66,6 +69,7 @@ def main():
         protocol=a.protocol, env=a.env, policy=a.policy, conditions=a.conditions, universes=a.universes,
         repeats=a.repeats, views=a.views, n_train=a.n_train, n_test=a.n_test, n_agents=a.n_agents,
         max_actions=a.max_actions, max_turns=a.max_turns, concurrency=a.concurrency, history_items=a.history_items, decay=a.decay,
+        context=a.context, canvas_chars=a.canvas_chars,
         n_distractors=a.n_distractors, save_traces=a.save_traces, out_dir=a.out, rng_seed=a.rng_seed,
         source_errors=a.source_errors, trusts=a.trusts, team_modes=a.team_modes,
         n_crops=a.n_crops, zoom_budget=a.zoom_budget, hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty,

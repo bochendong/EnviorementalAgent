@@ -47,6 +47,7 @@ set_tracing_disabled(True)  # no OpenAI key on Nibi; traces would try to upload
 CONDITIONS = ["none", "trajectory", "retrieval", "seed", "seed_llm", "oracle", "library", "library_flat",
               "testimony"]
 LIBRARY_CONDITIONS = ("library", "library_flat")
+CANVAS_RECENT = 6  # tool-call items kept next to the canvas
 
 
 @dataclass
@@ -64,6 +65,7 @@ class EpisodeCtx:
     input_tokens: int = 0
     output_tokens: int = 0
     _run_usage: tuple[int, int, int] = (0, 0, 0)
+    canvas: Any = None  # worldseeds.canvas.Canvas when the context is a canvas instead of a transcript
 
     def commit_usage(self) -> None:
         r, i, o = self._run_usage
@@ -182,6 +184,19 @@ def write_note(ctx: RunContextWrapper[EpisodeCtx], shelf: str, text: str) -> str
     return _log(ctx.context, "write_note", {"shelf": shelf, "text": text}, msg)
 
 
+@function_tool
+def rewrite_notes(ctx: RunContextWrapper[EpisodeCtx], text: str) -> str:
+    """Rewrite your NOTES on the canvas (they replace the old notes; at most 800 characters). Use them for
+    plans, open questions and lessons you want to keep in view. Costs no action.
+
+    Args:
+        text: the complete new notes.
+    """
+    c = ctx.context
+    out = c.canvas.rewrite_notes(text) if c.canvas is not None else "No canvas in this run."
+    return _log(c, "rewrite_notes", {"text": text}, out)
+
+
 def _stop_when_done(ctx: RunContextWrapper[EpisodeCtx], results) -> ToolsToFinalOutputResult:
     w = ctx.context.world
     if w.done:
@@ -250,6 +265,12 @@ def build_instructions(ctx: EpisodeCtx, traj: TrajectoryMemory | None, oracle: O
                 "their trade has taught them: act('ask', <villager id>). It costs an action. Not everyone is "
                 "right: some villagers are consistently mistaken, so weigh what you hear against what you "
                 "see happen.")
+    if ctx.canvas is not None:
+        mem += ("\nCANVAS MEMORY: you do not see the whole history of this episode. Every step you get a CANVAS "
+                "drawn from what you have perceived: where you are in full detail, places you saw recently by name, "
+                "older places only in outline, the recent events, and your NOTES. Older detail is still in the "
+                "world: go back and look again when you need it. Keep plans, open questions and lessons in your "
+                "notes with rewrite_notes(text); it replaces them, so write the full notes each time.")
     p = w.prompt_spec()
     view_help = FLAT_HELP if flat else ZOOM_HELP.format(details=p["details"])
     return BASE_INSTRUCTIONS.format(view_help=view_help, budget=w.max_actions, memory=mem,
@@ -268,6 +289,8 @@ def build_agent(ctx: EpisodeCtx, model, settings, traj=None, oracle=None, flat: 
         tools.append(write_note)
     if getattr(ctx.world, "team", None) is not None and ctx.world.team.messages:
         tools.append(tell)
+    if ctx.canvas is not None:
+        tools.append(rewrite_notes)
     return Agent[EpisodeCtx](
         name="explorer",
         instructions=build_instructions(ctx, traj, oracle, flat),
@@ -302,10 +325,38 @@ def _trim_history(max_items: int):
     return f
 
 
-def _run_config(history_items: int) -> RunConfig:
+def _canvas_input(recent: int, image: bool = False):
+    """call_model_input_filter for canvas memory: the first message, the canvas (redrawn now from what
+    the agent has perceived) and only the last ``recent`` items, instead of the long transcript.
+    With ``image`` the canvas is rendered into pictures (context as image, worldseeds.render)."""
+
+    def f(data):
+        items = list(data.model_data.input)
+        tail = items[1:][-recent:] if recent > 0 else []
+        while tail and isinstance(tail[0], dict) and tail[0].get("type") == "function_call_output":
+            tail = tail[1:]
+        canvas = data.context.canvas if data.context is not None else None
+        if canvas is None:
+            return data.model_data
+        text = canvas.render()
+        if image:
+            from .render import text_pages_content
+
+            msg = {"role": "user", "content": text_pages_content(text)}
+        else:
+            msg = {"role": "user", "content": text}
+        data.model_data.input = [items[0], msg] + tail
+        return data.model_data
+
+    return f
+
+
+def _run_config(history_items: int, context: str = "transcript") -> RunConfig:
+    flt = _trim_history(history_items) if context == "transcript" else \
+        _canvas_input(CANVAS_RECENT, image=(context == "image"))
     wanted = {
         "tracing_disabled": True,
-        "call_model_input_filter": _trim_history(history_items),
+        "call_model_input_filter": flt,
         "tool_not_found_behavior": "return_error_to_model",
     }
     fields = getattr(RunConfig, "__dataclass_fields__", {})
@@ -326,17 +377,23 @@ async def run_episode(
     max_turns: int = 80,
     history_items: int = 40,
     max_nudges: int = 3,
+    context: str = "transcript",
+    canvas_chars: int = 3000,
 ) -> tuple[dict[str, Any], EpisodeCtx]:
     flat = world.eager
     if library is not None and getattr(world, "library", None) is None:
         raise ValueError("library condition: grow the world with library=<LibraryArchive>")
     team = getattr(world, "team", None)
     ctx = EpisodeCtx(world=world, condition=condition, seed=seed, retrieval=retrieval)
+    if context in ("canvas", "image"):
+        from .canvas import Canvas
+
+        ctx.canvas = Canvas(world, chars=canvas_chars)
     agent = build_agent(ctx, model, settings, traj=traj, oracle=oracle, flat=flat)
     run_input: Any = "Begin. Current view:\n" + world.observe()
     t0 = time.time()
     status, error, nudges, turns_left = "finished", None, 0, max_turns
-    hooks, rc = _UsageHooks(), _run_config(history_items)
+    hooks, rc = _UsageHooks(), _run_config(history_items, context)
     while True:
         result = None
         try:
@@ -376,6 +433,9 @@ async def run_episode(
         "recall_calls": ctx.recall_calls,
         "notes_written": sum(1 for t in ctx.trace if t["tool"] == "write_note"),
         "observed_tokens": ctx.observed_chars // 4,
+        "context": context,
+        **({"canvas_mean_chars": ctx.canvas.rendered_chars // max(1, ctx.canvas.renders),
+            "notes_chars": len(ctx.canvas.notes)} if ctx.canvas is not None else {}),
         "llm_requests": ctx.llm_requests,
         "input_tokens": ctx.input_tokens,
         "output_tokens": ctx.output_tokens,

@@ -48,6 +48,10 @@ class ExpConfig:
     max_turns: int = 120
     concurrency: int = 16
     history_items: int = 40  # 0 = keep the full episode history in context
+    # LLM context: transcript (trimmed history) | canvas (multi-resolution memory canvas + notes, text) |
+    # image (the canvas rendered into pictures, for vision-language models)
+    context: str = "transcript"
+    canvas_chars: int = 3000
     decay: float = 1.0
     n_distractors: int = 2
     save_traces: bool = False
@@ -182,13 +186,15 @@ class Runner:
                 metrics, ctx = await run_episode(
                     world, cond, self.model, self.settings, seed=mem.seed, retrieval=mem.retrieval,
                     traj=mem.traj, oracle=mem.oracle, library=mem.library, max_turns=self.cfg.max_turns,
-                    history_items=self.cfg.history_items,
+                    history_items=self.cfg.history_items, context=self.cfg.context,
+                    canvas_chars=self.cfg.canvas_chars,
                 )
                 trace = ctx.trace
         if learn:
             await self.consolidate(world, mem, chain, episode)
         row = {
             "protocol": self.cfg.protocol, "env": self.env.name, "policy": self.cfg.policy, "llm": self.llm_name,
+            "context": self.cfg.context,
             "chain": chain, "condition": cond, "view": "flat" if world.eager else "zoom",
             "variant": variant, "phase": phase, "episode": episode,
             "seed_id": world.seed.id, "seed": world.seed.to_dict(), "composition": world.seed.composition,
@@ -501,7 +507,8 @@ class Runner:
 
                 outs = await asyncio.gather(*[
                     run_episode(Teammate(team, i), "seed", self.model, self.settings, seed=carried[i],
-                                max_turns=c.max_turns * matched, history_items=c.history_items)
+                                max_turns=c.max_turns * matched, history_items=c.history_items,
+                                context=c.context, canvas_chars=c.canvas_chars)
                     for i in range(n)])
                 metrics = team.metrics()
                 for m, _ in outs:

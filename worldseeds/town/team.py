@@ -26,7 +26,7 @@ from .world import TownWorld
 
 TEAM_NAMES = ["Ana", "Bo", "Cy", "Di"]
 _BODY = ("agent_room", "inventory", "focus", "seen_fine", "actions", "invalid_actions", "zoom_ops", "pile_page",
-         "zoom_left", "perception_spent")
+         "zoom_left", "perception_spent", "visit_log")
 
 
 @dataclass
@@ -40,6 +40,7 @@ class Body:
     invalid_actions: int = 0
     zoom_left: int | None = None
     perception_spent: int = 0
+    visit_log: list = field(default_factory=lambda: ["farm"])
     zoom_ops: int = 0
     pile_page: int = 0
     asleep: bool = False

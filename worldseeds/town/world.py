@@ -86,6 +86,7 @@ class TownWorld:
         self.coins = 0
         self.day, self.tick = 1, 0
         self.agent_room = "farm"
+        self.visit_log: list[str] = []  # places in the order the agent entered them (canvas memory)
         self.focus: list[str] = []
         self.seen_fine: set[str] = set()
         self.events: list[Event] = []
@@ -702,6 +703,7 @@ class TownWorld:
 
     def _enter(self, rid: str) -> None:
         self.agent_room = rid
+        self.visit_log.append(rid)
         self.rooms[rid].visited = True
         self._grow_room(rid)
         self.focus = [rid]
