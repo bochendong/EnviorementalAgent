@@ -49,6 +49,8 @@ def main():
                    default=["solo", "solo_matched", "independent", "library", "messages", "merged"],
                    choices=["solo", "solo_matched", "independent", "library", "messages", "merged"],
                    help="team protocol (board env): how teammates share what they learned")
+    p.add_argument("--zoom-budget", type=int, default=None,
+                   help="town/board: attention per day for looking closely at new objects (default: free)")
     p.add_argument("--n-crops", type=int, default=4, help="town/board: crops per universe (law space size)")
     p.add_argument("--hive-modes", nargs="+", default=["isolated", "serial", "groups", "hive", "sync",
                                                        "hive_verified", "hive_directed", "hive_full"],
@@ -66,7 +68,7 @@ def main():
         max_actions=a.max_actions, max_turns=a.max_turns, concurrency=a.concurrency, history_items=a.history_items, decay=a.decay,
         n_distractors=a.n_distractors, save_traces=a.save_traces, out_dir=a.out, rng_seed=a.rng_seed,
         source_errors=a.source_errors, trusts=a.trusts, team_modes=a.team_modes,
-        n_crops=a.n_crops, hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty,
+        n_crops=a.n_crops, zoom_budget=a.zoom_budget, hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty,
         hive_waves=a.hive_waves,
     )
     out = run_experiment(cfg)

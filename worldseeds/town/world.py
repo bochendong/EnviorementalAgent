@@ -62,7 +62,7 @@ def phase_of(tick: int) -> str:
 
 class TownWorld:
     def __init__(self, seed: TownSeed, eager: bool = False, max_actions: int = 60, library=None,
-                 testimony: float | None = None):
+                 testimony: float | None = None, zoom_budget: int | None = None):
         self.seed = seed
         self.library = library  # LibraryArchive or None: memory that lives in the town library
         # testimony: None = villagers do not answer questions; else the share of villagers who are
@@ -71,6 +71,10 @@ class TownWorld:
         self.liars: set[str] = set()
         self.asked: dict[str, int] = {}
         self.clock_divisor, self._clock_acc = 1, 0
+        # perception budget: looking closely at something new costs attention (None = free); refills at night
+        self.zoom_budget = zoom_budget
+        self.zoom_left = zoom_budget
+        self.perception_spent = 0
         self.pile_page = 0
         self.laws = seed.laws
         self.eager = eager
@@ -450,6 +454,7 @@ class TownWorld:
                                      text, target_attrs=attrs, effects=[{"outcome": outcome}]))
         self.day += 1
         self.tick = 0
+        self.zoom_left = self.zoom_budget
         self._update_schedule()
         self._enter("farm")
         lead = "Exhausted, you stumble home." if forced else "You sleep."
@@ -500,7 +505,8 @@ class TownWorld:
         d = {"id": o.id, "kind": o.kind, "name": o.name}
         if o.color:
             d["color"] = o.color
-        if o.kind in ("item", "crop"):
+        if o.kind in ("item", "crop") and not (self.zoom_budget is not None and oid not in self.seen_fine
+                                                and o.location != "inv"):
             d["category"] = o.fine["category"]
         if o.kind == "seeds":
             d["crop"] = o.fine["crop"]
@@ -565,7 +571,9 @@ class TownWorld:
         if o.kind == "villager":
             return f"{o.id} {o.name} (in {'an' if o.color[0] in 'aeiou' else 'a'} {o.color} shirt)"
         if o.kind in ("item", "crop"):
-            base = f"{o.id} {o.color} {o.name} ({o.fine['category']})"
+            # with a perception budget an item's category is a fine detail: look closer to see it
+            hidden = self.zoom_budget is not None and o.id not in self.seen_fine and o.location != "inv"
+            base = f"{o.id} {o.color} {o.name}" + ("" if hidden else f" ({o.fine['category']})")
         elif o.kind == "seeds":
             base = f"{o.id} packet of {o.name} ({o.state['uses']} left)"
         elif o.kind == "plot":
@@ -594,7 +602,9 @@ class TownWorld:
         inv = ", ".join(self._label(self.objs[i]) for i in self.inventory) or "nothing"
         return (f"(Day {self.day}, {self.season}, {self.phase} [tick {self.tick}/{TICKS_PER_DAY}] | coins {self.coins} "
                 f"| holding: {inv} | goal: {self._goal_status()} | actions used {self.actions}/{self.max_actions} "
-                f"| zoom: {'/'.join(['town'] + self.focus)})")
+                f"| zoom: {'/'.join(['town'] + self.focus)}"
+                + (f" | attention left today {self.zoom_left}/{self.zoom_budget}" if self.zoom_budget is not None else "")
+                + ")")
 
     def _goal_status(self) -> str:
         if self.requests:
@@ -673,6 +683,13 @@ class TownWorld:
             visible = {o.id for o in self.room_objects(cur) if cur == self.agent_room or o.kind != "villager"}
             if target not in visible | set(self.inventory):
                 return f"No '{target}' visible at {cur}.\n" + self.observe()
+            if self.zoom_budget is not None and target not in self.seen_fine:
+                if self.zoom_left <= 0:
+                    return (f"[{self._label(self.objs[target])}] You are too tired to take in the details today "
+                            f"(attention {self.zoom_budget}/{self.zoom_budget} spent; it comes back after a night's "
+                            "sleep).\n" + self.status_line())
+                self.zoom_left -= 1
+                self.perception_spent += 1
             self.focus.append(target)
             return self.observe()
         return "Nothing finer to see here.\n" + self.observe()

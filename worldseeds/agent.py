@@ -56,6 +56,7 @@ class EpisodeCtx:
     seed: SeedMemory | None = None
     retrieval: RetrievalMemory | None = None
     tool_calls: int = 0
+    observed_chars: int = 0  # text the environment returned to the agent (a proxy for observation tokens)
     predict_calls: int = 0
     recall_calls: int = 0
     trace: list[dict] = field(default_factory=list)
@@ -80,6 +81,7 @@ class _UsageHooks(RunHooks):
 
 def _log(ctx: EpisodeCtx, tool: str, args: dict, out: str) -> str:
     ctx.tool_calls += 1
+    ctx.observed_chars += len(out)
     ctx.trace.append({"tool": tool, "args": args, "out": out[:2000]})
     return out
 
@@ -373,6 +375,7 @@ async def run_episode(
         "predict_calls": ctx.predict_calls,
         "recall_calls": ctx.recall_calls,
         "notes_written": sum(1 for t in ctx.trace if t["tool"] == "write_note"),
+        "observed_tokens": ctx.observed_chars // 4,
         "llm_requests": ctx.llm_requests,
         "input_tokens": ctx.input_tokens,
         "output_tokens": ctx.output_tokens,

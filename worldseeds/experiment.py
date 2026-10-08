@@ -60,6 +60,8 @@ class ExpConfig:
     # team protocol (board env): how teammates share what they learned while specialising
     team_modes: list[str] = field(default_factory=lambda: ["solo", "solo_matched", "independent", "library",
                                                            "messages", "merged"])
+    # perception (town/board): looking closely at a new object costs attention, this much per day (None = free)
+    zoom_budget: int | None = None
     # law space (town/board): crops per universe; > 4 adds crops with their own soil and season laws
     n_crops: int = 4
     # hive protocol: many agents in many worlds at once sharing one memory (worldseeds/hive.py)
@@ -192,6 +194,8 @@ class Runner:
             "seed_id": world.seed.id, "seed": world.seed.to_dict(), "composition": world.seed.composition,
             "n_blocks": len(world.seed.blocks), "n_rooms": world.seed.n_rooms,
             "goal_index": world.goal_index, "oracle_steps": opt, **metrics,
+            **({"perception_spent": world.perception_spent, "zoom_budget": world.zoom_budget}
+               if getattr(world, "zoom_budget", None) is not None else {}),
             "time": time.time(), **(extra or {}),
         }
         if mem.seed is not None:
@@ -245,8 +249,16 @@ class Runner:
         if mem.traj is not None:
             mem.traj.add_events(world.events, tag)
 
+    def _env_kw(self) -> dict:
+        """World options that only the town family understands."""
+        c = self.cfg
+        if self.env.name == "dungeon":
+            return {}
+        return {"zoom_budget": c.zoom_budget} if c.zoom_budget is not None else {}
+
     def _grow(self, s, view: str, mem: Memories | None = None):
         kw = {"library": mem.library} if mem is not None and mem.library is not None else {}
+        kw.update(self._env_kw())
         if mem is not None and mem.condition == "testimony":
             kw["testimony"] = mem.source_error or 0.0
         return self.env.grow(s, eager=(view == "flat"), max_actions=self.cfg.max_actions, **kw)
@@ -470,7 +482,8 @@ class Runner:
             lib = LibraryArchive()
             for a in range(n):
                 lib.write_notes(seeds[a], ep, {TEAM_NAMES[a]: 0.0})
-        world = self.env.grow(s, eager=(view == "flat"), max_actions=c.max_actions * matched, library=lib)
+        world = self.env.grow(s, eager=(view == "flat"), max_actions=c.max_actions * matched, library=lib,
+                              **self._env_kw())
         team = Team(world, n, messages=(mode == "messages"), speed=matched if matched > 1 else 0)
         carried = [merged] * n if mode == "merged" else seeds[:n]
         try:

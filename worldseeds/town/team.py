@@ -25,7 +25,8 @@ from dataclasses import dataclass, field
 from .world import TownWorld
 
 TEAM_NAMES = ["Ana", "Bo", "Cy", "Di"]
-_BODY = ("agent_room", "inventory", "focus", "seen_fine", "actions", "invalid_actions", "zoom_ops", "pile_page")
+_BODY = ("agent_room", "inventory", "focus", "seen_fine", "actions", "invalid_actions", "zoom_ops", "pile_page",
+         "zoom_left", "perception_spent")
 
 
 @dataclass
@@ -37,6 +38,8 @@ class Body:
     seen_fine: set = field(default_factory=set)
     actions: int = 0
     invalid_actions: int = 0
+    zoom_left: int | None = None
+    perception_spent: int = 0
     zoom_ops: int = 0
     pile_page: int = 0
     asleep: bool = False
@@ -52,7 +55,7 @@ class Team:
         # speed > 0: the clock moves one tick per ``speed`` actions whatever the team size. A lone agent
         # with speed N and N times the budget is the compute-matched baseline for a team of N.
         self.speed = speed
-        self.bodies = [Body(TEAM_NAMES[i], focus=["farm"]) for i in range(n)]
+        self.bodies = [Body(TEAM_NAMES[i], focus=["farm"], zoom_left=world.zoom_budget) for i in range(n)]
         self.cur: int | None = None
         self._morning: asyncio.Event | None = None
         self.nights = 0
@@ -171,6 +174,7 @@ class Team:
         for i, b in enumerate(self.bodies):
             self.activate(i)
             self.w._enter("farm")
+            self.w.zoom_left = self.w.zoom_budget
             b.asleep = False
         self.activate(cur if cur is not None else 0)
         self._wake()
