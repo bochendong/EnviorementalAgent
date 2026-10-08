@@ -46,9 +46,12 @@ class Body:
 
 
 class Team:
-    def __init__(self, world: TownWorld, n: int, messages: bool = False):
+    def __init__(self, world: TownWorld, n: int, messages: bool = False, speed: int = 0):
         self.w = world
         self.messages = messages  # may teammates message each other (tell)?
+        # speed > 0: the clock moves one tick per ``speed`` actions whatever the team size. A lone agent
+        # with speed N and N times the budget is the compute-matched baseline for a team of N.
+        self.speed = speed
         self.bodies = [Body(TEAM_NAMES[i], focus=["farm"]) for i in range(n)]
         self.cur: int | None = None
         self._morning: asyncio.Event | None = None
@@ -86,7 +89,7 @@ class Team:
         return acts >= self.w.max_actions
 
     def _update_clock(self) -> None:
-        self.w.clock_divisor = max(1, len(self.awake()))
+        self.w.clock_divisor = self.speed or max(1, len(self.awake()))
 
     @property
     def done(self) -> bool:

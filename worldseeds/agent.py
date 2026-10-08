@@ -383,26 +383,38 @@ async def run_episode(
 
 
 # ------------------------------------------------------------------ LLM consolidator
+class LawClaim(BaseModel):
+    law: str = Field(description="a law id from the list of laws")
+    value: str = Field(description="the value you believe this law has (one of the allowed values)")
+
+
 class RuleBook(BaseModel):
     rules: list[str] = Field(description="At most 12 short, general, causal rules about how this universe works.")
+    claims: list[LawClaim] = Field(default_factory=list,
+                                   description="For each law you are fairly sure about, its value.")
 
 
 CONSOLIDATOR_INSTRUCTIONS = """You maintain a compact 'world seed': general causal rules about a universe,
 learned across many different worlds. You receive the current rules and the event log of one more
 episode. Update the rules: keep rules that are confirmed, revise or delete rules contradicted by the
 log, add new general rules supported by the log. Rules must be about laws (e.g. which attribute makes a
-key fit a lock), never about specific object ids or rooms of one world. At most 12 rules."""
+key fit a lock), never about specific object ids or rooms of one world. At most 12 rules.
+Also list, as claims, the value of each law (from the given list) that the evidence so far supports."""
 
 
 async def llm_consolidate(seed: SeedMemory, events_text: str, model, settings) -> list[str]:
     """Free-text consolidation C(S_t, trajectory) -> S_{t+1} with an LLM (Agents SDK structured output)."""
     agent = Agent(name="consolidator", instructions=CONSOLIDATOR_INSTRUCTIONS, model=model,
                   model_settings=settings, output_type=RuleBook)
+    laws = "\n".join(f"- {sp}: one of {', '.join(vals)}" for sp, vals in seed.SPACES.items())
     prompt = "CURRENT RULES:\n" + ("\n".join(f"- {r}" for r in seed.rules) or "(none)") + \
+             "\n\nLAWS YOU CAN STATE (id: allowed values):\n" + laws + \
              "\n\nEPISODE LOG:\n" + events_text
     try:
         res = await Runner.run(agent, prompt, max_turns=2)
         seed.rules = [r.strip() for r in res.final_output.rules][:12]
+        # self-written lessons, kept apart from the evidence and scored against the true laws
+        seed.reflected = [(c.law.strip(), c.value.strip()) for c in res.final_output.claims][:64]
     except Exception:
         pass  # keep previous rules on failure
     return seed.rules

@@ -203,6 +203,9 @@ class TownSeedMemory(LawSeed):
         self.SPACES = dict(TOWN_SPACES)  # per instance: grows with the crops this seed has met
         super().__init__(decay)
 
+    def allowed(self, space: str) -> list[str]:
+        return self.SPACES.get(space) or _crop_space(space) or []
+
     def ensure(self, sp: str) -> bool:
         """Make sure hypothesis space ``sp`` exists (creating crop spaces on demand)."""
         if sp in self.hyps:
@@ -241,6 +244,7 @@ class TownSeedMemory(LawSeed):
             for h, (sup, ag) in hs.items():
                 m.hyps[sp][h] = Hyp(sup, ag)
         m.rules = list(d.get("rules", []))
+        m.reflected = [tuple(c) for c in d.get("reflected", [])]
         m.worlds_seen = d.get("worlds_seen", 0)
         m.events_seen = d.get("events_seen", 0)
         return m

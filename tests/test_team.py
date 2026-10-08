@@ -83,8 +83,8 @@ def test_experiment_team_protocol(tmp_path):
     run_experiment(cfg)
     rows = [json.loads(line) for line in open(tmp_path / "episodes.jsonl")]
     test = [r for r in rows if r["phase"] == "test"]
-    assert {r["variant"] for r in test} == {"solo", "independent", "library", "messages", "merged"}
-    assert all(r["team_size"] == (1 if r["variant"] == "solo" else 2) for r in test)
+    assert {r["variant"] for r in test} == {"solo", "solo_matched", "independent", "library", "messages", "merged"}
+    assert all(r["team_size"] == (1 if r["variant"].startswith("solo") else 2) for r in test)
 
 
 def test_scripted_llm_team_sleeps_and_talks():

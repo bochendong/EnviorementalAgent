@@ -58,12 +58,13 @@ class ExpConfig:
     source_errors: list[float] = field(default_factory=list)
     trusts: list[str] = field(default_factory=lambda: ["blind", "calibrated"])  # heuristic policy only
     # team protocol (board env): how teammates share what they learned while specialising
-    team_modes: list[str] = field(default_factory=lambda: ["solo", "independent", "library", "messages", "merged"])
+    team_modes: list[str] = field(default_factory=lambda: ["solo", "solo_matched", "independent", "library",
+                                                           "messages", "merged"])
     # law space (town/board): crops per universe; > 4 adds crops with their own soil and season laws
     n_crops: int = 4
     # hive protocol: many agents in many worlds at once sharing one memory (worldseeds/hive.py)
-    hive_modes: list[str] = field(default_factory=lambda: ["isolated", "groups", "hive", "sync", "hive_verified",
-                                                           "hive_directed", "hive_full"])
+    hive_modes: list[str] = field(default_factory=lambda: ["isolated", "serial", "groups", "hive", "sync",
+                                                           "hive_verified", "hive_directed", "hive_full"])
     hive_sizes: list[int] = field(default_factory=lambda: [1, 4, 16])
     hive_faulty: list[float] = field(default_factory=lambda: [0.0])
     hive_waves: int = 8
@@ -199,6 +200,9 @@ class Runner:
             row["seed_laws_confident"] = len(known)
             row["seed_laws_correct"] = sum(1 for v in known if v)
             row["seed_rules"] = len(mem.seed.rules)
+            if mem.seed.reflected:
+                ok, bad, inv = mem.seed.reflection_score(mem.laws)
+                row["reflection_correct"], row["reflection_wrong"], row["reflection_invalid"] = ok, bad, inv
         if mem.library is not None:
             correct, scored = mem.library.accuracy(self.env.seed_cls.truth(mem.laws))
             row["library_reads"] = mem.library.reads - reads0
@@ -412,6 +416,7 @@ class Runner:
         towns containing its "home" block (agent a: block a), learning its own seed. Then every test town
         is played once per sharing mode:
             solo         agent 0 alone
+            solo_matched agent 0 alone with the whole team's compute (the compute-matched baseline)
             independent  the whole team, each with its own seed, no communication
             library      + everyone's seed written to the library as signed notes (go there to read)
             messages     + teammates can message each other (tell)
@@ -457,14 +462,16 @@ class Runner:
         from .town.team import TEAM_NAMES, Team, Teammate, run_heuristic_team
 
         c = self.cfg
-        n = 1 if mode == "solo" else len(seeds)
+        n = 1 if mode in ("solo", "solo_matched") else len(seeds)
+        # solo_matched: one agent with the whole team's compute (team-size actions per tick, team-size budget)
+        matched = len(seeds) if mode == "solo_matched" else 1
         lib = None
         if mode == "library":
             lib = LibraryArchive()
             for a in range(n):
                 lib.write_notes(seeds[a], ep, {TEAM_NAMES[a]: 0.0})
-        world = self.env.grow(s, eager=(view == "flat"), max_actions=c.max_actions, library=lib)
-        team = Team(world, n, messages=(mode == "messages"))
+        world = self.env.grow(s, eager=(view == "flat"), max_actions=c.max_actions * matched, library=lib)
+        team = Team(world, n, messages=(mode == "messages"), speed=matched if matched > 1 else 0)
         carried = [merged] * n if mode == "merged" else seeds[:n]
         try:
             opt = self.env.oracle_steps(world.clone())
@@ -481,7 +488,7 @@ class Runner:
 
                 outs = await asyncio.gather(*[
                     run_episode(Teammate(team, i), "seed", self.model, self.settings, seed=carried[i],
-                                max_turns=c.max_turns, history_items=c.history_items)
+                                max_turns=c.max_turns * matched, history_items=c.history_items)
                     for i in range(n)])
                 metrics = team.metrics()
                 for m, _ in outs:
@@ -513,7 +520,7 @@ class Runner:
         te = self.env.seeds_for(test, laws, c.n_test, random.Random(_seed(("hive-test", c.rng_seed, u, r))),
                                 n_distractors=c.n_distractors)
         runs = [(m, n, f) for m in c.hive_modes for n in c.hive_sizes for f in c.hive_faulty
-                if n > 1 or m == "isolated"]
+                if (n > 1 or m == "isolated") and not (m == "serial" and (n == 1 or f))]
         await asyncio.gather(*[self.hive_run(u, view, r, laws, m, n, f, te) for m, n, f in runs])
 
     async def hive_run(self, u, view, r, laws, mode, n, faulty, te) -> None:
@@ -539,22 +546,33 @@ class Runner:
                     blocks = tuple(b for b in self.env.blocks if b in set(s.blocks) | {"farming"})
                     s = replace(s, blocks=blocks, crops=tuple(hv.least_known(laws.crops, 4, rng)))
                 seeds.append(s)
-            mems = []
-            for i in range(n):
-                m = self._mem("seed", laws)
-                m.seed = hv.view(i)
-                mems.append(m)
             worlds = [self._grow(s, view) for s in seeds]
-            rows = await asyncio.gather(*[
-                self.play(w, mems[i], chain, ep + i, "train", variant=variant, learn=False, oracle=False,
-                          extra={**tag, "agent": i, "wave": wv, "agent_faulty": i in hv.faulty},
-                          write=c.policy == "llm" or n <= 16)  # big heuristic hives: wave summaries only
-                for i, w in enumerate(worlds)])
-            for i, w in enumerate(worlds):
-                hv.report(i, w.events)
+            write = c.policy == "llm" or n <= 16  # big heuristic hives: wave summaries only
+            if hv.mode.serial:  # one agent plays the wave's n worlds one after another, learning as it goes
+                rows = []
+                for k, w in enumerate(worlds):
+                    m = self._mem("seed", laws)
+                    m.seed = hv.view(0)
+                    rows.append(await self.play(w, m, chain, ep + k, "train", variant=variant, learn=False,
+                                                oracle=False, extra={**tag, "agent": 0, "wave": wv}, write=write))
+                    hv.report(0, w.events)
+            else:
+                mems = []
+                for i in range(n):
+                    m = self._mem("seed", laws)
+                    m.seed = hv.view(i)
+                    mems.append(m)
+                rows = await asyncio.gather(*[
+                    self.play(w, mems[i], chain, ep + i, "train", variant=variant, learn=False, oracle=False,
+                              extra={**tag, "agent": i, "wave": wv, "agent_faulty": i in hv.faulty}, write=write)
+                    for i, w in enumerate(worlds)])
+                for i, w in enumerate(worlds):
+                    hv.report(i, w.events)
+            stats = hv.take_wave_stats()
             hv.end_wave()
             ep += n
-            known = [Hive.score(hv.view(i), laws) for i in range(0, n, max(1, n // 32))]  # sample of agents
+            agents = [0] if hv.mode.serial else range(0, n, max(1, n // 32))  # a sample of agents
+            known = [Hive.score(hv.view(i), laws) for i in agents]
             await self.rec.write({
                 "protocol": "hive", "phase": "wave", "env": self.env.name, "policy": c.policy, "llm": self.llm_name,
                 "chain": chain, "variant": variant, "universe": u, "repeat": r, **tag, "wave": wv + 1,
@@ -564,7 +582,7 @@ class Runner:
                 "known_global": Hive.score(hv.glob, laws)[0], "wrong_global": Hive.score(hv.glob, laws)[1],
                 "known_collective": Hive.score(hv.collective(), laws)[0],
                 "wrong_collective": Hive.score(hv.collective(), laws)[1],
-                "messages": hv.messages, "syncs": hv.syncs,
+                "messages": hv.messages, "syncs": hv.syncs, **stats,
                 "wave_success": sum(bool(x["success"]) for x in rows) / n,
                 **({"wave_board": sum(x["board_done"] / x["board_total"] for x in rows) / n}
                    if rows and rows[0].get("board_total") else {}),

@@ -64,6 +64,7 @@ class LawSeed:
         self.decay = decay  # <1.0 = recency weighting (helps when laws shift)
         self.hyps: dict[str, dict[str, Hyp]] = {s: {h: Hyp() for h in hs} for s, hs in self.SPACES.items()}
         self.rules: list[str] = []  # free-text rules (LLM consolidator)
+        self.reflected: list[tuple[str, str]] = []  # (law, value) the LLM consolidator claims; scored, not used
         self.worlds_seen = 0
         self.events_seen = 0
 
@@ -101,6 +102,17 @@ class LawSeed:
         margin = b - (max(others) if others else 0.0)
         return h if b >= thresh and n >= min_evidence and margin > 0.1 else None
 
+    def allowed(self, space: str) -> list[str]:
+        return self.SPACES.get(space, [])
+
+    def reflection_score(self, laws) -> tuple[int, int, int]:
+        """(correct, wrong, invalid) among the LLM consolidator's claims about the laws; a claim is
+        invalid when the law does not exist or the value is not one it can take."""
+        truth = self.truth(laws)
+        valid = [(sp, v) for sp, v in self.reflected if sp in truth and v in self.allowed(sp)]
+        ok = sum(1 for sp, v in valid if truth[sp] == v)
+        return ok, len(valid) - ok, len(self.reflected) - len(valid)
+
     def recovery(self, laws) -> dict[str, bool | None]:
         """Per-space: did the seed recover the true law? (None = no confident belief yet)."""
         truth = self.truth(laws)
@@ -132,6 +144,7 @@ class LawSeed:
             "decay": self.decay,
             "hyps": {s: {h: [v.support, v.against] for h, v in hs.items()} for s, hs in self.hyps.items()},
             "rules": self.rules,
+            "reflected": [list(c) for c in self.reflected],
             "worlds_seen": self.worlds_seen,
             "events_seen": self.events_seen,
         }
@@ -143,6 +156,7 @@ class LawSeed:
             for h, (sup, ag) in hs.items():
                 m.hyps[s][h] = Hyp(sup, ag)
         m.rules = list(d.get("rules", []))
+        m.reflected = [tuple(c) for c in d.get("reflected", [])]
         m.worlds_seen = d.get("worlds_seen", 0)
         m.events_seen = d.get("events_seen", 0)
         return m

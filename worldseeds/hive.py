@@ -31,10 +31,12 @@ class HiveMode:
     sync_every: int = 0  # waves between consolidations (0 = never)
     verify: int = 0  # agents that must agree before a law enters the global seed (0 = no check)
     directed: bool = False
+    serial: bool = False  # one agent plays all the worlds one after another (same total experience)
 
 
 HIVE_MODES = {
     "isolated": HiveMode("isolated", group_size=1, sync_every=0),
+    "serial": HiveMode("serial", group_size=1, sync_every=0, serial=True),
     "groups": HiveMode("groups", group_size=4, sync_every=0),
     "hive": HiveMode("hive", group_size=4, sync_every=2),
     "sync": HiveMode("sync", group_size=0, sync_every=1),
@@ -57,6 +59,11 @@ class Hive:
         self.claims: dict[str, dict[str, set[int]]] = {}  # verify: space -> value -> agents who found it
         self.accepted: set[tuple[str, str]] = set()
         self.wave = 0
+        # redundancy: which laws some report has already found (any value), and per-wave tallies
+        self.found: set[str] = set()
+        self.novel_reports = 0  # reports this wave that found at least one law nobody had found before
+        self.novel_laws = 0
+        self.reports = 0
         self.messages = 0  # agent->group reports + group<->consolidator exchanges
         self.syncs = 0
 
@@ -81,6 +88,11 @@ class Hive:
         ep.consolidate_events(events)
         if i in self.faulty:
             ep = self._corrupt(ep, i)
+        new = {sp for sp in ep.hyps if ep.confident(sp) is not None} - self.found
+        self.found |= new
+        self.reports += 1
+        self.novel_laws += len(new)
+        self.novel_reports += bool(new)
         self.local[self.group_of[i]].merge(ep)
         self.messages += 1
         if self.mode.verify:
@@ -103,6 +115,13 @@ class Hive:
             except KeyError:
                 continue
         return bad
+
+    def take_wave_stats(self) -> dict:
+        """Redundancy this wave: share of reports that added nothing new to what the hive had found."""
+        out = {"reports": self.reports, "novel_laws": self.novel_laws,
+               "redundant_share": 1 - self.novel_reports / self.reports if self.reports else 0.0}
+        self.novel_reports = self.novel_laws = self.reports = 0
+        return out
 
     def end_wave(self) -> None:
         self.wave += 1

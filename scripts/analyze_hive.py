@@ -45,10 +45,10 @@ def main():
         if r["phase"] == "test":
             test[(r["env"], r["hive_mode"], r["hive_n"], r["faulty"])].append(r)
     hdr = ["env", "mode", "agents", "faulty", "waves", "laws", "known/agent", "wrong/agent", "known global",
-           "wrong global", "merged raw", "messages", "test success", "test board"]
+           "wrong global", "merged raw", "messages", "redundant", "test success", "test board"]
     print("| " + " | ".join(hdr) + " |")
     print("|" + "---|" * len(hdr))
-    order = ["isolated", "groups", "hive", "sync", "hive_verified", "hive_directed", "hive_full"]
+    order = ["isolated", "serial", "groups", "hive", "sync", "hive_verified", "hive_directed", "hive_full"]
     for key in sorted(by, key=lambda k: (k[0], k[3], order.index(k[1]) if k[1] in order else 99, k[2])):
         rs = by[key]
         last = max(r["wave"] for r in rs)
@@ -59,6 +59,7 @@ def main():
               f"{mean(r['known_agents'] for r in fin):.1f} | {mean(r['wrong_agents'] for r in fin):.1f} | "
               f"{mean(r['known_global'] for r in fin):.1f} | {mean(r['wrong_global'] for r in fin):.1f} | "
               f"{mean(r['known_collective'] for r in fin):.1f} | {mean(r['messages'] for r in fin):.0f} | "
+              f"{mean(r.get('redundant_share', float('nan')) for r in rs):.2f} | "
               f"{mean(bool(r['success']) for r in t):.2f} | {mean(board):.2f} |")
     if a.curve:
         print("\nLaws an average agent knows, per wave:")
