@@ -32,10 +32,20 @@ def town_world(index: int = 1, districts: int = 1, machines: int = 6, shortcuts:
 
 def record(world: Universe, mode: str, team: int, capacity: int | None, sprints: int = 3, budget: int = 120,
            projects_per_dev: int = 4, walk: bool = True, batch: bool = True, seed: int = 0, title: str = "",
-           description: str = "", **buildings) -> dict:
-    """Run ``sprints`` sprints of one organisation and record everything. ``solo`` gets the team's budget."""
+           description: str = "", events=None, **buildings) -> dict:
+    """Run ``sprints`` sprints of one organisation and record everything. ``solo`` gets the team's budget.
+    ``events`` (an EventRates) makes the town change: a copy of the world meets seeded events each sprint."""
     rng = random.Random(f"replay/{seed}/{world.index}/{world.n_functions}/{team}")
-    plan = [[world.project(rng) for _ in range(projects_per_dev * team)] for _ in range(sprints)]
+    sched = None
+    if events is not None and events.any:
+        import copy
+
+        from .events import Schedule
+
+        world, sched = copy.deepcopy(world), Schedule(events, seed)
+        plan = [None] * sprints
+    else:
+        plan = [[world.project(rng) for _ in range(projects_per_dev * team)] for _ in range(sprints)]
     solo = mode in ("solo", "solo_unbounded")
     org = Org(world, 1 if solo else team, None if mode == "solo_unbounded" else capacity,
               "solo" if solo else mode, seed=seed, walk=walk, record=True, batch=batch, **buildings)
@@ -49,15 +59,21 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
                      "look": list(LOOKS[i % len(LOOKS)])} for i, d in enumerate(org.devs)],
            "sprints": []}
     for s, projects in enumerate(plan):
+        happened = []
+        if sched is not None:  # this sprint's events, then the orders customers place after them
+            happened = sched.next(world, s + 1)
+            projects = [world.project(rng) for _ in range(projects_per_dev * team)]
         start = len(org.events)
         books = {d.name: list(d.notebook.laws) for d in org.devs}
-        m = org.sprint(projects, per_dev)
+        m = org.sprint(projects, per_dev, happened)
         n = len(org.devs)
         out["sprints"].append({
             "index": s + 1, "budget": per_dev,
             "projects": [{"id": p.id, "text": p.text(), "in": p.in_type, "out": p.out_type, "examples": p.examples,
                           "target": list(p.target), "dev": org.devs[k % n].name} for k, p in enumerate(projects)],
-            "start_notebooks": books, "events": org.events[start:], "metrics": m})
+            "start_notebooks": books, "events": org.events[start:], "metrics": m,
+            "world_events": happened, "broken": sorted(world.broken), "storm": sorted(world.storm),
+            "demand": world.demand})
     return out
 
 
@@ -79,6 +95,16 @@ def demo_replays(index: int = 1) -> list[dict]:
     reps.append(record(town, "random", 4, 12, sprints=4, board=True, title="Four apprentices and a notice board",
                        description="Nobody is told who knows what, but the board on the plaza lists it: read it once a "
                                    "sprint, then ask the right person."))
+    from .events import EventRates
+
+    weather = EventRates(breakdown=.05, drift=.05, festival=.5, storm=.3, rumor=1.5)
+    for mode, title, desc in (
+            ("owners", "Four masters in a changing town",
+             "Machines break down and get re-tuned, storms make walking slow, festivals change what is wanted. "
+             "Each master notices what happens to its own machines."),
+            ("random", "Four apprentices without masters in a changing town",
+             "The same events, but nobody looks after a workshop: old rules go stale until an order fails.")):
+        reps.append(record(town, mode, 4, 12, sprints=4, events=weather, title=title, description=desc))
     roads = town_world(index, districts=3, shortcuts=True)
     reps.append(record(roads, "owners", 12, 12, sprints=5, projects_per_dev=3, library=True, post=True,
                        title="Three districts with libraries, post offices and forest trails",

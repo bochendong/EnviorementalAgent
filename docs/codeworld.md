@@ -132,6 +132,20 @@ machine at a time pays a heavy coordination tax (39%, 12–14% once questions co
 everything a master knows that the order might need removes it (97–100%). What and how much to say per
 message is a first-class variable.
 
+**Town buildings and events (each a switch, off by default).** `--board`: a notice board on each plaza
+lists who knows which rule; without routing (`random`) apprentices read it once a sprint and ask the right
+person. `--library`: masters write their machines down at the library, anyone can read them there.
+`--post`: ask by letter (no walk; the answer takes `--post-delay` actions). `--shortcuts`: forest trails
+from each farm to its mountain and beach. Seeded random events (`events.py`, the same for every
+organisation): `--breakdown` (a machine out of order for 1–2 sprints), `--drift` (a machine re-tuned: its
+rule changes; whoever learned the old one holds a wrong rule), `--festival` (one finished good four times
+as wanted), `--storm` (walking across an outdoor map costs double), `--rumor` (posts on the board, true or
+false). A master notices what happens to its own machines and posts it; others find out by walking to a
+broken machine, by an order that will not fit (they then doubt what they remember and look again) or from
+the board. First numbers (town, 4 apprentices, walking, one-visit questions, sprints 5–8, universes 1–3):
+with breakdown and drift rates of 0, 0.03 and 0.08 per machine per sprint, a team without masters
+(`random`) delivers 0.63, 0.48 and 0.34 of its orders, a team of masters 1.00, 1.00 and 0.98.
+
 **Watching it.** `web/codeworld.html` (SeedVille Workshops) plays back sprints recorded by the engine, so
 the picture is exactly what happened: the maps drawn as small isometric scenes, workshops as rooms without
 a roof where you see apprentices step up to the machine they study, a light over every machine whose rule
@@ -192,6 +206,8 @@ PILOT=1 bash slurm/submit_codeworld.sh && bash slurm/submit_codeworld.sh && sbat
 **小镇：看得见的 CodeWorld。** 同一个世界换成小镇的说法（`--theme town`）：模块是工坊，函数是工坊里的机器，类型是货物，项目是订单，开发者是学徒，模块负责人是师傅。小镇像星露谷一样由多张相连的地图组成：每个街区有四张——中间的小镇（面包房、诊所）、西边的农场（农场、花店）、北边的山区（矿场、铁匠铺）、南边的海滩（旅店、商店）；小镇东边的路通往下一个街区的农场。地图在出口处相接，缩小后是一整片连续的地形（地图之间是树林，海滩外是海），道路从一张地图延伸到下一张。每张地图 22×14 格，工坊是 6×5 格、只有一扇门的房间，机器靠墙摆放；每个师傅负责同一张地图上的两个工坊。学徒沿最短路线一格一格走，穿过地图出口进入下一张地图，走过的路会记住。`--walk`：研究机器或问人都要走过去，路线上每 16 格花 1 个行动（同一张地图内约 2，相邻地图 3，跨街区 5–10）；`--batch`：去一次师傅那里，师傅把订单可能用到的他的所有机器都讲了。
 
 结果（稳定期完成率）：标准小镇（4 张地图、48 台机器、每人记 12 条、4 个学徒）单人（等算力）0.46，要走路时 0.32；有路由的网络 1.00。三个街区（12 张地图、144 台机器、12 人）：单人 0.01–0.02；一次只问一台机器的网络 0.39，要走路时只剩 0.12–0.14（沟通税）；一次问全的网络 0.97–1.00。每条消息说什么、说多少，是 agent 网络的核心变量。
+
+**建筑与事件（都是开关，默认关闭）。** 公告板（谁懂什么）、图书馆（师傅把规律写下来，任何人都能去读）、邮局（写信提问，不用走路但要等回信）、林间近路。随机事件由种子决定，每种组织遇到的完全一样：机器故障、规律漂移（机器被重新调校，记着旧规律的人就记错了）、节日（某种成品需求翻四倍）、暴风雨（户外地图走路成本翻倍）、谣言（公告板上真假难辨的消息）。师傅能察觉自己机器的变化并贴出告示；其他人要么走过去发现故障，要么订单怎么都对不上时开始怀疑自己记的规律、重新查看。故障和漂移率为 0、0.03、0.08 时，没有师傅的团队完成率 0.63、0.48、0.34，师傅团队 1.00、1.00、0.98。
 
 **界面。** `web/codeworld.html`（SeedVille Workshops）回放引擎记录下来的冲刺：每张地图是一个小小的等距场景，工坊是掀掉屋顶的房间，能看到学徒走到要研究的机器前；有人记得规律的机器上方会亮灯（灯的颜色是那个人的颜色）；提问有连线，每次行走会画出路线；每张订单有一位顾客在广场排队、完成后离开，镇民在路上走动；镜头跟着正在行动的学徒在地图之间切换，也可以手动选任意一张地图或看全部。运行 `python scripts/build_codeworld_web.py` 生成回放，再 `python -m http.server -d web 8000` 打开 `codeworld.html`；`python web/tools/kairoart.py` 重新绘制地图素材。
 

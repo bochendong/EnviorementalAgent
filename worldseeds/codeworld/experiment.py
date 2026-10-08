@@ -44,6 +44,12 @@ class CWConfig:
     post: bool = False  # town: ask by letter (no walk, the answer takes post_delay actions)
     post_delay: int = 3
     shortcuts: bool = False  # town: forest trails from each farm to its mountain and beach
+    # random events (events.py), per sprint; all zero = none (and then every sprint's orders are fixed up front)
+    breakdown: float = 0.0  # per machine: out of order for 1-2 sprints
+    drift: float = 0.0  # per machine: re-tuned, its law changes for good
+    festival: float = 0.0  # chance of a festival (one finished good four times as wanted)
+    storm: float = 0.0  # per outdoor map: walking there costs double
+    rumor: float = 0.0  # expected rumours per sprint on the notice board
     policy: str = "heuristic"  # heuristic | llm (worldseeds/codeworld/llm_agent.py)
     max_turns: int = 200  # llm: model turns per developer per sprint
     save_traces: bool = False
@@ -59,6 +65,32 @@ def _universe(u: int, modules: int, fns: int, theme: str = "software", shortcuts
     # more modules -> more types per level, so a bigger world is also a more varied one
     tpl = 2 if modules <= 8 else 3 if modules <= 16 else 4
     return Universe(u, n_modules=modules, fns_per_module=fns, levels=5, types_per_level=tpl)
+
+
+def _rates(cfg: CWConfig):
+    from .events import EventRates
+
+    return EventRates(cfg.breakdown, cfg.drift, cfg.festival, cfg.storm, cfg.rumor)
+
+
+def _plan(cfg: CWConfig, world: Universe, sprints: list, u: int, mods: int, n: int):
+    """(world, [(orders, events)] per sprint) for one organisation: with events, a fresh copy of the world
+    meets the seeded events and each sprint's orders are drawn after them (the same for every organisation)."""
+    rates = _rates(cfg)
+    if not rates.any:
+        return world, ((p, None) for p in sprints)
+    import copy
+
+    from .events import Schedule
+
+    w, sched = copy.deepcopy(world), Schedule(rates, cfg.seed)
+
+    def gen():
+        for s in range(cfg.sprints):
+            ev = sched.next(w, s + 1)
+            rng = random.Random(f"{cfg.seed}/{u}/{mods}/{n}/sprint{s}")
+            yield [w.project(rng) for _ in range(cfg.projects_per_dev * n)], ev
+    return w, gen()
 
 
 def _buildings(cfg: CWConfig) -> dict:
@@ -91,29 +123,33 @@ def run(cfg: CWConfig) -> Path:
                     for v in cfg.variants:
                         if cfg.policy == "llm" and v not in LLM_VARIANTS:
                             continue
+                        wv, plan = _plan(cfg, world, sprints, u, mods, n)
                         if v.startswith("solo"):
-                            org = Org(world, 1, None if v == "solo_unbounded" else cap, "solo", cfg.learn, cfg.seed,
+                            org = Org(wv, 1, None if v == "solo_unbounded" else cap, "solo", cfg.learn, cfg.seed,
                                       walk=cfg.walk, batch=cfg.batch, **_buildings(cfg))
                             budget = cfg.budget * n  # the team's compute, in one head
                         else:
                             if n < 2:
                                 continue
-                            org = Org(world, n, cap, v, cfg.learn, cfg.seed, walk=cfg.walk, batch=cfg.batch,
+                            org = Org(wv, n, cap, v, cfg.learn, cfg.seed, walk=cfg.walk, batch=cfg.batch,
                                       **_buildings(cfg))
                             budget = cfg.budget
-                        for s, projects in enumerate(sprints):
+                        for s, (projects, events) in enumerate(plan):
                             if cfg.policy == "llm":
+                                org.apply_events(events or [])
                                 res = asyncio.run(llm_sprint(org, projects, budget, model, settings, cfg.max_turns))
                                 m = res["metrics"]
                                 if tf is not None:
                                     tf.write(json.dumps({"universe": u, "modules": mods, "capacity": cap, "team": n,
                                                          "variant": v, "sprint": s + 1, "traces": res["traces"]}) + "\n")
                             else:
-                                m = org.sprint(projects, budget)
+                                m = org.sprint(projects, budget, events)
                             row = {"universe": u, "modules": mods, "functions": world.n_functions, "capacity": cap,
                                    "team": n, "variant": v, "sprint": s + 1, "budget_total": budget * len(org.devs),
                                    "policy": cfg.policy, "llm": llm_name, "theme": cfg.theme, "walk": cfg.walk, "batch": cfg.batch,
                                    "board": cfg.board, "library": cfg.library, "post": cfg.post, "shortcuts": cfg.shortcuts,
+                                   **{k: getattr(cfg, k) for k in ("breakdown", "drift", "festival", "storm", "rumor")},
+                                   "events": len(events or []),
                                    "districts": world.n_districts,
                                    "world_over_capacity": world.n_functions / cap, **m, "time": time.time()}
                             f.write(json.dumps(row) + "\n")

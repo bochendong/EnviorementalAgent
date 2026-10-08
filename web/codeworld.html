@@ -76,6 +76,12 @@ input[type=range] { flex: 1 1 120px; min-width: 0; accent-color: var(--wood); }
 #log { font-size: 16px; line-height: 1.05; max-height: 132px; overflow-y: auto; display: grid; gap: 1px; }
 #log div { color: var(--ink-soft); } #log div:first-child { color: var(--ink); }
 .legend { color: var(--ink-soft); font-size: 15px; margin-top: 4px; }
+#news { position: absolute; left: 12px; right: 12px; top: 10px; background: var(--wood-dark); color: var(--cream); border: 3px solid var(--gold); border-radius: 4px; padding: 4px 10px; font-size: 17px; line-height: 1.1; }
+#news b { color: var(--gold); font-family: var(--font-display); font-weight: 600; }
+#boardPosts { display: grid; gap: 4px; max-height: 200px; overflow-y: auto; font-size: 16px; line-height: 1.05; }
+#boardPosts .post { background: #fff6df; border-left: 4px solid var(--wood); padding: 2px 6px; }
+#boardPosts .post.notice { border-left-color: var(--bad); }
+#boardPosts .post .truth { color: var(--ink-soft); font-size: 14px; }
 #toast { position: absolute; left: 12px; bottom: 12px; background: var(--parchment); color: var(--ink); border: 3px solid var(--wood); border-radius: 4px; padding: 4px 8px; }
 </style>
 </head>
@@ -90,7 +96,7 @@ input[type=range] { flex: 1 1 120px; min-width: 0; accent-color: var(--wood); }
   </header>
   <div class="main">
     <div>
-      <div id="gamebox"><div id="game"></div><div id="toast" hidden></div></div>
+      <div id="gamebox"><div id="game"></div><div id="news" hidden></div><div id="toast" hidden></div></div>
       <div class="panel" style="margin-top:10px">
         <h2>Maps</h2>
         <div class="bar" id="maps"></div>
@@ -123,6 +129,10 @@ input[type=range] { flex: 1 1 120px; min-width: 0; accent-color: var(--wood); }
       <div class="panel">
         <h2>This sprint</h2>
         <div class="stats" id="stats"></div>
+      </div>
+      <div class="panel" id="boardPanel" hidden>
+        <h2>Notice board</h2>
+        <div id="boardPosts"></div>
       </div>
       <div class="panel">
         <h2>Orders</h2>

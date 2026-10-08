@@ -47,6 +47,10 @@ class OutOfBudget(Exception):
     pass
 
 
+class Broken(Exception):
+    """The machine is out of order (this program cannot be made now)."""
+
+
 @dataclass
 class Dev:
     name: str
@@ -59,6 +63,7 @@ class Dev:
     loc: str | None = None
     routes: dict = field(default_factory=dict)  # (from, to) -> the shortest way there, once walked
     board: dict | None = None  # what the notice board said (function -> who knew it) when last read
+    broken: set = field(default_factory=set)  # machines it believes are out of order
 
     def spend(self, kind: str, n: int = 1) -> None:
         if self.budget < n:
@@ -99,6 +104,8 @@ class Org:
         self._relevant: set[str] = set()
         self.board, self.library, self.post, self.post_delay = board, library, post, post_delay
         self.lib: dict = {}  # the library's shelves: function -> law as written down
+        self.notices = {"broken": set(), "repaired": set(), "changed": set()}  # what masters have posted
+        self.stats = {"broken_found": 0, "wrong_deliveries": 0}
         self.record = record
         self.events: list[dict] = []
         self._project: str | None = None
@@ -129,17 +136,55 @@ class Org:
     # ------------------------------------------------------------ knowledge
     def _study(self, dev: Dev, fn: str):
         self._go(dev, self.u.functions[fn].module)
+        if fn in self.u.broken:  # walked there for nothing: it is out of order
+            dev.spend("study")
+            dev.broken.add(fn)
+            self.stats["broken_found"] += 1
+            self._ev("broken_found", dev, fn=fn)
+            raise Broken(fn)
         dev.spend("study", STUDY_COST)
         law = fit({x: self.u.functions[fn].law(x) for x in study_inputs()})
         gone = dev.notebook.put(fn, law)
         self._ev("learn", dev, fn=fn, law=law.describe(), correct=law.table == self.u.functions[fn].law.table,
                  forgot=gone)
-        if self.library and fn not in self.lib and self.u.functions[fn].module in dev.owns:
+        if self.library and self.u.functions[fn].module in dev.owns and (fn not in self.lib or self.lib[fn].table != law.table):
             self._go(dev, self._nearest(dev, "library"))  # a master writes its machines down for everyone
             dev.spend("write")
             self.lib[fn] = law
             self._ev("deposit", dev, fn=fn)
         return law
+
+    def _mine(self, dev: Dev) -> set:
+        """Laws a master trusts without doubt: its own machines (it would have noticed a change)."""
+        if self.mode not in ("owners", "directory"):
+            return set()
+        return {fn for fn in dev.notebook.laws if self.u.functions[fn].module in dev.owns}
+
+    def _own(self, dev: Dev) -> set:
+        return {fn for fn, f in self.u.functions.items() if f.module in dev.owns}
+
+    def apply_events(self, events: list[dict]) -> None:
+        """What the people of the town notice when events happen: a master knows about its own machines (and
+        posts it on the board); everyone else finds out by trying, by a wrong delivery, or from the board."""
+        for e in events:
+            fn = e.get("fn")
+            # only a team with masters (owners, directory) has someone who looks after each workshop
+            owner = self.owner.get(self.u.functions[fn].module) if fn and self.mode in ("owners", "directory") else None
+            if e["kind"] == "breakdown":
+                self.notices["broken"].add(fn)
+                if owner:
+                    owner.broken.add(fn)
+            elif e["kind"] == "repaired":
+                self.notices["broken"].discard(fn)
+                self.notices["repaired"].add(fn)
+                if owner:
+                    owner.broken.discard(fn)
+            elif e["kind"] == "drift":
+                self.notices["changed"].add(fn)
+                if owner and fn in owner.notebook:
+                    del owner.notebook.laws[fn]  # the master will study it again when it matters
+        if events:
+            self._ev("events", self.devs[0], events=events)
 
     def _nearest(self, dev: Dev, kind: str) -> str:
         """The nearest town building of a kind ("library", "post", "board")."""
@@ -182,6 +227,11 @@ class Org:
             if d is not dev:
                 for g in d.notebook.laws:
                     dev.board.setdefault(g, []).append(d.name)
+        dev.broken -= self.notices["repaired"]  # and the masters' notices about their machines
+        dev.broken |= self.notices["broken"]
+        for g in self.notices["changed"]:
+            if g in dev.notebook and g not in self._own(dev):
+                del dev.notebook.laws[g]
         self._ev("board", dev, entries=sum(len(v) for v in dev.board.values()))
 
     def _helper(self, dev: Dev, fn: str):
@@ -238,12 +288,22 @@ class Org:
             return [law(x) for x in xs]
         known = cache.setdefault(fn, {})
         need = [x for x in xs if x not in known]
+        if need and fn in dev.broken:
+            raise Broken(fn)
         if need:
             law = self._read_library(dev, fn, cache)
             if law is not None:
                 return [law(x) for x in xs]
             asked = self.mode == "random" and not self.board  # random asking has walked and asked already
             helper = self._helper(dev, fn)
+            if helper is not None and fn in helper.broken:  # "it is out of order"
+                if not asked:
+                    self._go(dev, helper.loc)
+                    dev.spend("ask")
+                helper.spend("answer")
+                dev.broken.add(fn)
+                self._ev("ask", dev, to=helper.name, fn=fn, answered=True, law="out of order", also=[])
+                raise Broken(fn)
             if helper is not None:  # the teammate explains what the function does (one question, one answer)
                 by_post = (not asked and self.post and self.walk and self.u.map is not None
                            and self._dist(dev.loc, helper.loc) > self.post_delay)
@@ -286,6 +346,23 @@ class Org:
                 c += STUDY_COST
         return c
 
+    def _deliver(self, dev: Dev, project: Project, prog, tried: int, before: int) -> dict:
+        dev.spend("submit")
+        down = [fn for fn in prog if fn in self.u.broken]
+        ok = not down and self.u.table(prog) == self.u.table(project.target)
+        why = {}
+        if down:  # the order could not be made: a machine is out of order
+            dev.broken.update(down)
+            why = {"why": "out of order", "machines": down}
+        elif not ok:  # it came out wrong: some law it relied on is wrong (a machine was re-tuned)
+            self.stats["wrong_deliveries"] += 1
+            for fn in prog:
+                if fn in dev.notebook:
+                    del dev.notebook.laws[fn]
+            why = {"why": "came out wrong"}
+        self._ev("submit", dev, program=list(prog), ok=ok, tried=tried, **why)
+        return {"done": ok, "tried": tried, "actions": sum(dev.spent.values()) - before}
+
     def solve(self, dev: Dev, project: Project) -> dict:
         """Search programs (cheapest first) until one fits the examples, then submit it."""
         cands = self.u.candidates(project.in_type, project.out_type)
@@ -300,19 +377,31 @@ class Org:
         self._project = project.id
         self._ev("start", dev, text=project.text())
         try:
-            for prog in cands:
-                tried += 1
-                vals = xs
-                for k in range(1, len(prog) + 1):
-                    key = prog[:k]
-                    if key not in prefix:
-                        prefix[key] = self.values(dev, prog[k - 1], prefix[prog[:k - 1]], cache)
-                    vals = prefix[key]
-                if vals == want:
-                    dev.spend("submit")
-                    ok = self.u.table(prog) == self.u.table(project.target)
-                    self._ev("submit", dev, program=list(prog), ok=ok, tried=tried)
-                    return {"done": ok, "tried": tried, "actions": sum(dev.spent.values()) - before}
+            for attempt in (0, 1):
+                if attempt:  # nothing fits: something it remembers must be out of date; doubt it, look again
+                    doubted = sorted({fn for c in cands for fn in c if fn in dev.notebook} - self._mine(dev))
+                    if not doubted and not any(isinstance(k, tuple) and k[0] == "law" for k in cache):
+                        break
+                    for fn in doubted:
+                        del dev.notebook.laws[fn]
+                    cache.clear()
+                    prefix = {(): xs}
+                    self._ev("doubt", dev, laws=doubted)
+                for prog in cands:
+                    if dev.broken and any(fn in dev.broken for fn in prog):
+                        continue
+                    tried += 1
+                    vals = xs
+                    try:
+                        for k in range(1, len(prog) + 1):
+                            key = prog[:k]
+                            if key not in prefix:
+                                prefix[key] = self.values(dev, prog[k - 1], prefix[prog[:k - 1]], cache)
+                            vals = prefix[key]
+                    except Broken:
+                        continue
+                    if vals == want:
+                        return self._deliver(dev, project, prog, tried, before)
             self._ev("give_up", dev, reason="no program fits", tried=tried)
             return {"done": False, "tried": tried, "actions": sum(dev.spent.values()) - before, "stuck": True}
         except OutOfBudget:
@@ -327,7 +416,7 @@ class Org:
             self._project = None
 
     # ------------------------------------------------------------ sprints
-    def sprint(self, projects: list[Project], budget: int) -> dict:
+    def sprint(self, projects: list[Project], budget: int, events: list[dict] | None = None) -> dict:
         """Every developer gets ``budget`` actions; projects are handed out round robin and worked on in
         turns (one project per developer per turn) until done or nobody has budget left."""
         for d in self.devs:
@@ -335,6 +424,13 @@ class Org:
             d.board = None
             for k in d.spent:
                 d.spent[k] = 0
+        for k in self.stats:
+            self.stats[k] = 0
+        self.notices["changed"], self.notices["repaired"] = set(), set()
+        masters = self.mode in ("owners", "directory")
+        for d in self.devs:  # who is not the master cannot tell whether it has been repaired since
+            d.broken = {fn for fn in d.broken if masters and self.u.functions[fn].module in d.owns}
+        self.apply_events(events or [])
         queues = [projects[i::len(self.devs)] for i in range(len(self.devs))]
         results = []
         while any(queues):
@@ -371,4 +467,5 @@ class Org:
             else len(next(iter(books))),
             "relearned": sum(nb.relearned for nb in books), "evictions": sum(nb.evictions for nb in books),
             "routes_known": sum(len(d.routes) for d in self.devs) // 2,
+            **self.stats,
         }

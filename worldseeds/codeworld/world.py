@@ -176,6 +176,10 @@ class Universe:
         for f in self.functions.values():
             self.out_of.setdefault(f.in_type, []).append(f)
         self._n_projects = 0
+        # what random events have done to the world this sprint (see events.py)
+        self.broken: dict[str, int] = {}  # machine -> sprints until it is repaired
+        self.demand: dict[str, float] = {}  # good -> how much more often it is ordered
+        self.storm: set[str] = set()  # maps where walking costs double
 
     @staticmethod
     def _law(rng: random.Random, branch_share: float) -> Law:
@@ -265,6 +269,10 @@ class Universe:
                 alive = {o for o in alive if o[x] == tt[x]}
             if alive:
                 continue
+            if self.broken and any(fn in self.broken for fn in target):
+                continue  # customers only order what can be made
+            if self.demand and rng.random() > self.demand.get(t, 1.0) / max(self.demand.values()):
+                continue  # a festival: its good is ordered more often
             self._n_projects += 1
             return Project(f"p{self._n_projects}", in_type, t, examples, target, len(cands))
         raise RuntimeError("could not generate a project; make the universe bigger")
@@ -307,7 +315,9 @@ class Universe:
             return 0
         if self.map is None:
             return 1
-        return self.map.cost(self.map.steps(self.route(a, b)))
+        path = self.route(a, b)
+        storm = sum(1 for _, q in zip(path, path[1:]) if self.map.areas[q[0]].name in self.storm) if self.storm else 0
+        return self.map.cost(self.map.steps(path) + storm)
 
     def _room_at(self, m: str) -> dict:
         if not self.map:

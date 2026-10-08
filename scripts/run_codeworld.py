@@ -39,6 +39,12 @@ def main():
     ap.add_argument("--post", action="store_true", help="town: ask by letter (no walk, answer after --post-delay)")
     ap.add_argument("--post-delay", type=int, default=3)
     ap.add_argument("--shortcuts", action="store_true", help="town: forest trails from each farm to its mountain and beach")
+    for k, h in (("breakdown", "per machine per sprint: out of order for 1-2 sprints"),
+                 ("drift", "per machine per sprint: re-tuned, its law changes"),
+                 ("festival", "per sprint: one finished good four times as wanted"),
+                 ("storm", "per outdoor map per sprint: walking there costs double"),
+                 ("rumor", "expected rumours per sprint on the notice board")):
+        ap.add_argument(f"--{k}", type=float, default=0.0, help=f"random events (town): {h}")
     ap.add_argument("--no-learn", action="store_true", help="developers never learn laws (just run functions)")
     ap.add_argument("--policy", choices=["heuristic", "llm"], default="heuristic",
                     help="llm: developers are LLM agents (WS_BASE_URL / WS_MODEL, see worldseeds/llm.py)")
@@ -51,7 +57,8 @@ def main():
                        capacities=a.capacities, team_sizes=a.team_sizes, variants=a.variants, sprints=a.sprints,
                        projects_per_dev=a.projects_per_dev, budget=a.budget, learn=not a.no_learn, out_dir=a.out,
                        seed=a.seed, theme=a.theme, walk=a.walk, batch=a.batch, board=a.board, library=a.library,
-                       post=a.post, post_delay=a.post_delay, shortcuts=a.shortcuts, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
+                       post=a.post, post_delay=a.post_delay, shortcuts=a.shortcuts,
+                       breakdown=a.breakdown, drift=a.drift, festival=a.festival, storm=a.storm, rumor=a.rumor, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
     print(f"done -> {out}/codeworld.jsonl ; summary: python scripts/analyze_codeworld.py {out}")
 
 

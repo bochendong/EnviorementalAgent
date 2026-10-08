@@ -247,3 +247,33 @@ def test_town_buildings_and_shortcuts():
     org, _ = run(plain, "owners", post=True)
     letters = [e for e in org.events if e["kind"] == "ask" and e.get("by") == "post"]
     assert letters and sum(org.devs[0].spent.values()) >= 0
+
+
+def test_town_events_are_seeded_and_noticed():
+    import copy
+
+    from worldseeds.codeworld.events import EventRates, Schedule
+    from worldseeds.codeworld.replay import town_world
+
+    rates = EventRates(breakdown=.1, drift=.1, festival=1, storm=.5, rumor=2)
+    base = town_world(1)
+    runs = []
+    for _ in range(2):  # the same seed: the same events, whoever meets them
+        w, s = copy.deepcopy(base), Schedule(rates, seed=7)
+        runs.append([s.next(w, k) for k in range(1, 4)])
+    assert runs[0] == runs[1] and any(e["kind"] == "drift" for e in runs[0][0])
+    w, s = copy.deepcopy(base), Schedule(rates, seed=7)
+    ev = s.next(w, 1)
+    drifted = next(e["fn"] for e in ev if e["kind"] == "drift")
+    assert w.functions[drifted].law.table != base.functions[drifted].law.table  # the copy changed, not the base
+    assert {e["good"] for e in ev if e["kind"] == "festival"} == set(w.demand)
+    rng = random.Random(1)
+    orders = [w.project(rng) for _ in range(12)]
+    assert not any(fn in w.broken for p in orders for fn in p.target)  # nobody orders what cannot be made
+    org = Org(w, 4, 12, "owners", walk=True, batch=True)
+    master = org.owner[w.functions[drifted].module]
+    master.notebook.put(drifted, base.functions[drifted].law)  # the old law
+    org.sprint(orders, 120, ev)
+    assert drifted not in master.notebook or master.notebook.laws[drifted].table == w.functions[drifted].law.table
+    broken = [e["fn"] for e in ev if e["kind"] == "breakdown"]
+    assert all(fn in org.owner[w.functions[fn].module].broken for fn in broken)  # masters know their machines

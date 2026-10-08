@@ -171,7 +171,7 @@ class Town extends Phaser.Scene {
     this.sprites = {}; this.shops = {}; this.machines = {}; this.waters = [];
     this.cameras.main.setBackgroundColor("#1f3326");
     const rnd = new Phaser.Math.RandomDataGenerator(["seedville"]);
-    this.titles = [];
+    this.titles = []; this.storms = {};
     this.wild(rnd);
     for (const a of worldMap().areas) this.area(a, rnd);
     this.links = this.add.graphics().setDepth(-2e4);
@@ -313,6 +313,7 @@ class Town extends Phaser.Scene {
         beach: ["umbrella", "crate", "rock"], mountain: ["rock", "bush"] }[theme]));
     }
     for (const w of rooms) this.room(a, w);
+    if (theme !== "town") (this.storms = this.storms || {})[a.name] = this.stormOverlay(a);
     for (const bd of a.buildings || []) this.building(a, bd);
     // the map's name, shown when zoomed out (the maps touch, so the roads themselves are the exits)
     const c = centre(a, W / 2, H / 2);
@@ -355,7 +356,9 @@ class Town extends Phaser.Scene {
       const bulb = this.add.circle(img.x, img.y - 24, 3, 0xffd24a).setStrokeStyle(1, 0x26160e).setDepth(TOP - 3).setVisible(false);
       img.setInteractive({ useHandCursor: true, pixelPerfect: true })
         .on("pointerover", () => toast(machineText(w, m))).on("pointerout", () => toast(null));
-      this.machines[m.name] = { img, bulb };
+      const mark = this.add.text(img.x + 7, img.y - 30, "", { fontFamily: "Pixelify Sans", fontSize: "10px", color: "#fff6df",
+        backgroundColor: "#b23a2a", padding: { x: 2, y: 0 } }).setOrigin(.5, 1).setResolution(4).setDepth(TOP - 2).setVisible(false);
+      this.machines[m.name] = { img, bulb, mark };
     });
     const own = owner(w.module), top = iso(a, r.x + 3, r.y);
     const label = this.add.text(top.x, top.y - 22, `${KIND_TITLE[k]}${own ? " · " + nick(own) : ""}`, {
@@ -515,6 +518,35 @@ class Town extends Phaser.Scene {
     this.time.delayedCall(Math.max(ms, 150), () => m.img.clearTint());
   }
 
+  /* what this sprint's events did: machines out of order or re-tuned, storms over maps */
+  marks() {
+    for (const [fn, m] of Object.entries(this.machines)) {
+      const out = S.broken.has(fn), re = S.drifted.has(fn);
+      m.mark.setVisible(out || re).setText(out ? "✕ broken" : "re-tuned").setBackgroundColor(out ? "#b23a2a" : "#c9a227");
+      if (out) m.img.setTint(0x777777); else m.img.clearTint();
+    }
+    for (const [name, g] of Object.entries(this.storms || {})) g.setVisible(S.storm.has(name));
+  }
+
+  /* rain over one map */
+  stormOverlay(a) {
+    const W = worldMap().W, H = worldMap().H;
+    const c = [iso(a, 0, 0), iso(a, W, 0), iso(a, W, H), iso(a, 0, H)];
+    const box = this.add.container(0, 0).setDepth(TOP - 5).setVisible(false);
+    const g = this.add.graphics();
+    g.fillStyle(0x1b2a44, .35).fillPoints(c.map(p => ({ x: p.x, y: p.y })), true);
+    box.add(g);
+    const rnd = new Phaser.Math.RandomDataGenerator([a.name]);
+    for (let k = 0; k < 90; k++) {
+      const t = rnd.frac(), u = rnd.frac(), p = iso(a, t * W, u * H);
+      const drop = this.add.rectangle(p.x, p.y - 40, 1, 6, 0xbfe6ff, .8);
+      box.add(drop);
+      this.tweens.add({ targets: drop, y: p.y + 4, x: p.x - 6, duration: 700 + rnd.between(0, 400), repeat: -1,
+        delay: rnd.between(0, 700) });
+    }
+    return box;
+  }
+
   /* a light over each machine whose rule someone keeps in mind, in that person's colour */
   bulbs() {
     for (const [fn, m] of Object.entries(this.machines)) {
@@ -542,6 +574,11 @@ function reset() {
   }
   for (const p of sp.projects) S.orders[p.id] = { p, state: "pending", by: p.dev };
   S.log = [];
+  S.worldEvents = sp.world_events || [];
+  S.broken = new Set(sp.broken || []);
+  S.drifted = new Set(S.worldEvents.filter(e => e.kind === "drift").map(e => e.fn));
+  S.storm = new Set(sp.storm || []);
+  for (const e of S.worldEvents) say(eventText(e));
 }
 
 /* apply one event; ms > 0 animates it */
@@ -576,6 +613,18 @@ function apply(e, ms) {
           ((e.forgot || []).length ? ` and forgets ${e.forgot.join(", ")}.` : "."));
       break;
     }
+    case "events":
+      break;
+    case "broken_found":
+      sc.emote(who, "emote_bang", ms);
+      sc.float(who, "out of order!", "#ff8a7a", ms);
+      say(`${nick(who)} finds ${machineName(e.fn)} out of order.`);
+      break;
+    case "doubt":
+      sc.emote(who, "emote_q", ms);
+      sc.float(who, "something has changed…", "#f2d27a", ms);
+      say(`Nothing fits: ${nick(who)} doubts ${e.laws.length ? e.laws.length + " rule" + (e.laws.length > 1 ? "s" : "") + " in mind" : "what it was told"} and looks again.`);
+      break;
     case "read":
       t.read++;
       sc.emote(who, "emote_note", ms);
@@ -612,7 +661,8 @@ function apply(e, ms) {
       t[e.ok ? "done" : "failed"]++;
       sc.emote(who, e.ok ? "emote_heart" : "emote_bang", ms);
       say(e.ok ? `${nick(who)} delivers ${e.project} (${e.program.length} machines, ${e.tried} tried).`
-               : `${nick(who)} delivers ${e.project}, but it is wrong.`);
+               : e.why === "out of order" ? `${nick(who)} cannot deliver ${e.project}: ${e.machines.map(machineName).join(", ")} out of order.`
+               : `${nick(who)} delivers ${e.project}, but it comes out wrong (a rule it knew was out of date).`);
       break;
     case "give_up":
       S.orders[e.project].state = "failed"; S.active[who] = null; t.failed++;
@@ -635,6 +685,7 @@ function seek(n, instant) {
   const last = ev[S.pos - 1];
   S.scene.highlight(last && last.dev);
   S.scene.bulbs();
+  S.scene.marks();
   S.scene.syncCustomers(animate);
   if (last && S.follow) { S.followDev = last.dev; if (!animate) S.scene.follow(last.dev); else if (last.kind !== "walk") S.scene.follow(last.dev); }
   render(last);
@@ -659,10 +710,42 @@ function say(text, minor) { if (!minor || S.speed <= 3) S.log.unshift(text); if 
 function orderText(p) { return `${p.in} → ${p.out}, ${p.target.length} machines`; }
 function toast(text) { const t = $("toast"); t.hidden = !text; if (text) t.textContent = text; }
 
+function machineName(fn) {
+  const ws = workshop(moduleOf(fn)); if (!ws) return fn;
+  const m = ws.w.machines.find(x => x.name === fn);
+  return `${placeTitle(ws.w.module).replace(/^the /, "the ")}'s ${(m && m.title || verbOf(fn)).toLowerCase()}`;
+}
+function eventText(e) {
+  const a = e.area && areaOf(e.area);
+  return {
+    breakdown: () => `${cap(machineName(e.fn))} breaks down (${e.sprints} sprint${e.sprints > 1 ? "s" : ""}).`,
+    repaired: () => `${cap(machineName(e.fn))} is repaired.`,
+    drift: () => `${cap(machineName(e.fn))} is re-tuned: it now works differently.`,
+    festival: () => `Festival! Everyone wants ${e.good} this sprint.`,
+    storm: () => `A storm over ${a ? areaTitle(a) : e.area}: walking there is slow.`,
+    rumor: () => `Rumour on the board: “${e.text}”`,
+  }[e.kind]();
+}
+
 function machineText(w, m) {
   const k = S.run.devs.filter(d => S.books[d.name].includes(m.name)).map(d => d.look[0]);
-  return `${KIND_TITLE[w.kind]} · ${m.title || verbOf(m.name)}: ${m.in} → ${m.out}. ` +
+  const state = S.broken && S.broken.has(m.name) ? " OUT OF ORDER." : S.drifted && S.drifted.has(m.name) ? " Re-tuned this sprint." : "";
+  return `${KIND_TITLE[w.kind]} · ${m.title || verbOf(m.name)}: ${m.in} → ${m.out}.${state} ` +
     (k.length ? `Knows its rule: ${k.join(", ")}.` : "Nobody knows its rule yet.");
+}
+
+/* the sprint's news (top of the map) and the notice board (rumours, masters' notices) */
+function renderNews() {
+  const ev = S.worldEvents || [], big = ev.filter(e => e.kind !== "rumor");
+  $("news").hidden = !big.length;
+  if (big.length) $("news").innerHTML = `<b>Sprint ${sprint().index}</b> · ` + big.map(e => esc(eventText(e))).join(" · ");
+  const rumors = ev.filter(e => e.kind === "rumor"), ended = S.pos >= sprint().events.length;
+  const notices = S.run.mode === "owners" || S.run.mode === "directory" ?
+    ev.filter(e => e.kind === "breakdown" || e.kind === "drift") : [];
+  $("boardPanel").hidden = !rumors.length && !notices.length;
+  $("boardPosts").innerHTML = notices.map(e => `<div class="post notice">${esc(nick(owner(moduleOf(e.fn)) || "") + ": " +
+      (e.kind === "breakdown" ? `my ${machineName(e.fn).split("'s ")[1]} is out of order.` : `my ${machineName(e.fn).split("'s ")[1]} was re-tuned.`))}</div>`)
+    .concat(rumors.map(e => `<div class="post">“${esc(e.text)}” <span class="truth">${ended ? (e.true ? "(true)" : "(false)") : ""}</span></div>`)).join("");
 }
 
 /* the map switcher: every map, how many apprentices are there; follow the action or look around */
@@ -721,6 +804,7 @@ function render(last) {
       `<div class="cap">${book.length}${capacity ? " / " + capacity : ""} rules in mind · ${S.budget[d.name]} actions left</div></div></div>`;
   }).join("");
   renderMaps();
+  renderNews();
   $("log").innerHTML = S.log.slice(0, 40).map(x => `<div>${esc(x)}</div>`).join("");
 }
 function esc(s) { return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
