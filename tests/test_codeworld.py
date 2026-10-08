@@ -223,3 +223,27 @@ def test_town_machines_follow_the_recipe_book():
     assert u.types_at[0] == GOODS_BY_LEVEL[0]
     m = u.layout()["districts"][0]["workshops"][0]["machines"][0]
     assert m["look"] and m["title"][0].isupper()
+
+
+def test_town_buildings_and_shortcuts():
+    from worldseeds.codeworld.replay import town_world
+
+    plain, trails = town_world(1, 3), town_world(1, 3, shortcuts=True)
+    assert trails.distance("oak_farm", "oak_mine") < plain.distance("oak_farm", "oak_mine")  # a forest trail
+    rng = random.Random(4)
+    plan = [[plain.project(rng) for _ in range(36)] for _ in range(4)]
+
+    def run(u, mode, **kw):
+        org = Org(u, 12, 12, mode, walk=True, batch=True, record=True, **kw)
+        ms = [org.sprint(p, 120) for p in plan]
+        return org, sum(m["done"] for m in ms)
+
+    org, done = run(plain, "random", board=True)
+    assert any(e["kind"] == "board" for e in org.events) and done > run(plain, "random")[1]
+    org, done = run(plain, "owners", library=True)
+    assert org.lib and any(e["kind"] == "read" for e in org.events) and any(e["kind"] == "deposit" for e in org.events)
+    assert all(law.table == plain.functions[fn].law.table for fn, law in org.lib.items())
+    assert done > run(plain, "owners")[1]
+    org, _ = run(plain, "owners", post=True)
+    letters = [e for e in org.events if e["kind"] == "ask" and e.get("by") == "post"]
+    assert letters and sum(org.devs[0].spent.values()) >= 0

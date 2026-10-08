@@ -19,6 +19,16 @@ Organisations (``MODES``):
     random       no idea who knows what: ask up to two random teammates, then study yourself
     pooled       one shared notebook for everyone, as big as all notebooks together (no message cost):
                  an upper bound for sharing
+
+Town buildings (each an option, off by default):
+
+    board    a notice board on each town plaza listing who knows which law; without routing (``random``)
+             one can walk there and read it (1 action) once per sprint instead of asking around blindly
+    library  rules written down for everyone: a master deposits its own machines' laws after studying them
+             (walk + 1 action); anyone can read them there (walk + 1, every relevant law in one visit with
+             ``batch``) instead of asking or studying; they stay in working memory for the project
+    post     ask by letter instead of walking over: 1 action, the answer comes after ``post_delay`` actions
+             of waiting (chosen when it is cheaper than the walk)
 """
 
 from __future__ import annotations
@@ -43,10 +53,12 @@ class Dev:
     notebook: Notebook
     owns: set[str] = field(default_factory=set)  # modules
     budget: int = 0
-    spent: dict = field(default_factory=lambda: {"study": 0, "ask": 0, "answer": 0, "submit": 0, "walk": 0})
+    spent: dict = field(default_factory=lambda: {"study": 0, "ask": 0, "answer": 0, "submit": 0, "walk": 0,
+                                                 "letter": 0, "wait": 0, "read": 0, "write": 0})
     home: str | None = None  # the workshop (module) it works in; None = the plaza
     loc: str | None = None
     routes: dict = field(default_factory=dict)  # (from, to) -> the shortest way there, once walked
+    board: dict | None = None  # what the notice board said (function -> who knew it) when last read
 
     def spend(self, kind: str, n: int = 1) -> None:
         if self.budget < n:
@@ -57,7 +69,8 @@ class Dev:
 
 class Org:
     def __init__(self, universe: Universe, n: int, capacity: int | None, mode: str, learn: bool = True,
-                 seed: int = 0, walk: bool = False, record: bool = False, batch: bool = False):
+                 seed: int = 0, walk: bool = False, record: bool = False, batch: bool = False,
+                 board: bool = False, library: bool = False, post: bool = False, post_delay: int = 3):
         if mode not in MODES:
             raise ValueError(f"unknown mode {mode!r}; one of {MODES}")
         self.u, self.mode, self.learn = universe, mode, learn
@@ -84,6 +97,8 @@ class Org:
         # (one visit, many answers) instead of only the one asked about
         self.batch = batch
         self._relevant: set[str] = set()
+        self.board, self.library, self.post, self.post_delay = board, library, post, post_delay
+        self.lib: dict = {}  # the library's shelves: function -> law as written down
         self.record = record
         self.events: list[dict] = []
         self._project: str | None = None
@@ -104,7 +119,7 @@ class Org:
                 way = self.u.route(dev.loc, place)
                 dev.routes[key], dev.routes[(place, dev.loc)] = way, tuple(reversed(way))
             path = dev.routes[key]
-            extra = {"legs": self.u.map.legs(path), "steps": len(path) - 1, "remembered": known}
+            extra = {"legs": self.u.map.legs(path), "steps": self.u.map.steps(path), "remembered": known}
         cost = self.u.distance(dev.loc, place) if self.walk else 0
         if cost:
             dev.spend("walk", cost)
@@ -119,12 +134,74 @@ class Org:
         gone = dev.notebook.put(fn, law)
         self._ev("learn", dev, fn=fn, law=law.describe(), correct=law.table == self.u.functions[fn].law.table,
                  forgot=gone)
+        if self.library and fn not in self.lib and self.u.functions[fn].module in dev.owns:
+            self._go(dev, self._nearest(dev, "library"))  # a master writes its machines down for everyone
+            dev.spend("write")
+            self.lib[fn] = law
+            self._ev("deposit", dev, fn=fn)
         return law
+
+    def _nearest(self, dev: Dev, kind: str) -> str:
+        """The nearest town building of a kind ("library", "post", "board")."""
+        places = [f"{kind}:{d}" for d in range(self.u.n_districts)]
+        return min(places, key=lambda p: (self.u.distance(dev.loc, p) if self.u.map is not None else 0, p))
+
+    def _dist(self, a, b) -> int:
+        return self.u.distance(a, b) if self.walk and self.u.map is not None else 0
+
+    def _read_library(self, dev: Dev, fn: str, cache: dict):
+        """Read ``fn`` (and, with batch, every relevant law on the shelves) at the library, if that is
+        cheaper than studying it or asking its master."""
+        if not self.library or fn not in self.lib:
+            return None
+        lib = self._nearest(dev, "library")
+        cost = self._dist(dev.loc, lib) + 1
+        study = self._dist(dev.loc, self.u.functions[fn].module) + STUDY_COST
+        owner = self.owner[self.u.functions[fn].module]
+        ask = self._dist(dev.loc, owner.loc) + 1 if self.mode in ("owners", "directory") and owner is not dev else study
+        if cost > min(study, ask):
+            return None
+        self._go(dev, lib)
+        dev.spend("read")
+        got = [fn]
+        cache[("law", fn)] = self.lib[fn]
+        if self.batch:
+            for g in sorted(self._relevant):
+                if g != fn and g in self.lib and ("law", g) not in cache and g not in dev.notebook:
+                    cache[("law", g)] = self.lib[g]
+                    got.append(g)
+        self._ev("read", dev, fn=fn, also=got[1:])
+        return self.lib[fn]
+
+    def _read_board(self, dev: Dev) -> None:
+        """Walk to the notice board and note who knows what (once per sprint)."""
+        self._go(dev, self._nearest(dev, "board"))
+        dev.spend("read")
+        dev.board = {}
+        for d in self.devs:
+            if d is not dev:
+                for g in d.notebook.laws:
+                    dev.board.setdefault(g, []).append(d.name)
+        self._ev("board", dev, entries=sum(len(v) for v in dev.board.values()))
 
     def _helper(self, dev: Dev, fn: str):
         """Who to ask about ``fn`` (and whether they must study it first), per the organisation."""
         others = [d for d in self.devs if d is not dev]
         if not others or self.mode in ("solo", "independent", "pooled"):
+            return None
+        if self.mode == "random" and self.board:  # read the board once per sprint, then ask who it names
+            if dev.board is None:
+                self._read_board(dev)
+            names = dev.board.get(fn, [])
+            holders = [d for d in others if d.name in names and d.budget >= 1]
+            holders.sort(key=lambda d: (self._dist(dev.loc, d.loc), d.name))
+            for d in holders[:1]:
+                if fn in d.notebook:
+                    return d
+                self._go(dev, d.loc)  # the board was out of date: they have forgotten it
+                dev.spend("ask")
+                d.spend("answer")
+                self._ev("ask", dev, to=d.name, fn=fn, answered=False)
             return None
         if self.mode == "random":
             for d in self.rng.sample(others, min(2, len(others))):
@@ -162,9 +239,18 @@ class Org:
         known = cache.setdefault(fn, {})
         need = [x for x in xs if x not in known]
         if need:
+            law = self._read_library(dev, fn, cache)
+            if law is not None:
+                return [law(x) for x in xs]
+            asked = self.mode == "random" and not self.board  # random asking has walked and asked already
             helper = self._helper(dev, fn)
             if helper is not None:  # the teammate explains what the function does (one question, one answer)
-                if self.mode != "random":
+                by_post = (not asked and self.post and self.walk and self.u.map is not None
+                           and self._dist(dev.loc, helper.loc) > self.post_delay)
+                if by_post:  # a letter: no walk, but the answer takes a while
+                    dev.spend("letter")
+                    dev.spend("wait", self.post_delay)
+                elif not asked:
                     self._go(dev, helper.loc)
                     dev.spend("ask")
                 helper.spend("answer")
@@ -176,7 +262,8 @@ class Org:
                         if g != fn and g in helper.notebook.laws and ("law", g) not in cache and g not in dev.notebook:
                             cache[("law", g)] = helper.notebook.laws[g]
                             extra.append(g)
-                self._ev("ask", dev, to=helper.name, fn=fn, answered=True, law=law.describe(), also=extra)
+                self._ev("ask", dev, to=helper.name, fn=fn, answered=True, law=law.describe(), also=extra,
+                         **({"by": "post", "delay": self.post_delay} if by_post else {}))
                 return [law(x) for x in xs]
             if self.learn:
                 law = self._study(dev, fn)
@@ -245,6 +332,7 @@ class Org:
         turns (one project per developer per turn) until done or nobody has budget left."""
         for d in self.devs:
             d.budget = budget
+            d.board = None
             for k in d.spent:
                 d.spent[k] = 0
         queues = [projects[i::len(self.devs)] for i in range(len(self.devs))]

@@ -41,8 +41,13 @@ function workshop(module) {
   for (const d of S.run.world.districts) for (const w of d.workshops) if (w.module === module) return { d, w };
   return null;
 }
+const BUILDING_TITLE = { library: "library", post: "post office", board: "notice board" };
 function placeTitle(module) {
   if (!module) return "the plaza";
+  if (module.includes(":")) {
+    const [kind, d] = module.split(":");
+    return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[+d].name) + " " : "the ") + BUILDING_TITLE[kind];
+  }
   const ws = workshop(module); if (!ws) return module;
   const t = KIND_TITLE[ws.w.kind] || cap(ws.w.kind);
   return S.run.world.districts.length > 1 ? `${cap(ws.d.name)} ${t}` : `the ${t.toLowerCase()}`;
@@ -82,6 +87,12 @@ function placeSpot(module, name) {
   if (!module) {
     const p = worldMap().plaza, c = centre(p.area, p.x, p.y);
     return { area: p.area, x: c.x + ((k % 4) - 1.5) * 7, y: c.y + Math.floor(k / 4) * 4 };
+  }
+  if (module.includes(":")) {  // a town building: "library:0", "post:1", "board:0"
+    const [kind, d] = module.split(":");
+    const a = worldMap().areas.find(x => x.theme === "town" && x.district === +d), t = a.places[kind];
+    const c = centre(a, t[0], t[1]);
+    return { area: a.name, x: c.x + ((k % 4) - 1.5) * 6, y: c.y + Math.floor(k / 4) * 3 };
   }
   const { w } = workshop(module), r = w.room;
   const free = [];
@@ -174,15 +185,30 @@ class Town extends Phaser.Scene {
   }
 
   /* the land between and around the maps: woods, and the sea south of the beaches */
+  /* the tiles of every forest trail (a shortcut between two maps), as world tiles */
+  trailTiles() {
+    const m = worldMap(), out = new Map();
+    for (const a of m.areas) for (const e of a.exits) {
+      if ((e.steps || 1) <= 1 || a.name > e.to) continue;
+      const b = areaOf(e.to);
+      const A = [a.offset[0] + e.at[0], a.offset[1] + e.at[1]], B = [b.offset[0] + e.arrive[0], b.offset[1] + e.arrive[1]];
+      const dy = Math.sign(B[1] - A[1]) || 1, dx = Math.sign(B[0] - A[0]) || 1;
+      for (let Y = A[1] + dy; Y !== B[1] + dy; Y += dy) out.set(`${A[0]},${Y}`, [A[0], Y]);
+      for (let X = A[0]; X !== B[0]; X += dx) out.set(`${X},${B[1]}`, [X, B[1]]);
+    }
+    return out;
+  }
+
   wild(rnd) {
-    const m = worldMap(), b = bounds();
+    const m = worldMap(), b = bounds(), trails = this.trailTiles();
     const inside = (X, Y) => m.areas.some(a => X >= a.offset[0] && X < a.offset[0] + m.W && Y >= a.offset[1] && Y < a.offset[1] + m.H);
     const seaY = Math.max(...m.areas.map(a => a.offset[1])) + m.H - 4;
     for (let Y = b.y0; Y <= b.y1; Y++) for (let X = b.x0; X <= b.x1; X++) {
       if (inside(X, Y)) continue;
-      const p = isoG(X, Y), sea = Y >= seaY;
-      const img = this.add.image(p.x, p.y, "k", sea ? "water0" : "g_town").setOrigin(.5, 0).setDepth(-1e4);
+      const p = isoG(X, Y), sea = Y >= seaY, trail = trails.has(`${X},${Y}`);
+      const img = this.add.image(p.x, p.y, "k", sea ? "water0" : trail ? "path_dirt" : "g_town").setOrigin(.5, 0).setDepth(-1e4);
       if (sea) { this.waters.push(img); continue; }
+      if (trail) continue;
       if (rnd.frac() < .5) this.add.image(p.x, p.y + TH, "k", Y < 0 ? "tree_pine" : rnd.pick(["tree_round0", "tree_round1", "tree_pine"]))
         .setOrigin(.5, 1).setDepth(p.y + TH / 2);
     }
@@ -287,11 +313,25 @@ class Town extends Phaser.Scene {
         beach: ["umbrella", "crate", "rock"], mountain: ["rock", "bush"] }[theme]));
     }
     for (const w of rooms) this.room(a, w);
+    for (const bd of a.buildings || []) this.building(a, bd);
     // the map's name, shown when zoomed out (the maps touch, so the roads themselves are the exits)
     const c = centre(a, W / 2, H / 2);
     const title = this.add.text(c.x, c.y, areaTitle(a), { fontFamily: "Pixelify Sans", fontSize: "28px", color: "#fff6df",
       backgroundColor: THEME_BG[theme], padding: { x: 10, y: 3 } }).setOrigin(.5).setResolution(2).setDepth(TOP + 10).setAlpha(.85);
     (this.titles = this.titles || []).push(title);
+  }
+
+  /* a town building (library, post office, notice board) */
+  building(a, bd) {
+    if (bd.kind === "board") { this.stand(a, bd.x, bd.y, "b_board"); return; }
+    const f = this.textures.getFrame("k", `b_${bd.kind}`), p = iso(a, bd.x, bd.y), n = bd.w + bd.h;
+    const img = this.add.image(p.x, p.y, "k", `b_${bd.kind}`)
+      .setOrigin(bd.h / n, (f.height - n * TH / 2) / f.height).setDepth(iso(a, bd.x + bd.w / 2, bd.y + bd.h / 2).y + TH / 2);
+    const top = iso(a, bd.x + bd.w / 2, bd.y);
+    this.add.text(top.x, top.y - 30, { library: "Library", post: "Post office" }[bd.kind], { fontFamily: "Pixelify Sans",
+      fontSize: "10px", color: "#fff6df", backgroundColor: "#4a2a14", padding: { x: 4, y: 1 } })
+      .setOrigin(.5, 1).setResolution(4).setDepth(TOP);
+    return img;
   }
 
   /* something standing on tile (gx, gy): its tile diamond is the bottom 16 rows of the frame */
@@ -392,6 +432,14 @@ class Town extends Phaser.Scene {
     }));
     pts.push({ ...end, jump: false });
     pts.unshift({ x: s.sp.x, y: s.sp.y, area: s.area, jump: false });
+    for (let i = 1; i < legs.length; i++) {  // a forest trail between two maps: follow its corner
+      const a = areaOf(legs[i - 1].area), b = areaOf(legs[i].area);
+      const A = legs[i - 1].path[legs[i - 1].path.length - 1], B = legs[i].path[0];
+      const XA = a.offset[0] + A[0], YA = a.offset[1] + A[1], XB = b.offset[0] + B[0], YB = b.offset[1] + B[1];
+      if (Math.abs(XA - XB) + Math.abs(YA - YB) <= 1) continue;
+      const c = isoG(XA, YB), at = pts.findIndex(p => p.area === legs[i].area);
+      if (at > 0) pts.splice(at, 0, { x: c.x, y: c.y + TH / 2, area: legs[i - 1].area, jump: false });
+    }
     // its route, in its colour, on every map it crosses
     const col = Phaser.Display.Color.HexStringToColor(colorOf(name)).color;
     const g = this.add.graphics().setDepth(-8e3);
@@ -449,6 +497,18 @@ class Town extends Phaser.Scene {
     this.tweens.add({ targets: g, alpha: 0, duration: Math.max(ms * 1.6, 300), onComplete: () => g.destroy() });
   }
 
+  /* a letter: an envelope flies to the master and back */
+  letter(a, b, ms) {
+    if (!ms) return;
+    const A1 = this.sprites[a].sp, B1 = this.sprites[b].sp;
+    const env = this.add.container(A1.x, A1.y - 24).setDepth(TOP + 4);
+    env.add(this.add.rectangle(0, 0, 9, 6, 0xffffff).setStrokeStyle(1, 0x26160e));
+    env.add(this.add.rectangle(0, 0, 2, 2, 0xc8463a));
+    this.tweens.chain({ targets: env, tweens: [
+      { x: B1.x, y: B1.y - 24, duration: Math.max(ms * .45, 200), ease: "Sine.easeInOut" },
+      { x: A1.x, y: A1.y - 24, duration: Math.max(ms * .45, 200), ease: "Sine.easeInOut", onComplete: () => env.destroy() }] });
+  }
+
   flash(fn, ms) {
     const m = this.machines[fn]; if (!m || !ms) return;
     m.img.setTint(0xfff1b0);
@@ -474,7 +534,8 @@ function sprint() { return S.run.sprints[S.sprint]; }
 function reset() {
   const sp = sprint();
   S.books = {}; S.budget = {}; S.loc = {}; S.orders = {}; S.active = {}; S.fresh = {}; S.gone = {};
-  S.tally = { done: 0, failed: 0, study: 0, ask: 0, unanswered: 0, walk: 0, forgot: 0, wrong: 0 };
+  S.tally = { done: 0, failed: 0, study: 0, ask: 0, unanswered: 0, walk: 0, forgot: 0, wrong: 0, read: 0, wrote: 0,
+              board: 0, letters: 0 };
   for (const d of S.run.devs) {
     S.books[d.name] = [...(sp.start_notebooks[d.name] || [])];
     S.budget[d.name] = sp.budget; S.loc[d.name] = d.home; S.fresh[d.name] = null; S.gone[d.name] = [];
@@ -515,14 +576,31 @@ function apply(e, ms) {
           ((e.forgot || []).length ? ` and forgets ${e.forgot.join(", ")}.` : "."));
       break;
     }
+    case "read":
+      t.read++;
+      sc.emote(who, "emote_note", ms);
+      sc.float(who, `library +${1 + (e.also || []).length}`, "#bfe6ff", ms);
+      say(`${nick(who)} reads ${e.fn} at the library` + ((e.also || []).length ? ` and ${e.also.length} more rule${e.also.length > 1 ? "s" : ""}.` : "."));
+      break;
+    case "deposit":
+      t.wrote++;
+      sc.float(who, "wrote it down", "#f2d27a", ms);
+      say(`${nick(who)} writes ${e.fn} down at the library.`);
+      break;
+    case "board":
+      t.board++;
+      sc.emote(who, "emote_q", ms);
+      sc.float(who, `board: ${e.entries}`, "#fff6df", ms);
+      say(`${nick(who)} reads the notice board: ${e.entries} entries of who knows what.`);
+      break;
     case "ask":
       t.ask++; S.budget[e.to] = Math.max(0, (S.budget[e.to] || 0) - 1);
-      sc.link(who, e.to, e.answered, ms);
+      if (e.by === "post") { t.letters++; sc.letter(who, e.to, ms); } else sc.link(who, e.to, e.answered, ms);
       sc.emote(who, "emote_q", ms);
       if (e.answered) {
         sc.time.delayedCall(ms * .4, () => sc.emote(e.to, "emote_note", ms));
         const also = (e.also || []).length;
-        say(`${nick(who)} asks ${nick(e.to)} about ${e.fn}${also ? ` and gets ${also} more rule${also > 1 ? "s" : ""} on the same visit` : ""}.`);
+        say(`${nick(who)} ${e.by === "post" ? "writes to" : "asks"} ${nick(e.to)} about ${e.fn}${also ? ` and gets ${also} more rule${also > 1 ? "s" : ""} ${e.by === "post" ? "in the reply" : "on the same visit"}` : ""}.`);
       } else {
         t.unanswered++;
         sc.time.delayedCall(ms * .4, () => sc.emote(e.to, "emote_dots", ms));
@@ -612,6 +690,8 @@ function render(last) {
     stat(`${S.pos}/${ev.length}`, "steps"),
     stat(t.study, "studied"), stat(`${t.ask}`, `asked${t.unanswered ? ` (${t.unanswered} no idea)` : ""}`),
     stat(t.walk, "walked"),
+    ...(S.run.board || S.run.library || S.run.post ? [stat(t.board, "board reads"), stat(`${t.read}/${t.wrote}`, "library read/wrote"),
+      stat(t.letters, "letters")] : []),
     stat(`${known.size}/${total}`, "rules in heads"), stat(t.forgot, "forgotten"),
     stat(S.pos >= ev.length ? `${Math.round(100 * sp.metrics.done / sp.metrics.projects)}%` : "…", "sprint score"),
   ].join("");

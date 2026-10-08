@@ -39,6 +39,11 @@ class CWConfig:
     theme: str = "software"  # software | town (workshops in districts of 8; modules = 8 x districts)
     walk: bool = False  # town: studying a machine / asking someone means walking there (1 next door, 3 across)
     batch: bool = False  # whoever is asked also explains every other law they know that this project needs
+    board: bool = False  # town: a notice board of who knows what (read it once a sprint)
+    library: bool = False  # town: masters write their laws down at the library, anyone can read them there
+    post: bool = False  # town: ask by letter (no walk, the answer takes post_delay actions)
+    post_delay: int = 3
+    shortcuts: bool = False  # town: forest trails from each farm to its mountain and beach
     policy: str = "heuristic"  # heuristic | llm (worldseeds/codeworld/llm_agent.py)
     max_turns: int = 200  # llm: model turns per developer per sprint
     save_traces: bool = False
@@ -46,14 +51,18 @@ class CWConfig:
     seed: int = 0
 
 
-def _universe(u: int, modules: int, fns: int, theme: str = "software") -> Universe:
+def _universe(u: int, modules: int, fns: int, theme: str = "software", shortcuts: bool = False) -> Universe:
     if theme == "town":
         from .replay import town_world
 
-        return town_world(u, districts=max(1, modules // 8), machines=fns)
+        return town_world(u, districts=max(1, modules // 8), machines=fns, shortcuts=shortcuts)
     # more modules -> more types per level, so a bigger world is also a more varied one
     tpl = 2 if modules <= 8 else 3 if modules <= 16 else 4
     return Universe(u, n_modules=modules, fns_per_module=fns, levels=5, types_per_level=tpl)
+
+
+def _buildings(cfg: CWConfig) -> dict:
+    return {"board": cfg.board, "library": cfg.library, "post": cfg.post, "post_delay": cfg.post_delay}
 
 
 def run(cfg: CWConfig) -> Path:
@@ -74,7 +83,7 @@ def run(cfg: CWConfig) -> Path:
         model, settings, llm_name = make_model(lc), make_settings(lc), lc.model
     for u in cfg.universes:
         for mods in cfg.modules:
-            world = _universe(u, mods, cfg.fns_per_module, cfg.theme)
+            world = _universe(u, mods, cfg.fns_per_module, cfg.theme, cfg.shortcuts)
             for n in cfg.team_sizes:
                 rng = random.Random(f"{cfg.seed}/{u}/{mods}/{n}")
                 sprints = [[world.project(rng) for _ in range(cfg.projects_per_dev * n)] for _ in range(cfg.sprints)]
@@ -84,12 +93,13 @@ def run(cfg: CWConfig) -> Path:
                             continue
                         if v.startswith("solo"):
                             org = Org(world, 1, None if v == "solo_unbounded" else cap, "solo", cfg.learn, cfg.seed,
-                                      walk=cfg.walk, batch=cfg.batch)
+                                      walk=cfg.walk, batch=cfg.batch, **_buildings(cfg))
                             budget = cfg.budget * n  # the team's compute, in one head
                         else:
                             if n < 2:
                                 continue
-                            org = Org(world, n, cap, v, cfg.learn, cfg.seed, walk=cfg.walk, batch=cfg.batch)
+                            org = Org(world, n, cap, v, cfg.learn, cfg.seed, walk=cfg.walk, batch=cfg.batch,
+                                      **_buildings(cfg))
                             budget = cfg.budget
                         for s, projects in enumerate(sprints):
                             if cfg.policy == "llm":
@@ -103,6 +113,7 @@ def run(cfg: CWConfig) -> Path:
                             row = {"universe": u, "modules": mods, "functions": world.n_functions, "capacity": cap,
                                    "team": n, "variant": v, "sprint": s + 1, "budget_total": budget * len(org.devs),
                                    "policy": cfg.policy, "llm": llm_name, "theme": cfg.theme, "walk": cfg.walk, "batch": cfg.batch,
+                                   "board": cfg.board, "library": cfg.library, "post": cfg.post, "shortcuts": cfg.shortcuts,
                                    "districts": world.n_districts,
                                    "world_over_capacity": world.n_functions / cap, **m, "time": time.time()}
                             f.write(json.dumps(row) + "\n")

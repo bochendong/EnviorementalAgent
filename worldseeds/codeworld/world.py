@@ -111,7 +111,7 @@ class Universe:
 
     def __init__(self, index: int = 0, n_modules: int = 8, fns_per_module: int = 4, levels: int = 5,
                  types_per_level: int = 2, branch_share: float = 0.3, popularity: float = 1.0,
-                 theme: str = "software"):
+                 theme: str = "software", shortcuts: bool = False):
         self.index, self.levels, self.theme = index, levels, theme
         rng = random.Random(f"codeworld/{index}/{n_modules}/{fns_per_module}/{levels}/{types_per_level}"
                             + ("" if theme == "software" else f"/{theme}"))
@@ -136,7 +136,8 @@ class Universe:
 
             nd = max(self.district_of.values()) + 1
             self.map = TownMap(nd, [DISTRICTS[d % len(DISTRICTS)] + ("" if d < len(DISTRICTS) else str(d))
-                                    for d in range(nd)], seed=str(index), machines=fns_per_module)
+                                    for d in range(nd)], seed=str(index), machines=fns_per_module,
+                               shortcuts=shortcuts)
             for m in names:
                 self.room[m] = self.map.room_of(self.district_of[m], self.kind_of[m])
         if town:  # goods by level and the machines of each trade come from the recipe book
@@ -288,6 +289,10 @@ class Universe:
         """Where one stands at a place: (area index, x, y) inside a workshop; None is the town plaza."""
         if not place:
             return self.map.plaza
+        if ":" in place:  # a town building: "library:0", "post:1", "board:0"
+            kind, d = place.split(":")
+            a = next(i for i, ar in enumerate(self.map.areas) if ar.theme == "town" and ar.district == int(d))
+            return (a, *self.map.areas[a].places[kind])
         a, r = self.room[place]
         return (a, *r["centre"])
 
@@ -302,7 +307,7 @@ class Universe:
             return 0
         if self.map is None:
             return 1
-        return self.map.cost(len(self.route(a, b)) - 1)
+        return self.map.cost(self.map.steps(self.route(a, b)))
 
     def _room_at(self, m: str) -> dict:
         if not self.map:

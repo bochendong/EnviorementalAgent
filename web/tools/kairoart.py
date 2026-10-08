@@ -400,6 +400,54 @@ def looks():
     return out
 
 
+class Big:
+    """An Iso canvas for a building covering w x h tiles; at(gx, gy) in tile units of 16 px."""
+
+    def __init__(self, w, h, height):
+        self.w, self.h = w, h
+        self.W, self.extra = (w + h) * 16, height + 10
+        self.H = (w + h) * 8 + self.extra
+        self.iso = Iso(self.W, self.H)
+
+    def at(self, gx, gy):
+        return self.h * 16 + gx - gy, self.extra + (gx + gy) // 2
+
+    def box(self, gx, gy, wx, wy, h, pal, windows=None, roof="plain"):
+        ox, oy = self.at(gx, gy)
+        return self.iso.box(ox, oy, wx, wy, h, pal, windows, random.Random(0), roof=roof)
+
+
+def library():
+    b = Big(4, 3, 30)
+    win = lambda a, bb, w, h, base, r, s: (hx("#f2d27a") if 6 <= bb <= 12 and a % 8 in (3, 4, 5) and 2 < a < w - 2 else
+                                           hx("#e8e2d2") if a % 8 == 0 else base)
+    b.box(2, 2, 60, 44, 18, tri("#d8cdb8"), win)
+    ox, oy = b.at(2, 2)
+    b.iso.pyramid(ox, oy - 18, 60, 44, tri("#3f6fc4"), 90)
+    b.box(30, 46, 10, 4, 10, tri("#7a4a26"))  # door
+    c = b.iso.finish()
+    return c
+
+
+def post_office():
+    b = Big(4, 3, 28)
+    win = lambda a, bb, w, h, base, r, s: hx("#7fb6e8") if 6 <= bb <= 11 and a % 9 in (3, 4, 5) and 2 < a < w - 2 else base
+    b.box(2, 2, 60, 44, 16, tri("#c8563a"), win)
+    ox, oy = b.at(2, 2)
+    b.iso.pyramid(ox, oy - 16, 60, 44, tri("#f4f0e6"), 91)
+    b.box(46, 50, 5, 5, 10, tri("#e8584a"))  # the post box
+    return b.iso.finish()
+
+
+def notice_board():
+    t = Thing(22)
+    t.box(4, 7, 2, 2, 18, tri("#7a4a26"))
+    t.box(10, 7, 2, 2, 18, tri("#7a4a26"))
+    t.box(2, 7, 12, 2, 10, tri("#c9955a"), lambda a, b, w, h, base, r, s:
+          hx(["#ffffff", "#f2d27a", "#bfe6ff"][(a // 4) % 3]) if s == "l" and 2 <= b <= 7 and a % 4 in (1, 2) else base)
+    return t.done()
+
+
 def main():
     at = Atlas(1024)
     grounds = {
@@ -442,6 +490,9 @@ def main():
         at.add(f"low_y_{kind}", wall(kind, "y", low=True))
         for v in range(2):
             at.add(f"m_{kind}_{v}", machine(kind, v))
+    at.add("b_library", library())
+    at.add("b_post", post_office())
+    at.add("b_board", notice_board())
     for k, c in looks().items():
         at.add(f"mc_{k}", c)
     at.save(OUT / "kairo.png", OUT / "kairo.json")

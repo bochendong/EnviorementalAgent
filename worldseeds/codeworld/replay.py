@@ -24,24 +24,26 @@ LOOKS = [("Rosa", "red"), ("Tomas", "blue"), ("Ivy", "green"), ("Bram", "orange"
          ("Clara", "orange"), ("Abe", "yellow")]
 
 
-def town_world(index: int = 1, districts: int = 1, machines: int = 6) -> Universe:
+def town_world(index: int = 1, districts: int = 1, machines: int = 6, shortcuts: bool = False) -> Universe:
     """The town-scale CodeWorld: 8 workshops per district, ``machines`` machines each."""
     return Universe(index, n_modules=8 * districts, fns_per_module=machines, levels=5,
-                    types_per_level=3 if districts == 1 else 4, theme="town")
+                    types_per_level=3 if districts == 1 else 4, theme="town", shortcuts=shortcuts)
 
 
 def record(world: Universe, mode: str, team: int, capacity: int | None, sprints: int = 3, budget: int = 120,
            projects_per_dev: int = 4, walk: bool = True, batch: bool = True, seed: int = 0, title: str = "",
-           description: str = "") -> dict:
+           description: str = "", **buildings) -> dict:
     """Run ``sprints`` sprints of one organisation and record everything. ``solo`` gets the team's budget."""
     rng = random.Random(f"replay/{seed}/{world.index}/{world.n_functions}/{team}")
     plan = [[world.project(rng) for _ in range(projects_per_dev * team)] for _ in range(sprints)]
     solo = mode in ("solo", "solo_unbounded")
     org = Org(world, 1 if solo else team, None if mode == "solo_unbounded" else capacity,
-              "solo" if solo else mode, seed=seed, walk=walk, record=True, batch=batch)
+              "solo" if solo else mode, seed=seed, walk=walk, record=True, batch=batch, **buildings)
     per_dev = budget * (team if solo else 1)
     out = {"kind": "codeworld", "title": title or f"{mode}: {team if not solo else 1} apprentice(s)",
            "description": description, "mode": mode, "team": len(org.devs), "capacity": capacity, "walk": walk, "batch": batch,
+           **{k: bool(v) for k, v in buildings.items() if k in ("board", "library", "post")},
+           "shortcuts": bool(world.map and world.map.shortcuts),
            "budget": per_dev, "world": world.layout(),
            "devs": [{"name": d.name, "owns": sorted(d.owns, key=world.modules.index), "home": d.home,
                      "look": list(LOOKS[i % len(LOOKS)])} for i, d in enumerate(org.devs)],
@@ -74,6 +76,14 @@ def demo_replays(index: int = 1) -> list[dict]:
             ("directory", "Four apprentices and a roster of who knows what",
              "Before asking, they look up who has the machine's rule in mind.")):
         reps.append(record(town, mode, 4, 12, sprints=4, title=title, description=desc))
+    reps.append(record(town, "random", 4, 12, sprints=4, board=True, title="Four apprentices and a notice board",
+                       description="Nobody is told who knows what, but the board on the plaza lists it: read it once a "
+                                   "sprint, then ask the right person."))
+    roads = town_world(index, districts=3, shortcuts=True)
+    reps.append(record(roads, "owners", 12, 12, sprints=5, projects_per_dev=3, library=True, post=True,
+                       title="Three districts with libraries, post offices and forest trails",
+                       description="Masters write their machines down at the library; far questions go by letter; "
+                                   "trails through the woods join each farm to its mountain and beach."))
     big = town_world(index, districts=3)
     for mode, title, desc in (
             ("solo", "Three districts, one apprentice", "144 machines for one head of 12 laws."),

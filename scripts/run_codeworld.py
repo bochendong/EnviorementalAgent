@@ -34,6 +34,11 @@ def main():
     ap.add_argument("--walk", action="store_true", help="town: walking to a workshop or a teammate costs actions")
     ap.add_argument("--batch", action="store_true",
                     help="whoever is asked also explains every other law they know that the project needs")
+    ap.add_argument("--board", action="store_true", help="town: a notice board of who knows what")
+    ap.add_argument("--library", action="store_true", help="town: laws written down at the library for everyone")
+    ap.add_argument("--post", action="store_true", help="town: ask by letter (no walk, answer after --post-delay)")
+    ap.add_argument("--post-delay", type=int, default=3)
+    ap.add_argument("--shortcuts", action="store_true", help="town: forest trails from each farm to its mountain and beach")
     ap.add_argument("--no-learn", action="store_true", help="developers never learn laws (just run functions)")
     ap.add_argument("--policy", choices=["heuristic", "llm"], default="heuristic",
                     help="llm: developers are LLM agents (WS_BASE_URL / WS_MODEL, see worldseeds/llm.py)")
@@ -45,7 +50,8 @@ def main():
     out = run(CWConfig(universes=a.universes, modules=a.modules, fns_per_module=a.fns_per_module,
                        capacities=a.capacities, team_sizes=a.team_sizes, variants=a.variants, sprints=a.sprints,
                        projects_per_dev=a.projects_per_dev, budget=a.budget, learn=not a.no_learn, out_dir=a.out,
-                       seed=a.seed, theme=a.theme, walk=a.walk, batch=a.batch, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
+                       seed=a.seed, theme=a.theme, walk=a.walk, batch=a.batch, board=a.board, library=a.library,
+                       post=a.post, post_delay=a.post_delay, shortcuts=a.shortcuts, policy=a.policy, max_turns=a.max_turns, save_traces=a.save_traces))
     print(f"done -> {out}/codeworld.jsonl ; summary: python scripts/analyze_codeworld.py {out}")
 
 

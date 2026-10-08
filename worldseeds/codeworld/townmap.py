@@ -15,17 +15,21 @@ Tile codes::
     .  ground (grass, sand or dirt by theme)   =  path        p  plaza       b  bridge or pier
     ~  water      ^  rock      T  tree      f  field      h  house      o  small decoration     F  fountain
     w  workshop wall      i  workshop floor      m  machine      d  workshop door
+    L  library    O  post office    B  notice board        (buildings of the town; one stands in front of them)
+
+Shortcuts (``shortcuts=True``) add forest trails from each farm to its district's mountain and beach.
 """
 
 from __future__ import annotations
 
+import heapq
 import math
 import random
-from collections import deque
 from functools import lru_cache
 
 W, H = 22, 14
 TILES_PER_ACTION = 16
+TRAIL = 6  # length of a forest trail (shortcut), in tiles
 WALKABLE = set(".=pbid")
 THEMES = ["town", "farm", "beach", "mountain"]
 AREA_KINDS = {"town": ["bakery", "clinic"], "farm": ["farm", "florist"], "beach": ["inn", "shop"],
@@ -45,11 +49,15 @@ def room_tiles(x0: int, y0: int):
 
 
 class Area:
-    def __init__(self, name: str, theme: str, district: int, rng: random.Random, machines: int = 6):
+    def __init__(self, name: str, theme: str, district: int, rng: random.Random, machines: int = 6,
+                 shortcuts: bool = False):
         self.name, self.theme, self.district, self.n_machines = name, theme, district, machines
+        self.shortcuts = shortcuts
         self.g = [["."] * W for _ in range(H)]
         self.rooms: list[dict] = []  # {"kind", "x", "y", "door", "centre", "machines"}
-        self.exits: list[dict] = []  # {"to": area index, "at": (x, y), "arrive": (x, y)}
+        self.exits: list[dict] = []  # {"to": area index, "at": (x, y), "arrive": (x, y), "steps": n}
+        self.places: dict[str, tuple[int, int]] = {}  # library / post / board -> where one stands
+        self.buildings: list[dict] = []  # {"kind", "x", "y", "w", "h"} (drawn by the client)
         getattr(self, "_" + theme)(rng)
 
     # ------------------------------------------------------------ drawing helpers
@@ -73,6 +81,14 @@ class Area:
         self.put(*door, "d")
         self.put(door[0], door[1] + 1, "=")
         self.rooms.append({"kind": kind, "x": x0, "y": y0, "door": door, "centre": centre, "machines": machines})
+
+    def building(self, kind, code, x0, y0, w, h, stand, lane=()):
+        self.rect(x0, y0, x0 + w - 1, y0 + h - 1, code)
+        for t in (stand, *lane):
+            if self.g[t[1]][t[0]] != "p":
+                self.put(*t, "=")
+        self.places[kind] = stand
+        self.buildings.append({"kind": kind, "x": x0, "y": y0, "w": w, "h": h})
 
     def scatter(self, rng, c, n, x0=0, y0=0, x1=W - 1, y1=H - 1, keep_clear=()):
         for _ in range(n * 6):
@@ -104,7 +120,11 @@ class Area:
         self.rect(9, 6, 13, 8, "p")
         self.room(2, 1, "bakery")
         self.room(14, 1, "clinic")
-        for x, y in ((3, 10), (6, 11), (15, 10), (18, 11), (2, 12), (19, 9)):
+        # library and post office face south; a lane runs round to their doors
+        self.building("library", "L", 3, 8, 4, 3, (5, 11), [(7, y) for y in range(8, 12)] + [(6, 11)])
+        self.building("post", "O", 15, 8, 4, 3, (16, 11), [(14, y) for y in range(8, 12)] + [(15, 11)])
+        self.building("board", "B", 8, 5, 1, 1, (8, 6))
+        for x, y in ((1, 12), (9, 12), (12, 12), (20, 12)):
             self.put(x, y, "h")
         self.put(8, 10, "F")
         self.border(rng, "T")
@@ -119,12 +139,14 @@ class Area:
         self.rect(1, 9, 8, 12, "f")
         self.rect(13, 9, 20, 12, "f")
         self.rect(20, 1, 21, 4, "~")
+        if self.shortcuts:  # lanes to the forest trails, north to the mountain and south to the beach
+            self.rect(11, 0, 11, H - 1, "=")
         self.border(rng, "T", .4)
         self.scatter(rng, "o", 3, 9, 8, 12, 12)
 
     def _beach(self, rng):
         self.rect(11, 0, 11, 9, "=")
-        self.rect(2, 6, 19, 6, "=")
+        self.rect(0 if self.shortcuts else 2, 6, 19, 6, "=")
         self.room(3, 0, "inn")
         self.room(14, 0, "shop")
         self.rect(0, 10, W - 1, H - 1, "~")
@@ -138,7 +160,7 @@ class Area:
 
     def _mountain(self, rng):
         self.rect(11, 6, 11, H - 1, "=")
-        self.rect(3, 6, 19, 6, "=")
+        self.rect(0 if self.shortcuts else 3, 6, 19, 6, "=")
         self.room(3, 0, "mine")
         self.room(14, 0, "smithy")
         self.rect(2, 9, 7, 12, "~")
@@ -154,14 +176,17 @@ class Area:
 class TownMap:
     """All areas of all districts, their exits, and shortest walks between any two tiles of the world."""
 
-    def __init__(self, n_districts: int, district_names: list[str], seed: str = "", machines: int = 6):
+    def __init__(self, n_districts: int, district_names: list[str], seed: str = "", machines: int = 6,
+                 shortcuts: bool = False):
+        self.shortcuts = shortcuts
         self.areas: list[Area] = []
         self.index: dict[str, int] = {}
         for d in range(n_districts):
             for theme in THEMES:
                 name = theme if n_districts == 1 else f"{district_names[d]}_{theme}"
                 self.index[name] = len(self.areas)
-                self.areas.append(Area(name, theme, d, random.Random(f"townmap/{seed}/{name}"), machines))
+                self.areas.append(Area(name, theme, d, random.Random(f"townmap/{seed}/{name}"), machines,
+                                        shortcuts))
         for d in range(n_districts):
             t, f, b, m = (self.index[self._name(d, th, n_districts, district_names)] for th in THEMES)
             self._join(t, (0, 7), f, (W - 1, 7))
@@ -169,6 +194,9 @@ class TownMap:
             self._join(t, (11, H - 1), b, (11, 0))
             if d + 1 < n_districts:
                 self._join(t, (W - 1, 7), self.index[self._name(d + 1, "farm", n_districts, district_names)], (0, 7))
+            if shortcuts:  # forest trails, TRAIL tiles long
+                self._join(f, (11, 0), m, (0, 6), TRAIL)
+                self._join(f, (11, H - 1), b, (0, 6), TRAIL)
         # where each map lies in one continuous world grid: maps touch at their exits, so the roads run on
         self.offset, self.mini = {}, {}
         for a in self.areas:
@@ -181,9 +209,9 @@ class TownMap:
     def _name(d, theme, n, names):
         return theme if n == 1 else f"{names[d]}_{theme}"
 
-    def _join(self, a, at_a, b, at_b):
-        self.areas[a].exits.append({"to": b, "at": at_a, "arrive": at_b})
-        self.areas[b].exits.append({"to": a, "at": at_b, "arrive": at_a})
+    def _join(self, a, at_a, b, at_b, steps=1):
+        self.areas[a].exits.append({"to": b, "at": at_a, "arrive": at_b, "steps": steps})
+        self.areas[b].exits.append({"to": a, "at": at_b, "arrive": at_a, "steps": steps})
 
     def room_of(self, district: int, kind: str) -> tuple[int, dict]:
         """(area index, room) of the workshop of ``kind`` in ``district``."""
@@ -200,24 +228,26 @@ class TownMap:
         ar = self.areas[a]
         for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
             if ar.walkable(nx, ny):
-                yield (a, nx, ny)
+                yield (a, nx, ny), 1
         for e in ar.exits:
             if e["at"] == (x, y):
-                yield (e["to"], *e["arrive"])
+                yield (e["to"], *e["arrive"]), e["steps"]
 
     @lru_cache(maxsize=None)
     def route(self, src: tuple[int, int, int], dst: tuple[int, int, int]) -> tuple[tuple[int, int, int], ...]:
-        """Shortest walk (area, x, y), ... from src to dst, both included."""
-        prev = {src: None}
-        q = deque([src])
+        """Shortest walk (area, x, y), ... from src to dst, both included (a trail counts its length)."""
+        dist, prev = {src: 0}, {src: None}
+        q = [(0, src)]
         while q:
-            c = q.popleft()
+            d, c = heapq.heappop(q)
             if c == dst:
                 break
-            for n in self._next(c):
-                if n not in prev:
-                    prev[n] = c
-                    q.append(n)
+            if d > dist[c]:
+                continue
+            for n, w in self._next(c):
+                if d + w < dist.get(n, 1 << 30):
+                    dist[n], prev[n] = d + w, c
+                    heapq.heappush(q, (d + w, n))
         if dst not in prev:
             raise ValueError(f"no way from {src} to {dst}")
         out, c = [], dst
@@ -225,6 +255,13 @@ class TownMap:
             out.append(c)
             c = prev[c]
         return tuple(reversed(out))
+
+    def steps(self, path) -> int:
+        """Length of a walk in tiles (a trail counts its length)."""
+        n = 0
+        for p, q in zip(path, path[1:]):
+            n += next((w for t, w in self._next(p) if t == q), 1)
+        return n
 
     def legs(self, path) -> list[dict]:
         """A walk split by area, each leg reduced to its turning points (what the client draws)."""
@@ -248,5 +285,7 @@ class TownMap:
                 "plaza": {"area": self.areas[self.plaza[0]].name, "x": self.plaza[1], "y": self.plaza[2]},
                 "areas": [{"name": a.name, "theme": a.theme, "district": a.district, "title": TITLES[a.theme],
                            "mini": list(self.mini[a.name]), "offset": list(self.offset[a.name]), "grid": ["".join(r) for r in a.g],
-                           "exits": [{"to": self.areas[e["to"]].name, "at": list(e["at"]), "arrive": list(e["arrive"])}
-                                     for e in a.exits]} for a in self.areas]}
+                           "exits": [{"to": self.areas[e["to"]].name, "at": list(e["at"]), "arrive": list(e["arrive"]),
+                                      "steps": e["steps"]} for e in a.exits],
+                           "places": {k: list(v) for k, v in a.places.items()}, "buildings": a.buildings}
+                          for a in self.areas], "shortcuts": self.shortcuts}
