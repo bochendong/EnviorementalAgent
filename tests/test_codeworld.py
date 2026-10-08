@@ -142,7 +142,11 @@ def test_town_districts_walking_and_batched_questions():
     big = town_world(1, districts=3)
     assert big.n_functions == 144 and big.n_districts == 3 and big.modules[0] == "oak_bakery"
     a, b, c = big.modules[0], big.modules[1], big.modules[8]
-    assert big.distance(a, a) == 0 and big.distance(a, b) == 1 and big.distance(a, c) == 3
+    assert big.distance(a, a) == 0 and 1 <= big.distance(a, b) < big.distance(a, c)  # along the roads
+    path = big.route(a, c)
+    assert path[0] == big.door[a] and path[-1] == big.door[c] and all(big.map.is_road(*t) for t in path)
+    assert all(abs(p[0] - q[0]) + abs(p[1] - q[1]) == 1 for p, q in zip(path, path[1:]))
+    assert len(set(big.tile.values())) == 24 and not any(big.map.is_road(*t) for t in big.tile.values())
     rng = random.Random(2)
     projects = [big.project(rng) for _ in range(24)]
     asks = {}
@@ -169,13 +173,18 @@ def test_replay_is_what_the_engine_did():
         for e in sp["events"]:
             assert {"kind", "dev", "loc", "budget", "project"} <= set(e)
             if e["kind"] == "learn":  # the client rebuilds notebooks from learn events
-                books[e["dev"]] = [f for f in books[e["dev"]] if f != e["fn"] and f not in e["forgot"]] + [e["fn"]]
-            if e["kind"] == "walk":
-                assert e["to"] in town.modules
+                b = [f for f in books[e["dev"]] if f != e["fn"]] + [e["fn"]]
+                books[e["dev"]] = [f for f in b if f not in e["forgot"]]  # it may forget what it just learned
+            if e["kind"] == "walk":  # the shortest way along the roads, which the client draws
+                assert e["to"] in town.modules and e["path"][-1] == list(town.where(e["to"]))
+                assert e["steps"] == len(town.route(e["frm"], e["to"])) - 1
             if e["kind"] == "ask":
                 assert e["to"] in books and "answered" in e
             done += e["kind"] == "submit" and e["ok"]
         assert done == sp["metrics"]["done"]
         assert sum(map(len, books.values())) == round(sp["metrics"]["known_per_dev"] * 4)
+    org = Org(town, 2, 12, "owners", walk=True)
+    org.sprint([town.project(random.Random(5)) for _ in range(6)], 120)
+    assert all(d.routes for d in org.devs)  # apprentices remember the ways they walked
     solo = record(town, "solo", 4, 12, sprints=1)
     assert solo["team"] == 1 and solo["budget"] == 4 * 120  # the same compute as the team

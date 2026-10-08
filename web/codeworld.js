@@ -9,8 +9,7 @@
 const A = "assets/";
 const GW = 1280, GH = 800;            // canvas size
 const TW = 64, TH = 32;               // isometric tile
-const BLOCK = 8;                      // tiles per district side
-const QUADS = [[1, 1], [5, 1], [1, 5], [5, 5]];
+const QUADS = [[1, 1], [7, 1], [1, 7], [7, 7]];  // blocks inside a district (5 x 5 tiles each)
 const DIRS = ["down", "left", "right", "up"];
 const COLORS = { red: "#c8463a", blue: "#3f6fc4", green: "#3d8a3a", yellow: "#c9a227", purple: "#8a4fb0", orange: "#d8782e" };
 const KIND_COLOR = { bakery: "#c98a3a", smithy: "#4c5262", florist: "#b0563e", mine: "#9a7a5a", clinic: "#8a8f9c",
@@ -49,31 +48,14 @@ function moduleOf(fn) { return fn.split(".")[0]; }
 function verbOf(fn) { return fn.split(".")[1]; }
 
 /* ===================================================================== geometry */
-function grid() {
-  const n = S.run.world.districts.length;
-  const cols = n <= 3 ? n : Math.ceil(Math.sqrt(n)), rows = Math.ceil(n / cols);
-  return { cols, rows, GX: cols * BLOCK, GY: rows * BLOCK };
-}
-function corner(index) { const { cols } = grid(); return [(index % cols) * BLOCK, Math.floor(index / cols) * BLOCK]; }
-const isRoad = (gx, gy) => gx % 4 === 0 || gy % 4 === 0;
+function grid() { return S.run.world.map; }  // the engine's street map (worldseeds/codeworld/citymap.py)
+function corner(index) { const m = grid(); return [(index % m.cols) * m.block, Math.floor(index / m.cols) * m.block]; }
+const isRoad = (gx, gy) => gx % grid().road === 0 || gy % grid().road === 0;
 let ORIGIN = { x: 0, y: 0 };
 /* top vertex of tile (gx, gy) in world pixels; the tile's centre is 16 px lower */
 function iso(gx, gy) { return { x: ORIGIN.x + (gx - gy) * TW / 2, y: ORIGIN.y + (gx + gy) * TH / 2 }; }
 function centre(gx, gy) { const p = iso(gx, gy); return { x: p.x, y: p.y + TH / 2 }; }
-function slotTile(district, slot) {
-  const [cx, cy] = corner(district), [qx, qy] = QUADS[slot >> 1];
-  return slot % 2 ? [cx + qx, cy + qy + 2] : [cx + qx + 2, cy + qy];
-}
-function doorTile(district, slot) {
-  const [gx, gy] = slotTile(district, slot);
-  return slot % 2 ? [gx, gy + 1] : [gx + 1, gy];
-}
-function plazaTile() { const [cx, cy] = corner(0); return [cx + 4, cy + 4]; }
-function tileOfPlace(module) {
-  if (!module) return plazaTile();
-  const { d, w } = workshop(module);
-  return doorTile(d.index, d.workshops.indexOf(w));
-}
+function tileOfPlace(module) { return module ? workshop(module).w.door : grid().plaza; }
 function devOffset(name) {
   const k = S.run.devs.findIndex(d => d.name === name);
   return { x: ((k % 4) - 1.5) * 7, y: (Math.floor(k / 4) % 3) * 4 - 4 };
@@ -82,7 +64,7 @@ function spot(module, name) {
   const [gx, gy] = tileOfPlace(module), c = centre(gx, gy), o = devOffset(name);
   return { x: c.x + o.x, y: c.y + o.y };
 }
-/* shortest way along the roads, as a list of road tiles */
+/* shortest way along the roads, as a list of road tiles (only for replays that do not record their paths) */
 function route(from, to) {
   const { GX, GY } = grid(), key = (x, y) => x * 1000 + y;
   const prev = new Map([[key(...from), null]]), q = [from];
@@ -160,15 +142,15 @@ class Town extends Phaser.Scene {
     for (let gx = -1; gx <= GX + 1; gx++) for (let gy = -1; gy <= GY + 1; gy++) {
       const inside = gx >= 0 && gy >= 0 && gx <= GX && gy <= GY;
       let f = "t_grass";
-      if (inside && isRoad(gx, gy)) f = gx % 4 === 0 && gy % 4 === 0 ? "t_cross" : gx % 4 === 0 ? "t_road_y" : "t_road_x";
+      const R = grid().road;
+      if (inside && isRoad(gx, gy)) f = gx % R === 0 && gy % R === 0 ? "t_cross" : gx % R === 0 ? "t_road_y" : "t_road_x";
       const p = iso(gx, gy);
       this.add.image(p.x, p.y, "iso", f).setOrigin(.5, 0).setDepth(-1e4);
       if (!inside && rnd.frac() < .35) this.prop(gx, gy, rnd.pick(["tree0", "tree1", "tree2"]));
     }
     for (const d of S.run.world.districts) this.district(d, rnd, taken);
-    const pl = plazaTile(), pp = iso(...pl);
+    const pl = grid().plaza, pp = iso(...pl);
     this.add.image(pp.x, pp.y, "iso", "t_plaza").setOrigin(.5, 0).setDepth(-9e3);
-    this.prop(pl[0], pl[1], "fountain", -8);
     this.cars(rnd);
     for (const d of S.run.devs) this.dev(d);
     this.fit();
@@ -187,9 +169,11 @@ class Town extends Phaser.Scene {
   district(d, rnd, taken) {
     const [cx, cy] = corner(d.index);
     const title = S.run.world.districts.length > 1 ? `${cap(d.name)} district` : "SeedVille";
-    d.workshops.forEach((w, slot) => {
-      const [gx, gy] = slotTile(d.index, slot);
+    const near = new Set();
+    for (const w of d.workshops) {
+      const [gx, gy] = w.tile;
       taken.add(`${gx},${gy}`);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) near.add(`${gx + dx},${gy + dy}`);
       const img = this.prop(gx, gy, `w_${w.kind}`);
       const own = owner(w.module);
       const label = this.add.text(img.x, img.y - img.height + 12,
@@ -201,26 +185,29 @@ class Town extends Phaser.Scene {
       img.on("pointerover", () => showMachines(w));
       img.on("pointerout", () => toast(null));
       this.shops[w.module] = { img, label };
-    });
-    // fill each block: a tall office at the back, low buildings and parks in front of the workshops
-    for (const [qx, qy] of QUADS) {
-      for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) {
-        const gx = cx + qx + i, gy = cy + qy + j;
-        if (taken.has(`${gx},${gy}`)) continue;
-        const back = i + j <= 1, front = i + j >= 3 || (i === 2 && j === 1) || (i === 1 && j === 2);
-        const r = rnd.frac();
-        if (back && i + j === 0) this.prop(gx, gy, rnd.pick(["f_tower0", "f_tower3", "f_tower2"]));
-        else if (front) {
-          if (r < .35) this.prop(gx, gy, `f_house${rnd.between(0, 2)}`);
-          else if (r < .55) { const p = iso(gx, gy); this.add.image(p.x, p.y, "iso", "t_lot").setOrigin(.5, 0).setDepth(-9e3);
-            if (rnd.frac() < .7) this.prop(gx, gy, rnd.pick(["car_red_x", "car_blue_y", "van_x"]), -4); }
-          else this.prop(gx, gy, rnd.pick(["tree0", "tree1", "tree2"]));
-        } else if (r < .45) this.prop(gx, gy, rnd.pick(["f_low0", "f_low1", "f_tower2", "f_tower5"]));
-        else { const p = iso(gx, gy); this.add.image(p.x, p.y, "iso", "t_park").setOrigin(.5, 0).setDepth(-9e3);
-          this.prop(gx, gy, rnd.pick(["tree0", "tree1", "tree2"])); }
-      }
     }
-    const sign = centre(cx + 4, cy + 4);
+    // each block is mostly open ground: a small park, a few trees, one house or low building
+    const ground = (gx, gy, f) => { const p = iso(gx, gy); this.add.image(p.x, p.y, "iso", f).setOrigin(.5, 0).setDepth(-9e3); };
+    for (const [qx, qy] of QUADS) {
+      const free = [];
+      for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
+        const k = `${cx + qx + i},${cy + qy + j}`;
+        if (!taken.has(k) && !near.has(k)) free.push([cx + qx + i, cy + qy + j]);
+      }
+      rnd.shuffle(free);
+      const take = () => { const t = free.pop(); if (t) taken.add(`${t[0]},${t[1]}`); return t; };
+      const park = take();
+      if (park) { ground(...park, "t_park"); this.prop(...park, rnd.frac() < .4 ? "fountain" : "tree1"); }
+      const thing = take();
+      if (thing) {
+        const r = rnd.frac();
+        if (r < .45) this.prop(...thing, `f_house${rnd.between(0, 2)}`);
+        else if (r < .75) this.prop(...thing, rnd.pick(["f_low0", "f_low1"]));
+        else { ground(...thing, "t_lot"); this.prop(...thing, rnd.pick(["car_red_x", "car_blue_y", "van_x"]), -4); }
+      }
+      for (let n = rnd.between(2, 4); n > 0; n--) { const t = take(); if (t) this.prop(...t, rnd.pick(["tree0", "tree1", "tree2"])); }
+    }
+    const sign = centre(cx + grid().road, cy + grid().road);
     this.add.text(sign.x, sign.y + 14, title, { fontFamily: "Pixelify Sans", fontSize: "12px", color: "#fff6df",
       backgroundColor: "#7a4a26", padding: { x: 5, y: 1 } }).setOrigin(.5, 0).setResolution(4).setDepth(TOP - 1);
   }
@@ -231,9 +218,9 @@ class Town extends Phaser.Scene {
     const n = 2 * S.run.world.districts.length;
     for (let k = 0; k < n; k++) {
       const kind = rnd.pick(["car_red", "car_blue", "van", "truck"]);
-      const img = this.add.image(0, 0, "iso", `${kind}_x`).setOrigin(.5, .75);
+      const img = this.add.image(0, 0, "iso", `${kind}_x`).setOrigin(.5, .75).setVisible(false);
       const drive = () => {
-        const alongX = rnd.frac() < .5, line = 4 * rnd.between(0, (alongX ? GY : GX) / 4);
+        const alongX = rnd.frac() < .5, R = grid().road, line = R * rnd.between(0, (alongX ? GY : GX) / R);
         const a = alongX ? [0, line] : [line, 0], b = alongX ? [GX, line] : [line, GY];
         const [s, e] = rnd.frac() < .5 ? [a, b] : [b, a];
         img.setFrame(`${kind}_${alongX ? "x" : "y"}`).setFlipX(false);
@@ -241,7 +228,7 @@ class Town extends Phaser.Scene {
         const o = { t: 0 }, cs = centre(...s), ce = centre(...e);
         this.tweens.add({ targets: o, t: 1, duration: 9000 + rnd.between(0, 6000), delay: rnd.between(0, 2500),
           onUpdate: () => { const x = cs.x + (ce.x - cs.x) * o.t + lane.x, y = cs.y + (ce.y - cs.y) * o.t + lane.y;
-            img.setPosition(x, y).setDepth(y + 2); },
+            img.setPosition(x, y).setDepth(y + 2).setVisible(true); },
           onComplete: drive });
       };
       drive();
@@ -275,14 +262,20 @@ class Town extends Phaser.Scene {
     cam.setZoom(this.fitZoom).centerOn((l + r) / 2, (t + b) / 2);
   }
 
-  walk(name, to, ms) {
+  /* walk to a place along `path` (the turning points of the engine's route), or the shortest way */
+  walk(name, to, ms, path) {
     const s = this.sprites[name], target = tileOfPlace(to), o = devOffset(name);
     if (s.tween) { s.tween.stop(); s.tween = null; }
-    const path = route(s.tile, target);
+    path = path || route(s.tile, target);
     s.tile = target;
     if (!ms) { this.put(name, spot(to, name)); s.sp.anims.stop(); s.sp.setFrame(0); return; }
     const pts = path.map(t => centre(...t)).map((c, i, a) => i === a.length - 1 ? { x: c.x + o.x, y: c.y + o.y } : c);
     pts.unshift({ x: s.sp.x, y: s.sp.y });
+    if (pts.length > 2) {  // the route it takes, in its colour
+      const g = this.add.graphics().setDepth(-8e3);
+      g.lineStyle(3, Phaser.Display.Color.HexStringToColor(colorOf(name)).color, .8).strokePoints(pts.slice(1));
+      this.tweens.add({ targets: g, alpha: 0, duration: Math.max(ms * 2.5, 400), onComplete: () => g.destroy() });
+    }
     const legs = []; let total = 0;
     for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); legs.push(d); total += d; }
     const pos = { d: 0 };
@@ -362,8 +355,9 @@ function apply(e, ms) {
       break;
     case "walk":
       S.loc[who] = e.to; t.walk += e.cost || 0;
-      sc.walk(who, e.to, ms ? ms * .85 : 0);
-      say(`${nick(who)} walks to ${placeTitle(e.to)}.`, true);
+      sc.walk(who, e.to, ms ? ms * .85 : 0, e.path);
+      say(`${nick(who)} walks to ${placeTitle(e.to)}` + (e.steps !== undefined ?
+        ` (${e.steps} tiles, ${e.remembered ? "a way it knows" : "a new way, now remembered"}).` : "."), true);
       break;
     case "learn": {
       const b = S.books[who], i = b.indexOf(e.fn);

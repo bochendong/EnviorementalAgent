@@ -46,6 +46,7 @@ class Dev:
     spent: dict = field(default_factory=lambda: {"study": 0, "ask": 0, "answer": 0, "submit": 0, "walk": 0})
     home: str | None = None  # the workshop (module) it works in; None = the plaza
     loc: str | None = None
+    routes: dict = field(default_factory=dict)  # (from, to) -> the shortest way there, once walked
 
     def spend(self, kind: str, n: int = 1) -> None:
         if self.budget < n:
@@ -90,10 +91,19 @@ class Org:
     def _go(self, dev: Dev, place: str | None) -> None:
         if dev.loc == place:
             return
+        extra = {}
+        if self.u.map is not None:  # walk the shortest way along the roads, and remember it
+            key = (dev.loc, place)
+            known = key in dev.routes
+            if not known:
+                way = self.u.route(dev.loc, place)
+                dev.routes[key], dev.routes[(place, dev.loc)] = way, tuple(reversed(way))
+            path = dev.routes[key]
+            extra = {"path": self.u.map.corners(path), "steps": len(path) - 1, "remembered": known}
         cost = self.u.distance(dev.loc, place) if self.walk else 0
         if cost:
             dev.spend("walk", cost)
-        self._ev("walk", dev, to=place, frm=dev.loc, cost=cost)
+        self._ev("walk", dev, to=place, frm=dev.loc, cost=cost, **extra)
         dev.loc = place
 
     # ------------------------------------------------------------ knowledge
@@ -262,4 +272,5 @@ class Org:
             "known_per_dev": sum(len(nb) for nb in books) / len(self.devs) if self.mode != "pooled"
             else len(next(iter(books))),
             "relearned": sum(nb.relearned for nb in books), "evictions": sum(nb.evictions for nb in books),
+            "routes_known": sum(len(d.routes) for d in self.devs) // 2,
         }

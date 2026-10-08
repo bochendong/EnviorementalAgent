@@ -135,6 +135,15 @@ class Universe:
             self.kind_of = {m: m for m in names}
             self.district_of = {m: 0 for m in names}
         self.modules = names
+        self.map = None
+        self.door: dict[str, tuple[int, int]] = {}
+        self.tile: dict[str, tuple[int, int]] = {}
+        if town:  # the street map: every workshop stands on a tile with its door on a road
+            from .citymap import CityMap
+
+            self.map = CityMap(max(self.district_of.values()) + 1)
+            for i, m in enumerate(names):
+                self.tile[m], self.door[m] = self.map.slot(self.district_of[m], i % PER_DISTRICT)
         pool, verbs = (GOODS, TOWN_VERBS) if town else (TYPE_NAMES, VERBS)
         tnames = [pool[i % len(pool)] + (str(i // len(pool) + 1) if i >= len(pool) else "")
                   for i in range(levels * types_per_level)]
@@ -269,14 +278,22 @@ class Universe:
     def n_districts(self) -> int:
         return max(self.district_of.values()) + 1
 
+    def where(self, place: str | None) -> tuple[int, int]:
+        """The road tile one stands on at a place (a workshop's door; None is the plaza)."""
+        return self.door[place] if place else self.map.plaza
+
+    def route(self, a: str | None, b: str | None) -> tuple[tuple[int, int], ...]:
+        """The shortest walk along the roads between two places (town theme)."""
+        return self.map.route(self.where(a), self.where(b))
+
     def distance(self, a: str | None, b: str | None) -> int:
-        """Walking cost between two places (workshops, or None for the plaza of district 0): next door 1,
-        another district 3, the same place 0."""
+        """Walking cost between two places (workshops, or None for the plaza): in the town, one action per
+        block of road on the shortest route; without a map, 1 between any two places. The same place is 0."""
         if a == b:
             return 0
-        da = self.district_of.get(a, 0) if a else 0
-        db = self.district_of.get(b, 0) if b else 0
-        return 1 if da == db else 3
+        if self.map is None:
+            return 1
+        return self.map.cost(len(self.route(a, b)) - 1)
 
     def layout(self) -> dict:
         """Districts, workshops and machines (public), for the pixel client."""
@@ -286,5 +303,8 @@ class Universe:
             out.append({"index": d, "name": DISTRICTS[d % len(DISTRICTS)] if self.n_districts > 1 else "town",
                         "workshops": [{"module": m, "kind": self.kind_of[m], "machines": [
                             {"name": f.name, "in": f.in_type, "out": f.out_type}
-                            for f in self.functions.values() if f.module == m]} for m in mods]})
-        return {"theme": self.theme, "districts": out, "levels": [self.types_at[lv] for lv in range(self.levels)]}
+                            for f in self.functions.values() if f.module == m],
+                            **({"tile": list(self.tile[m]), "door": list(self.door[m])} if self.map else {})}
+                            for m in mods]})
+        return {"theme": self.theme, "districts": out, "levels": [self.types_at[lv] for lv in range(self.levels)],
+                "map": self.map.to_dict() if self.map else None}

@@ -100,8 +100,11 @@ The same world, told as a city (`--theme town`, `worldseeds/codeworld/replay.py`
 **apprentice**, and the owner of a module is its **master**. A town has 8 workshops; bigger worlds are
 several **districts** of 8 (`oak_bakery`, `river_inn`, ...), joined by roads.
 
-* `--walk`: studying a machine or asking someone means going there: 1 action next door, 3 to another
-  district. Distance makes the cost of a question visible.
+* The town has a street map (`citymap.py`): districts of 12 x 12 tiles with a road every 6 tiles, two
+  workshops per block, each with its door on a road. Apprentices walk the shortest way along the roads and
+  remember each way they have walked (recorded in the replay, so the client draws the very route).
+* `--walk`: studying a machine or asking someone means going there, one action per block of road (6 tiles)
+  on the shortest route. Distance makes the cost of a question visible.
 * `--batch`: one visit to a master explains every machine of theirs the order may need, not just the one
   asked about.
 
@@ -111,16 +114,19 @@ The standard town is 8 workshops x 6 machines (48 rules), apprentices who keep 1
 | world | questions | solo (same compute) | random | owners | directory | pooled |
 |---|---|---|---|---|---|---|
 | town, 48 machines, team of 4 | per machine | 0.46 | 0.50 | 1.00 | 1.00 | 1.00 |
-| town, walking | per machine | 0.34 | 0.40 | 1.00 | 1.00 | 1.00 |
+| town, walking | per machine | 0.31 | 0.34 | 1.00 | 1.00 | 1.00 |
 | 3 districts, 144 machines, team of 12 | per machine | 0.04 | 0.11 | 0.43 | 0.43 | 1.00 |
-| 3 districts, walking | per machine | 0.04 | 0.05 | 0.17 | 0.16 | 1.00 |
+| 3 districts, walking | per machine | 0.04 | 0.05 | 0.15 | 0.15 | 1.00 |
 | 3 districts | one visit | 0.04 | 0.14 | 1.00 | 1.00 | 1.00 |
-| 3 districts, walking | one visit | 0.04 | 0.09 | 1.00 | 1.00 | 1.00 |
+| 3 districts, walking | one visit | 0.04 | 0.06 | 0.93 | 0.84 | 1.00 |
 
 At town scale the network already doubles what one apprentice does with the same time. With three
 districts, one head is hopeless (4%), a routed network that asks one machine at a time pays a heavy
-coordination tax (43%, 17% once questions cost a walk), and asking for everything a master knows that the
-order might need removes the tax (100%). What and how much to say per message is a first-class variable.
+coordination tax (43%, 15% once questions cost a walk), and asking for everything a master knows that the
+order might need removes most of it (100%, 93% with walking). With walking, the roster that sends each
+question to the *nearest* apprentice who knows does worse than asking the master (0.84 vs 0.93): the
+nearest holder knows one rule, the master knows the whole workshop, so a one-visit question is better spent
+on the master. What and how much to say per message is a first-class variable.
 
 **Watching it.** `web/codeworld.html` (SeedVille Workshops) plays back sprints recorded by the engine, so
 the picture is exactly what happened: an isometric city of workshops, apprentices walking the roads,
@@ -176,7 +182,7 @@ PILOT=1 bash slurm/submit_codeworld.sh && bash slurm/submit_codeworld.sh && sbat
 
 **初步结果（规则开发者，CPU）：** 见上面两张表。三种情况：世界装得进一个人的脑子时，组织方式无所谓；装不进一个人、但装得进全队时，有路由的网络（owners、directory）达到 0.96–1.00，和完美共享一样，是等算力单人（0.32–0.40）的约三倍；随机提问的团队和单干一样差，没有"谁知道什么"的网络不算网络；世界大到全队都装不下时，所有人都失败。最大世界里 8 个人的网络完成 0.45，单人 0.07，共享记忆 1.00，中间的差距就是"沟通税"：该传什么、什么时候直接委派子问题而不是问事实，这正是 agent 网络要研究的问题。
 
-**小镇：看得见的 CodeWorld。** 同一个世界换成城市的说法（`--theme town`）：模块是工坊（面包房、铁匠铺、花店、矿场、诊所、旅店、商店、农场），函数是工坊里的机器，类型是货物，项目是订单，开发者是学徒，模块负责人是师傅。一个镇 8 个工坊；更大的世界由多个 8 工坊的街区组成，用道路连起来。`--walk`：研究机器或问人都要走过去，隔壁 1 个行动，跨街区 3 个；`--batch`：去一次师傅那里，师傅把订单可能用到的他的所有机器都讲了。标准小镇是 8 工坊 × 6 机器（48 条规律），每个学徒记得住 12 条，4 人一队：单人（等算力）完成 0.46（要走路时 0.34），有路由的网络 1.00。三个街区（144 台机器、12 人）：单人 0.04；一次只问一台机器的网络 0.43，要走路时只剩 0.17（沟通税）；一次问全的网络 1.00。每条消息说什么、说多少，是 agent 网络的核心变量。
+**小镇：看得见的 CodeWorld。** 同一个世界换成城市的说法（`--theme town`）：模块是工坊（面包房、铁匠铺、花店、矿场、诊所、旅店、商店、农场），函数是工坊里的机器，类型是货物，项目是订单，开发者是学徒，模块负责人是师傅。一个镇 8 个工坊；更大的世界由多个 8 工坊的街区组成，用道路连起来。小镇有街道地图：每个街区 12×12 格、每 6 格一条路，学徒沿最短路线走，走过的路会记住（回放里记录了路线，界面画的就是这条路）。`--walk`：研究机器或问人都要走过去，最短路线上每 6 格路花 1 个行动；`--batch`：去一次师傅那里，师傅把订单可能用到的他的所有机器都讲了。标准小镇是 8 工坊 × 6 机器（48 条规律），每个学徒记得住 12 条，4 人一队：单人（等算力）完成 0.46（要走路时 0.31），有路由的网络 1.00。三个街区（144 台机器、12 人）：单人 0.04；一次只问一台机器的网络 0.43，要走路时只剩 0.15（沟通税）；一次问全的网络 1.00（要走路时 0.93）。要走路时，"问最近的知情者"的名册反而不如直接问师傅（0.84 对 0.93）：最近的人只懂一条规律，师傅懂整个工坊。每条消息说什么、说多少，是 agent 网络的核心变量。
 
 **界面。** `web/codeworld.html`（SeedVille Workshops）回放引擎记录下来的冲刺，画面就是实际发生的事：等距视角的城市、沿路走动的学徒、提问的连线、每个人脑子里的规律（以及忘掉的）、订单和剩余时间。运行 `python scripts/build_codeworld_web.py` 生成回放，再 `python -m http.server -d web 8000` 打开 `codeworld.html`；`python web/tools/isoart.py` 重新绘制等距素材。
 
