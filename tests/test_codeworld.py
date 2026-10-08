@@ -209,3 +209,17 @@ def test_replay_is_what_the_engine_did():
     assert all(d.routes for d in org.devs)  # apprentices remember the ways they walked
     solo = record(town, "solo", 4, 12, sprints=1)
     assert solo["team"] == 1 and solo["budget"] == 4 * 120  # the same compute as the team
+
+
+def test_town_machines_follow_the_recipe_book():
+    from worldseeds.codeworld.recipes import GOODS_BY_LEVEL, RECIPES
+    from worldseeds.codeworld.replay import town_world
+
+    u = town_world(2)
+    for f in u.functions.values():  # every machine is one of its trade's recipes, one level up
+        tool = f.name.split(".", 1)[1]
+        assert (tool, f.in_type, f.out_type) in RECIPES[u.kind_of[f.module]]
+        assert u.type_level[f.out_type] == u.type_level[f.in_type] + 1
+    assert u.types_at[0] == GOODS_BY_LEVEL[0]
+    m = u.layout()["districts"][0]["workshops"][0]["machines"][0]
+    assert m["look"] and m["title"][0].isupper()

@@ -232,6 +232,11 @@ class Org:
             self._ev("give_up", dev, reason="out of budget", tried=tried)
             return {"done": False, "tried": tried, "actions": sum(dev.spent.values()) - before, "out_of_budget": True}
         finally:
+            if self.u.map is not None and dev.home and dev.loc != dev.home:  # back to one's own workshop
+                try:
+                    self._go(dev, dev.home)
+                except OutOfBudget:
+                    dev.loc = dev.home  # the day is over: home anyway
             self._project = None
 
     # ------------------------------------------------------------ sprints

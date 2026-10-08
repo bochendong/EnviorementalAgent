@@ -43,12 +43,6 @@ VERBS = ["to", "make", "get", "parse", "quote", "hash", "map", "lookup", "encode
 WORKSHOPS = ["bakery", "smithy", "florist", "mine", "clinic", "inn", "shop", "farm"]
 DISTRICTS = ["oak", "river", "hill", "sea", "pine", "stone", "fern", "moss", "lake", "dune", "ash", "elm",
              "glen", "cove", "peak", "vale"]
-GOODS = ["wheat", "ore", "petal", "herb", "milk", "clay", "wool", "fish", "flour", "ingot", "dye", "salve",
-         "cheese", "brick", "yarn", "salt", "dough", "horseshoe", "ribbon", "tonic", "butter", "tile", "cloth",
-         "jerky", "bread", "bell", "bouquet", "potion", "pie", "lamp", "coat", "stew", "feast", "carriage",
-         "festoon", "elixir", "banquet", "tower", "tapestry", "voyage"]
-TOWN_VERBS = ["knead", "bake", "forge", "smelt", "press", "dye", "weave", "brew", "grind", "polish", "mix",
-              "cut", "boil", "carve", "spin", "cure"]
 PER_DISTRICT = len(WORKSHOPS)
 
 
@@ -145,22 +139,33 @@ class Universe:
                                     for d in range(nd)], seed=str(index), machines=fns_per_module)
             for m in names:
                 self.room[m] = self.map.room_of(self.district_of[m], self.kind_of[m])
-        pool, verbs = (GOODS, TOWN_VERBS) if town else (TYPE_NAMES, VERBS)
-        tnames = [pool[i % len(pool)] + (str(i // len(pool) + 1) if i >= len(pool) else "")
-                  for i in range(levels * types_per_level)]
-        if not town:
-            rng.shuffle(tnames)  # (town goods are listed raw materials first, so they keep their order)
-        self.type_level = {t: i // types_per_level for i, t in enumerate(tnames)}
+        if town:  # goods by level and the machines of each trade come from the recipe book
+            from .recipes import GOODS_BY_LEVEL, RECIPES
+
+            levels = self.levels = len(GOODS_BY_LEVEL)
+            tnames = [g for lv in GOODS_BY_LEVEL for g in lv]
+            self.type_level = {g: lv for lv, gs in enumerate(GOODS_BY_LEVEL) for g in gs}
+        else:
+            tnames = [TYPE_NAMES[i % len(TYPE_NAMES)] + (str(i // len(TYPE_NAMES) + 1) if i >= len(TYPE_NAMES) else "")
+                      for i in range(levels * types_per_level)]
+            rng.shuffle(tnames)
+            self.type_level = {t: i // types_per_level for i, t in enumerate(tnames)}
         self.types_at = {lv: [t for t in tnames if self.type_level[t] == lv] for lv in range(levels)}
         # module popularity: some modules are used far more than others (a long tail, like real code)
         self.weight = {m: 1.0 / (k + 1) ** popularity for k, m in enumerate(names)}
         self.functions: dict[str, Function] = {}
         for m in names:
+            if town:  # this workshop's machines: fns_per_module of its trade's recipes
+                book = RECIPES[self.kind_of[m]]
+                for tool, t_in, t_out in sorted(rng.sample(book, min(fns_per_module, len(book))), key=book.index):
+                    name = f"{m}.{tool}"
+                    self.functions[name] = Function(name, m, t_in, t_out, self._law(rng, branch_share))
+                continue
             used = set()
             for _ in range(fns_per_module):
                 lv = rng.randrange(levels - 1)
                 t_in, t_out = rng.choice(self.types_at[lv]), rng.choice(self.types_at[lv + 1])
-                base = f"{m}.{rng.choice(verbs)}_{t_out.lower()}"
+                base = f"{m}.{rng.choice(VERBS)}_{t_out.lower()}"
                 name, k = base, 2
                 while name in self.functions or name in used:
                     name, k = f"{base}{k}", k + 1
@@ -309,9 +314,12 @@ class Universe:
     def _machine_at(self, m: str, k: int) -> dict:
         if not self.map:
             return {}
+        from .recipes import LOOK, title
+
         ms = self.room[m][1]["machines"]
         tile, stand = ms[k % len(ms)]
-        return {"tile": list(tile), "stand": list(stand)}
+        tool = [f for f in self.functions.values() if f.module == m][k].name.split(".", 1)[1]
+        return {"tile": list(tile), "stand": list(stand), "look": LOOK.get(tool, "table"), "title": title(tool)}
 
     def layout(self) -> dict:
         """Districts, workshops and machines (public), for the pixel client."""

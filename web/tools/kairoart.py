@@ -347,6 +347,59 @@ def machine(kind, v):
     return t.done()
 
 
+def looks():
+    """One sprite per kind of machine (see worldseeds/codeworld/recipes.py LOOK)."""
+    out = {}
+    wood, stone = tri("#b97f48"), tri("#9a9aa6")
+    # mill: a millstone on a wooden base
+    t = Thing(18); t.box(3, 3, 10, 10, 5, wood); t.box(4, 4, 8, 8, 4, tri("#c9c2b0")); t.box(7, 7, 2, 2, 12, tri("#7a4a26"))
+    out["mill"] = t.done()
+    # churn: a tall wooden barrel with a plunger
+    t = Thing(20); t.box(5, 5, 6, 6, 11, tri("#c08a4a")); t.box(5, 5, 6, 6, 2, tri("#5d6068")); t.box(7, 7, 2, 2, 16, tri("#7a4a26"))
+    out["churn"] = t.done()
+    # rack: a drying frame hung with green bundles
+    t = Thing(20); t.box(2, 7, 12, 2, 14, wood, lambda a, b, w, h, base, r, s:
+        hx("#5bb544") if s == "l" and b < 11 and b > 3 and a % 3 == 1 else base)
+    out["rack"] = t.done()
+    # press: a screw press
+    t = Thing(18); t.box(3, 3, 10, 10, 4, wood); t.box(4, 7, 8, 2, 12, tri("#7a4a26")); t.box(7, 7, 2, 2, 15, tri("#5d6068"))
+    out["press"] = t.done()
+    # oven: brick with a glowing mouth and a chimney
+    t = Thing(20)
+    t.box(2, 2, 12, 12, 11, tri("#c8563a"), lambda a, b, w, h, base, r, s:
+          (hx("#ffb02e") if 3 <= b <= 5 and 3 <= a <= w - 4 else hx("#3a2018") if 2 <= b <= 7 and 2 <= a <= w - 3 else base)
+          if s == "l" else base)
+    t.box(9, 3, 3, 3, 16, tri("#8a8f9c"))
+    out["oven"] = t.done()
+    # furnace: stone with fire on top
+    t = Thing(16); t.box(2, 2, 12, 12, 9, stone)
+    t.box(4, 4, 8, 8, 1, {"top": hx("#ff8a2a"), "left": hx("#ff6a2a"), "right": hx("#d24a1a")})
+    out["furnace"] = t.done()
+    # anvil: dark iron on a stump
+    t = Thing(14); t.box(5, 5, 6, 6, 4, tri("#8a5a32")); t.box(3, 6, 10, 4, 3, tri("#4c5262")); t.box(2, 6, 12, 4, 0, tri("#4c5262"))
+    out["anvil"] = t.done()
+    # cart: a small wooden cart with wheels
+    t = Thing(14); t.box(3, 4, 10, 8, 5, wood)
+    for gx, gy in ((3, 11), (11, 11)):
+        ox, oy = t.at(gx, gy); t.iso.c.ellipse(ox - 1, oy - 1, 2, 2, hx("#3a2b20"))
+    out["cart"] = t.done()
+    # still: a copper pot with a coiled pipe
+    t = Thing(20); t.box(4, 4, 8, 8, 9, tri("#d17a3a")); t.box(6, 6, 4, 4, 13, tri("#e8a060")); t.box(11, 5, 2, 2, 11, tri("#b86a2a"))
+    out["still"] = t.done()
+    # shelf: bottles in colours
+    t = Thing(20)
+    t.box(3, 5, 10, 6, 16, wood, lambda a, b, w, h, base, r, s:
+          (hx(["#e8584a", "#3f6fc4", "#f2b632", "#5bb544"][(a // 3) % 4]) if b % 5 in (1, 2) and 1 <= a < w - 1 else base)
+          if s == "l" else base)
+    out["shelf"] = t.done()
+    # table: a work table with things on it
+    t = Thing(14); t.box(2, 3, 12, 10, 6, wood)
+    for k, col in enumerate(("#f2d27a", "#e8584a", "#ffffff")):
+        t.iso.c.rect(12 + k * 3, t.base - 2 + (k % 2), 2, 2, hx(col))
+    out["table"] = t.done()
+    return out
+
+
 def main():
     at = Atlas(1024)
     grounds = {
@@ -389,6 +442,8 @@ def main():
         at.add(f"low_y_{kind}", wall(kind, "y", low=True))
         for v in range(2):
             at.add(f"m_{kind}_{v}", machine(kind, v))
+    for k, c in looks().items():
+        at.add(f"mc_{k}", c)
     at.save(OUT / "kairo.png", OUT / "kairo.json")
     print("wrote", OUT / "kairo.png")
 

@@ -311,7 +311,7 @@ class Town extends Phaser.Scene {
       this.stand(a, r.x + 5, r.y + j, `low_y_${k}`, 6);
     }
     w.machines.forEach((m, i) => {
-      const img = this.stand(a, m.tile[0], m.tile[1], `m_${k}_${i % 2}`);
+      const img = this.stand(a, m.tile[0], m.tile[1], m.look ? `mc_${m.look}` : `m_${k}_${i % 2}`);
       const bulb = this.add.circle(img.x, img.y - 24, 3, 0xffd24a).setStrokeStyle(1, 0x26160e).setDepth(TOP - 3).setVisible(false);
       img.setInteractive({ useHandCursor: true, pixelPerfect: true })
         .on("pointerover", () => toast(machineText(w, m))).on("pointerout", () => toast(null));
@@ -583,7 +583,7 @@ function toast(text) { const t = $("toast"); t.hidden = !text; if (text) t.textC
 
 function machineText(w, m) {
   const k = S.run.devs.filter(d => S.books[d.name].includes(m.name)).map(d => d.look[0]);
-  return `${KIND_TITLE[w.kind]}: ${verbOf(m.name)} turns ${m.in} into ${m.out}. ` +
+  return `${KIND_TITLE[w.kind]} · ${m.title || verbOf(m.name)}: ${m.in} → ${m.out}. ` +
     (k.length ? `Knows its rule: ${k.join(", ")}.` : "Nobody knows its rule yet.");
 }
 
