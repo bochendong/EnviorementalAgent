@@ -142,20 +142,39 @@ def test_town_districts_walking_and_batched_questions():
     big = town_world(1, districts=3)
     assert big.n_functions == 144 and big.n_districts == 3 and big.modules[0] == "oak_bakery"
     a, b, c = big.modules[0], big.modules[1], big.modules[8]
-    assert big.distance(a, a) == 0 and 1 <= big.distance(a, b) < big.distance(a, c)  # along the roads
+    assert big.distance(a, a) == 0 and 1 <= big.distance(a, b) < big.distance(a, c)  # walking, across maps
     path = big.route(a, c)
-    assert path[0] == big.door[a] and path[-1] == big.door[c] and all(big.map.is_road(*t) for t in path)
-    assert all(abs(p[0] - q[0]) + abs(p[1] - q[1]) == 1 for p, q in zip(path, path[1:]))
-    assert len(set(big.tile.values())) == 24 and not any(big.map.is_road(*t) for t in big.tile.values())
+    assert path[0] == big.where(a) and path[-1] == big.where(c)
+    areas = big.map.areas
+    assert all(areas[t[0]].walkable(t[1], t[2]) for t in path)
+    assert all(p[0] != q[0] or abs(p[1] - q[1]) + abs(p[2] - q[2]) == 1 for p, q in zip(path, path[1:]))
+    assert len({p[0] for p in path}) >= 3  # oak's bakery is in oak's town; river's is two maps away
+    # every workshop is a room in the map of its kind, with one machine per function along its walls
+    for m in big.modules:
+        ai, room = big.room[m]
+        assert areas[ai].theme == {"bakery": "town", "clinic": "town", "inn": "beach", "shop": "beach",
+                                   "farm": "farm", "florist": "farm", "mine": "mountain", "smithy": "mountain"}[big.kind_of[m]]
+        assert sum(areas[ai].g[y][x] == "m" for x, y in (t for t, _ in room["machines"])) == 6
+    for a in areas:  # maps touch at their exits: the tiles on both sides are neighbours in one world grid
+        for e in a.exits:
+            (ax, ay), (bx, by) = big.map.offset[a.name], big.map.offset[areas[e["to"]].name]
+            assert abs(ax + e["at"][0] - bx - e["arrive"][0]) + abs(ay + e["at"][1] - by - e["arrive"][1]) == 1
+    lay = town.layout()
+    assert {a["theme"] for a in lay["map"]["areas"]} == {"town", "farm", "beach", "mountain"}
+    for w in lay["districts"][0]["workshops"]:
+        grid = next(a["grid"] for a in lay["map"]["areas"] if a["name"] == w["area"])
+        assert all(grid[mc["tile"][1]][mc["tile"][0]] == "m" and grid[mc["stand"][1]][mc["stand"][0]] == "i"
+                   for mc in w["machines"])
     rng = random.Random(2)
-    projects = [big.project(rng) for _ in range(24)]
-    asks = {}
+    plan = [[big.project(rng) for _ in range(36)] for _ in range(6)]
+    done = {}
     for batch in (False, True):
         org = Org(big, 12, 12, "owners", walk=True, batch=batch)
-        m = org.sprint(projects, 120)
-        assert m["spent_walk"] > 0
-        asks[batch] = m["spent_ask"] / max(1, m["done"])
-    assert asks[True] < asks[False]  # one visit explains every relevant machine of that master
+        ms = [org.sprint(p, 120) for p in plan]
+        assert all(m["spent_walk"] > 0 for m in ms)
+        done[batch] = sum(m["done"] for m in ms)
+    assert done[True] > done[False]  # one visit explains every relevant machine of that master
+    assert {d.name: sorted(d.owns) for d in org.devs}["dev0"] == ["oak_bakery", "oak_clinic"]  # one map each
 
 
 def test_replay_is_what_the_engine_did():
@@ -176,7 +195,9 @@ def test_replay_is_what_the_engine_did():
                 b = [f for f in books[e["dev"]] if f != e["fn"]] + [e["fn"]]
                 books[e["dev"]] = [f for f in b if f not in e["forgot"]]  # it may forget what it just learned
             if e["kind"] == "walk":  # the shortest way along the roads, which the client draws
-                assert e["to"] in town.modules and e["path"][-1] == list(town.where(e["to"]))
+                end = town.where(e["to"])
+                assert e["to"] in town.modules and e["legs"][-1]["path"][-1] == list(end[1:])
+                assert e["legs"][-1]["area"] == town.map.areas[end[0]].name
                 assert e["steps"] == len(town.route(e["frm"], e["to"])) - 1
             if e["kind"] == "ask":
                 assert e["to"] in books and "answered" in e

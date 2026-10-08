@@ -136,14 +136,15 @@ class Universe:
             self.district_of = {m: 0 for m in names}
         self.modules = names
         self.map = None
-        self.door: dict[str, tuple[int, int]] = {}
-        self.tile: dict[str, tuple[int, int]] = {}
-        if town:  # the street map: every workshop stands on a tile with its door on a road
-            from .citymap import CityMap
+        self.room: dict[str, tuple[int, dict]] = {}  # module -> (area index, room)
+        if town:  # the maps: every workshop is a room in the area of its kind (bakery in town, inn on the beach)
+            from .townmap import TownMap
 
-            self.map = CityMap(max(self.district_of.values()) + 1)
-            for i, m in enumerate(names):
-                self.tile[m], self.door[m] = self.map.slot(self.district_of[m], i % PER_DISTRICT)
+            nd = max(self.district_of.values()) + 1
+            self.map = TownMap(nd, [DISTRICTS[d % len(DISTRICTS)] + ("" if d < len(DISTRICTS) else str(d))
+                                    for d in range(nd)], seed=str(index), machines=fns_per_module)
+            for m in names:
+                self.room[m] = self.map.room_of(self.district_of[m], self.kind_of[m])
         pool, verbs = (GOODS, TOWN_VERBS) if town else (TYPE_NAMES, VERBS)
         tnames = [pool[i % len(pool)] + (str(i // len(pool) + 1) if i >= len(pool) else "")
                   for i in range(levels * types_per_level)]
@@ -278,22 +279,39 @@ class Universe:
     def n_districts(self) -> int:
         return max(self.district_of.values()) + 1
 
-    def where(self, place: str | None) -> tuple[int, int]:
-        """The road tile one stands on at a place (a workshop's door; None is the plaza)."""
-        return self.door[place] if place else self.map.plaza
+    def where(self, place: str | None) -> tuple[int, int, int]:
+        """Where one stands at a place: (area index, x, y) inside a workshop; None is the town plaza."""
+        if not place:
+            return self.map.plaza
+        a, r = self.room[place]
+        return (a, *r["centre"])
 
-    def route(self, a: str | None, b: str | None) -> tuple[tuple[int, int], ...]:
-        """The shortest walk along the roads between two places (town theme)."""
+    def route(self, a: str | None, b: str | None) -> tuple[tuple[int, int, int], ...]:
+        """The shortest walk between two places, across areas (town theme)."""
         return self.map.route(self.where(a), self.where(b))
 
     def distance(self, a: str | None, b: str | None) -> int:
         """Walking cost between two places (workshops, or None for the plaza): in the town, one action per
-        block of road on the shortest route; without a map, 1 between any two places. The same place is 0."""
+        TILES_PER_ACTION tiles of the shortest walk; without a map, 1 between any two places. Same place: 0."""
         if a == b:
             return 0
         if self.map is None:
             return 1
         return self.map.cost(len(self.route(a, b)) - 1)
+
+    def _room_at(self, m: str) -> dict:
+        if not self.map:
+            return {}
+        a, r = self.room[m]
+        return {"area": self.map.areas[a].name, "room": {"x": r["x"], "y": r["y"], "door": list(r["door"]),
+                                                       "centre": list(r["centre"])}}
+
+    def _machine_at(self, m: str, k: int) -> dict:
+        if not self.map:
+            return {}
+        ms = self.room[m][1]["machines"]
+        tile, stand = ms[k % len(ms)]
+        return {"tile": list(tile), "stand": list(stand)}
 
     def layout(self) -> dict:
         """Districts, workshops and machines (public), for the pixel client."""
@@ -302,9 +320,8 @@ class Universe:
             mods = [m for m in self.modules if self.district_of[m] == d]
             out.append({"index": d, "name": DISTRICTS[d % len(DISTRICTS)] if self.n_districts > 1 else "town",
                         "workshops": [{"module": m, "kind": self.kind_of[m], "machines": [
-                            {"name": f.name, "in": f.in_type, "out": f.out_type}
-                            for f in self.functions.values() if f.module == m],
-                            **({"tile": list(self.tile[m]), "door": list(self.door[m])} if self.map else {})}
-                            for m in mods]})
+                            {"name": f.name, "in": f.in_type, "out": f.out_type, **self._machine_at(m, k)}
+                            for k, f in enumerate(f for f in self.functions.values() if f.module == m)],
+                            **self._room_at(m)} for m in mods]})
         return {"theme": self.theme, "districts": out, "levels": [self.types_at[lv] for lv in range(self.levels)],
                 "map": self.map.to_dict() if self.map else None}

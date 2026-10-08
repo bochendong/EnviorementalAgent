@@ -87,6 +87,8 @@ class Iso:
             self.diamond(ox, top, wx, wy, pal["top"], ft)
             if wx > 14 and wy > 14:  # parapet: an inset darker roof deck
                 self.diamond(ox, top + 3, wx - 6, wy - 6, shade(pal["top"], .86), ft)
+        elif roof == "plain":
+            self.diamond(ox, top, wx, wy, pal["top"], ft)
         elif roof == "pyramid":
             self.pyramid(ox, top, wx, wy, pal, ft)
         return top

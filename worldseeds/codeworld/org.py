@@ -64,8 +64,13 @@ class Org:
         self.rng = random.Random(seed)
         pool = Notebook(None if capacity is None else capacity * n) if mode == "pooled" else None
         self.devs = [Dev(f"dev{i}", pool if pool is not None else Notebook(capacity)) for i in range(n)]
-        for k, m in enumerate(universe.modules):  # module owners, round robin
-            self.devs[k % n].owns.add(m)
+        if universe.map is None:
+            for k, m in enumerate(universe.modules):  # module owners, round robin
+                self.devs[k % n].owns.add(m)
+        else:  # in the town, neighbours: a master keeps the workshops of one map (or of neighbouring maps)
+            mods = sorted(universe.modules, key=lambda m: (universe.room[m][0], universe.modules.index(m)))
+            for k, m in enumerate(mods):
+                self.devs[k * n // len(mods)].owns.add(m)
         if mode in ("owners", "directory"):  # specialists forget foreign laws before their own modules' laws
             for d in self.devs:
                 d.notebook.keep = (lambda name, owns=d.owns: name.split(".", 1)[0] in owns)
@@ -92,14 +97,14 @@ class Org:
         if dev.loc == place:
             return
         extra = {}
-        if self.u.map is not None:  # walk the shortest way along the roads, and remember it
+        if self.u.map is not None:  # walk the shortest way, across areas, and remember it
             key = (dev.loc, place)
             known = key in dev.routes
             if not known:
                 way = self.u.route(dev.loc, place)
                 dev.routes[key], dev.routes[(place, dev.loc)] = way, tuple(reversed(way))
             path = dev.routes[key]
-            extra = {"path": self.u.map.corners(path), "steps": len(path) - 1, "remembered": known}
+            extra = {"legs": self.u.map.legs(path), "steps": len(path) - 1, "remembered": known}
         cost = self.u.distance(dev.loc, place) if self.walk else 0
         if cost:
             dev.spend("walk", cost)

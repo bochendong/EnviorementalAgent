@@ -38,8 +38,9 @@ python scripts/run_codeworld.py --out results/codeworld/core && python scripts/a
 ```
 
 The same world as a city you can watch: **SeedVille Workshops** (`web/codeworld.html`) replays recorded
-sprints in an isometric town of workshops (modules), machines (functions), masters (owners) and
-apprentices walking the roads. In the standard town (48 machines, 12 rules per head, 4 apprentices) masters
+sprints in a town of several connected maps (town, farm, beach, mountain): workshops (modules) are rooms
+whose machines (functions) you see apprentices study, masters (owners) answer questions, and apprentices
+walk the shortest way from map to map. In the standard town (48 machines, 12 rules per head, 4 apprentices) masters
 deliver every order and one apprentice with the team's time 46%; across three districts (144 machines, 12
 apprentices) one head manages 4%.
 

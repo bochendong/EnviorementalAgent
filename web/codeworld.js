@@ -1,22 +1,27 @@
 /* SeedVille Workshops: plays back CodeWorld replays recorded by the engine
    (worldseeds/codeworld/replay.py), so the picture is always what the engine did.
 
-   An isometric city. A district is 8 x 8 tiles with a road every 4 tiles; its eight workshops are
-   towers on the streets, two in each block, and districts join into one road grid. Apprentices walk
-   the roads to a workshop to study its machines, to a master to ask, and deliver orders. */
+   The town is several maps joined at their edges (worldseeds/codeworld/townmap.py): in every district a
+   town with a farm to the west, the mountain to the north and the beach to the south. Workshops are rooms
+   without a roof, their machines along the walls. Apprentices walk the engine's shortest routes, from map
+   to map, to study a machine, to ask a master, and deliver orders. */
 "use strict";
 
 const A = "assets/";
 const GW = 1280, GH = 800;            // canvas size
-const TW = 64, TH = 32;               // isometric tile
-const QUADS = [[1, 1], [7, 1], [1, 7], [7, 7]];  // blocks inside a district (5 x 5 tiles each)
+const TW = 32, TH = 16;               // isometric tile
+const AREA_DX = 620, AREA_DY = 380;   // spacing of maps in the world (by their place on the minimap)
 const DIRS = ["down", "left", "right", "up"];
 const COLORS = { red: "#c8463a", blue: "#3f6fc4", green: "#3d8a3a", yellow: "#c9a227", purple: "#8a4fb0", orange: "#d8782e" };
-const KIND_COLOR = { bakery: "#c98a3a", smithy: "#4c5262", florist: "#b0563e", mine: "#9a7a5a", clinic: "#8a8f9c",
-                     inn: "#a0503a", shop: "#4a8a8a", farm: "#5a8a42" };
+const KIND_COLOR = { bakery: "#e0823a", smithy: "#59606e", florist: "#e86a8a", mine: "#8a5a32", clinic: "#3f7fd0",
+                     inn: "#a0402a", shop: "#3f6fc4", farm: "#c8463a" };
 const KIND_TITLE = { bakery: "Bakery", smithy: "Smithy", florist: "Florist", mine: "Mine", clinic: "Clinic", inn: "Inn",
                      shop: "Shop", farm: "Farm" };
-const TOP = 1e5;                      // depth of labels and speech above the city
+const THEME_BG = { town: "#4f9a3a", farm: "#5aa040", beach: "#3f8ed8", mountain: "#6a8a48" };
+const TOP = 1e5;                      // depth of labels and speech above the maps
+const NAMES = ["Rosa", "Tomas", "Ivy", "Bram", "Lena", "Otto", "Mira", "Finn", "Hana", "Leo", "Clara", "Abe"];
+const ALL_LOOKS = NAMES.flatMap(n => Object.keys(COLORS).map(c => `${n}_${c}`));
+const WALK_PX = 70;                   // townsfolk walking speed, pixels per second
 
 const $ = id => document.getElementById(id);
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -24,6 +29,7 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 /* ===================================================================== state */
 const S = {
   runs: [], run: null, sprint: 0, pos: 0, playing: false, speed: 3, timer: null, scene: null,
+  follow: true, followDev: null, view: null,
   // reconstructed from the replay up to `pos`
   books: {}, budget: {}, loc: {}, orders: {}, active: {}, tally: null, fresh: {}, gone: {},
 };
@@ -48,42 +54,57 @@ function moduleOf(fn) { return fn.split(".")[0]; }
 function verbOf(fn) { return fn.split(".")[1]; }
 
 /* ===================================================================== geometry */
-function grid() { return S.run.world.map; }  // the engine's street map (worldseeds/codeworld/citymap.py)
-function corner(index) { const m = grid(); return [(index % m.cols) * m.block, Math.floor(index / m.cols) * m.block]; }
-const isRoad = (gx, gy) => gx % grid().road === 0 || gy % grid().road === 0;
-let ORIGIN = { x: 0, y: 0 };
-/* top vertex of tile (gx, gy) in world pixels; the tile's centre is 16 px lower */
-function iso(gx, gy) { return { x: ORIGIN.x + (gx - gy) * TW / 2, y: ORIGIN.y + (gx + gy) * TH / 2 }; }
-function centre(gx, gy) { const p = iso(gx, gy); return { x: p.x, y: p.y + TH / 2 }; }
-function tileOfPlace(module) { return module ? workshop(module).w.door : grid().plaza; }
-function devOffset(name) {
+function worldMap() { return S.run.world.map; }
+function areaOf(name) { return worldMap().areas.find(a => a.name === name); }
+function areaTitle(a) { return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[a.district].name) + " " : "") + a.title; }
+/* the maps lie in one world grid (their offsets come from the engine), touching at their exits */
+function bounds() {
+  if (S.B && S.B.run === S.run) return S.B;
+  const m = worldMap(), xs = m.areas.map(a => a.offset[0]), ys = m.areas.map(a => a.offset[1]);
+  S.B = { run: S.run, x0: Math.min(...xs) - 3, y0: Math.min(...ys) - 3,
+          x1: Math.max(...xs) + m.W + 2, y1: Math.max(...ys) + m.H + 2 };
+  return S.B;
+}
+/* top vertex of world tile (X, Y) in pixels */
+function isoG(X, Y) {
+  const b = bounds();
+  return { x: (b.y1 - b.y0 + 1 + (X - b.x0) - (Y - b.y0)) * TW / 2, y: 60 + ((X - b.x0) + (Y - b.y0)) * TH / 2 };
+}
+/* top vertex of tile (gx, gy) of an area; a tile's centre is 8 px lower */
+function iso(area, gx, gy) {
+  const a = typeof area === "string" ? areaOf(area) : area;
+  return isoG(gx + a.offset[0], gy + a.offset[1]);
+}
+function centre(area, gx, gy) { const p = iso(area, gx, gy); return { x: p.x, y: p.y + TH / 2 }; }
+/* where an apprentice stands at a place: a free floor tile of the workshop, spread by apprentice */
+function placeSpot(module, name) {
   const k = S.run.devs.findIndex(d => d.name === name);
-  return { x: ((k % 4) - 1.5) * 7, y: (Math.floor(k / 4) % 3) * 4 - 4 };
+  if (!module) {
+    const p = worldMap().plaza, c = centre(p.area, p.x, p.y);
+    return { area: p.area, x: c.x + ((k % 4) - 1.5) * 7, y: c.y + Math.floor(k / 4) * 4 };
+  }
+  const { w } = workshop(module), r = w.room;
+  const free = [];
+  for (let y = r.y + 2; y <= r.y + 3; y++) for (let x = r.x + 2; x <= r.x + 4; x++) free.push([x, y]);
+  const [gx, gy] = free[k % free.length], c = centre(w.area, gx, gy);
+  const j = Math.floor(k / free.length);
+  return { area: w.area, x: c.x + j * 4, y: c.y + j * 2 };
 }
-function spot(module, name) {
-  const [gx, gy] = tileOfPlace(module), c = centre(gx, gy), o = devOffset(name);
-  return { x: c.x + o.x, y: c.y + o.y };
-}
-/* shortest way along the roads, as a list of road tiles (only for replays that do not record their paths) */
-function route(from, to) {
-  const { GX, GY } = grid(), key = (x, y) => x * 1000 + y;
+
+/* shortest way between two outdoor tiles of one map (for the townsfolk) */
+function areaPath(a, from, to) {
+  const key = (x, y) => x * 100 + y, ok = (x, y) => y >= 0 && y < a.grid.length && x >= 0 && x < a.grid[0].length && "=pb.".includes(a.grid[y][x]);
   const prev = new Map([[key(...from), null]]), q = [from];
   while (q.length) {
     const [x, y] = q.shift();
     if (x === to[0] && y === to[1]) break;
-    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
-      const nx = x + dx, ny = y + dy;
-      if (nx < 0 || ny < 0 || nx > GX || ny > GY || !isRoad(nx, ny) || prev.has(key(nx, ny))) continue;
-      prev.set(key(nx, ny), [x, y]); q.push([nx, ny]);
-    }
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]])
+      if (ok(nx, ny) && !prev.has(key(nx, ny))) { prev.set(key(nx, ny), [x, y]); q.push([nx, ny]); }
   }
-  if (!prev.has(key(...to))) return [to];
+  if (!prev.has(key(...to))) return [from];
   const out = []; let c = to;
   while (c) { out.push(c); c = prev.get(key(...c)); }
-  out.reverse();
-  // keep only the corners
-  return out.filter((p, i) => i === 0 || i === out.length - 1 ||
-    (out[i - 1][0] - p[0]) !== (p[0] - out[i + 1][0]) || (out[i - 1][1] - p[1]) !== (p[1] - out[i + 1][1]));
+  return out.reverse();
 }
 
 /* ===================================================================== Phaser */
@@ -93,11 +114,9 @@ class Boot extends Phaser.Scene {
     const bar = this.add.rectangle(GW / 2 - 150, GH / 2, 0, 10, 0xf2b632).setOrigin(0, .5);
     this.add.rectangle(GW / 2, GH / 2, 304, 14).setStrokeStyle(2, 0x7a4a26);
     this.load.on("progress", p => bar.width = 300 * p);
-    this.load.atlas("iso", `${A}iso.png`, `${A}iso.json`);
+    this.load.atlas("k", `${A}kairo.png`, `${A}kairo.json`);
     this.load.atlas("ui", `${A}ui.png`, `${A}ui.json`);
-    const looks = new Set();
-    for (const r of S.runs) for (const d of r.devs) looks.add(d.look.join("_"));
-    for (const k of looks) this.load.spritesheet(`ch_${k}`, `${A}chars/${k}.png`, { frameWidth: 16, frameHeight: 32 });
+    for (const k of ALL_LOOKS) this.load.spritesheet(`ch_${k}`, `${A}chars/${k}.png`, { frameWidth: 16, frameHeight: 32 });
   }
   create() {
     for (const k of this.textures.getTextureKeys().filter(k => k.startsWith("ch_")))
@@ -111,11 +130,10 @@ class Town extends Phaser.Scene {
   constructor() { super("town"); }
   create() {
     S.scene = this;
-    this.sprites = {}; this.shops = {};
     this.build();
     const cam = this.cameras.main;
     this.input.on("wheel", (p, o, dx, dy) => {
-      const z = Phaser.Math.Clamp(cam.zoom * (dy > 0 ? .9 : 1.1), this.fitZoom * .8, 4);
+      const z = Phaser.Math.Clamp(cam.zoom * (dy > 0 ? .9 : 1.1), .3, 5);
       const before = cam.getWorldPoint(p.x, p.y);
       cam.setZoom(z);
       const after = cam.getWorldPoint(p.x, p.y);
@@ -123,178 +141,293 @@ class Town extends Phaser.Scene {
     });
     this.input.on("pointermove", p => {
       if (!p.isDown) return;
+      S.follow = false; renderMaps();
       cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom; cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom;
     });
-    this.input.on("pointerdown", p => { if (p.event.detail === 2) this.fit(); });
+    this.input.on("pointerdown", p => { if (p.event.detail === 2) this.overview(); });
     seek(S.pos, true);
+    this.view(S.view || worldMap().plaza.area, true);
+  }
+
+  update() {  // names of the maps when zoomed out; labels of workshops when zoomed in
+    const far = this.cameras.main.zoom < 1.2;
+    for (const t of this.titles || []) t.setVisible(far);
   }
 
   build() {
     this.tweens.killAll(); this.time.removeAllEvents();
     this.children.removeAll(true);
-    this.sprites = {}; this.shops = {};
-    const { GX, GY } = grid();
-    ORIGIN = { x: (GY + 2) * TW / 2, y: 130 };
-    this.cameras.main.setBackgroundColor("#2c4a2a");
+    this.sprites = {}; this.shops = {}; this.machines = {}; this.waters = [];
+    this.cameras.main.setBackgroundColor("#1f3326");
     const rnd = new Phaser.Math.RandomDataGenerator(["seedville"]);
-    const taken = new Set();
-    // ground: a ring of grass around the road grid
-    for (let gx = -1; gx <= GX + 1; gx++) for (let gy = -1; gy <= GY + 1; gy++) {
-      const inside = gx >= 0 && gy >= 0 && gx <= GX && gy <= GY;
-      let f = "t_grass";
-      const R = grid().road;
-      if (inside && isRoad(gx, gy)) f = gx % R === 0 && gy % R === 0 ? "t_cross" : gx % R === 0 ? "t_road_y" : "t_road_x";
-      const p = iso(gx, gy);
-      this.add.image(p.x, p.y, "iso", f).setOrigin(.5, 0).setDepth(-1e4);
-      if (!inside && rnd.frac() < .35) this.prop(gx, gy, rnd.pick(["tree0", "tree1", "tree2"]));
-    }
-    for (const d of S.run.world.districts) this.district(d, rnd, taken);
-    const pl = grid().plaza, pp = iso(...pl);
-    this.add.image(pp.x, pp.y, "iso", "t_plaza").setOrigin(.5, 0).setDepth(-9e3);
-    this.cars(rnd);
+    this.titles = [];
+    this.wild(rnd);
+    for (const a of worldMap().areas) this.area(a, rnd);
+    this.links = this.add.graphics().setDepth(-2e4);
+    this.time.addEvent({ delay: 600, loop: true, callback: () => {
+      const f = (this.time.now / 600 | 0) % 2 ? "water1" : "water0";
+      for (const w of this.waters) w.setFrame(f);
+    } });
     for (const d of S.run.devs) this.dev(d);
-    this.fit();
+    this.customers = {}; this.customerKey = null;
+    this.townsfolk(rnd);
   }
 
-  /* a building or prop standing on tile (gx, gy); its frame has the tile diamond in its bottom 32 rows */
-  prop(gx, gy, frame, depthShift = 0) {
-    const p = iso(gx, gy), f = this.textures.getFrame("iso", frame);
-    const img = this.add.image(p.x, p.y + TH, "iso", frame);
-    if (frame.startsWith("tree")) img.setOrigin(.5, 1).setY(p.y + TH / 2 + 4);
-    else img.setOrigin(.5, 1);
-    img.setDepth(p.y + TH / 2 + 8 + depthShift);
-    return img;
-  }
-
-  district(d, rnd, taken) {
-    const [cx, cy] = corner(d.index);
-    const title = S.run.world.districts.length > 1 ? `${cap(d.name)} district` : "SeedVille";
-    const near = new Set();
-    for (const w of d.workshops) {
-      const [gx, gy] = w.tile;
-      taken.add(`${gx},${gy}`);
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) near.add(`${gx + dx},${gy + dy}`);
-      const img = this.prop(gx, gy, `w_${w.kind}`);
-      const own = owner(w.module);
-      const label = this.add.text(img.x, img.y - img.height + 12,
-        `${KIND_TITLE[w.kind] || w.kind}${own ? " · " + nick(own) : ""}`, {
-          fontFamily: "Pixelify Sans", fontSize: "10px", color: "#fff6df",
-          backgroundColor: own ? colorOf(own) : "#3a3f4c", padding: { x: 3, y: 1 } })
-        .setOrigin(.5, 1).setResolution(4).setDepth(TOP);
-      img.setInteractive({ useHandCursor: true, pixelPerfect: true });
-      img.on("pointerover", () => showMachines(w));
-      img.on("pointerout", () => toast(null));
-      this.shops[w.module] = { img, label };
+  /* the land between and around the maps: woods, and the sea south of the beaches */
+  wild(rnd) {
+    const m = worldMap(), b = bounds();
+    const inside = (X, Y) => m.areas.some(a => X >= a.offset[0] && X < a.offset[0] + m.W && Y >= a.offset[1] && Y < a.offset[1] + m.H);
+    const seaY = Math.max(...m.areas.map(a => a.offset[1])) + m.H - 4;
+    for (let Y = b.y0; Y <= b.y1; Y++) for (let X = b.x0; X <= b.x1; X++) {
+      if (inside(X, Y)) continue;
+      const p = isoG(X, Y), sea = Y >= seaY;
+      const img = this.add.image(p.x, p.y, "k", sea ? "water0" : "g_town").setOrigin(.5, 0).setDepth(-1e4);
+      if (sea) { this.waters.push(img); continue; }
+      if (rnd.frac() < .5) this.add.image(p.x, p.y + TH, "k", Y < 0 ? "tree_pine" : rnd.pick(["tree_round0", "tree_round1", "tree_pine"]))
+        .setOrigin(.5, 1).setDepth(p.y + TH / 2);
     }
-    // each block is mostly open ground: a small park, a few trees, one house or low building
-    const ground = (gx, gy, f) => { const p = iso(gx, gy); this.add.image(p.x, p.y, "iso", f).setOrigin(.5, 0).setDepth(-9e3); };
-    for (const [qx, qy] of QUADS) {
-      const free = [];
-      for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) {
-        const k = `${cx + qx + i},${cy + qy + j}`;
-        if (!taken.has(k) && !near.has(k)) free.push([cx + qx + i, cy + qy + j]);
+  }
+
+  /* townsfolk strolling along the paths of every map (scenery; the apprentices carry the name tags) */
+  townsfolk(rnd) {
+    const used = new Set(S.run.devs.map(d => d.look.join("_")));
+    const looks = ALL_LOOKS.filter(k => !used.has(k));
+    this.folk = [];
+    for (const a of worldMap().areas) {
+      const paths = [];
+      a.grid.forEach((row, y) => [...row].forEach((ch, x) => { if ("=pb".includes(ch)) paths.push([x, y]); }));
+      const n = a.theme === "town" ? 4 : 2;
+      for (let k = 0; k < n && paths.length; k++) {
+        const key = `ch_${rnd.pick(looks)}`, start = rnd.pick(paths), c = centre(a, ...start);
+        const sp = this.add.sprite(c.x, c.y, key, 0).setOrigin(.5, 1).setDepth(c.y + 2);
+        const f = { sp, key, a, at: start };
+        this.folk.push(f);
+        const stroll = () => {
+          if (!sp.active) return;
+          const to = rnd.pick(paths), way = areaPath(a, f.at, to);
+          f.at = to;
+          if (way.length < 2) { this.time.delayedCall(800, stroll); return; }
+          const pts = way.map(t => centre(a, ...t));
+          let i = 0;
+          const next = () => {
+            if (!sp.active) return;
+            if (++i >= pts.length) { sp.anims.stop(); sp.setFrame(0); this.time.delayedCall(rnd.between(800, 3500), stroll); return; }
+            const p = pts[i], q = pts[i - 1], dx = p.x - q.x, dy = p.y - q.y;
+            sp.play(`${key}_${dy < 0 ? (dx < 0 ? "left" : "up") : (dx < 0 ? "down" : "right")}`, true);
+            this.tweens.add({ targets: sp, x: p.x, y: p.y, duration: 1000 * Math.hypot(dx, dy) / WALK_PX,
+              onUpdate: () => sp.setDepth(sp.y + 2), onComplete: next });
+          };
+          next();
+        };
+        this.time.delayedCall(rnd.between(0, 3000), stroll);
       }
-      rnd.shuffle(free);
-      const take = () => { const t = free.pop(); if (t) taken.add(`${t[0]},${t[1]}`); return t; };
-      const park = take();
-      if (park) { ground(...park, "t_park"); this.prop(...park, rnd.frac() < .4 ? "fountain" : "tree1"); }
-      const thing = take();
-      if (thing) {
-        const r = rnd.frac();
-        if (r < .45) this.prop(...thing, `f_house${rnd.between(0, 2)}`);
-        else if (r < .75) this.prop(...thing, rnd.pick(["f_low0", "f_low1"]));
-        else { ground(...thing, "t_lot"); this.prop(...thing, rnd.pick(["car_red_x", "car_blue_y", "van_x"]), -4); }
-      }
-      for (let n = rnd.between(2, 4); n > 0; n--) { const t = take(); if (t) this.prop(...t, rnd.pick(["tree0", "tree1", "tree2"])); }
     }
-    const sign = centre(cx + grid().road, cy + grid().road);
-    this.add.text(sign.x, sign.y + 14, title, { fontFamily: "Pixelify Sans", fontSize: "12px", color: "#fff6df",
-      backgroundColor: "#7a4a26", padding: { x: 5, y: 1 } }).setOrigin(.5, 0).setResolution(4).setDepth(TOP - 1);
   }
 
-  /* traffic: a few cars driving along the roads, just for life */
-  cars(rnd) {
-    const { GX, GY } = grid();
-    const n = 2 * S.run.world.districts.length;
-    for (let k = 0; k < n; k++) {
-      const kind = rnd.pick(["car_red", "car_blue", "van", "truck"]);
-      const img = this.add.image(0, 0, "iso", `${kind}_x`).setOrigin(.5, .75).setVisible(false);
-      const drive = () => {
-        const alongX = rnd.frac() < .5, R = grid().road, line = R * rnd.between(0, (alongX ? GY : GX) / R);
-        const a = alongX ? [0, line] : [line, 0], b = alongX ? [GX, line] : [line, GY];
-        const [s, e] = rnd.frac() < .5 ? [a, b] : [b, a];
-        img.setFrame(`${kind}_${alongX ? "x" : "y"}`).setFlipX(false);
-        const lane = alongX ? { x: 4, y: -2 } : { x: -4, y: -2 };
-        const o = { t: 0 }, cs = centre(...s), ce = centre(...e);
-        this.tweens.add({ targets: o, t: 1, duration: 9000 + rnd.between(0, 6000), delay: rnd.between(0, 2500),
-          onUpdate: () => { const x = cs.x + (ce.x - cs.x) * o.t + lane.x, y = cs.y + (ce.y - cs.y) * o.t + lane.y;
-            img.setPosition(x, y).setDepth(y + 2).setVisible(true); },
-          onComplete: drive });
-      };
-      drive();
+  /* the customers of this sprint's orders: they wait at the plaza and leave when served */
+  syncCustomers(animate) {
+    const sp = sprint(), key = `${S.runs.indexOf(S.run)}/${S.sprint}`;
+    if (this.customerKey !== key) {
+      for (const c of Object.values(this.customers)) c.sp.destroy();
+      this.customers = {}; this.customerKey = key;
+      const used = new Set(S.run.devs.map(d => d.look.join("_")));
+      const looks = ALL_LOOKS.filter(k => !used.has(k));
+      sp.projects.forEach((p, i) => {
+        const dev = devOf(p.dev), home = dev && dev.home ? workshop(dev.home).d.index : 0;
+        const town = worldMap().areas.find(a => a.theme === "town" && a.district === home);
+        const slots = [];
+        town.grid.forEach((row, y) => [...row].forEach((ch, x) => { if (ch === "p") slots.push([x, y]); }));
+        const n = sp.projects.filter((q, j) => j < i && (devOf(q.dev).home ? workshop(devOf(q.dev).home).d.index : 0) === home).length;
+        const t = slots[n % slots.length], c = centre(town, ...t), j = Math.floor(n / slots.length);
+        const look = looks[(i * 7 + S.sprint * 3) % looks.length];
+        const s2 = this.add.sprite(c.x + j * 5 - 4, c.y + j * 2, `ch_${look}`, 0).setOrigin(.5, 1).setDepth(c.y + 2);
+        this.customers[p.id] = { sp: s2, town, left: false, key: `ch_${look}` };
+      });
     }
+    for (const [id, c] of Object.entries(this.customers)) {
+      const st = S.orders[id].state, gone = st === "done" || st === "failed";
+      if (!gone) { c.left = false; c.sp.setVisible(true).setAlpha(1); continue; }
+      if (c.left) continue;
+      c.left = true;
+      if (!animate) { c.sp.setVisible(false); continue; }
+      const e = this.add.image(c.sp.x, c.sp.y - 40, "ui", st === "done" ? "emote_heart" : "emote_bang").setDepth(TOP + 2);
+      this.tweens.add({ targets: e, y: e.y - 8, alpha: 0, duration: 1200, onComplete: () => e.destroy() });
+      const out = centre(c.town, 11, worldMap().H - 2);
+      c.sp.play(`${c.key}_down`, true);
+      this.tweens.add({ targets: c.sp, x: out.x, y: out.y, alpha: .2, duration: 1600, delay: 300,
+        onUpdate: () => c.sp.setDepth(c.sp.y + 2), onComplete: () => c.sp.setVisible(false) });
+    }
+  }
+
+  /* one map: ground, things standing on it, workshops, exits */
+  area(a, rnd) {
+    const W = worldMap().W, H = worldMap().H, theme = a.theme;
+    const pathFrame = { town: "path_town", farm: "path_dirt", mountain: "path_dirt", beach: "pier" }[theme];
+    const rooms = [];
+    for (const d of S.run.world.districts) for (const w of d.workshops) if (w.area === a.name) rooms.push(w);
+    const roomAt = (x, y) => rooms.find(w => x >= w.room.x && x < w.room.x + 6 && y >= w.room.y && y < w.room.y + 5);
+    for (let gy = 0; gy < H; gy++) for (let gx = 0; gx < W; gx++) {
+      const ch = a.grid[gy][gx], p = iso(a, gx, gy);
+      let f = `g_${theme}`;
+      if (ch === "=" || ch === "d") f = pathFrame;
+      else if (ch === "p") f = "plaza";
+      else if (ch === "f") f = "field";
+      else if (ch === "~" || ch === "b") f = "water0";
+      else if ("wim".includes(ch)) { const w = roomAt(gx, gy); f = w ? `floor_${w.kind}` : f; }
+      const img = this.add.image(p.x, p.y, "k", f).setOrigin(.5, 0).setDepth(-1e4);
+      if (f === "water0") this.waters.push(img);
+      if (ch === "b") this.add.image(p.x, p.y, "k", "pier").setOrigin(.5, 0).setDepth(-9e3);
+      const stand = fr => this.stand(a, gx, gy, fr);
+      if (ch === "T") stand({ town: rnd.pick(["tree_round0", "tree_round1"]), farm: rnd.pick(["tree_round0", "tree_round1"]),
+        mountain: "tree_pine", beach: "tree_palm" }[theme]);
+      else if (ch === "^") stand(theme === "mountain" ? "rock_big" : "rock");
+      else if (ch === "h") stand(`house${rnd.between(0, 2)}`);
+      else if (ch === "F") stand("fountain");
+      else if (ch === "o") stand(rnd.pick({ town: ["lamp", "bush_flower", "bush"], farm: ["crate", "barrel", "bush"],
+        beach: ["umbrella", "crate", "rock"], mountain: ["rock", "bush"] }[theme]));
+    }
+    for (const w of rooms) this.room(a, w);
+    // the map's name, shown when zoomed out (the maps touch, so the roads themselves are the exits)
+    const c = centre(a, W / 2, H / 2);
+    const title = this.add.text(c.x, c.y, areaTitle(a), { fontFamily: "Pixelify Sans", fontSize: "28px", color: "#fff6df",
+      backgroundColor: THEME_BG[theme], padding: { x: 10, y: 3 } }).setOrigin(.5).setResolution(2).setDepth(TOP + 10).setAlpha(.85);
+    (this.titles = this.titles || []).push(title);
+  }
+
+  /* something standing on tile (gx, gy): its tile diamond is the bottom 16 rows of the frame */
+  stand(a, gx, gy, frame, dz = 0) {
+    const p = iso(a, gx, gy);
+    return this.add.image(p.x, p.y + TH, "k", frame).setOrigin(.5, 1).setDepth(p.y + TH / 2 + dz);
+  }
+
+  room(a, w) {
+    const r = w.room, k = w.kind;
+    for (let i = 0; i < 6; i++) {           // back wall along x, a window every other tile
+      this.stand(a, r.x + i, r.y, (i % 2 ? `wall_xw_${k}` : `wall_x_${k}`), -6);
+      if (r.x + i !== r.door[0]) this.stand(a, r.x + i, r.y + 4, `low_x_${k}`, 6);  // the front, but its door
+    }
+    for (let j = 0; j < 5; j++) {           // back wall along y, and the low wall on the right
+      this.stand(a, r.x, r.y + j, (j % 2 ? `wall_yw_${k}` : `wall_y_${k}`), -5);
+      this.stand(a, r.x + 5, r.y + j, `low_y_${k}`, 6);
+    }
+    w.machines.forEach((m, i) => {
+      const img = this.stand(a, m.tile[0], m.tile[1], `m_${k}_${i % 2}`);
+      const bulb = this.add.circle(img.x, img.y - 24, 3, 0xffd24a).setStrokeStyle(1, 0x26160e).setDepth(TOP - 3).setVisible(false);
+      img.setInteractive({ useHandCursor: true, pixelPerfect: true })
+        .on("pointerover", () => toast(machineText(w, m))).on("pointerout", () => toast(null));
+      this.machines[m.name] = { img, bulb };
+    });
+    const own = owner(w.module), top = iso(a, r.x + 3, r.y);
+    const label = this.add.text(top.x, top.y - 22, `${KIND_TITLE[k]}${own ? " · " + nick(own) : ""}`, {
+      fontFamily: "Pixelify Sans", fontSize: "10px", color: "#fff6df", backgroundColor: own ? colorOf(own) : KIND_COLOR[k],
+      padding: { x: 4, y: 1 } }).setOrigin(.5, 1).setResolution(4).setDepth(TOP);
+    this.shops[w.module] = { label, area: a.name };
   }
 
   dev(d) {
     const key = `ch_${d.look.join("_")}`;
-    const p = spot(d.home, d.name);
+    const p = placeSpot(d.home, d.name);
     const sh = this.add.ellipse(p.x, p.y, 12, 5, 0x000000, .3);
     const sp = this.add.sprite(p.x, p.y, key, 0).setOrigin(.5, 1);
-    const tag = this.add.text(p.x, p.y - 33, d.look[0], { fontFamily: "Pixelify Sans", fontSize: "9px", color: "#fff6df",
+    const tag = this.add.text(p.x, p.y - 33, d.look[0], { fontFamily: "Pixelify Sans", fontSize: "8px", color: "#fff6df",
       backgroundColor: COLORS[d.look[1]], padding: { x: 2, y: 0 } }).setOrigin(.5, 1).setResolution(4);
-    const k = S.run.devs.indexOf(d);
-    this.sprites[d.name] = { sp, sh, tag, key, tween: null, lift: (k % 2) * 9, tile: tileOfPlace(d.home) };
+    this.sprites[d.name] = { sp, sh, tag, key, tween: null, area: p.area };
     this.put(d.name, p);
   }
 
   put(name, p) {
     const s = this.sprites[name];
-    s.sp.setPosition(p.x, p.y).setDepth(p.y + 1);
-    s.sh.setPosition(p.x, p.y - 1).setDepth(p.y + .5);
-    s.tag.setPosition(p.x, p.y - 33 - s.lift).setDepth(TOP + 1);
+    if (p.area) s.area = p.area;
+    s.sp.setPosition(p.x, p.y).setDepth(p.y + 2);
+    s.sh.setPosition(p.x, p.y - 1).setDepth(p.y + 1);
+    s.tag.setPosition(p.x, p.y - 33).setDepth(TOP + 1);
   }
 
-  fit() {
-    const { GX, GY } = grid(), cam = this.cameras.main;
-    const l = iso(-1, GY + 1).x - TW / 2, r = iso(GX + 1, -1).x + TW / 2;
-    const t = iso(-1, -1).y - 70, b = iso(GX + 1, GY + 1).y + TH;
-    this.fitZoom = Math.min(GW / (r - l), GH / (b - t));
-    cam.setZoom(this.fitZoom).centerOn((l + r) / 2, (t + b) / 2);
+  /* the camera on one map (like walking into it), or on all of them */
+  view(areaName, instant) {
+    const a = areaOf(areaName); if (!a) return;
+    S.view = areaName;
+    const W = worldMap().W, H = worldMap().H, cam = this.cameras.main;
+    const l = iso(a, 0, H).x - 8, r = iso(a, W, 0).x + 8, t = iso(a, 0, 0).y - 50, b = iso(a, W, H).y + 10;
+    const z = Math.min(GW / (r - l), GH / (b - t));
+    const cx = (l + r) / 2, cy = (t + b) / 2;
+    this.glide(cx, cy, z, instant);
   }
 
-  /* walk to a place along `path` (the turning points of the engine's route), or the shortest way */
-  walk(name, to, ms, path) {
-    const s = this.sprites[name], target = tileOfPlace(to), o = devOffset(name);
+  /* move the camera to a centre and zoom together (one tween, so they cannot fight) */
+  glide(cx, cy, z, instant) {
+    const cam = this.cameras.main;
+    if (this.camTween) this.camTween.stop();
+    if (instant) { cam.setZoom(z).centerOn(cx, cy); return; }
+    const from = { x: cam.midPoint.x, y: cam.midPoint.y, z: cam.zoom }, o = { t: 0 };
+    this.camTween = this.tweens.add({ targets: o, t: 1, duration: 450, ease: "Sine.easeInOut",
+      onUpdate: () => { cam.setZoom(from.z + (z - from.z) * o.t).centerOn(from.x + (cx - from.x) * o.t, from.y + (cy - from.y) * o.t); } });
+  }
+
+  overview() {
+    S.follow = false; S.view = null;
+    const cam = this.cameras.main, as = worldMap().areas;
+    const W = worldMap().W, H = worldMap().H;
+    const xs = as.flatMap(a => [iso(a, 0, H).x, iso(a, W, 0).x]), ys = as.flatMap(a => [iso(a, 0, 0).y - 60, iso(a, W, H).y]);
+    const l = Math.min(...xs), r = Math.max(...xs), t = Math.min(...ys), b = Math.max(...ys);
+    this.glide((l + r) / 2, (t + b) / 2, Math.min(GW / (r - l + 40), GH / (b - t + 40)));
+    renderMaps();
+  }
+
+  follow(name) {
+    if (!S.follow || !name) return;
+    const a = this.sprites[name].area;
+    if (a && a !== S.view) { this.view(a); renderMaps(); }
+  }
+
+  /* walk to a place: along each leg of the engine's route (one leg per map), stepping from map to map */
+  walk(name, to, ms, legs) {
+    const s = this.sprites[name], end = placeSpot(to, name);
     if (s.tween) { s.tween.stop(); s.tween = null; }
-    path = path || route(s.tile, target);
-    s.tile = target;
-    if (!ms) { this.put(name, spot(to, name)); s.sp.anims.stop(); s.sp.setFrame(0); return; }
-    const pts = path.map(t => centre(...t)).map((c, i, a) => i === a.length - 1 ? { x: c.x + o.x, y: c.y + o.y } : c);
-    pts.unshift({ x: s.sp.x, y: s.sp.y });
-    if (pts.length > 2) {  // the route it takes, in its colour
-      const g = this.add.graphics().setDepth(-8e3);
-      g.lineStyle(3, Phaser.Display.Color.HexStringToColor(colorOf(name)).color, .8).strokePoints(pts.slice(1));
-      this.tweens.add({ targets: g, alpha: 0, duration: Math.max(ms * 2.5, 400), onComplete: () => g.destroy() });
-    }
-    const legs = []; let total = 0;
-    for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); legs.push(d); total += d; }
+    if (!ms || !legs) { this.put(name, end); s.sp.anims.stop(); s.sp.setFrame(0); return; }
+    const pts = [];  // {x, y, area, jump}
+    legs.forEach((leg, i) => leg.path.forEach((t, j) => {
+      const c = centre(leg.area, t[0], t[1]);
+      pts.push({ x: c.x, y: c.y, area: leg.area, jump: false });
+    }));
+    pts.push({ ...end, jump: false });
+    pts.unshift({ x: s.sp.x, y: s.sp.y, area: s.area, jump: false });
+    // its route, in its colour, on every map it crosses
+    const col = Phaser.Display.Color.HexStringToColor(colorOf(name)).color;
+    const g = this.add.graphics().setDepth(-8e3);
+    for (let i = 1; i < pts.length; i++) if (!pts[i].jump) g.lineStyle(2, col, .9).lineBetween(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+    this.tweens.add({ targets: g, alpha: 0, delay: ms, duration: Math.max(ms * 2, 400), onComplete: () => g.destroy() });
+    const legsLen = []; let total = 0;
+    for (let i = 1; i < pts.length; i++) { const d = pts[i].jump ? 0 : Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); legsLen.push(d); total += d; }
     const pos = { d: 0 };
-    s.tween = this.tweens.add({ targets: pos, d: total, duration: ms,
+    s.tween = this.tweens.add({ targets: pos, d: total || 1, duration: ms,
       onUpdate: () => {
         let d = pos.d, i = 0;
-        while (i < legs.length - 1 && d > legs[i]) { d -= legs[i]; i++; }
-        const a = pts[i], b = pts[i + 1] || a, f = legs[i] ? Math.min(1, d / legs[i]) : 1;
+        while (i < legsLen.length - 1 && d > legsLen[i]) { d -= legsLen[i]; i++; }
+        const a = pts[i], b = pts[i + 1] || a, f = legsLen[i] ? Math.min(1, d / legsLen[i]) : 1;
         const dx = b.x - a.x, dy = b.y - a.y;
-        const dir = dy < 0 ? (dx < 0 ? "left" : "up") : (dx < 0 ? "down" : "right");
-        s.sp.play(`${s.key}_${dir}`, true);
-        this.put(name, { x: a.x + dx * f, y: a.y + dy * f });
+        if (dx || dy) s.sp.play(`${s.key}_${dy < 0 ? (dx < 0 ? "left" : "up") : (dx < 0 ? "down" : "right")}`, true);
+        this.put(name, { x: a.x + dx * f, y: a.y + dy * f, area: f >= 1 ? b.area : a.area });
+        if (S.follow && S.followDev === name) this.follow(name);
       },
-      onComplete: () => { s.sp.anims.stop(); s.sp.setFrame(0); s.tween = null; } });
+      onComplete: () => { s.sp.anims.stop(); s.sp.setFrame(0); s.tween = null; this.put(name, end); } });
   }
+
+  /* inside the workshop: step up to the machine being studied */
+  study(name, fn, ms) {
+    const ws = workshop(moduleOf(fn)); if (!ws || !ms) return;
+    const m = ws.w.machines.find(x => x.name === fn); if (!m) return;
+    const s = this.sprites[name]; if (s.tween) return;
+    const c = centre(ws.w.area, m.stand[0], m.stand[1]);
+    const o = { x: s.sp.x, y: s.sp.y };
+    s.tween = this.tweens.add({ targets: o, x: c.x, y: c.y, duration: ms * .4,
+      onUpdate: () => this.put(name, o), onComplete: () => { s.tween = null; } });
+  }
+
   emote(name, frame, ms) {
     if (!ms) return;
     const s = this.sprites[name];
-    const e = this.add.image(s.sp.x, s.sp.y - 40, "ui", frame).setDepth(TOP + 2);
+    const e = this.add.image(s.sp.x, s.sp.y - 42, "ui", frame).setDepth(TOP + 2);
     this.tweens.add({ targets: e, y: e.y - 6, alpha: { from: 1, to: 0 }, duration: Math.max(ms * 1.6, 300),
       ease: "Cubic.easeIn", onComplete: () => e.destroy() });
   }
@@ -302,7 +435,7 @@ class Town extends Phaser.Scene {
   float(name, text, color, ms) {
     if (!ms) return;
     const s = this.sprites[name];
-    const t = this.add.text(s.sp.x, s.sp.y - 46, text, { fontFamily: "VT323", fontSize: "11px", color,
+    const t = this.add.text(s.sp.x, s.sp.y - 48, text, { fontFamily: "VT323", fontSize: "11px", color,
       stroke: "#1b271f", strokeThickness: 3 }).setOrigin(.5, 1).setResolution(4).setDepth(TOP + 3);
     this.tweens.add({ targets: t, y: t.y - 14, alpha: { from: 1, to: 0 }, duration: Math.max(ms * 2, 500),
       onComplete: () => t.destroy() });
@@ -316,17 +449,25 @@ class Town extends Phaser.Scene {
     this.tweens.add({ targets: g, alpha: 0, duration: Math.max(ms * 1.6, 300), onComplete: () => g.destroy() });
   }
 
-  flash(module, ms) {
-    const sh = this.shops[module]; if (!sh || !ms) return;
-    sh.img.setTint(0xfff1b0);
-    this.time.delayedCall(Math.max(ms, 150), () => sh.img.clearTint());
+  flash(fn, ms) {
+    const m = this.machines[fn]; if (!m || !ms) return;
+    m.img.setTint(0xfff1b0);
+    this.time.delayedCall(Math.max(ms, 150), () => m.img.clearTint());
+  }
+
+  /* a light over each machine whose rule someone keeps in mind, in that person's colour */
+  bulbs() {
+    for (const [fn, m] of Object.entries(this.machines)) {
+      const who = S.run.devs.find(d => S.books[d.name].includes(fn));
+      m.bulb.setVisible(!!who);
+      if (who) m.bulb.setFillStyle(Phaser.Display.Color.HexStringToColor(COLORS[who.look[1]]).color);
+    }
   }
 
   highlight(active) {
     for (const [n, s] of Object.entries(this.sprites)) s.tag.setStyle({ color: active === n ? "#f2b632" : "#fff6df" });
   }
 }
-
 /* ===================================================================== replay */
 function sprint() { return S.run.sprints[S.sprint]; }
 
@@ -355,7 +496,8 @@ function apply(e, ms) {
       break;
     case "walk":
       S.loc[who] = e.to; t.walk += e.cost || 0;
-      sc.walk(who, e.to, ms ? ms * .85 : 0, e.path);
+      if (ms) S.followDev = who;
+      sc.walk(who, e.to, ms ? ms * .85 : 0, e.legs);
       say(`${nick(who)} walks to ${placeTitle(e.to)}` + (e.steps !== undefined ?
         ` (${e.steps} tiles, ${e.remembered ? "a way it knows" : "a new way, now remembered"}).` : "."), true);
       break;
@@ -366,7 +508,7 @@ function apply(e, ms) {
       for (const f of e.forgot || []) { const j = b.indexOf(f); if (j >= 0) b.splice(j, 1); }
       t.study++; t.forgot += (e.forgot || []).length; if (!e.correct) t.wrong++;
       S.fresh[who] = e.fn; S.gone[who] = e.forgot || [];
-      sc.emote(who, e.correct ? "emote_note" : "emote_bang", ms); sc.flash(moduleOf(e.fn), ms);
+      sc.study(who, e.fn, ms); sc.emote(who, e.correct ? "emote_note" : "emote_bang", ms); sc.flash(e.fn, ms);
       sc.float(who, `+${verbOf(e.fn)}`, "#f2b632", ms);
       if ((e.forgot || []).length) sc.time.delayedCall(ms * .5, () => sc.float(who, `−${e.forgot.map(verbOf).join(" −")}`, "#ff8a7a", ms));
       say(`${nick(who)} studies ${e.fn}: ${e.law.replace(" (mod 101)", "")}` +
@@ -414,6 +556,9 @@ function seek(n, instant) {
   if (!animate) for (const d of S.run.devs) S.scene.walk(d.name, S.loc[d.name], 0);
   const last = ev[S.pos - 1];
   S.scene.highlight(last && last.dev);
+  S.scene.bulbs();
+  S.scene.syncCustomers(animate);
+  if (last && S.follow) { S.followDev = last.dev; if (!animate) S.scene.follow(last.dev); else if (last.kind !== "walk") S.scene.follow(last.dev); }
   render(last);
 }
 
@@ -436,12 +581,24 @@ function say(text, minor) { if (!minor || S.speed <= 3) S.log.unshift(text); if 
 function orderText(p) { return `${p.in} → ${p.out}, ${p.target.length} machines`; }
 function toast(text) { const t = $("toast"); t.hidden = !text; if (text) t.textContent = text; }
 
-function showMachines(w) {
-  const knows = fn => S.run.devs.filter(d => S.books[d.name].includes(fn)).map(d => d.look[0]);
-  toast(`${KIND_TITLE[w.kind] || w.kind}: ` + w.machines.map(m => {
-    const k = knows(m.name);
-    return `${verbOf(m.name)} ${m.in}→${m.out}${k.length ? " (" + k.join(", ") + ")" : ""}`;
-  }).join(" · "));
+function machineText(w, m) {
+  const k = S.run.devs.filter(d => S.books[d.name].includes(m.name)).map(d => d.look[0]);
+  return `${KIND_TITLE[w.kind]}: ${verbOf(m.name)} turns ${m.in} into ${m.out}. ` +
+    (k.length ? `Knows its rule: ${k.join(", ")}.` : "Nobody knows its rule yet.");
+}
+
+/* the map switcher: every map, how many apprentices are there; follow the action or look around */
+function renderMaps() {
+  const box = $("maps"); if (!box || !S.run || !S.scene || !S.scene.sprites) return;
+  const here = {};
+  for (const [n, s] of Object.entries(S.scene.sprites)) here[s.area] = (here[s.area] || 0) + 1;
+  box.innerHTML = `<button id="bFollow" class="${S.follow ? "on" : ""}">Follow</button>` +
+    `<button id="bAll" class="${S.view ? "" : "on"}">All maps</button>` +
+    worldMap().areas.map(a => `<button data-area="${a.name}" class="${S.view === a.name ? "on" : ""}">` +
+      `${areaTitle(a)}${here[a.name] ? ` · ${here[a.name]}` : ""}</button>`).join("");
+  $("bFollow").onclick = () => { S.follow = !S.follow; if (S.follow && S.followDev) S.scene.follow(S.followDev); renderMaps(); };
+  $("bAll").onclick = () => S.scene.overview();
+  for (const b of box.querySelectorAll("[data-area]")) b.onclick = () => { S.follow = false; S.scene.view(b.dataset.area); renderMaps(); };
 }
 
 function render(last) {
@@ -483,6 +640,7 @@ function render(last) {
       `<div class="chips">${chips || '<span class="cap">nothing in mind yet</span>'}</div>` +
       `<div class="cap">${book.length}${capacity ? " / " + capacity : ""} rules in mind · ${S.budget[d.name]} actions left</div></div></div>`;
   }).join("");
+  renderMaps();
   $("log").innerHTML = S.log.slice(0, 40).map(x => `<div>${esc(x)}</div>`).join("");
 }
 function esc(s) { return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
@@ -498,7 +656,7 @@ function chooseRun(k) {
     `${r.capacity ? r.capacity + " rules per head" : "unlimited memory"}, ${r.budget} actions each per sprint` +
     `${r.walk ? ", walking costs time" : ""}.`;
   reset();
-  if (S.scene) { S.scene.build(); seek(0, true); }
+  if (S.scene) { S.scene.build(); S.view = null; seek(0, true); S.scene.view(worldMap().plaza.area, true); }
 }
 
 function wire() {
