@@ -18,100 +18,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from worldseeds.agent import CONDITIONS  # noqa: E402
-from worldseeds.envs import ENV_NAMES  # noqa: E402
-from worldseeds.experiment import PROTOCOLS, ExpConfig, run_experiment  # noqa: E402
-from worldseeds.hive import HIVE_MODES  # noqa: E402
+from worldseeds.experiment import PROTOCOLS, add_arguments, from_args, run_experiment  # noqa: E402
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--env", choices=ENV_NAMES, default="dungeon", help="dungeon (rooms/doors) or town (SeedVille)")
-    p.add_argument("--protocol", choices=PROTOCOLS, default="compgen")
-    p.add_argument("--policy", choices=["llm", "heuristic"], default="llm")
-    p.add_argument("--conditions", nargs="+", choices=CONDITIONS, default=["none", "retrieval", "seed", "oracle"])
-    p.add_argument("--universes", nargs="+", type=int, default=[0, 1, 2])
-    p.add_argument("--views", nargs="+", choices=["zoom", "flat"], default=["zoom"])
-    p.add_argument("--repeats", type=int, default=1)
-    p.add_argument("--n-train", type=int, default=24)
-    p.add_argument("--n-test", type=int, default=16)
-    p.add_argument("--n-agents", type=int, default=4)
-    p.add_argument("--max-actions", type=int, default=50)
-    p.add_argument("--max-turns", type=int, default=120)
-    p.add_argument("--concurrency", type=int, default=16)
-    p.add_argument("--history-items", type=int, default=40, help="trim agent context to last N items (0=off)")
-    p.add_argument("--context", choices=["transcript", "canvas", "image"], default="transcript",
-                   help="LLM context: trimmed transcript, a multi-resolution memory canvas, or the canvas as images")
-    p.add_argument("--canvas-chars", type=int, default=3000, help="size budget of the memory canvas")
-    p.add_argument("--decay", type=float, default=1.0)
-    p.add_argument("--n-distractors", type=int, default=2)
-    p.add_argument("--save-traces", action="store_true")
-    p.add_argument("--rng-seed", type=int, default=0)
-    p.add_argument("--source-errors", nargs="*", type=float, default=[],
-                   help="town/board: error rates of library notes and villager testimony (one variant each)")
-    p.add_argument("--team-modes", nargs="+",
-                   default=["solo", "solo_matched", "independent", "library", "messages", "merged"],
-                   choices=["solo", "solo_matched", "independent", "library", "messages", "merged"],
-                   help="team protocol (board env): how teammates share what they learned")
-    p.add_argument("--zoom-budget", type=int, default=None,
-                   help="town/board: attention per day for looking closely at new objects (default: free)")
-    p.add_argument("--noise", type=float, default=0.0, help="town/board: chance a crop's night outcome flips")
-    p.add_argument("--screen-error", type=float, default=None,
-                   help="town/board: enable the quick 'screen' test, wrong with this probability")
-    p.add_argument("--confounder", action="store_true", help="town/board: rainy nights flood one soil")
-    p.add_argument("--deconfound", action="store_true", help="learned seeds set rainy nights aside")
-    p.add_argument("--skin", default="none", choices=["none", "drug"],
-                   help="LLM agents: the same hidden laws told as another story (drug: compounds, targets, protocols)")
-    p.add_argument("--publication-bias", action="store_true",
-                   help="library notes only from successful towns and successful events")
-    p.add_argument("--festival", action="store_true",
-                   help="board/team: interdependent festival requests (a cooked dish, a visit for two) and 'drop'")
-    p.add_argument("--roles", action="store_true",
-                   help="team: private perception, each teammate sees only soils, people or goods")
-    p.add_argument("--n-crops", type=int, default=4, help="town/board: crops per universe (law space size)")
-    p.add_argument("--hive-modes", nargs="+", default=["isolated", "serial", "groups", "hive", "sync",
-                                                       "hive_verified", "hive_directed", "hive_full"],
-                   choices=list(HIVE_MODES), help="hive protocol: how the agents share memory (see worldseeds/hive.py)")
-    p.add_argument("--hive-sizes", nargs="+", type=int, default=[1, 4, 16], help="hive: numbers of agents")
-    p.add_argument("--hive-faulty", nargs="+", type=float, default=[0.0], help="hive: shares of faulty agents")
-    p.add_argument("--hive-waves", type=int, default=8, help="hive: worlds each agent plays")
-    p.add_argument("--hive-faulty-mode", choices=["scattered", "correlated", "groups"], default="scattered",
-                   help="hive: faulty agents each tell their own lie, all the same lie, or sit in whole groups")
-    p.add_argument("--hive-shift-wave", type=int, default=0, help="hive: wave from which laws change (0 = never)")
-    p.add_argument("--hive-shift-share", type=float, default=1.0, help="hive: share of the groups whose laws change")
-    p.add_argument("--hive-shift-laws", type=int, default=2, help="hive: law families that change")
-    p.add_argument("--evolve-generations", type=int, default=8, help="evolve: generations")
-    p.add_argument("--evolve-pop", type=int, default=8, help="evolve: lives per generation")
-    p.add_argument("--evolve-archive", type=int, default=6, help="evolve: best lives kept as parents")
-    p.add_argument("--evolve-evaluators", nargs="+", choices=["true", "proxy"], default=["true", "proxy"],
-                   help="evolve: select on test success (true) or on claims / self-grade (proxy, the weak evaluator)")
-    p.add_argument("--no-evolve-benchmark", action="store_true", help="evolve: skip the per-generation benchmark")
-    p.add_argument("--transfer-universes", nargs="*", type=int, default=[],
-                   help="evolve: unseen universes for the initial-vs-evolved learner comparison")
-    p.add_argument("--transfer-curve", nargs="+", type=int, default=[1, 2, 4, 8],
-                   help="evolve: training towns before the transfer test")
-    p.add_argument("--trusts", nargs="+", choices=["blind", "calibrated"], default=["blind", "calibrated"],
-                   help="heuristic policy only: how the agent weighs second-hand claims")
-    p.add_argument("--out", default="results/run")
+    add_arguments(p)  # every option is declared once, in worldseeds/experiment/config.py
     a = p.parse_args()
-    cfg = ExpConfig(
-        protocol=a.protocol, env=a.env, policy=a.policy, conditions=a.conditions, universes=a.universes,
-        repeats=a.repeats, views=a.views, n_train=a.n_train, n_test=a.n_test, n_agents=a.n_agents,
-        max_actions=a.max_actions, max_turns=a.max_turns, concurrency=a.concurrency, history_items=a.history_items, decay=a.decay,
-        context=a.context, canvas_chars=a.canvas_chars,
-        n_distractors=a.n_distractors, save_traces=a.save_traces, out_dir=a.out, rng_seed=a.rng_seed,
-        source_errors=a.source_errors, trusts=a.trusts, team_modes=a.team_modes,
-        n_crops=a.n_crops, zoom_budget=a.zoom_budget, noise=a.noise, screen_error=a.screen_error,
-        confounder=a.confounder, deconfound=a.deconfound, publication_bias=a.publication_bias, skin=a.skin,
-        festival=a.festival, roles=a.roles,
-        hive_modes=a.hive_modes, hive_sizes=a.hive_sizes, hive_faulty=a.hive_faulty, hive_waves=a.hive_waves,
-        hive_faulty_mode=a.hive_faulty_mode, hive_shift_wave=a.hive_shift_wave, hive_shift_share=a.hive_shift_share,
-        hive_shift_laws=a.hive_shift_laws,
-        evolve_generations=a.evolve_generations, evolve_pop=a.evolve_pop, evolve_archive=a.evolve_archive,
-        evolve_evaluators=a.evolve_evaluators, evolve_benchmark=not a.no_evolve_benchmark,
-        transfer_universes=a.transfer_universes, transfer_curve=a.transfer_curve,
-    )
-    out = run_experiment(cfg)
+    if a.protocol not in PROTOCOLS:
+        p.error(f"--protocol must be one of {PROTOCOLS}")
+    out = run_experiment(from_args(a))
     print(f"done -> {out}/episodes.jsonl")
 
 
