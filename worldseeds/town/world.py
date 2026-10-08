@@ -309,7 +309,9 @@ class TownWorld:
                 v.state["request"] = it.id
             self.requests.append(r)
         if self.festival:
-            self._festival_requests(villagers, [r["villager"] for r in self.requests])
+            # a holder who also posted a request would not hand its item over: keep them apart
+            self._festival_requests(villagers, [r["villager"] for r in self.requests]
+                                    + [r["holder"] for r in self.requests if r["holder"]])
         # start with enough for the seeds; buys are funded by rewards (or one buy, if buys are all there is)
         self.coins = sum(o.state["price"] for o in shop_needed) + (ITEM_PRICE if all(r["kind"] == "buy" for r in self.requests) else 0)
 

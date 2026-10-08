@@ -97,3 +97,19 @@ def test_heuristic_team_works_the_festival():
     m = run_heuristic_team(team, [None, None, None], rng_seed=1, messages=True)
     assert m["board_together_done"] == 1
     assert m["board_done"] >= 3 and m["roles"] == ["farmer", "socialite", "merchant"]
+
+
+def test_oracle_solves_festival_boards():
+    from worldseeds.town.agents import TownOracle
+
+    for surf in range(8):
+        for team in (False, True):
+            w = grow_town(TownSeed(laws=TownLaws.from_index(surf % 3), blocks=("farming", "gifting", "shop"), board=3,
+                                   surface_seed=surf), festival=True, max_actions=10_000)
+            if team:
+                Team(w, 2)
+            steps = TownOracle(w).solve()
+            assert steps > 0
+            together = _req(w, "together")
+            assert w.done == team and together["done"] == team  # a lone farmer cannot visit as two
+            assert all(r["done"] for r in w.requests if r["kind"] != "together")

@@ -94,16 +94,59 @@ class TownOracle:
         self.meet(vid)
         self._do("talk", vid)
 
-    def solve_board(self) -> int:
-        """Town board: crops first (they need nights), then friends and fetches, buys last (paid by rewards)."""
+    def _crop(self) -> str:
+        crops = [i for i in self.w.inventory if self.w.objs[i].kind == "crop"]
+        return crops[0] if crops else self.grow_crop()
+
+    def _together(self, vid: str) -> int:
+        """A visit for two: a second teammate walks over while the first keeps the villager company.
+        Returns the second body's actions (0 without a team: then it cannot be done)."""
         w = self.w
-        start = w.actions
-        rank = {"harvest": 0, "friends": 1, "fetch": 2, "buy": 3}
+        team = w.team_ref
+        if team is None or len(team.bodies) < 2:
+            return 0
+        me = team.cur
+        other = next(i for i in range(len(team.bodies)) if i != me)
+        spent = 0
+        for _ in range(12):
+            self.meet(vid)
+            room = w.objs[vid].location
+            team.activate(other)
+            before = w.actions
+            if w.agent_room != room:
+                self._do("go", room)
+            spent += w.actions - before
+            team.activate(me)
+            if w.objs[vid].location == w.agent_room and w.present(room) >= 2:
+                self._do("talk", vid)
+                return spent
+        raise TownOracleError("could not meet the villager together")
+
+    def solve_board(self) -> int:
+        """Town board: crops first (they need nights), then friends and fetches, buys last (paid by rewards).
+        Festival: a dish (crop -> cook -> requester) with the crops, a visit for two at the end. Without a
+        team a visit for two cannot be done and is skipped (the steps count the rest)."""
+        w = self.w
+        start, extra = w.actions, 0
+        rank = {"harvest": 0, "dish": 0, "friends": 1, "fetch": 2, "buy": 3, "together": 4}
         for r in sorted(w.requests, key=lambda r: rank[r["kind"]]):
             if r["done"]:
                 continue
             v = w.objs[r["villager"]]
-            if r["kind"] == "harvest":
+            if r["kind"] == "together":
+                if w.team_ref is None or len(w.team_ref.bodies) < 2:
+                    continue
+                extra += self._together(v.id)
+                if not r["done"]:
+                    raise TownOracleError(f"request {r['id']} not done")
+                continue
+            if r["kind"] == "dish":
+                if r["item"] is None:
+                    crop = self._crop()
+                    self.meet(r["holder"])
+                    self._do("give", r["holder"], crop)
+                self._hand_in(v.id, [r["item"]])
+            elif r["kind"] == "harvest":
                 crops = [i for i in w.inventory if w.objs[i].kind == "crop"]
                 self._hand_in(v.id, [crops[0] if crops else self.grow_crop()])
             elif r["kind"] == "friends":
@@ -129,7 +172,7 @@ class TownOracle:
                 self._hand_in(v.id, [r["item"]])
             if not r["done"]:
                 raise TownOracleError(f"request {r['id']} not done")
-        return w.actions - start
+        return w.actions - start + extra
 
     def solve(self) -> int:
         w = self.w
