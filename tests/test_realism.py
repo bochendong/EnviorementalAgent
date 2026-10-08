@@ -183,3 +183,40 @@ def test_screen_policy_and_weight_options(tmp_path):
             assert seed.get("tuning", {}).get("w_screen", 0.3) == w
     assert all(r["screens"] == 0 and r["screen_policy"] == "off" for r in rows["off"])
     assert any(r["screens"] > 0 for r in rows["use"]) and all("plantings" in r for r in rows["use"])
+
+
+def test_skin_in_pictures():
+    from worldseeds.render import _lab_tile, canvas_content, render_view
+
+    w = _town()
+    k = Skin("drug")
+    w.focus = ["farm"]
+    assert render_view(w, k).size == render_view(w).size
+    plot = next(o for o in w.objs.values() if o.kind == "plot")
+    assert _lab_tile(plot) is not None and _lab_tile(w.objs["bed"]) is None
+    parts = canvas_content(w, k.out("CANVAS\n[farm] p1 plot"), skin=k)
+    assert sum(p["type"] == "input_image" for p in parts) >= 2
+
+
+def test_skinned_consolidator_claims_map_back():
+    pytest.importorskip("agents")
+    testing = pytest.importorskip("agents.testing")
+    from agents import ModelSettings
+
+    from worldseeds.agent import llm_consolidate
+
+    seen = {}
+
+    class Spy(testing.ScriptedModel):
+        async def get_response(self, system_instructions, input, *a, **kw):
+            seen["prompt"] = input if isinstance(input, str) else str(input)
+            return await super().get_response(system_instructions, input, *a, **kw)
+
+    out = json.dumps({"rules": ["AX-102 binds the protease target."],
+                      "claims": [{"law": "target.AX-102", "value": "protease"}, {"law": "gift_attr", "value": "color"}]})
+    model = Spy([[testing.assistant_message(out)]])
+    seed = TownSeedMemory()
+    asyncio.run(llm_consolidate(seed, "the melon in p1 withered (soil loam)", model, ModelSettings(), skin=Skin("drug")))
+    assert "melon" not in seen["prompt"] and "AX-102" in seen["prompt"] and "target.AX-102" in seen["prompt"]
+    assert seed.reflected == [("soil.melon", "clay"), ("gift_attr", "color")]
+    assert seed.rules == ["AX-102 binds the protease target."]

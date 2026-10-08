@@ -142,8 +142,9 @@ def life_summary(rows: list[dict], traces: list[list[dict]], max_chars: int = 50
     return "\n".join(lines)[-max_chars:]
 
 
-async def mentor(playbook: str, summary: str, spaces: dict, model, settings) -> dict:
-    """One mentor call: a self-grade (the weak evaluator), claimed laws, and the child's playbook."""
+async def mentor(playbook: str, summary: str, spaces: dict, model, settings, skin=None) -> dict:
+    """One mentor call: a self-grade (the weak evaluator), claimed laws, and the child's playbook. With a
+    ``skin`` the mentor reads the agent's story; its claims are translated back for scoring."""
     from agents import Agent, Runner as SDKRunner
     from pydantic import BaseModel, Field
 
@@ -159,10 +160,13 @@ async def mentor(playbook: str, summary: str, spaces: dict, model, settings) -> 
                   output_type=Mentoring)
     prompt = (f"PLAYBOOK THE AGENT HAD:\n{playbook}\n\nLIFE:\n{summary}\n\n"
               f"LAWS YOU CAN STATE (id: allowed values):\n{laws}")
+    if skin is not None:
+        prompt = skin.out(prompt)
+    back = skin.back if skin is not None else (lambda x: x)
     try:
         res = await SDKRunner.run(agent, prompt, max_turns=2)
         m = res.final_output
-        return {"self_score": max(0.0, min(10.0, float(m.self_score))), "claims": [(c.law, c.value) for c in m.claims],
+        return {"self_score": max(0.0, min(10.0, float(m.self_score))), "claims": [(back(c.law), back(c.value)) for c in m.claims],
                 "playbook": (m.playbook or playbook).strip()[:PLAYBOOK_CHARS]}
     except Exception as e:  # a broken mentor call must not end the run: the child keeps the parent's playbook
         return {"self_score": 0.0, "claims": [], "playbook": playbook, "error": f"{type(e).__name__}: {e}"[:300]}

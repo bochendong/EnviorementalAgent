@@ -127,7 +127,9 @@ class CoreRunner:
                 from ..agent import llm_consolidate
 
                 lines = "\n".join(ev.line() for ev in world.events if ev.valid)[-6000:]
-                await llm_consolidate(mem.seed, lines, self.model, self.cons_settings)
+                from ..skin import make_skin
+
+                await llm_consolidate(mem.seed, lines, self.model, self.cons_settings, skin=make_skin(self.cfg.llm.skin))
         if mem.library is not None:
             if self.cfg.learner.publication_bias:  # only successful projects publish, and only their positive results
                 if world.done:

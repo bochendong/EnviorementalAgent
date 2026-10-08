@@ -356,7 +356,7 @@ def _canvas_input(recent: int, image: bool = False):
         if image:
             from .render import canvas_content
 
-            msg = {"role": "user", "content": canvas_content(data.context.world, text)}
+            msg = {"role": "user", "content": canvas_content(data.context.world, text, skin=data.context.skin)}
         else:
             msg = {"role": "user", "content": text}
         data.model_data.input = [items[0], msg] + tail
@@ -485,19 +485,24 @@ key fit a lock), never about specific object ids or rooms of one world. At most 
 Also list, as claims, the value of each law (from the given list) that the evidence so far supports."""
 
 
-async def llm_consolidate(seed: SeedMemory, events_text: str, model, settings) -> list[str]:
-    """Free-text consolidation C(S_t, trajectory) -> S_{t+1} with an LLM (Agents SDK structured output)."""
+async def llm_consolidate(seed: SeedMemory, events_text: str, model, settings, skin=None) -> list[str]:
+    """Free-text consolidation C(S_t, trajectory) -> S_{t+1} with an LLM (Agents SDK structured output).
+    With a ``skin`` the consolidator reads the same story as the agent (law ids and values included) and
+    its claims are translated back before they are scored."""
     agent = Agent(name="consolidator", instructions=CONSOLIDATOR_INSTRUCTIONS, model=model,
                   model_settings=settings, output_type=RuleBook)
     laws = "\n".join(f"- {sp}: one of {', '.join(vals)}" for sp, vals in seed.SPACES.items())
     prompt = "CURRENT RULES:\n" + ("\n".join(f"- {r}" for r in seed.rules) or "(none)") + \
              "\n\nLAWS YOU CAN STATE (id: allowed values):\n" + laws + \
              "\n\nEPISODE LOG:\n" + events_text
+    if skin is not None:
+        prompt = skin.out(prompt)
+    back = skin.back if skin is not None else (lambda x: x)
     try:
         res = await Runner.run(agent, prompt, max_turns=2)
         seed.rules = [r.strip() for r in res.final_output.rules][:12]
         # self-written lessons, kept apart from the evidence and scored against the true laws
-        seed.reflected = [(c.law.strip(), c.value.strip()) for c in res.final_output.claims][:64]
+        seed.reflected = [(back(c.law.strip()), back(c.value.strip())) for c in res.final_output.claims][:64]
     except Exception:
         pass  # keep previous rules on failure
     return seed.rules

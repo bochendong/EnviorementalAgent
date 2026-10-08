@@ -49,8 +49,10 @@ class EvolveProtocol:
         if isinstance(genome, dict):
             out["proxy"] = out["claimed"]  # the weak evaluator: how much the agent says it knows
         else:  # the mentor grades the life (self-evaluation) and writes the child's playbook
+            from ..skin import make_skin
+
             m = await mentor(genome, life_summary(rows, traces), mem.seed.SPACES if mem.seed else {},
-                             self.model, self.cons_settings)
+                             self.model, self.cons_settings, skin=make_skin(self.cfg.llm.skin))
             truth = self.env.seed_cls.truth(laws)
             ok = sum(1 for sp, v in m["claims"] if truth.get(sp) == v)
             out.update(proxy=m["self_score"] / 10, child=m["playbook"], mentor_claims=len(m["claims"]),

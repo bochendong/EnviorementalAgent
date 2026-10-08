@@ -10,6 +10,8 @@
 
 Only what the agent has perceived is drawn (labels and details come from the world's views).
 Sprites come from web/assets; objects without a sprite (e.g. extra crops) get a lettered tile.
+With a skin (worldseeds.skin) every label is translated and the farm's sprites give way to neutral
+lab tiles (a compound is a flask, a plot a well coloured by its state, the watering can an incubator).
 """
 
 from __future__ import annotations
@@ -82,7 +84,41 @@ def _frame_name(o) -> str | None:
     return None
 
 
-def _icon(o, size: int) -> Image.Image:
+STATUS_COLOR = {"empty": (200, 190, 170), "planted": (190, 210, 160), "growing": (106, 168, 79),
+                "ripe": (242, 182, 50), "withered": (170, 60, 50), "dormant": (110, 140, 190)}
+COLOR_RGB = {"red": (200, 60, 50), "blue": (60, 100, 200), "green": (70, 160, 80), "yellow": (230, 200, 60),
+             "purple": (140, 80, 170), "orange": (230, 140, 50)}
+
+
+def _lab_tile(o) -> Image.Image | None:
+    """A neutral tile for the lab skin (no farm imagery): flask, sample tube, well, incubator."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    col = COLOR_RGB.get(o.color, (120, 160, 200))
+    if o.kind == "crop":  # a compound: a flask
+        d.rectangle((6, 1, 9, 6), outline=INK, fill=(230, 235, 240))
+        d.polygon([(6, 6), (9, 6), (14, 14), (1, 14)], outline=INK, fill=col)
+    elif o.kind == "seeds":  # samples: a tube
+        d.rectangle((5, 1, 10, 14), outline=INK, fill=(230, 235, 240))
+        d.rectangle((6, 8, 9, 13), fill=(120, 160, 200))
+    elif o.kind == "plot":  # a well, coloured by its state
+        d.ellipse((1, 1, 14, 14), outline=INK, fill=STATUS_COLOR.get(o.state.get("status"), (200, 190, 170)))
+        if o.state.get("watered"):
+            d.ellipse((5, 5, 10, 10), outline=(60, 100, 200))
+    elif o.kind == "tool":  # an incubator
+        d.rectangle((1, 3, 14, 14), outline=INK, fill=(210, 215, 220))
+        d.rectangle((4, 6, 11, 11), outline=INK, fill=col)
+    else:
+        return None
+    return img
+
+
+def _icon(o, size: int, skin=None) -> Image.Image:
+    img = _lab_tile(o) if skin is not None else None
+    if img is not None:
+        w, h = img.size
+        k = max(1, size // max(w, h))
+        return img.resize((w * k, h * k), Image.NEAREST)
     img = _portrait(o.name, o.color) if o.kind == "villager" else None
     if img is None:
         name = _frame_name(o)
@@ -91,7 +127,8 @@ def _icon(o, size: int) -> Image.Image:
         img = Image.new("RGBA", (16, 16), PAPER + (255,))
         d = ImageDraw.Draw(img)
         d.rectangle((0, 0, 15, 15), outline=WOOD)
-        d.text((4, 2), (o.name or "?")[0].upper(), fill=INK, font=font(10))
+        name = skin.out(o.name) if skin is not None else o.name
+        d.text((4, 2), (name or "?")[0].upper(), fill=INK, font=font(10))
     w, h = img.size
     k = max(1, size // max(w, h))
     return img.resize((w * k, h * k), Image.NEAREST)
@@ -110,35 +147,39 @@ def _wrap(text: str, width: int) -> list[str]:
 
 
 # ---------------------------------------------------------------------------- the view
-def render_view(world) -> Image.Image:
+def render_view(world, skin=None) -> Image.Image:
     """The agent's current view; the deeper the zoom, the higher the resolution."""
     focus = list(getattr(world, "focus", []) or [])
     if not focus:
-        return _map(world)
+        return _map(world, skin)
     if len(focus) == 1:
-        return _place(world, focus[0])
-    return _object(world, focus[-1])
+        return _place(world, focus[0], skin)
+    return _object(world, focus[-1], skin)
 
 
-def _map(world) -> Image.Image:
+def _t(skin, text: str) -> str:
+    return skin.out(text) if skin is not None else text
+
+
+def _map(world, skin=None) -> Image.Image:
     rooms = list(world.rooms.items())
     cols = 5
     rows = (len(rooms) + cols - 1) // cols
     W, cw, ch = 520, 100, 34
     img = Image.new("RGB", (W, 24 + rows * (ch + 6) + 8), PAPER)
     d = ImageDraw.Draw(img)
-    d.text((8, 4), "TOWN MAP", fill=INK, font=font(12))
+    d.text((8, 4), _t(skin, "TOWN MAP"), fill=INK, font=font(12))
     for i, (rid, r) in enumerate(rooms):
         x, y = 6 + (i % cols) * (cw + 3), 24 + (i // cols) * (ch + 6)
         fill = GOLD if rid == world.agent_room else GREEN if r.visited else GREY
         d.rectangle((x, y, x + cw, y + ch), fill=fill, outline=WOOD, width=2)
-        d.text((x + 4, y + 4), rid[:14], fill=INK, font=font(10))
+        d.text((x + 4, y + 4), _t(skin, rid)[:14], fill=INK, font=font(10))
         d.text((x + 4, y + 18), ("here" if rid == world.agent_room else "visited" if r.visited else "?"), fill=INK,
                font=font(9))
     return img
 
 
-def _place(world, rid: str) -> Image.Image:
+def _place(world, rid: str, skin=None) -> Image.Image:
     here = rid == world.agent_room
     objs = [o for o in world.room_objects(rid) if here or o.kind != "villager"]
     cols, cw, ch = 4, 176, 92
@@ -146,31 +187,31 @@ def _place(world, rid: str) -> Image.Image:
     W = 16 + cols * (cw + 8)
     img = Image.new("RGB", (W, 64 + rows * (ch + 8)), PAPER)
     d = ImageDraw.Draw(img)
-    title = f"{rid}: {world.rooms[rid].name}" + ("" if here else " (remembered)")
+    title = _t(skin, f"{rid}: {world.rooms[rid].name}" + ("" if here else " (remembered)"))
     d.rectangle((0, 0, W, 30), fill=WOOD)
     d.text((10, 6), title, fill=PAPER, font=font(16))
-    d.text((10, 36), world.status_line()[1:120], fill=INK, font=font(10))
+    d.text((10, 36), _t(skin, world.status_line())[1:120], fill=INK, font=font(10))
     for i, o in enumerate(objs):
         x, y = 8 + (i % cols) * (cw + 8), 56 + (i // cols) * (ch + 8)
         d.rectangle((x, y, x + cw, y + ch), outline=WOOD, width=2)
-        icon = _icon(o, 48)
+        icon = _icon(o, 48, skin)
         img.paste(icon, (x + 6, y + 6), icon)
         attrs = world.visible_attrs(o.id)
-        lines = [o.id, *_wrap(world._label(o).split(" ", 1)[-1], 14)[:2]]
-        lines += [f"{k}: {attrs[k]}" for k in ("soil", "job") if k in attrs]
+        lines = [_t(skin, o.id), *_wrap(_t(skin, world._label(o)).split(" ", 1)[-1], 14)[:2]]
+        lines += [_t(skin, f"{k}: {attrs[k]}") for k in ("soil", "job") if k in attrs]
         for j, ln in enumerate(lines[:5]):
             d.text((x + 60, y + 6 + j * 16), ln[:15], fill=INK, font=font(12 if j == 0 else 11))
     return img
 
 
-def _object(world, oid: str) -> Image.Image:
+def _object(world, oid: str, skin=None) -> Image.Image:
     o = world.objs[oid]
     W = 640
-    text = world.view_obj(oid).rsplit("\n(", 1)[0]  # the object's details, without the status line
+    text = _t(skin, world.view_obj(oid).rsplit("\n(", 1)[0])  # the object's details, without the status line
     lines = _wrap(text, 48)
     img = Image.new("RGB", (W, max(260, 40 + len(lines) * 22)), PAPER)
     d = ImageDraw.Draw(img)
-    icon = _icon(o, 192)
+    icon = _icon(o, 192, skin)
     img.paste(icon, (16, 24), icon)
     for j, ln in enumerate(lines):
         d.text((232, 24 + j * 22), ln, fill=INK, font=font(16))
@@ -226,8 +267,9 @@ def text_pages_content(text: str) -> list[dict]:
     return parts
 
 
-def canvas_content(world, text: str) -> list[dict]:
-    """What a vision-language agent sees each step: its current view and its canvas, as pictures."""
+def canvas_content(world, text: str, skin=None) -> list[dict]:
+    """What a vision-language agent sees each step: its current view and its canvas, as pictures.
+    ``text`` is the canvas as the agent reads it (already in the skin's words, if any)."""
     return ([{"type": "input_text", "text": "What you see now:"},
-             {"type": "input_image", "image_url": data_url(render_view(world)), "detail": "auto"}]
+             {"type": "input_image", "image_url": data_url(render_view(world, skin)), "detail": "auto"}]
             + text_pages_content(text))
