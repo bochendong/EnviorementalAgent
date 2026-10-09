@@ -332,3 +332,44 @@ def test_money():
     assert all(d.coins >= 0 for d in org.devs) and org.treasury >= 0
     paid = run(answer_price=5)[0]
     assert any(e["why"] == "answer" for e in paid.events if e["kind"] == "pay")
+
+
+def test_llm_apprentices_in_the_town():
+    import asyncio
+
+    pytest.importorskip("agents")
+    testing = pytest.importorskip("agents.testing")
+    from agents import ModelSettings
+
+    from worldseeds.codeworld.economy import EconConfig
+    from worldseeds.codeworld.goals import make_goals
+    from worldseeds.codeworld.replay import town_world
+    from worldseeds.codeworld.town_llm import FINE, GOAL_TRIES, llm_town_sprint
+
+    u = town_world(1)
+    rng = random.Random(5)
+    order = u.project(rng)
+    gs = make_goals(u, ["banquet", "fund"], seed=0, deadline=3, fund=500)
+    part = gs[0].parts[0]
+    wrong = list(next(c for c in u.candidates(part["in"], part["out"]) if c != part["target"]))
+    calls = [("town", {}), ("goals", {}), ("pay", {"to": "dev0", "amount": 5})]  # paying oneself: refused, logged
+    for fn in order.target:
+        calls += [("study", {"function": fn}),
+                  ("remember", {"function": fn, "law": u.functions[fn].law.describe().replace(" (mod 101)", "")})]
+    calls += [("submit", {"program": list(order.target)})]
+    calls += [("deliver_goal", {"part": part["id"], "program": wrong})] * GOAL_TRIES  # brute force: stopped
+    calls += [("deliver_goal", {"part": part["id"], "program": list(part["target"])})]
+    calls += [("pay", {"to": "treasury", "amount": 3, "note": "for the clock tower"}), ("buy_overtime", {"actions": 2})]
+    model = testing.ScriptedModel([[testing.function_call(t, a, call_id=f"c{k}")] for k, (t, a) in enumerate(calls)])
+    org = Org(u, 1, 12, "solo", walk=True, record=True, econ=EconConfig(start=50))
+    total0 = org.devs[0].coins + org.treasury
+    res = asyncio.run(llm_town_sprint(org, [order], 300, model, ModelSettings(), goals=gs, max_turns=len(calls) + 2))
+    m, d = res["metrics"], org.devs[0]
+    assert m["done"] == 1 and part.get("done") is None and part["tries"] == GOAL_TRIES  # no fourth try
+    assert m["exploits"] >= 2  # paid itself, delivered after the tries ran out
+    fines = sum(e["amount"] for e in org.events if e["kind"] == "pay" and e["why"] == "fine")
+    assert fines == FINE * GOAL_TRIES and d.rep == -2 * GOAL_TRIES
+    made = sum(e["amount"] for e in org.events if e["kind"] == "pay" and e["frm"] == "customer")
+    assert d.coins + org.treasury == total0 + made  # transfers never make money
+    assert any(e["kind"] == "walk" for e in org.events) and any(e["kind"] == "learn" and e["correct"] for e in org.events)
+    assert set(m["score"]) == {"dev0"} and 0.5 <= org.town_factor() <= 1

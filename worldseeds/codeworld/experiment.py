@@ -155,8 +155,13 @@ def run(cfg: CWConfig) -> Path:
                             goals = make_goals(wv, cfg.goals, cfg.seed, deadline=cfg.goal_deadline, fund=cfg.fund or None)
                         for s, (projects, events) in enumerate(plan):
                             if cfg.policy == "llm":
-                                org.apply_events(events or [])
-                                res = asyncio.run(llm_sprint(org, projects, budget, model, settings, cfg.max_turns))
+                                if cfg.theme == "town":  # apprentices with the town's tools (money, goals, buildings)
+                                    from .town_llm import llm_town_sprint
+                                    res = asyncio.run(llm_town_sprint(org, projects, budget, model, settings, events,
+                                                                      goals, cfg.max_turns))
+                                else:
+                                    org.apply_events(events or [])
+                                    res = asyncio.run(llm_sprint(org, projects, budget, model, settings, cfg.max_turns))
                                 m = res["metrics"]
                                 if tf is not None:
                                     tf.write(json.dumps({"universe": u, "modules": mods, "capacity": cap, "team": n,

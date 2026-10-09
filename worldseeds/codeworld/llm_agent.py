@@ -273,15 +273,20 @@ def instructions(session: Session) -> str:
                                signatures=org.u.signatures_text())
 
 
-async def run_dev(session: Session, model, settings, max_turns: int = 200) -> dict:
+async def run_dev(session: Session, model, settings, max_turns: int = 200, tools=None, text=None, more=None) -> dict:
+    """Run one developer's sprint. ``tools`` / ``text`` replace the default tools and instructions; ``more()``
+    says whether there is work left (default: projects in the queue)."""
     from agents import Agent, MaxTurnsExceeded, RunConfig, Runner, ToolsToFinalOutputResult
 
+    more = more or (lambda: bool(session.queue))
+
     def stop(ctx, results):
-        if not session.queue or session.dev.budget <= 0:
+        if not more() or session.dev.budget <= 0:
             return ToolsToFinalOutputResult(is_final_output=True, final_output="DONE")
         return ToolsToFinalOutputResult(is_final_output=False)
 
-    agent = Agent(name=session.dev.name, instructions=instructions(session), tools=_tools(session), model=model,
+    agent = Agent(name=session.dev.name, instructions=text or instructions(session),
+                  tools=tools if tools is not None else _tools(session), model=model,
                   model_settings=settings, tool_use_behavior=stop, reset_tool_choice=False)
     status, usage, nudges = "finished", [0, 0], 0
     run_input, turns_left = "Begin." + session.status(), max_turns
@@ -299,12 +304,12 @@ async def run_dev(session: Session, model, settings, max_turns: int = 200) -> di
             status = "max_turns"
         except Exception as e:  # a broken run must not end the sprint for everyone
             status = f"error: {type(e).__name__}: {e}"[:300]
-        if res is None or not session.queue or session.dev.budget <= 0 or nudges >= 3:
+        if res is None or not more() or session.dev.budget <= 0 or nudges >= 3:
             break
         # the model stopped talking with work left: nudge it to keep going
         nudges += 1
         turns_left = max(1, turns_left - len([i for i in res.new_items if i.type == "tool_call_item"]) - 1)
-        run_input = res.to_input_list() + [{"role": "user", "content": "Projects are left and you have budget. "
+        run_input = res.to_input_list() + [{"role": "user", "content": "Work is left and you have budget. "
                                             "Keep going: call a tool." + session.status()}]
     return {"dev": session.dev.name, "done": session.done, "status": status, "nudges": nudges,
             "input_tokens": usage[0],

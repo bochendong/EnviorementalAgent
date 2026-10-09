@@ -177,6 +177,20 @@ goals, but inequality grows (Gini 0.21, 0.33, 0.39); a team without masters fini
 apprentices always pay when they can: whether agents hoard knowledge, raise prices or collude is a question
 for LLM apprentices.
 
+**LLM apprentices in the town** (`town_llm.py`; `--policy llm --theme town`, or
+`scripts/build_codeworld_web.py --llm` for replays to watch): each apprentice is an LLM agent with the
+developer tools (study, remember, compute, ask, submit) plus the town's: `town`, `goals`, `deliver_goal`,
+`set_price`, `pay`, `buy_overtime`, `hand_over`, `letter`, `post`, `board`, `library_read`, `library_write`.
+Studying a machine means walking to its workshop, asking someone means walking to them. Its score is coins +
+5 × reputation, scaled by how the town's goals went (0.5 if all fail, 1 if all succeed), so nobody wins by
+getting rich while the town fails. Rules against gaming the town, enforced by the engine and logged as
+`exploits`: money is only made by customers (transfers move it, never create it); a goal part takes at
+most 3 deliveries and a wrong one costs 5 coins and 2 reputation (no brute force on the prize's grades);
+reputation for an explanation counts once per asker, machine and sprint and only if the rule was right;
+prices for explanations are capped; one cannot pay, ask or hire oneself. `scripts/mock_llm_server.py` is an
+OpenAI-compatible stand-in for dry runs without a GPU; `slurm/town_llm_job.sh` runs replays and the
+experiment (masters, roster, no masters, one apprentice; free and paid answers) on Nibi with vLLM.
+
 **Watching it.** `web/codeworld.html` (SeedVille Workshops) plays back sprints recorded by the engine, so
 the picture is exactly what happened: the maps drawn as small isometric scenes, workshops as rooms without
 a roof where you see apprentices step up to the machine they study, a light over every machine whose rule
@@ -243,6 +257,8 @@ PILOT=1 bash slurm/submit_codeworld.sh && bash slurm/submit_codeworld.sh && sbat
 **终极目标**（`--goals banquet prize recipe encyclopedia`）：全镇在日常订单之前共同追求的目标，各有截止冲刺和可精确打分的子任务。丰收节（盛宴、礼篮、游行马车、祝酒灵药，每样都是跨三个以上工坊的四步配方，对应"分子编辑"式的组装问题）；评审大奖（指定原料做出恰好某个等级的成品，配方和批次自选，必须把一条配方的规律弄清到能反推，对应数学题式的逆问题）；失传配方（只剩批次与成品的等级记录，原料和机器都不知道，对应破译）；全镇百科（把每台机器的规律正确地写进图书馆，并在机器被重新调校后保持正确，对应建立共享知识网络）。若机器被调校导致某个子任务无解，镇上会按现在的机器重新发布它。三个街区（144 台机器、12 人、每人记 12 条）、故障与漂移各 0.03、丰收节+大奖+失传配方在第 4 冲刺前完成：单人（全队时间）一个目标也没完成（16 个子任务完成 1 个）；随机提问的团队完成 1–2 个（主要是大奖，16 个完成 7 个）；师傅制或名册三个全部完成。加上百科后，图书馆成了没有容量上限的共享记忆，所有人都受益，但只有师傅制能在机器变化时保持它正确（八个冲刺后 92% 正确，其他 81–83%）。
 
 **钱**（`--money`）：每人有钱包，镇上有金库。顾客为订单付钱：一半给交货的人，一部分作为使用费给机器被用到的师傅，其余作为税进金库；金库为终极目标的子任务发悬赏。钱可以买加班（更多行动点）、雇空闲的人做你的订单，开启 `--answer-price` 后提问要付钱；`--upkeep` 是每冲刺的食宿费（付给面包房、旅店、农场、商店的师傅，付不起的人会累，少四分之一的时间）。钟楼（`--goals fund`）是用钱完成的目标：金库要在截止前攒够钱，来源是税和捐款；每个学徒的慷慨程度不同（愿意捐出闲钱的 0–80%），于是出现搭便车的人。单街区、4 人、丰收节+大奖+钟楼（400）在第 4 冲刺前完成、食宿费 10：提问免费、3 和 8 个金币时，师傅团队订单仍完成 99–100%、目标全部完成，但贫富差距变大（基尼 0.21、0.33、0.39）；没有师傅的团队 9 个目标完成 6 个。规则学徒只要付得起就会付钱；agent 会不会囤积知识、抬价或串通，要等换成 LLM 学徒才能看到。
+
+**LLM 学徒**（`--policy llm --theme town`，或 `scripts/build_codeworld_web.py --llm` 生成可观看的回放）：每个学徒是一个 LLM agent，除了研究、记录、计算、提问、交货，还有小镇工具：查看小镇、查看目标、交付目标、定价、付钱、买加班、转交订单、写信、在公告板发帖、读公告板、读写图书馆。研究机器要走到工坊，问人要走到对方那里。个人分数 = 金币 + 5 × 声望，再乘以小镇目标的完成度（全失败 0.5，全成功 1），所以不能靠自己发财、让小镇失败来取胜。防钻空子的规则由引擎强制并记录为 `exploits`：钱只能由顾客带入，转账只移动不创造；每个目标子任务最多交付 3 次，交错扣 5 金币和 2 声望（不能暴力猜大奖的等级）；回答问题的声望每个冲刺对同一提问者、同一机器只算一次，且规律必须正确；定价有上限；不能付钱给自己、问自己、雇自己。`scripts/mock_llm_server.py` 是一个兼容 OpenAI 接口的假服务器，用来在没有 GPU 时试跑；`slurm/town_llm_job.sh` 在 Nibi 上用 vLLM 跑回放和实验（师傅制、名册、无师傅、单人；提问免费与收费）。
 
 **界面。** `web/codeworld.html`（SeedVille Workshops）回放引擎记录下来的冲刺：每张地图是一个小小的等距场景，工坊是掀掉屋顶的房间，能看到学徒走到要研究的机器前；有人记得规律的机器上方会亮灯（灯的颜色是那个人的颜色）；提问有连线，每次行走会画出路线；每张订单有一位顾客在广场排队、完成后离开，镇民在路上走动；镜头跟着正在行动的学徒在地图之间切换，也可以手动选任意一张地图或看全部。运行 `python scripts/build_codeworld_web.py` 生成回放，再 `python -m http.server -d web 8000` 打开 `codeworld.html`；`python web/tools/kairoart.py` 重新绘制地图素材。
 

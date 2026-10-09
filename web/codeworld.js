@@ -592,6 +592,7 @@ function reset() {
   S.rep = { ...(sp.start_rep || {}) };
   S.treasury = sp.start_treasury || 0;
   S.flows = {};
+  S.posts = [];
   S.worldEvents = sp.world_events || [];
   S.broken = new Set(sp.broken || []);
   S.drifted = new Set(S.worldEvents.filter(e => e.kind === "drift").map(e => e.fn));
@@ -677,6 +678,17 @@ function apply(e, ms) {
       if (e.why === "answer") say(`${nick(e.frm)} pays ${nick(e.to)} ${amt} coins for the explanation.`, true);
       break;
     }
+    case "post":
+      (S.posts = S.posts || []).push({ by: who, text: e.text });
+      sc.float(who, "pinned a note", "#fff6df", ms);
+      say(`${nick(who)} pins a note on the board: “${e.text}”`);
+      break;
+    case "exploit":
+      t.exploits = (t.exploits || 0) + 1;
+      sc.emote(who, "emote_bang", ms);
+      sc.float(who, "not allowed", "#ff8a7a", ms);
+      say(`${nick(who)} tries to bend the rules (${e.what}): refused.`);
+      break;
     case "hire":
       sc.link(who, e.to, true, ms);
       say(`${nick(who)} has no time left and hires ${nick(e.to)} to make order ${e.project}.`);
@@ -824,11 +836,15 @@ function renderMoney() {
   const sum = vals.reduce((a, b) => a + b, 0);
   const gini = sum ? vals.reduce((g, x, i) => g + (2 * i - n + 1) * x, 0) / (n * sum) : 0;
   const best = [...S.run.devs].sort((a, b) => (S.rep[b.name] || 0) - (S.rep[a.name] || 0))[0];
+  const gs = S.goals || [];
+  const factor = gs.length ? .5 + .5 * gs.reduce((a, g) => a + g.parts.filter(p => p.done != null).length / Math.max(1, g.parts.length), 0) / gs.length : 1;
+  const score = d => Math.round(((S.coins[d.name] || 0) + 5 * (S.rep[d.name] || 0)) * factor);
   const flow = Object.entries(S.flows).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(" · ");
   $("money").innerHTML = `<div class="tre"><span>Treasury <i class="coin"></i>${S.treasury}</span><span>inequality (Gini) ${gini.toFixed(2)}</span></div>` +
     devs.map((d, i) => `<div class="row"><img alt="" src="${A}portraits/${d.look.join("_")}.png"><span>${i === 0 ? "♛ " : ""}${d.look[0]}` +
-      `${d.generosity != null ? ` <span>gives ${Math.round(d.generosity * 100)}%</span>` : ""}</span>` +
-      `<b><i class="coin"></i>${S.coins[d.name] || 0}</b><span>★${S.rep[d.name] || 0}${best && best.name === d.name ? " best" : ""}</span></div>`).join("") +
+      `${d.generosity != null && S.run.policy !== "llm" ? ` <span>gives ${Math.round(d.generosity * 100)}%</span>` : ""}</span>` +
+      `<b><i class="coin"></i>${S.coins[d.name] || 0}</b><span>★${S.rep[d.name] || 0} · score ${score(d)}</span></div>`).join("") +
+    `<div class="legend">Score = coins + 5 × reputation, × ${factor.toFixed(2)} for how the town's goals are going.${S.tally.exploits ? ` Rule-bending attempts refused: ${S.tally.exploits}.` : ""}</div>` +
     (flow ? `<div class="legend">This sprint: ${esc(flow)}</div>` : "");
 }
 
@@ -857,10 +873,12 @@ function renderNews() {
   const rumors = ev.filter(e => e.kind === "rumor"), ended = S.pos >= sprint().events.length;
   const notices = S.run.mode === "owners" || S.run.mode === "directory" ?
     ev.filter(e => e.kind === "breakdown" || e.kind === "drift") : [];
-  $("boardPanel").hidden = !rumors.length && !notices.length;
+  const posts = S.posts || [];
+  $("boardPanel").hidden = !rumors.length && !notices.length && !posts.length;
   $("boardPosts").innerHTML = notices.map(e => `<div class="post notice">${esc(nick(owner(moduleOf(e.fn)) || "") + ": " +
       (e.kind === "breakdown" ? `my ${machineName(e.fn).split("'s ")[1]} is out of order.` : `my ${machineName(e.fn).split("'s ")[1]} was re-tuned.`))}</div>`)
-    .concat(rumors.map(e => `<div class="post">“${esc(e.text)}” <span class="truth">${ended ? (e.true ? "(true)" : "(false)") : ""}</span></div>`)).join("");
+    .concat(rumors.map(e => `<div class="post">“${esc(e.text)}” <span class="truth">${ended ? (e.true ? "(true)" : "(false)") : ""}</span></div>`))
+    .concat(posts.slice(-8).map(p => `<div class="post">${esc(nick(p.by))}: “${esc(p.text)}”</div>`)).join("");
 }
 
 /* the map switcher: every map, how many apprentices are there; follow the action or look around */
@@ -981,7 +999,12 @@ function load(data) {
   try {
     const r = await fetch("replays/codeworld.json");
     if (!r.ok) throw new Error(r.status);
-    load(await r.json());
+    const data = await r.json();
+    try {  // LLM apprentices' runs, if recorded (scripts/build_codeworld_web.py --llm)
+      const l = await fetch("replays/llm.json");
+      if (l.ok) data.replays = (await l.json()).replays.concat(data.replays);
+    } catch (e) { /* none yet */ }
+    load(data);
   } catch (e) {
     toast("No replays/codeworld.json yet: run scripts/build_codeworld_web.py, or load a replay file.");
     wire();

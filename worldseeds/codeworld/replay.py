@@ -33,10 +33,11 @@ def town_world(index: int = 1, districts: int = 1, machines: int = 6, shortcuts:
 def record(world: Universe, mode: str, team: int, capacity: int | None, sprints: int = 3, budget: int = 120,
            projects_per_dev: int = 4, walk: bool = True, batch: bool = True, seed: int = 0, title: str = "",
            description: str = "", events=None, goals=None, goal_deadline: int = 4, fund: int | None = None,
-           econ=None, **buildings) -> dict:
+           econ=None, model=None, settings=None, max_turns: int = 200, **buildings) -> dict:
     """Run ``sprints`` sprints of one organisation and record everything. ``solo`` gets the team's budget.
     ``events`` (an EventRates) makes the town change: a copy of the world meets seeded events each sprint.
-    ``goals`` (kinds, see goals.py) gives the town grand goals, worked on before the day's orders."""
+    ``goals`` (kinds, see goals.py) gives the town grand goals, worked on before the day's orders.
+    ``model`` (an Agents SDK model) makes the apprentices LLM agents (town_llm.py) instead of rule-based ones."""
     rng = random.Random(f"replay/{seed}/{world.index}/{world.n_functions}/{team}")
     sched = None
     if events is not None and events.any:
@@ -61,7 +62,7 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
            "description": description, "mode": mode, "team": len(org.devs), "capacity": capacity, "walk": walk, "batch": batch,
            **{k: bool(v) for k, v in buildings.items() if k in ("board", "library", "post")},
            "shortcuts": bool(world.map and world.map.shortcuts),
-           "money": org.econ is not None,
+           "money": org.econ is not None, "policy": "llm" if model is not None else "heuristic",
            "budget": per_dev, "world": world.layout(),
            "goals": [{**g.to_dict(), "parts": [{**p, "done": None} for p in g.to_dict()["parts"]]} for g in gl] if gl else [],
            "devs": [{"name": d.name, "owns": sorted(d.owns, key=world.modules.index), "home": d.home,
@@ -78,7 +79,15 @@ def record(world: Universe, mode: str, team: int, capacity: int | None, sprints:
         purses = {d.name: d.coins for d in org.devs}
         reps = {d.name: d.rep for d in org.devs}
         treasury = org.treasury
-        m = org.sprint(projects, per_dev, happened, goals=gl)
+        if model is not None:
+            import asyncio
+
+            from .town_llm import llm_town_sprint
+
+            res = asyncio.run(llm_town_sprint(org, projects, per_dev, model, settings, happened, gl, max_turns))
+            m = res["metrics"]
+        else:
+            m = org.sprint(projects, per_dev, happened, goals=gl)
         n = len(org.devs)
         out["sprints"].append({
             "index": s + 1, "budget": per_dev,

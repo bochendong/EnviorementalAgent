@@ -121,6 +121,11 @@ class Org:
         if econ:
             for d in self.devs:
                 d.coins = econ.start
+        self._answered: set = set()
+        self.posts: list[dict] = []  # notes pinned on the notice board (LLM apprentices)
+        self.prices: dict[str, int] = {}  # what each charges for an explanation (LLM apprentices)
+        self.sessions: dict = {}
+        self.sprint_events: list[dict] = []
         self.goals: list = []  # grand goals (goals.py), worked on before the day's orders
         self.sprint_no = 0
         self.ency = False  # the town encyclopedia is a goal: everyone writes down what is missing
@@ -396,7 +401,9 @@ class Org:
                             extra.append(g)
                 self._ev("ask", dev, to=helper.name, fn=fn, answered=True, law=law.describe(), also=extra,
                          **({"by": "post", "delay": self.post_delay} if by_post else {}))
-                helper.rep += 1
+                if (dev.name, helper.name, fn) not in self._answered and law.table == self.u.functions[fn].law.table:
+                    self._answered.add((dev.name, helper.name, fn))
+                    helper.rep += 1
                 if price:
                     self.pay(dev, helper, price, "answer")
                 return [law(x) for x in xs]
@@ -613,11 +620,10 @@ class Org:
                 self._ev("goal_done", self.devs[0], goal=g.id)
 
     # ------------------------------------------------------------ sprints
-    def sprint(self, projects: list[Project], budget: int, events: list[dict] | None = None, goals=None) -> dict:
-        """Every developer gets ``budget`` actions; projects are handed out round robin and worked on in
-        turns (one project per developer per turn) until done or nobody has budget left. Grand goals
-        (``goals``, shared across sprints) come first: their open parts are handed out before the orders."""
+    def begin_sprint(self, budget: int, events: list[dict] | None = None, goals=None) -> None:
+        """A new sprint: time, events, upkeep, re-issued goal parts (shared by heuristic and LLM sprints)."""
         self.sprint_no += 1
+        self.sprint_events = events or []
         if goals is not None:
             self.goals = goals
             self.ency = any(g.kind == "encyclopedia" for g in goals)
@@ -630,6 +636,7 @@ class Org:
         for k in self.stats:
             self.stats[k] = 0
         self.money = {}
+        self._answered = set()  # (asker, helper, function): reputation counts each explanation once a sprint
         self.notices["changed"], self.notices["repaired"] = set(), set()
         masters = self.mode in ("owners", "directory")
         for d in self.devs:  # who is not the master cannot tell whether it has been repaired since
@@ -642,6 +649,21 @@ class Org:
 
             for e in reissue(self.u, self.goals):
                 self._ev("goal_reissued", self.devs[0], **{k: v for k, v in e.items() if k != "kind"})
+
+    def end_sprint(self, results: list[dict], gifts: bool = True) -> dict:
+        if gifts and self.econ and any(g.kind == "fund" and g.done_at is None and self.sprint_no <= g.deadline
+                                       for g in self.goals):
+            for d in self.devs:  # gifts for the clock tower, each as generous as it is
+                self.pay(d, "treasury", int(max(0, d.coins - self.econ.reserve) * self.generosity[d.name]), "gift")
+        if self.goals:
+            self._score_goals()
+        return self.metrics(results)
+
+    def sprint(self, projects: list[Project], budget: int, events: list[dict] | None = None, goals=None) -> dict:
+        """Every developer gets ``budget`` actions; projects are handed out round robin and worked on in
+        turns (one project per developer per turn) until done or nobody has budget left. Grand goals
+        (``goals``, shared across sprints) come first: their open parts are handed out before the orders."""
+        self.begin_sprint(budget, events, goals)
         gq = self._assign(self._goal_tasks()) if self.goals else [[] for _ in self.devs]
         for d, tasks in zip(self.devs, gq):  # goal work first, while there is time for it
             for t in tasks:
@@ -665,12 +687,19 @@ class Org:
                     q.clear()
             if not progressed:
                 break
-        if self.econ and any(g.kind == "fund" and g.done_at is None and self.sprint_no <= g.deadline for g in self.goals):
-            for d in self.devs:  # gifts for the clock tower, each as generous as it is
-                self.pay(d, "treasury", int(max(0, d.coins - self.econ.reserve) * self.generosity[d.name]), "gift")
-        if self.goals:
-            self._score_goals()
-        return self.metrics(results)
+        return self.end_sprint(results)
+
+    def town_factor(self) -> float:
+        """How the town's goals went, 0.5 (all missed) .. 1 (all done): personal scores are scaled by it, so
+        nobody wins by getting rich while the town fails."""
+        if not self.goals:
+            return 1.0
+        return 0.5 + 0.5 * sum(g.progress for g in self.goals) / len(self.goals)
+
+    def scores(self) -> dict:
+        """Personal score: coins + 5 x reputation, scaled by the town factor."""
+        f = self.town_factor()
+        return {d.name: round((d.coins + 5 * d.rep) * f, 1) for d in self.devs}
 
     def _upkeep(self) -> None:
         """Food and lodging: paid to the masters of the bakery, inn, farm and shop; who cannot pay is tired."""
@@ -736,6 +765,7 @@ class Org:
             **self.stats,
             **({"treasury": self.treasury, "coins": {d.name: d.coins for d in self.devs},
                 "wealth_gini": round(gini([d.coins for d in self.devs]), 3), "rep": {d.name: d.rep for d in self.devs},
+                "score": self.scores(),
                 **{f"money_{k}": v for k, v in self.money.items()}} if self.econ else {}),
             **({"goal_parts_done": sum(p.get("done") is not None for g in self.goals for p in g.parts),
                 "goal_parts": sum(len(g.parts) for g in self.goals),
