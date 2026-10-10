@@ -50,6 +50,17 @@ def test_ungated_delivery_does_not_count_as_learning():
     assert gated.submit(list(MACHINES)).startswith("Rejected")
 
 
+def test_explicit_guidance_is_shared_and_does_not_supply_coefficients():
+    for seed in (11, 22, 33):
+        _, raw, _ = make_case(seed, CONDITIONS[3])
+        _, calc, _ = make_case(seed, CONDITIONS[4])
+        text = instructions(raw, True)
+        assert text == instructions(calc, True)
+        assert '(output_at_1-output_at_0)%101' in text and 'minus sign' in text
+        assert 'once' in text.lower() and text != instructions(raw)
+        assert all(f.law.describe() not in text for f in raw.u.functions.values())
+
+
 def test_model_pipeline_calculator_records_and_learning_checks(tmp_path):
     from agents import ModelSettings
     from agents.testing import ScriptedModel, function_call

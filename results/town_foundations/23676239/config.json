@@ -1,0 +1,17 @@
+{
+  "out_dir": "/scratch/bdong/worldseeds/results/town_foundations/23676239",
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "conditions": [
+    "small_gated",
+    "small_open",
+    "small_open_calculator",
+    "wrapped_open",
+    "wrapped_open_calculator"
+  ],
+  "budget": 32,
+  "max_turns": 40
+}

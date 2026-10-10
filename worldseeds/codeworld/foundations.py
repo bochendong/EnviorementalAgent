@@ -42,6 +42,7 @@ class FoundationConfig:
     conditions: tuple = tuple(c.name for c in CONDITIONS)
     budget: int = 32
     max_turns: int = 40
+    explicit_arithmetic: bool = False
 
 
 class FoundationSession(TutorialSession):
@@ -65,12 +66,25 @@ def make_case(seed, condition, budget=32):
     return org, session, order
 
 
-def instructions(session):
+def instructions(session, explicit_arithmetic=False):
     # Identical for all five conditions. The only calculator intervention is tool availability.
-    return prompt(session) + (
+    text = prompt(session) + (
         " If a calculate tool is available, use it for arithmetic with the numbers you actually observed, "
         "including modular subtraction; it does not discover a rule for you. "
         "If it is unavailable, calculate the same arithmetic yourself.")
+    if explicit_arithmetic:
+        text += (" For EACH affine machine, keep the numeric outputs at inputs 0, 1, 2 in that order. "
+                 "The intercept is output_at_0. The slope expression is "
+                 "(output_at_1-output_at_0)%101: replace these placeholders with the actual numbers, "
+                 "include the parentheses and %101, and evaluate the WHOLE expression. "
+                 "Use calculate if available. Copy its result exactly into remember; never take the "
+                 "absolute value of a negative result. Negative coefficients are valid, and losing their "
+                 "minus sign changes the rule. Check the rule on your observed input 2. "
+                 "If a note is rejected, recheck your arithmetic and the copied numbers, rather than "
+                 "repeating the same probes. Once inputs 0, 1, 2 are known, you already have enough "
+                 "samples for an affine rule; do not study those same samples again. "
+                 "After both notes are saved, compute both order examples and submit.")
+    return text
 
 
 def learning_metrics(session, order):
@@ -134,7 +148,7 @@ async def _run(config, model, settings):
                 if condition.calculator:
                     tools.append(calculator_tool(session))
                 result = await run_dev(session, model, settings, config.max_turns,
-                                       tools=tools, text=instructions(session))
+                                       tools=tools, text=instructions(session, config.explicit_arithmetic))
                 metrics = org.end_sprint([{"done": session.done == 1}], gifts=False)
                 row = {**metrics, **tags, **learning_metrics(session, order),
                        "condition": asdict(condition), "players": 1, "projects": 1,

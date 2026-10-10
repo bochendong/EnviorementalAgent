@@ -1,0 +1,51 @@
+{
+  "conditions": [
+    {
+      "condition": "small_gated",
+      "cases": 3,
+      "orders_passed": 3,
+      "learning_passed": 3,
+      "statuses": {
+        "completed": 3
+      }
+    },
+    {
+      "condition": "small_open",
+      "cases": 3,
+      "orders_passed": 3,
+      "learning_passed": 3,
+      "statuses": {
+        "completed": 3
+      }
+    },
+    {
+      "condition": "small_open_calculator",
+      "cases": 3,
+      "orders_passed": 3,
+      "learning_passed": 3,
+      "statuses": {
+        "completed": 3
+      }
+    },
+    {
+      "condition": "wrapped_open",
+      "cases": 3,
+      "orders_passed": 0,
+      "learning_passed": 0,
+      "statuses": {
+        "out_of_budget": 2,
+        "blocked_budget": 1
+      }
+    },
+    {
+      "condition": "wrapped_open_calculator",
+      "cases": 3,
+      "orders_passed": 2,
+      "learning_passed": 2,
+      "statuses": {
+        "repeated_tool_failure": 1,
+        "completed": 2
+      }
+    }
+  ]
+}

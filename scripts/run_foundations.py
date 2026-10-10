@@ -13,5 +13,6 @@ if __name__ == "__main__":
     ap.add_argument("--conditions", nargs="+", choices=[c.name for c in CONDITIONS],
                     default=[c.name for c in CONDITIONS])
     ap.add_argument("--out", required=True)
+    ap.add_argument("--explicit-arithmetic", action="store_true", help="explicit slope/sign and non-repetition guidance")
     args = ap.parse_args()
-    run(FoundationConfig(args.out, tuple(args.seeds), tuple(args.conditions)))
+    run(FoundationConfig(args.out, tuple(args.seeds), tuple(args.conditions), explicit_arithmetic=args.explicit_arithmetic))

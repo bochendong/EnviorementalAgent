@@ -31,3 +31,9 @@ sbatch slurm/town_foundations.sh
 先看 small_gated 与 small_open 的差别，再看 wrapped_open 与 wrapped_open_calculator 的差别。基础推断可复现后，再测试多条链、边界规律和互相提问。每项支持都必须写进实验条件，并在后续团队/单人比较中保持一致。
 
 阶梯也提供可选 `--calculator`，默认关闭，旧实验行为保持原样。基础诊断通过后可使用 `LADDER_ARGS="--calculator" sbatch slurm/town_ladder.sh`，记录中会标注此支持；它不自动替 agent 学习任何规则。
+
+第 1 轮 23676239：小系数三组均为 3/3 学会并交付；大系数无计算器为 0/3，有计算器为 2/3。失败的计算器案例把返回的 `-16` 写成了 `+16`，随后重复计算和采样。第 2 轮将大系数两组都加上相同的明确提示：使用完整的模减法表达式、保留结果的符号、已有三个样例后不重复采样；计算器实现、世界、预算和判定不变。这是在看到第 1 轮结果后追加的探索性提示修复，不是预先指定的独立确认。
+
+```bash
+FOUNDATION_ARGS="--conditions wrapped_open wrapped_open_calculator --explicit-arithmetic" sbatch slurm/town_foundations.sh
+```

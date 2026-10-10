@@ -1,0 +1,3 @@
+NVIDIA H100 80GB HBM3; one 3g.40gb MIG slice.
+Four CPUs, 32 GiB requested host memory, one-hour Slurm limit.
+Original hardware and operational server logs retained privately.

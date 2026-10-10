@@ -56,7 +56,7 @@ cleanup() {
 trap cleanup EXIT
 RUN_SECONDS=$SECONDS
 set +e
-python scripts/run_foundations.py --seeds 11 22 33 ${FOUNDATION_ARGS:-} --out "$OUT"
+python scripts/run_foundations.py --seeds 11 22 33 --out "$OUT"
 RUN_EXIT=$?
 set -e
 printf 'experiment_seconds=%s\nexit_code=%s\n' "$((SECONDS - RUN_SECONDS))" "$RUN_EXIT" | tee -a "$OUT/timing.txt"
