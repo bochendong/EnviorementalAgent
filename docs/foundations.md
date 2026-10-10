@@ -37,3 +37,7 @@ sbatch slurm/town_foundations.sh
 ```bash
 FOUNDATION_ARGS="--conditions wrapped_open wrapped_open_calculator --explicit-arithmetic" sbatch slurm/town_foundations.sh
 ```
+
+第 2 轮 23677053：明确提示后，无计算器交付 2/3、完整学习与验证流程通过 1/3；有计算器两项均为 3/3，每局只用了 6 次采样、2 次算术、3 次记笔记、2 次验证和1次提交。第一次错误笔记被反馈纠正，最终两条规则均正确。共享的算术流程提示也用于阶梯的 `--calculator` 条件，对有分支的机器另提醒不要跨分支套用两点仿射公式。
+
+目前只确认这三个已使用过的世界种子，后续需要新的世界种子确认泛化，并继续测试多候选链、分支和沟通；尚未证明这些支持足以解决完整小镇。第二轮是在第一轮结果之后修复提示，属于探索性结果。

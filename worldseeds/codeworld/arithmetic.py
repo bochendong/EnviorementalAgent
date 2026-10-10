@@ -3,6 +3,21 @@ import ast
 import operator
 
 
+AFFINE_GUIDANCE = (
+    " For EACH affine machine, keep the numeric outputs at inputs 0, 1, 2 in that order. "
+    "The intercept is output_at_0. The slope expression is "
+    "(output_at_1-output_at_0)%101: replace these placeholders with the actual numbers, "
+    "include the parentheses and %101, and evaluate the WHOLE expression. "
+    "Use calculate if available. Copy its result exactly into remember; never take the "
+    "absolute value of a negative result. Negative coefficients are valid, and losing their "
+    "minus sign changes the rule. Check the rule on your observed input 2. "
+    "If a note is rejected, recheck your arithmetic and the copied numbers, rather than "
+    "repeating the same probes. Once inputs 0, 1, 2 are known, you already have enough "
+    "samples for an affine rule; do not study those same samples again. "
+    "After both notes are saved, compute both order examples and submit."
+)
+
+
 def evaluate(expression: str) -> int:
     if len(expression) > 256:
         raise ValueError("expression must be at most 256 characters")

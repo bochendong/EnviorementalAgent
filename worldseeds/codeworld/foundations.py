@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from ..recording import ACTIVE_RECORDING, EventLog
-from .arithmetic import calculator_tool
+from .arithmetic import AFFINE_GUIDANCE, calculator_tool
 from .ladder import LEVELS, build_world
 from .llm_agent import _tools, run_dev
 from .org import Org
@@ -73,17 +73,7 @@ def instructions(session, explicit_arithmetic=False):
         "including modular subtraction; it does not discover a rule for you. "
         "If it is unavailable, calculate the same arithmetic yourself.")
     if explicit_arithmetic:
-        text += (" For EACH affine machine, keep the numeric outputs at inputs 0, 1, 2 in that order. "
-                 "The intercept is output_at_0. The slope expression is "
-                 "(output_at_1-output_at_0)%101: replace these placeholders with the actual numbers, "
-                 "include the parentheses and %101, and evaluate the WHOLE expression. "
-                 "Use calculate if available. Copy its result exactly into remember; never take the "
-                 "absolute value of a negative result. Negative coefficients are valid, and losing their "
-                 "minus sign changes the rule. Check the rule on your observed input 2. "
-                 "If a note is rejected, recheck your arithmetic and the copied numbers, rather than "
-                 "repeating the same probes. Once inputs 0, 1, 2 are known, you already have enough "
-                 "samples for an affine rule; do not study those same samples again. "
-                 "After both notes are saved, compute both order examples and submit.")
+        text += AFFINE_GUIDANCE
     return text
 
 

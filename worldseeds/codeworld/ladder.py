@@ -228,7 +228,7 @@ def run(cfg: LadderConfig, model=None, settings=None):
 async def _run(cfg: LadderConfig, model, settings):
     from ..llm import LLMConfig, make_model, make_settings
     from .town_llm import _tools as town_tools
-    from .arithmetic import calculator_tool
+    from .arithmetic import AFFINE_GUIDANCE, calculator_tool
 
     out = Path(cfg.out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -262,7 +262,11 @@ async def _run(cfg: LadderConfig, model, settings):
 
             arithmetic_hint = (" Use calculate for arithmetic with your observed numbers, including modular "
                                "subtraction and modular inverses. It only evaluates your expression; "
-                               "you must still infer and verify rules.") if cfg.calculator else ""
+                               "you must still infer and verify rules." +
+                               AFFINE_GUIDANCE.replace("After both notes are saved",
+                                                       "After the required notes for your current chain are saved") +
+                               " For branched machines, identify the edge case and fit each segment; "
+                               "do not use the two-point affine shortcut across a branch boundary.") if cfg.calculator else ""
             outs = await asyncio.gather(*[
                 run_dev(s, model, settings, lv.max_turns, text=prompt(s) + arithmetic_hint,
                         tools=agent_tools(s),

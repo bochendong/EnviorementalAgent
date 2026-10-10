@@ -1,0 +1,23 @@
+{
+  "conditions": [
+    {
+      "condition": "wrapped_open",
+      "cases": 3,
+      "orders_passed": 2,
+      "learning_passed": 1,
+      "statuses": {
+        "repeated_tool_failure": 1,
+        "completed": 2
+      }
+    },
+    {
+      "condition": "wrapped_open_calculator",
+      "cases": 3,
+      "orders_passed": 3,
+      "learning_passed": 3,
+      "statuses": {
+        "completed": 3
+      }
+    }
+  ]
+}
