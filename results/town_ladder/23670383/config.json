@@ -1,0 +1,19 @@
+{
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "levels": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "out_dir": "/scratch/bdong/worldseeds/results/town_ladder/23670383",
+  "gate": 0.6666666666666666,
+  "stop": true,
+  "extra": {}
+}

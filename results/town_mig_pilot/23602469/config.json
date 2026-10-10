@@ -1,0 +1,53 @@
+{
+ "universes": [
+  1
+ ],
+ "modules": [
+  8
+ ],
+ "fns_per_module": 6,
+ "capacities": [
+  12
+ ],
+ "team_sizes": [
+  4
+ ],
+ "variants": [
+  "solo",
+  "owners"
+ ],
+ "sprints": 1,
+ "projects_per_dev": 1,
+ "budget": 40,
+ "learn": true,
+ "theme": "town",
+ "walk": true,
+ "batch": false,
+ "board": false,
+ "library": false,
+ "post": false,
+ "post_delay": 3,
+ "shortcuts": false,
+ "breakdown": 0.0,
+ "drift": 0.0,
+ "festival": 0.0,
+ "storm": 0.0,
+ "rumor": 0.0,
+ "goals": [
+  "banquet",
+  "prize",
+  "fund"
+ ],
+ "goal_deadline": 1,
+ "fund": 300,
+ "money": true,
+ "answer_price": 0,
+ "upkeep": 0,
+ "bounty": 25,
+ "hiring": true,
+ "policy": "llm",
+ "max_turns": 160,
+ "save_traces": true,
+ "out_dir": "/scratch/bdong/worldseeds/results/town_mig_pilot/23602469",
+ "seed": 0
+}

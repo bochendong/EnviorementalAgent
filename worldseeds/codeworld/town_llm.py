@@ -374,6 +374,7 @@ class TownSession(Session):
         p = self.queue.pop(0)
         self.explained = {}
         other.queue.append(p)
+        self.handed_over += 1
         o._ev("hire", d, to=mate.name, project=p.id)
         if coins and o.econ:
             o.pay(d, mate, int(coins), "wage")

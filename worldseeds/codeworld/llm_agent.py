@@ -109,6 +109,7 @@ class Session:
     model_requests: int = 0
     observations: dict = field(default_factory=dict)  # this sprint's actual machine samples, not task targets
     failed_programs: dict = field(default_factory=dict)  # persists across intervening free computations
+    handed_over: int = 0
 
     @property
     def u(self):
@@ -150,7 +151,9 @@ class Session:
 
     def stop_reason(self, more) -> str | None:
         if not more():
-            return "completed"
+            if self.handed_over:
+                return "orders_transferred"
+            return "completed" if self.done else "no_orders"
         if self.dev.budget <= 0:
             return "out_of_budget"
         if self.blocked_budget >= 2:
@@ -442,12 +445,14 @@ async def run_dev(session: Session, model, settings, max_turns: int = 200, tools
         raw_usage = bound[0].http_usage.get(bound[0].usage_key(bound[1]))
         if raw_usage is not None:
             usage = list(raw_usage)
-    event("agent_end", status=status, done=session.done, remaining_orders=len(session.queue),
+    event("agent_end", status=status, done=session.done, handed_over=session.handed_over,
+          remaining_orders=len(session.queue),
           budget=session.dev.budget, model_requests=session.model_requests,
           input_tokens=usage[0], output_tokens=usage[1])
     if token is not None:
         ACTIVE_RECORDING.reset(token)
-    return {"dev": session.dev.name, "done": session.done, "status": status, "nudges": nudges,
+    return {"dev": session.dev.name, "done": session.done, "handed_over": session.handed_over,
+            "status": status, "nudges": nudges,
             "input_tokens": usage[0],
             "output_tokens": usage[1], "trace": session.trace}
 
