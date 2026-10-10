@@ -23,6 +23,7 @@ from __future__ import annotations
 import asyncio
 import re
 import time
+import traceback
 from dataclasses import dataclass, field
 
 from .knowledge import study_inputs
@@ -30,6 +31,10 @@ from .org import Dev, Org, OutOfBudget
 from .world import P, Law, Project
 
 _AFF = r"(-?\d+)\s*\*\s*x\s*(?:([+-])\s*(\d+))?"
+LAW_HELP = ("Use concrete integer coefficients, not the letters a or b. Examples of syntax only: "
+            "'3*x + 5' or '7*x + 1 if x % 3 == 0 else 2*x + 9'. "
+            "All outputs are modulo 101; infer the numbers from your observed samples. "
+            "Do not copy these example numbers as a machine's law.")
 
 
 def parse_law(text: str) -> Law | None:
@@ -60,6 +65,15 @@ You have {budget} actions this sprint. Running a function costs 1, studying one 
 costs 1. Knowing laws makes building cheap: compute(program, x) is free with laws you know. Your notebook holds at
 most {capacity} laws; when it is full the least recently used law is forgotten. Write laws with
 remember(function, law) in the form "a*x + b" or "a2*x + b2 if x % m == 0 else a*x + b".
+Replace a, b, a2, b2 and m with actual integers inferred from observations. For example, the syntax is
+"3*x + 5", not the literal string "a*x + b". Arithmetic wraps modulo 101. After studying a function,
+infer and remember its rule before studying another; avoid repeating a study with identical inputs.
+If study is too expensive, run(function, x) costs only 1 action. Use known rules to compute candidate
+chains against the project's examples and submit a matching chain. Signatures are already listed below.
+run/study are real observations; compute only predicts from your notebook and may be wrong.
+Never infer a machine's rule from the output you WANT an order to have. Fit observed input/output
+pairs instead. If a submission disagrees with compute, re-test your notebook assumptions, not the
+same submission. Tool calls handle any required walking automatically; no separate walk tool is needed.
 {team}
 FUNCTIONS (module: function: input type -> output type):
 {signatures}
@@ -89,6 +103,12 @@ class Session:
     submits: int = 0
     trace: list = field(default_factory=list)
     explained: dict = field(default_factory=dict)  # this project's working memory: laws teammates explained
+    blocked_budget: int = 0
+    repeated_failure: int = 0
+    _last_failure: object = None
+    model_requests: int = 0
+    observations: dict = field(default_factory=dict)  # this sprint's actual machine samples, not task targets
+    failed_programs: dict = field(default_factory=dict)  # persists across intervening free computations
 
     @property
     def u(self):
@@ -105,8 +125,51 @@ class Session:
                 + (p.text() if p else "no projects left") + "]")
 
     def log(self, tool, args, out) -> str:
-        self.trace.append({"tool": tool, "args": args, "out": out[:1500], "t": time.monotonic()})
-        return out + self.status()
+        import json
+        budget_error = out.startswith("Out of budget")
+        self.blocked_budget = self.blocked_budget + 1 if budget_error else 0
+        failure = budget_error or out.startswith(("Could not read", "Rejected:", "No function"))
+        key = (tool, json.dumps(args, sort_keys=True)) if failure else None
+        self.repeated_failure = self.repeated_failure + 1 if key and key == self._last_failure else int(failure)
+        self._last_failure = key
+        if budget_error:
+            out += (f" This operation cannot be afforded with {self.dev.budget} actions left. "
+                    "Do not repeat it. Use a cheaper action (run costs 1), compute with known rules, "
+                    "submit if possible, or buy overtime if available. Two consecutive unaffordable "
+                    "calls end this player's run.")
+        returned = out + self.status()
+        entry = {"tool": tool, "args": args, "out": out, "returned": returned, "t": time.monotonic(),
+                 "time": time.time(), "budget_after": self.dev.budget, "location": self.dev.loc,
+                 "project": self.project.id if self.project else None}
+        self.trace.append(entry)
+        from ..recording import ACTIVE_RECORDING
+        active = ACTIVE_RECORDING.get()
+        if active:
+            active[0].write("tool_result", active[1], **entry)
+        return returned
+
+    def stop_reason(self, more) -> str | None:
+        if not more():
+            return "completed"
+        if self.dev.budget <= 0:
+            return "out_of_budget"
+        if self.blocked_budget >= 2:
+            return "blocked_budget"
+        if self.repeated_failure >= 3:
+            return "repeated_tool_failure"
+        if any(count >= 3 for count in self.failed_programs.values()):
+            return "repeated_submission_failure"
+        return None
+
+    def observation_conflict(self, function, law):
+        for x, observed in self.observations.get(function, {}).items():
+            predicted = law(x)
+            if predicted != observed:
+                return (f"Rejected: your rule predicts {predicted} for input {x}, but you observed "
+                        f"{observed} from {function}. No note was saved. "
+                        "Fit the observed values, not the order's desired output. "
+                        "Use run/study for additional real samples if needed.")
+        return None
 
     def _law(self, fn: str) -> Law | None:
         return self.dev.notebook.get(fn) or self.explained.get(fn)
@@ -124,7 +187,10 @@ class Session:
             self.dev.spend("study")
         except OutOfBudget:
             return self.log("run", {"function": function, "x": x}, "Out of budget.")
-        return self.log("run", {"function": function, "x": x}, f"{function}({x % P}) = {f.law(x % P)}")
+        observed = f.law(x % P)
+        self.observations.setdefault(function, {})[x % P] = observed
+        return self.log("run", {"function": function, "x": x},
+                        f"{function}({x % P}) = {observed}. Real machine observation, not a notebook prediction.")
 
     def study(self, function: str) -> str:
         f = self.u.functions.get(function)
@@ -134,8 +200,11 @@ class Session:
             self.dev.spend("study", len(study_inputs()))
         except OutOfBudget:
             return self.log("study", {"function": function}, "Out of budget.")
-        pts = ", ".join(f"{x} -> {f.law(x)}" for x in study_inputs())
-        return self.log("study", {"function": function}, f"{function}: {pts}")
+        samples = {x: f.law(x) for x in study_inputs()}
+        self.observations.setdefault(function, {}).update(samples)
+        pts = ", ".join(f"{x} -> {y}" for x, y in samples.items())
+        return self.log("study", {"function": function},
+                        f"{function}: {pts}. These are real observations. Infer numeric coefficients and remember them.")
 
     def remember(self, function: str, law: str) -> str:
         if function not in self.u.functions:
@@ -143,10 +212,16 @@ class Session:
         parsed = parse_law(law)
         if parsed is None:
             return self.log("remember", {"function": function, "law": law},
-                            "Could not read that law. Use 'a*x + b' or 'a2*x + b2 if x % m == 0 else a*x + b'.")
+                            "Could not read that law. " + LAW_HELP)
+        conflict = self.observation_conflict(function, parsed)
+        if conflict:
+            return self.log("remember", {"function": function, "law": law}, conflict)
         gone = self.dev.notebook.put(function, parsed)
+        n = len(self.observations.get(function, {}))
         return self.log("remember", {"function": function, "law": law},
-                        f"Noted {function}: {parsed.describe()}." + (f" Forgot: {', '.join(gone)}." if gone else ""))
+                        f"Noted {function}: {parsed.describe()}. Checked against {n} observed samples; "
+                        "this is a hypothesis, not a guarantee on untested inputs."
+                        + (f" Forgot: {', '.join(gone)}." if gone else ""))
 
     def notebook(self) -> str:
         lines = [f"{n}: {law.describe()}" for n, law in self.dev.notebook.laws.items()]
@@ -160,7 +235,9 @@ class Session:
             if law is None:
                 return self.log("compute", {"program": program, "x": x}, f"You do not know the law of {fn}.")
             v = law(v)
-        return self.log("compute", {"program": program, "x": x}, f"{' -> '.join(program)} on {x}: {v}")
+        return self.log("compute", {"program": program, "x": x},
+                        f"{' -> '.join(program)} on {x}: {v}. Notebook prediction only; no machine was run. "
+                        "A matching prediction does not prove the chain works; wrong notes give wrong predictions.")
 
     def ask(self, teammate: str, function: str) -> str:
         mate = next((d for d in self.org.devs if d.name == teammate and d is not self.dev), None)
@@ -194,13 +271,23 @@ class Session:
             return self.log("submit", {"program": program}, "Out of budget.")
         self.submits += 1
         prog = tuple(program)
+        def reject(message):
+            key = (p.id, prog)
+            self.failed_programs[key] = self.failed_programs.get(key, 0) + 1
+            return self.log("submit", {"program": program}, "Rejected: " + message +
+                            " This tests the real machines, not your notes. Do not resubmit the same chain "
+                            "without changing it. Three rejections of one chain end your run even if "
+                            "you call compute between submissions.")
         if not self.u.type_checks(prog, p.in_type, p.out_type):
-            return self.log("submit", {"program": program}, "Rejected: the program does not type-check.")
+            return reject("the program does not type-check.")
         if self.u.table(prog) != self.u.table(p.target):
             bad = next(x for x, y in p.examples if self.u.run(prog, x) != y) if any(
                 self.u.run(prog, x) != y for x, y in p.examples) else None
-            return self.log("submit", {"program": program},
-                            "Rejected: " + (f"wrong on example {bad}." if bad is not None else "fails hidden tests."))
+            if bad is not None:
+                desired = dict(p.examples)[bad]
+                actual = self.u.run(prog, bad)
+                return reject(f"wrong on example {bad}: actual machine output {actual}; required output {desired}.")
+            return reject("fails hidden tests; your hypotheses may fail on inputs not covered by the examples.")
         self.done += 1
         self.queue.pop(0)
         self.explained = {}
@@ -227,7 +314,7 @@ def _tools(session: Session):
 
     @function_tool
     def remember(function: str, law: str) -> str:
-        """Write a law into your notebook: 'a*x + b' or 'a2*x + b2 if x % m == 0 else a*x + b'. Free."""
+        """Write a rule with numeric coefficients, e.g. '3*x + 5'; never literal a or b. Modulo 101. Free."""
         return session.remember(function, law)
 
     @function_tool
@@ -237,7 +324,7 @@ def _tools(session: Session):
 
     @function_tool
     def compute(program: list[str], x: int) -> str:
-        """Run a program (list of function names, in order) on x using only laws you know. Free."""
+        """Predict using notebook hypotheses only; does not execute real machines. Wrong notes give wrong predictions. Free."""
         return session.compute(program, x)
 
     @function_tool
@@ -276,41 +363,90 @@ def instructions(session: Session) -> str:
 async def run_dev(session: Session, model, settings, max_turns: int = 200, tools=None, text=None, more=None) -> dict:
     """Run one developer's sprint. ``tools`` / ``text`` replace the default tools and instructions; ``more()``
     says whether there is work left (default: projects in the queue)."""
-    from agents import Agent, MaxTurnsExceeded, RunConfig, Runner, ToolsToFinalOutputResult
+    from agents import Agent, MaxTurnsExceeded, RunConfig, RunHooks, Runner, ToolsToFinalOutputResult
+    from ..recording import ACTIVE_RECORDING
 
     more = more or (lambda: bool(session.queue))
 
     def stop(ctx, results):
-        if not more() or session.dev.budget <= 0:
-            return ToolsToFinalOutputResult(is_final_output=True, final_output="DONE")
+        reason = session.stop_reason(more)
+        if reason:
+            return ToolsToFinalOutputResult(is_final_output=True, final_output=reason)
         return ToolsToFinalOutputResult(is_final_output=False)
+
+    active = ACTIVE_RECORDING.get()
+    if active:
+        token = ACTIVE_RECORDING.set((active[0], {**active[1], "dev": session.dev.name}))
+    else:
+        token = None
+
+    def event(kind, **data):
+        a = ACTIVE_RECORDING.get()
+        if a:
+            a[0].write(kind, a[1], **data)
+
+    class RecordingHooks(RunHooks):
+        async def on_llm_start(self, context, agent, system_prompt, input_items):
+            session.model_requests += 1
+            event("llm_start", turn=session.model_requests, system_prompt=system_prompt,
+                  input_items=input_items, settings=settings)
+
+        async def on_llm_end(self, context, agent, response):
+            # Count each response immediately, even if a later turn fails or hits the limit.
+            usage[0] += response.usage.input_tokens
+            usage[1] += response.usage.output_tokens
+            event("llm_end", turn=session.model_requests, response=response)
 
     agent = Agent(name=session.dev.name, instructions=text or instructions(session),
                   tools=tools if tools is not None else _tools(session), model=model,
                   model_settings=settings, tool_use_behavior=stop, reset_tool_choice=False)
     status, usage, nudges = "finished", [0, 0], 0
     run_input, turns_left = "Begin." + session.status(), max_turns
+    event("agent_start", instructions=agent.instructions, input=run_input, budget=session.dev.budget,
+          max_turns=max_turns, tools=[{"name": t.name, "description": t.description,
+                                    "schema": t.params_json_schema} for t in agent.tools])
     fields = getattr(RunConfig, "__dataclass_fields__", {})
     rc = RunConfig(**{k: v for k, v in {"tracing_disabled": True,
                                         "tool_not_found_behavior": "return_error_to_model"}.items() if k in fields})
     while True:
         res = None
+        reason = session.stop_reason(more)
+        if reason:
+            status = reason
+            break
         try:
-            res = await Runner.run(agent, run_input, max_turns=turns_left, run_config=rc)
-            u = res.context_wrapper.usage
-            usage[0] += u.input_tokens
-            usage[1] += u.output_tokens
+            res = await Runner.run(agent, run_input, max_turns=turns_left, run_config=rc, hooks=RecordingHooks())
         except MaxTurnsExceeded:
             status = "max_turns"
+            event("agent_limit", status=status)
         except Exception as e:  # a broken run must not end the sprint for everyone
             status = f"error: {type(e).__name__}: {e}"[:300]
-        if res is None or not more() or session.dev.budget <= 0 or nudges >= 3:
+            event("agent_error", error_type=type(e).__name__, message=str(e), traceback=traceback.format_exc())
+        reason = session.stop_reason(more)
+        if reason and not status.startswith("error:"):
+            status = reason
+        if res is None or reason or nudges >= 3:
+            if res is not None and not reason:
+                status = "stopped_with_work_left"
             break
         # the model stopped talking with work left: nudge it to keep going
         nudges += 1
-        turns_left = max(1, turns_left - len([i for i in res.new_items if i.type == "tool_call_item"]) - 1)
+        turns_left = max_turns - session.model_requests
+        if turns_left <= 0:
+            status = "max_turns"
+            break
         run_input = res.to_input_list() + [{"role": "user", "content": "Work is left and you have budget. "
                                             "Keep going: call a tool." + session.status()}]
+    bound = ACTIVE_RECORDING.get()
+    if bound:
+        raw_usage = bound[0].http_usage.get(bound[0].usage_key(bound[1]))
+        if raw_usage is not None:
+            usage = list(raw_usage)
+    event("agent_end", status=status, done=session.done, remaining_orders=len(session.queue),
+          budget=session.dev.budget, model_requests=session.model_requests,
+          input_tokens=usage[0], output_tokens=usage[1])
+    if token is not None:
+        ACTIVE_RECORDING.reset(token)
     return {"dev": session.dev.name, "done": session.done, "status": status, "nudges": nudges,
             "input_tokens": usage[0],
             "output_tokens": usage[1], "trace": session.trace}

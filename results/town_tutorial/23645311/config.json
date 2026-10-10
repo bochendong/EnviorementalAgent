@@ -1,0 +1,10 @@
+{
+  "seeds": [
+    11,
+    22,
+    33
+  ],
+  "budget": 32,
+  "max_turns": 40,
+  "out_dir": "/scratch/bdong/worldseeds/results/town_tutorial/23645311"
+}

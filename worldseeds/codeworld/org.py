@@ -135,8 +135,13 @@ class Org:
 
     def _ev(self, kind: str, dev: Dev, **kw) -> None:
         if self.record:
-            self.events.append({"i": len(self.events), "kind": kind, "dev": dev.name, "loc": dev.loc,
-                                "budget": dev.budget, "project": self._project, **kw})
+            event = {"i": len(self.events), "kind": kind, "dev": dev.name, "loc": dev.loc,
+                     "budget": dev.budget, "project": self._project, **kw}
+            self.events.append(event)
+            from ..recording import ACTIVE_RECORDING
+            active = ACTIVE_RECORDING.get()
+            if active:
+                active[0].write("engine_event", {**active[1], "dev": dev.name}, event=event)
 
     def _go(self, dev: Dev, place: str | None) -> None:
         if dev.loc == place:

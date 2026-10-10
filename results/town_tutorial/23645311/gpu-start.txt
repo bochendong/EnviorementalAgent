@@ -1,0 +1,7 @@
+Sanitized GPU configuration summary for Nibi job 23645311.
+Original nvidia-smi output retained locally, excluded from public upload.
+GPU model: NVIDIA H100 80GB HBM3
+Requested MIG profile: 3g.40gb
+MIG framebuffer memory: 40448 MiB
+Physical GPU framebuffer memory: 81559 MiB
+Hardware identifiers, PCI details and other infrastructure fields omitted.

@@ -606,6 +606,13 @@ function apply(e, ms) {
   if (e.budget !== undefined) S.budget[who] = e.budget;
   S.fresh[who] = null; S.gone[who] = [];
   switch (e.kind) {
+    case "tool":
+      if (e.tool === "study" && e.args.function && !e.out.startsWith("Out of budget")) {
+        sc.study(who, e.args.function, ms);
+      }
+      sc.emote(who, e.out.startsWith("Out of budget") || e.out.startsWith("Could not read") ? "emote_bang" : "emote_note", ms);
+      say(`${nick(who)}: ${e.tool}(${JSON.stringify(e.args)}) → ${e.out}`);
+      break;
     case "goal_start": {
       const g = S.goals.find(x => x.id === e.goal);
       sc.emote(who, "emote_note", ms);

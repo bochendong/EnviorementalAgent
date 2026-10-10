@@ -30,7 +30,7 @@ import time
 from dataclasses import dataclass, field
 
 from .goals import check
-from .llm_agent import Session, parse_law, run_dev
+from .llm_agent import LAW_HELP, Session, parse_law, run_dev
 from .org import Org, OutOfBudget
 from .world import Project
 
@@ -48,6 +48,15 @@ TIME: {budget} actions this sprint. Running a machine on one grade costs 1, stud
 walking costs actions too (to a workshop to use its machines, to a person to ask them). Your notebook holds at most
 {capacity} rules (write them with remember(machine, rule) as "a*x + b" or "a2*x + b2 if x % m == 0 else a*x + b";
 the least recently used is forgotten). compute(program, x) is free with rules you know.
+Write actual integer coefficients: "3*x + 5" is an example of syntax, whereas literal "a*x + b" is invalid.
+Infer the numbers from the observed grades, remembering that arithmetic wraps modulo 101. After studying
+a machine, infer and remember its rule; do not repeatedly request the same samples. If you cannot afford
+study (8 actions plus walking), use run for a single grade (1 plus walking). Use compute to check a chain
+against the current order's examples, then submit it. The complete machine list is already shown below.
+run/study return actual machine outputs; compute only predicts using your notebook. A desired order
+output is not an observation. Never write a rule to force a desired answer against observed samples.
+If submission fails, inspect actual vs required output and test your rules before choosing another chain.
+Walking to machines or teammates is automatic inside the tool call. There is no separate walk tool.
 {team}
 MONEY: you have {coins} coins. Customers pay for orders: half to who delivers, a royalty to the masters of the
 machines used, the rest is tax for the treasury ({treasury} coins). The treasury pays a bounty of {bounty} coins for each
@@ -82,6 +91,12 @@ class TownSession(Session):
     started: set = field(default_factory=set)
 
     # ------------------------------------------------------------ helpers
+    def log(self, tool, args, out):
+        # Include every actual tool call in the browser replay, even unsuccessful ones.
+        self.org._project = self.project.id if self.project else ""
+        self.org._ev("tool", self.dev, tool=tool, args=args, out=out)
+        return super().log(tool, args, out)
+
     def status(self) -> str:
         p = self.project
         e = self.org.econ
@@ -103,6 +118,7 @@ class TownSession(Session):
         self.org._ev("exploit", self.dev, what=what)
 
     def _walk(self, place) -> str | None:
+        self.org._project = self.project.id if self.project else ""
         try:
             self.org._go(self.dev, place)
         except OutOfBudget:
@@ -135,10 +151,12 @@ class TownSession(Session):
         return super().study(function)
 
     def remember(self, function: str, law: str) -> str:
+        before = set(self.dev.notebook.laws)
         out = super().remember(function, law)
         parsed = parse_law(law)
-        if parsed is not None and function in self.u.functions:
-            self.org._ev("learn", self.dev, fn=function, law=parsed.describe(), forgot=[],
+        if out.startswith("Noted ") and parsed is not None and function in self.u.functions:
+            self.org._ev("learn", self.dev, fn=function, law=parsed.describe(),
+                         forgot=sorted(before - set(self.dev.notebook.laws)),
                          correct=parsed.table == self.u.functions[function].law.table)
         return out
 
@@ -419,7 +437,7 @@ class TownSession(Session):
             return self.log("library_write", args, "There is no library in this town.")
         parsed = parse_law(law)
         if parsed is None or function not in self.u.functions:
-            return self.log("library_write", args, "Could not read that (machine name, rule as 'a*x + b' ...).")
+            return self.log("library_write", args, "Could not read that machine name or rule. " + LAW_HELP)
         err = self._walk(o._nearest(d, "library"))
         if err:
             return self.log("library_write", args, err)
@@ -465,7 +483,7 @@ def _tools(s: TownSession):
 
     @function_tool
     def remember(function: str, law: str) -> str:
-        """Write a rule into your notebook: 'a*x + b' or 'a2*x + b2 if x % m == 0 else a*x + b'. Free."""
+        """Write numeric coefficients, e.g. '3*x + 5'; never literal a or b. Contradicting observed samples is rejected. Free."""
         return s.remember(function, law)
 
     @function_tool
@@ -475,7 +493,7 @@ def _tools(s: TownSession):
 
     @function_tool
     def compute(program: list[str], x: int) -> str:
-        """Run a chain of machines on a grade with rules you know. Free."""
+        """Predict from notebook hypotheses only; does not run real machines. Wrong notes give wrong predictions. Free."""
         return s.compute(program, x)
 
     @function_tool

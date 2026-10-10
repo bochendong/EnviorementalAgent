@@ -19,7 +19,7 @@ import os
 from dataclasses import dataclass
 
 from agents import ModelSettings, OpenAIChatCompletionsModel, set_tracing_disabled
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, DefaultAsyncHttpxClient
 
 
 @dataclass
@@ -28,7 +28,7 @@ class LLMConfig:
     model: str = os.environ.get("WS_MODEL", "qwen3-8b")
     api_key: str = os.environ.get("WS_API_KEY", "EMPTY")
     temperature: float = 0.3
-    max_tokens: int = 1024
+    max_tokens: int = int(os.environ.get("WS_MAX_TOKENS", "1024"))
     thinking: bool = os.environ.get("WS_THINKING", "0") == "1"
     # "required" forces a tool call every turn (episodes end via the environment, not by
     # the model chatting). Set WS_TOOL_CHOICE=auto for servers without support.
@@ -39,7 +39,11 @@ class LLMConfig:
 def make_model(cfg: LLMConfig) -> OpenAIChatCompletionsModel:
     # Tracing would try to upload to OpenAI's servers; there is no OpenAI key on Nibi.
     set_tracing_disabled(True)
-    client = AsyncOpenAI(base_url=cfg.base_url, api_key=cfg.api_key, timeout=cfg.timeout, max_retries=3)
+    from .recording import record_request, record_response
+
+    client = AsyncOpenAI(base_url=cfg.base_url, api_key=cfg.api_key, timeout=cfg.timeout, max_retries=3,
+                         http_client=DefaultAsyncHttpxClient(timeout=cfg.timeout,
+                             event_hooks={"request": [record_request], "response": [record_response]}))
     return OpenAIChatCompletionsModel(model=cfg.model, openai_client=client)
 
 

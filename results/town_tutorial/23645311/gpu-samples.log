@@ -1,0 +1,42 @@
+2026-10-09T20:45:17Z
+pid, process_name, used_gpu_memory [MiB]
+57912, /cvmfs/restricted.computecanada.ca/easybuild/software/2023/x86-64-v4/CUDA/gcc12/openmpi4/cuda12.6/amber-pmemd/24.3/bin/pmemd.cuda, 512 MiB
+445412, VLLM::EngineCore, 35586 MiB
+vllm:num_requests_running{engine="0",model_name="qwen3-8b"} 0.0
+vllm:kv_cache_usage_perc{engine="0",model_name="qwen3-8b"} 0.0
+2026-10-09T20:45:32Z
+pid, process_name, used_gpu_memory [MiB]
+57912, /cvmfs/restricted.computecanada.ca/easybuild/software/2023/x86-64-v4/CUDA/gcc12/openmpi4/cuda12.6/amber-pmemd/24.3/bin/pmemd.cuda, 512 MiB
+445412, VLLM::EngineCore, 35586 MiB
+vllm:num_requests_running{engine="0",model_name="qwen3-8b"} 0.0
+vllm:kv_cache_usage_perc{engine="0",model_name="qwen3-8b"} 0.0
+2026-10-09T20:45:47Z
+pid, process_name, used_gpu_memory [MiB]
+57912, /cvmfs/restricted.computecanada.ca/easybuild/software/2023/x86-64-v4/CUDA/gcc12/openmpi4/cuda12.6/amber-pmemd/24.3/bin/pmemd.cuda, 512 MiB
+445412, VLLM::EngineCore, 35674 MiB
+vllm:num_requests_running{engine="0",model_name="qwen3-8b"} 1.0
+vllm:kv_cache_usage_perc{engine="0",model_name="qwen3-8b"} 0.012378839191871993
+2026-10-09T20:46:03Z
+pid, process_name, used_gpu_memory [MiB]
+57912, /cvmfs/restricted.computecanada.ca/easybuild/software/2023/x86-64-v4/CUDA/gcc12/openmpi4/cuda12.6/amber-pmemd/24.3/bin/pmemd.cuda, 512 MiB
+445412, VLLM::EngineCore, 35674 MiB
+vllm:num_requests_running{engine="0",model_name="qwen3-8b"} 0.0
+vllm:kv_cache_usage_perc{engine="0",model_name="qwen3-8b"} 0.0
+2026-10-09T20:46:18Z
+pid, process_name, used_gpu_memory [MiB]
+57912, /cvmfs/restricted.computecanada.ca/easybuild/software/2023/x86-64-v4/CUDA/gcc12/openmpi4/cuda12.6/amber-pmemd/24.3/bin/pmemd.cuda, 512 MiB
+445412, VLLM::EngineCore, 35674 MiB
+vllm:num_requests_running{engine="0",model_name="qwen3-8b"} 0.0
+vllm:kv_cache_usage_perc{engine="0",model_name="qwen3-8b"} 0.0
+2026-10-09T20:46:33Z
+pid, process_name, used_gpu_memory [MiB]
+57912, /cvmfs/restricted.computecanada.ca/easybuild/software/2023/x86-64-v4/CUDA/gcc12/openmpi4/cuda12.6/amber-pmemd/24.3/bin/pmemd.cuda, 512 MiB
+445412, VLLM::EngineCore, 35842 MiB
+vllm:num_requests_running{engine="0",model_name="qwen3-8b"} 0.0
+vllm:kv_cache_usage_perc{engine="0",model_name="qwen3-8b"} 0.0
+2026-10-09T20:46:48Z
+pid, process_name, used_gpu_memory [MiB]
+57912, /cvmfs/restricted.computecanada.ca/easybuild/software/2023/x86-64-v4/CUDA/gcc12/openmpi4/cuda12.6/amber-pmemd/24.3/bin/pmemd.cuda, 512 MiB
+445412, VLLM::EngineCore, 35842 MiB
+vllm:num_requests_running{engine="0",model_name="qwen3-8b"} 0.0
+vllm:kv_cache_usage_perc{engine="0",model_name="qwen3-8b"} 0.0

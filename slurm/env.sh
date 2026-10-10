@@ -29,4 +29,5 @@ export VLLM_SIF="${VLLM_SIF:-$WS_STORE/vllm-openai.sif}"
 
 load_modules() {
   module load StdEnv/2023 python/3.11 gcc cuda/12.6 2>/dev/null || module load python/3.11
+  module load opencv/4.13.0
 }

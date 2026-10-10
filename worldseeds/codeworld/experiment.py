@@ -113,21 +113,46 @@ def _buildings(cfg: CWConfig) -> dict:
 
 
 def run(cfg: CWConfig) -> Path:
+    import asyncio
+    # One loop owns the model client for every universe, variant and sprint.
+    return asyncio.run(_run(cfg))
+
+
+async def _run(cfg: CWConfig) -> Path:
     out = Path(cfg.out_dir)
     out.mkdir(parents=True, exist_ok=True)
+    if (out / "codeworld.jsonl").exists():
+        raise FileExistsError(f"Use a new output directory; existing results: {out}")
     (out / "config.json").write_text(json.dumps(asdict(cfg), indent=1))
     f = open(out / "codeworld.jsonl", "a")
     tf = open(out / "traces.jsonl", "a") if cfg.save_traces else None
     model = settings = None
     llm_name = "heuristic"
+    from ..recording import ACTIVE_RECORDING, EventLog
+    log = EventLog(out / "events.jsonl") if cfg.save_traces else None
+    from .recording import start_replay, sprint_snapshot
+    replays = []
+    failed_players = []
     if cfg.policy == "llm":
-        import asyncio
-
         from ..llm import LLMConfig, make_model, make_settings
         from .llm_agent import llm_sprint
 
         lc = LLMConfig()
         model, settings, llm_name = make_model(lc), make_settings(lc), lc.model
+        if log:
+            # Deliberately omit API keys from provenance.
+            import platform
+            import importlib.metadata
+            import hashlib
+            root = Path(__file__).resolve().parents[1]
+            sources = [Path(__file__), Path(__file__).with_name("llm_agent.py"),
+                       Path(__file__).with_name("town_llm.py"), root / "llm.py", root / "recording.py"]
+            log.write("experiment_start", config=asdict(cfg), model=lc.model, base_url=lc.base_url,
+                      thinking=lc.thinking, max_tokens=lc.max_tokens, settings=settings,
+                      python=platform.python_version(),
+                      versions={p: importlib.metadata.version(p) for p in ("openai-agents", "openai", "pydantic")},
+                      source_sha256={str(p.relative_to(root.parent)): hashlib.sha256(p.read_bytes()).hexdigest()
+                                     for p in sources})
     for u in cfg.universes:
         for mods in cfg.modules:
             world = _universe(u, mods, cfg.fns_per_module, cfg.theme, cfg.shortcuts)
@@ -141,31 +166,46 @@ def run(cfg: CWConfig) -> Path:
                         wv, plan = _plan(cfg, world, sprints, u, mods, n)
                         if v.startswith("solo"):
                             org = Org(wv, 1, None if v == "solo_unbounded" else cap, "solo", cfg.learn, cfg.seed,
-                                      walk=cfg.walk, batch=cfg.batch, **_buildings(cfg))
+                                      walk=cfg.walk, record=cfg.save_traces, batch=cfg.batch, **_buildings(cfg))
                             budget = cfg.budget * n  # the team's compute, in one head
                         else:
                             if n < 2:
                                 continue
                             org = Org(wv, n, cap, v, cfg.learn, cfg.seed, walk=cfg.walk, batch=cfg.batch,
-                                      **_buildings(cfg))
+                                      record=cfg.save_traces, **_buildings(cfg))
                             budget = cfg.budget
                         goals = None
                         if cfg.goals:
                             from .goals import make_goals
                             goals = make_goals(wv, cfg.goals, cfg.seed, deadline=cfg.goal_deadline, fund=cfg.fund or None)
+                        replay = start_replay(org, {"universe": u, "variant": v}, budget) if tf else None
+                        if replay:
+                            replay["policy"] = cfg.policy
+                            replay["goals"] = [g.to_dict() for g in goals] if goals else []
+                            replays.append(replay)
                         for s, (projects, events) in enumerate(plan):
+                            tags = {"universe": u, "modules": mods, "capacity": cap, "team": n,
+                                    "variant": v, "sprint": s + 1}
+                            start = len(org.events)
+                            snapshot = sprint_snapshot(org, projects, goals) if replay else None
+                            token = ACTIVE_RECORDING.set((log, tags)) if log else None
+                            if log:
+                                log.write("sprint_start", tags, snapshot=snapshot, budget=budget,
+                                          world=wv.layout(), devs=replay["devs"] if replay else [])
                             if cfg.policy == "llm":
                                 if cfg.theme == "town":  # apprentices with the town's tools (money, goals, buildings)
                                     from .town_llm import llm_town_sprint
-                                    res = asyncio.run(llm_town_sprint(org, projects, budget, model, settings, events,
-                                                                      goals, cfg.max_turns))
+                                    res = await llm_town_sprint(org, projects, budget, model, settings, events,
+                                                               goals, cfg.max_turns)
                                 else:
                                     org.apply_events(events or [])
-                                    res = asyncio.run(llm_sprint(org, projects, budget, model, settings, cfg.max_turns))
+                                    res = await llm_sprint(org, projects, budget, model, settings, cfg.max_turns)
                                 m = res["metrics"]
+                                failed_players += [x for x in m["statuses"] if x.startswith("error:")]
                                 if tf is not None:
                                     tf.write(json.dumps({"universe": u, "modules": mods, "capacity": cap, "team": n,
                                                          "variant": v, "sprint": s + 1, "traces": res["traces"]}) + "\n")
+                                    tf.flush()
                             else:
                                 m = org.sprint(projects, budget, events, goals=goals)
                             row = {"universe": u, "modules": mods, "functions": world.n_functions, "capacity": cap,
@@ -178,8 +218,24 @@ def run(cfg: CWConfig) -> Path:
                                    "districts": world.n_districts,
                                    "world_over_capacity": world.n_functions / cap, **m, "time": time.time()}
                             f.write(json.dumps(row) + "\n")
+                            f.flush()
+                            if replay:
+                                replay["sprints"].append({**snapshot, "index": s + 1, "budget": budget,
+                                    "events": org.events[start:], "metrics": m, "world_events": events or [],
+                                    "broken": sorted(wv.broken), "storm": sorted(wv.storm), "demand": wv.demand,
+                                    "goals": [g.to_dict() for g in goals] if goals else []})
+                                tmp = out / "replay.tmp"
+                                tmp.write_text(json.dumps({"replays": replays}))
+                                tmp.replace(out / "replay.json")
+                            if log:
+                                log.write("sprint_end", tags, metrics=m, engine_events=org.events[start:])
+                                ACTIVE_RECORDING.reset(token)
                     f.flush()
     f.close()
     if tf is not None:
         tf.close()
+    if log:
+        log.write("experiment_end", failed_players=failed_players)
+    if failed_players:
+        raise RuntimeError(f"{len(failed_players)} player runtime errors; results and records preserved: {failed_players}")
     return out
