@@ -27,7 +27,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from ..recording import ACTIVE_RECORDING, EventLog
-from .llm_agent import run_dev
+from .llm_agent import _tools, run_dev
 from .org import Org
 from .recording import sprint_snapshot, start_replay
 from .town_llm import TownSession
@@ -218,6 +218,7 @@ class LadderConfig:
     gate: float = 2 / 3
     stop: bool = True  # stop at the first level that fails its gate
     extra: dict = field(default_factory=dict)
+    calculator: bool = False
 
 
 def run(cfg: LadderConfig, model=None, settings=None):
@@ -227,6 +228,7 @@ def run(cfg: LadderConfig, model=None, settings=None):
 async def _run(cfg: LadderConfig, model, settings):
     from ..llm import LLMConfig, make_model, make_settings
     from .town_llm import _tools as town_tools
+    from .arithmetic import calculator_tool
 
     out = Path(cfg.out_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -251,9 +253,19 @@ async def _run(cfg: LadderConfig, model, settings):
                       devs=replay["devs"])
             for s in sessions:
                 s._begin()
+
+            def agent_tools(s):
+                tools = town_tools(s) if lv.town_tools else _tools(s)
+                if cfg.calculator:
+                    tools.append(calculator_tool(s))
+                return tools
+
+            arithmetic_hint = (" Use calculate for arithmetic with your observed numbers, including modular "
+                               "subtraction and modular inverses. It only evaluates your expression; "
+                               "you must still infer and verify rules.") if cfg.calculator else ""
             outs = await asyncio.gather(*[
-                run_dev(s, model, settings, lv.max_turns, text=prompt(s),
-                        tools=town_tools(s) if lv.town_tools else None,
+                run_dev(s, model, settings, lv.max_turns, text=prompt(s) + arithmetic_hint,
+                        tools=agent_tools(s),
                         more=lambda s=s: bool(s.queue)) for s in sessions])
             done = sum(s.done for s in sessions)
             metrics = org.end_sprint([{"done": True}] * done + [{"done": False}] * (len(orders) - done), gifts=False)

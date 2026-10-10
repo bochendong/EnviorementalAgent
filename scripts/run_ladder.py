@@ -15,6 +15,7 @@ if __name__ == "__main__":
     ap.add_argument("--seeds", nargs="+", type=int, default=[11, 22, 33])
     ap.add_argument("--levels", nargs="+", type=int, default=[lv.n for lv in LEVELS])
     ap.add_argument("--no-stop", action="store_true", help="run every level even after one fails")
+    ap.add_argument("--calculator", action="store_true", help="give all players a bounded integer calculator")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
-    run(LadderConfig(tuple(a.seeds), tuple(a.levels), a.out, stop=not a.no_stop))
+    run(LadderConfig(tuple(a.seeds), tuple(a.levels), a.out, stop=not a.no_stop, calculator=a.calculator))
