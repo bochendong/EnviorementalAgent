@@ -13,7 +13,7 @@ The repository has two halves, kept apart on purpose:
 
 | | |
 |---|---|
-| `worldseeds/` | **the environment**: the network (`worldseeds/net`), its task providers, presets and held-out tasks, the worlds (CodeWorld and its town, SeedVille), the HTTP server, town replays |
+| `worldseeds/` | **the environment**: the network (`worldseeds/net`), its task providers, presets and held-out tasks, the worlds (CodeWorld and its town, the original World Seeds world), the HTTP server, town replays |
 | `netagents/` | **the agents**: they reach the environment only through its public interface (`step`, `ops`, `observe`, `public`), in the same process or over HTTP |
 
 ## The environment: one network, pluggable tasks
@@ -62,7 +62,7 @@ notes on the board and deliver orders. The page shows what the environment recor
 ```bash
 python -m netagents.replays                      # reference teams -> web/replays/codeworld.json
 python -m netagents.replays --llm                # LLM teams      -> web/replays/llm.json
-python -m http.server -d web 8000                # open http://localhost:8000/codeworld.html
+python -m http.server -d web 8000                # open http://localhost:8000
 ```
 
 | | |
@@ -85,15 +85,14 @@ worldseeds/net/         the network environment: core.py (provider interface), e
                         providers/ (codeworld, math, website, molecule), server.py, replay.py
 worldseeds/codeworld/   the CodeWorld world and its town: world.py, townmap.py, recipes.py, events.py,
                         goals.py, economy.py
-worldseeds/town/        SeedVille, the farming town world (seed, world, library, sources, team bodies)
 worldseeds/*.py         the original World Seeds worlds (laws, seed, world, oracle, similarity)
 netagents/              the agents (clients, tools, LLM team, reference teams, run, baselines, replays)
 tasks/heldout/          held-out tasks (math, website, molecule)
-web/                    the browser pages (codeworld.html: the town replays)
+web/                    the town replay page (codeworld.html), its art (web/tools: kairoart.py, make_people.py)
 scripts/run_net.py      serve the environment; similarity_demo.py
 slurm/                  Nibi: setup_nibi.sh, start_vllm.sh, net_llm.sh
 docs/                   network.md, codeworld.md, research notes
 ```
 
 The agent code of earlier experiments (World Seeds memory agents, hives, CodeWorld developers, the LLM
-tutorial and ladder) was removed; it is in the git history before commit `290b93f`.
+tutorial and ladder) and the SeedVille farming town were removed; it is in the git history before commit `290b93f`.

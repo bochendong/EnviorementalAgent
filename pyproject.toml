@@ -9,7 +9,7 @@ dependencies = ["sympy>=1.12", "rdkit>=2024.3"]
 agents = ["openai-agents>=0.23", "openai>=3.0", "pydantic>=2.7"]
 
 [tool.setuptools]
-packages = ["worldseeds", "worldseeds.net", "worldseeds.net.providers", "worldseeds.codeworld", "worldseeds.town",
+packages = ["worldseeds", "worldseeds.net", "worldseeds.net.providers", "worldseeds.codeworld",
             "netagents"]
 
 [tool.pytest.ini_options]
