@@ -53,11 +53,15 @@ python -m netagents.baselines --seeds 10                                # refere
 ```
 
 Published agent designs run on the same environment with matched compute ([docs/testset.md](docs/testset.md)): ReAct,
-Reflexion, the independent / centralized / decentralized / hybrid architectures of Kim et al. (2025), multiagent
-debate, a blackboard system, Mixture-of-Agents and MetaGPT, on suites for development, testing, held-out tasks,
-scaling, network topology and robustness:
+Reflexion, the single / independent / centralized / decentralized / hybrid architectures of Kim et al. (2026),
+multiagent debate, the LbMAS blackboard system, Mixture-of-Agents, and AutoGen, Magentic-One and CAMEL teams run in
+their own frameworks. They run on two tracks: a compatibility track in the papers' own settings, where published
+findings are reproduced first (identical agents, no deadline, messages passed by the framework), and a network track
+for what this environment adds (role-split tools, topologies, latency, costs; messages travel through the network).
+Network-track suites cover development, testing, held-out tasks, scaling, topology and robustness:
 
 ```bash
+python -m netagents.evaluate --suite compat --designs sas independent centralized decentralized hybrid
 python -m netagents.evaluate --suite dev --designs all
 SUITE=test sbatch slurm/net_eval.sh                                       # on Nibi
 ```

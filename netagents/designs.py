@@ -131,6 +131,83 @@ async def _together(members, message, k):
     await asyncio.gather(*(m.turn(message(m) if callable(message) else message, k) for m in members))
 
 
+class Channel:
+    """How a design's messages travel between its members.
+
+    framework  the framework hands the text over, free and at once, as in the authors' code (the
+               compatibility track)
+    network    through the environment's network: a send is charged to the sender, reading the inbox to the
+               receiver, latency and outages delay it, and a message to someone who is not a neighbour is lost
+               (the network track). Speakers that are not agents of the environment (an orchestrator, a
+               control unit) speak from a seat: the first agent.
+
+    The board works the same way: in memory, or the environment's notice board."""
+
+    def __init__(self, env, route: str = "framework"):
+        if route not in ("framework", "network"):
+            raise ValueError(f"unknown route {route!r}")
+        self.env, self.route = env, route
+        self.names = list(env.public()["agents"])
+        self.seat = self.names[0]
+        self.cfg = env.public()["config"]
+        self.box: dict[str, list] = {a: [] for a in self.names}
+        self.board: list[str] = []
+        self.sent = self.lost = 0
+
+    def _seat(self, who: str) -> str:
+        return who if who in self.box else self.seat
+
+    def send(self, src: str, dst: str, text: str, tag: str) -> str | None:
+        """Deliver ``text`` from ``src`` to ``dst``; returns what arrived, or None if it was lost."""
+        if self.route == "framework":
+            self.sent += 1
+            return text
+        s, d = self._seat(src), self._seat(dst)
+        if s == d:
+            return text
+        mark = f"[{tag}:{len(self.box[d])}:{self.sent}]"
+        r = self.env.step(s, "send", {"to": d, "text": (mark + " " + text)[:self.cfg["max_message"] - 10]})
+        if not r.get("ok"):
+            self.lost += 1
+            return None
+        self.sent += 1
+        for _ in range(2 * len(self.names) * (self.cfg["latency"] + self.cfg["outage_rounds"] + 1) + 2):
+            self.box[d] += self.env.step(d, "inbox", {}).get("messages", [])
+            for m in self.box[d]:
+                if m["text"].startswith(mark):
+                    self.box[d].remove(m)
+                    return m["text"][len(mark) + 1:]
+            o = self.env.observe(d)
+            if o["episode_over"] or o["budget"] <= 0:
+                break
+            self.env.step(d, "wait", {})
+        self.lost += 1
+        return None
+
+    def post(self, src: str, text: str):
+        if self.route == "framework":
+            self.board.append(text)
+        elif not self.env.step(self._seat(src), "post", {"text": text[:self.cfg["max_message"] - 10]}).get("ok"):
+            self.lost += 1
+            return
+        self.sent += 1
+
+    def read(self, reader: str) -> list[str]:
+        if self.route == "framework":
+            return list(self.board)
+        gone = getattr(self, "removed", set())
+        return [p["text"] for p in self.env.step(self._seat(reader), "board", {}).get("posts", [])
+                if p["by"] != "world" and p["text"] not in gone]
+
+    def remove(self, texts: set):
+        """Take messages off the board (LbMAS's cleaner); on the network the posts stay, the readers skip them."""
+        self.board = [t for t in self.board if t not in texts]
+        self.removed = getattr(self, "removed", set()) | set(texts)
+
+    def report(self) -> dict:
+        return {"route": self.route, "delivered": self.sent, "lost": self.lost}
+
+
 SOLUTION = ("Stop and state your current solution: for every task you worked on, what you found and your answer "
             "or result so far. Do not call tools.")
 
@@ -148,9 +225,13 @@ class Design:
     async def run(self, env, model, settings, calls: int) -> list[dict]:
         raise NotImplementedError
 
+    route: str = "framework"  # how messages travel (Channel); the evaluation sets it per track
+    network_route = True  # False: the design's messages stay inside its framework whatever the track
+
     async def play(self, env, model, settings, calls: int) -> list[dict]:
         """Run with a hard cap of ``calls`` tool calls for the whole team."""
         self._pool = [calls]
+        self.chan = Channel(env, self.route)
         return await self.run(env, model, settings, calls)
 
     def member(self, env, name, model, settings, protocol="", keep=None) -> Member:
@@ -241,31 +322,30 @@ def _save(path, memory):
 # not copied). Its gsm/gen_gsm.py: 3 agents, 2 rounds; in every round after the first, each agent is shown
 # the other agents' solutions ("These are the solutions to the problem from other agents ... Using the
 # solutions from other agents as additional information, can you provide your answer ...?") and answers
-# again. Here every agent works with tools; its solution is what it states at the end of a round, and the
-# solutions travel as messages through the network (charged and subject to its topology).
+# again. Here every agent works with tools; its solution is what it states at the end of a round. The
+# solutions reach the others through the design's channel (the framework, or the network).
 class Debate(Design):
     async def run(self, env, model, settings, calls):
         names = list(env.public()["agents"])
-        ms = {a: self.member(env, a, model, settings, REACT_INSTRUCTION) for a in names}
+        ms = {a: self.member(env, a, model, settings, REACT_INSTRUCTION, keep=no_network) for a in names}
         per = -(-calls // (len(names) * self.rounds))
+        solutions: dict[str, str] = {}
         for r in range(self.rounds):
             if _all_over(ms.values()):
                 break
             if r == 0:
                 await _together(list(ms.values()), "Can you solve the tasks? Explain your reasoning.", per)
             else:
-                async def again(m):
-                    got = env.step(m.name, "inbox", {}).get("messages", [])
-                    others = "".join(f"\n\n One agent solution: ```{x['text']}```" for x in got
-                                     if x["text"].startswith("solution:"))
-                    await m.turn("These are the solutions to the tasks from other agents:" + others +
-                                 "\n\n Using the solutions from other agents as additional information, can you "
-                                 "provide your answer to the tasks? Submit the answers you are confident in.", per)
-                await asyncio.gather(*(again(m) for m in ms.values()))
+                def message(m):
+                    got = [self.chan.send(b, m.name, t, "solution") for b, t in solutions.items() if b != m.name]
+                    others = "".join(f"\n\n One agent solution: ```{t}```" for t in got if t)
+                    return ("These are the solutions to the tasks from other agents:" + others +
+                            "\n\n Using the solutions from other agents as additional information, can you "
+                            "provide your answer to the tasks? Submit the answers you are confident in.")
+                await asyncio.gather(*(m.turn(message(m), per) for m in ms.values()))
             if r < self.rounds - 1:
                 for m in ms.values():
-                    text = await m.say(SOLUTION)
-                    env.step(m.name, "send", {"to": "*", "text": "solution: " + text[:3000]})
+                    solutions[m.name] = (await m.say(SOLUTION))[:3000]
         return [m.report() for m in ms.values()]
 
 
@@ -285,15 +365,15 @@ AGGREGATE = ("You have been provided with a set of responses from various open-s
 class MixtureOfAgents(Design):
     async def run(self, env, model, settings, calls):
         names = list(env.public()["agents"])
-        ms = {a: self.member(env, a, model, settings, REACT_INSTRUCTION) for a in names}
+        ms = {a: self.member(env, a, model, settings, REACT_INSTRUCTION, keep=no_network) for a in names}
         agg = ms[names[0]]
         layers = self.rounds  # proposer layers; then the aggregator
         per = -(-calls // (len(names) * layers + len(names)))
+        responses: dict[str, str] = {}
 
-        def refs(m):
-            got = env.step(m.name, "inbox", {}).get("messages", [])
-            return "".join(f"\n{i + 1}. {x['text'][9:]}" for i, x in enumerate(
-                [x for x in got if x["text"].startswith("response:")]))
+        def refs(m):  # the previous layer's responses, each passed to m through the channel
+            got = [self.chan.send(b, m.name, t, "response") for b, t in responses.items()]
+            return "".join(f"\n{i + 1}. {t}" for i, t in enumerate(t for t in got if t))
 
         for layer in range(layers):
             if _all_over(ms.values()):
@@ -303,9 +383,7 @@ class MixtureOfAgents(Design):
             else:
                 await asyncio.gather(*(m.turn(AGGREGATE + refs(m) + "\n\nWork on the tasks.", per)
                                        for m in ms.values()))
-            for m in ms.values():  # this layer's responses go to the next layer
-                text = await m.say(SOLUTION)
-                env.step(m.name, "send", {"to": "*", "text": "response: " + text[:3000]})
+            responses = {m.name: (await m.say(SOLUTION))[:3000] for m in ms.values()}
         await agg.turn(AGGREGATE + refs(agg) + "\n\nSynthesise the final answers and submit them.", per * len(names))
         return [m.report() for m in ms.values()]
 
@@ -479,11 +557,14 @@ class KimCentralized(Design):
                                      min_iterations=3, agent_status="active",
                                      agent_findings_summary="\n".join(findings[a][-3:]) or "(none yet)",
                                      team_context=team)
-                msgs[a] = (split(fill(K.SUBAGENT_START, orchestrator_objective=sub[a].get("objective", ""),
-                                      orchestrator_guidance=guidance))[1] if r == 1 else guidance)
+                text = (split(fill(K.SUBAGENT_START, orchestrator_objective=sub[a].get("objective", ""),
+                                   orchestrator_guidance=guidance))[1] if r == 1 else guidance)
+                msgs[a] = self.chan.send("orchestrator", a, text, "guidance") or "Continue with your objective."
             await asyncio.gather(*(workers[a].turn(msgs[a], self.iterations) for a in active))
             for a in active:
-                findings[a].append(await workers[a].say(K.SUBAGENT_SUMMARIZE[0][1]))
+                got = self.chan.send(a, "orchestrator", await workers[a].say(K.SUBAGENT_SUMMARIZE[0][1]), "finding")
+                if got:
+                    findings[a].append(got)
             everything = "\n".join(f"{a} (round {i + 1}): {f}" for a, fs in findings.items() for i, f in enumerate(fs))
             decision = await ask(K.LEAD_STOPPING, query=problem, round_num=r,
                                  total_findings=sum(len(f) for f in findings.values()), total_agents=len(names),
@@ -493,7 +574,8 @@ class KimCentralized(Design):
                 break
         if self.peer_round:  # multiagent_hybrid.py: a final round with the peers' findings injected
             peers = {a: "\n\n## Direct Peer Findings (shared peer-to-peer)\n" + "\n".join(
-                f"[PEER {b}]: {findings[b][-1][:400]}" for b in names if b != a and findings[b])
+                f"[PEER {b}]: {t}" for b in names if b != a and findings[b]
+                for t in [self.chan.send(b, a, findings[b][-1][:400], "peer")] if t)
                 for a in names}
             await asyncio.gather(*(workers[a].turn(
                 "Final round with peer insights. Review your peers' work and finalize your solution." + peers[a],
@@ -501,6 +583,7 @@ class KimCentralized(Design):
         everything = "\n".join(f"{a}: {f}" for a, fs in findings.items() for f in fs)
         synthesis = await ask(K.LEAD_SYNTHESIS, all_findings=everything[-8000:])
         # the authors' auto-submit goes through the first sub-agent's environment
+        synthesis = self.chan.send("orchestrator", names[0], synthesis, "synthesis") or "(the synthesis was lost)"
         await workers[names[0]].turn("The lead agent's synthesis of the team's findings:\n" + synthesis +
                                      "\n\nSubmit every result that is ready.", self.iterations)
         self.rounds_used = rounds
@@ -535,7 +618,8 @@ class KimDecentralized(Design):
             active = [a for a in names if not ms[a].finished()]
             if not active:
                 break
-            await asyncio.gather(*(ms[a].turn(kim_debate_prompt(a, r, self.rounds, answers), self.iterations)
+            heard = {a: {b: self.chan.send(b, a, t, "peer") for b, t in answers.items() if b != a} for a in active}
+            await asyncio.gather(*(ms[a].turn(kim_debate_prompt(a, r, self.rounds, heard[a]), self.iterations)
                                    for a in active))
             for a in active:
                 answers[a] = await ms[a].say(K.SUBAGENT_SUMMARIZE[0][1])
@@ -572,39 +656,40 @@ class LbMAS(Design):
         team = {a: self.member(env, a, model, settings, H.SYSTEM.replace("{role_name}", a).replace(
             "{question}", question) + "\n\n" + H.GENERATED_EXPERT.replace("{role}", pub["agents"][a]).replace(
             "{roles_description}", env.observe(a)["role_doc"]), keep=no_network) for a in names}
-        board: list[dict] = []
         decided = ""
+        seat = names[0]
 
-        def shown() -> str:
-            return "\n".join(f"[{m['agent']}] {m['message']}" for m in board)[-8000:] or "(empty)"
+        def shown(reader: str) -> str:  # the blackboard, as the channel delivers it to ``reader``
+            return "\n".join(self.chan.read(reader))[-8000:] or "(empty)"
 
         for _ in range(self.rounds):
             listing = "\n".join(f"{k}: {v}" for k, v in roles.items())
             pick = _json(await talker.ask("", H.CONTROL_UNIT.replace("{role_list}", listing).replace(
-                "{question}", question) + "\nBlackboard:\n" + shown())) or {}
+                "{question}", question) + "\nBlackboard:\n" + shown(seat))) or {}
             chosen = [c for c in pick.get("chosen agents", []) if c in roles] or names
             for c in chosen:  # Algorithm 1: chosen agents act one after another, each reading the blackboard
                 if c in team:
                     m = team[c]
-                    await m.turn("The blackboard:\n" + shown() + "\n\nContribute with your tools.", self.iterations)
+                    await m.turn("The blackboard:\n" + shown(c) + "\n\nContribute with your tools.", self.iterations)
                     text = await m.say("Write on the blackboard what you found, in the json form {\"output\":\"\"}.")
                 else:
                     prompt = H.PREDEFINED.get(c) or H.GENERATED_EXPERT.replace("{role}", c).replace(
                         "{roles_description}", roles[c])
                     text = await talker.ask(H.SYSTEM.replace("{role_name}", c).replace("{question}", question),
-                                            prompt + "\n\nThe blackboard:\n" + shown())
+                                            prompt + "\n\nThe blackboard:\n" + shown(c))
                 if c == "cleaner":
                     useless = {x.get("useless message") for x in (_json(text) or {}).get("clean list", [])
                                if isinstance(x, dict)}
-                    board = [m for m in board if m["message"] not in useless]
+                    useless = {u for u in useless if isinstance(u, str) and u.strip()}
+                    self.chan.remove({t for t in self.chan.read(seat) if any(u in t for u in useless)})
                     continue
-                board.append({"agent": c, "message": text[:2000]})
+                self.chan.post(c, f"[{c}] {text[:2000]}")
                 if c == "decider" and "boxed" in text:
                     decided = text
             if decided:
                 break
         # the decider's solution is handed to the team members, who hold the submit tool
-        await _together(list(team.values()), "The blackboard's decision:\n" + (decided or shown()[-3000:]) +
+        await _together(list(team.values()), "The blackboard's decision:\n" + (decided or shown(seat)[-3000:]) +
                         "\n\nSubmit every result that is ready.", self.iterations)
         return [talker.report()] + [m.report() for m in team.values()]
 
@@ -622,13 +707,13 @@ DESIGNS: dict[str, Design] = {d.name: d for d in [
            "Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt "
            "paraphrased)", "port", "team",
            ("agents use tools between rounds; a solution is what an agent states at the end of a round",
-            "solutions travel as network messages (charged, limited to neighbours)",
+            "solutions pass through the design's channel (the framework, or the environment's network)",
             "agents submit themselves instead of a majority vote over final answers",
             "team size is the preset's, not 3"), rounds=2),
     MixtureOfAgents("moa", "Mixture-of-Agents", "Wang et al., Mixture-of-Agents Enhances Large Language Model "
                     "Capabilities, arXiv 2406.04692 (2024); code: togethercomputer/MoA (Apache-2.0)", "port", "team",
                     ("one model in every position instead of different open-source models",
-                     "proposers use tools; their responses travel as network messages",
+                     "proposers use tools; their responses pass through the design's channel",
                      "the aggregate prompt is a user message, not a system message",
                      "the aggregator is one of the team, with its role's tools"), rounds=1),
     KimSingle("sas", "Single-agent system (Kim et al.)", "Kim et al., Towards a Science of Scaling Agent Systems, arXiv "
@@ -645,12 +730,12 @@ DESIGNS: dict[str, Design] = {d.name: d for d in [
                    "port", "team",
                    ("the orchestrator reads the task list once through the first worker (one action)",
                     "the final auto-submit is a turn of the first worker given the synthesis",
-                    "orchestrator-worker messages pass through the framework, as in the authors' code, not the "
-                    "environment's network", "team size is the preset's, not 3"), rounds=5),
+                    "orchestrator-worker messages pass through the design's channel: the framework, as in the "
+                    "authors' code, or the environment's network", "team size is the preset's, not 3"), rounds=5),
     KimDecentralized("decentralized", "Decentralized (Kim et al.)", "Kim et al. 2026; code: ybkim95/agent-scaling "
                      "(MIT)", "port", "team",
                      ("the consensus vote over final answers is recorded; agents submit their own results",
-                      "peer answers pass through the framework, not the environment's network",
+                      "peer answers pass through the design's channel (the framework, or the network)",
                       "team size is the preset's, not 3"), rounds=3),
     KimHybrid("hybrid", "Hybrid (Kim et al.)", "Kim et al. 2026; code: ybkim95/agent-scaling (MIT)", "port", "team",
               ("as centralized, plus the authors' final peer round", "team size is the preset's, not 3"), rounds=5),

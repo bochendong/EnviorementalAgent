@@ -22,6 +22,7 @@ class FrameworkDesign(Design):
     module: str = ""
     team: str = ""
     python_var: str = ""
+    network_route = False  # AutoGen and CAMEL pass their messages themselves
 
     async def run(self, env, model, settings, calls):
         from worldseeds.net.server import make_handler

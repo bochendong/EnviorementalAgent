@@ -15,7 +15,15 @@ messages, board posts and store writes, and failure signals in the spirit of MAS
     wrong_submissions    submissions the environment rejected (task verification)
     stopped_early        members that stopped with budget left while the problem was unsolved
 
-Writes runs.jsonl and summary.md to --out.
+The designs' messages travel as the case's track says (the framework on the compatibility track, the
+environment's network on the network track; --route overrides it, e.g. to run the compatibility cases
+through the network). Designs that run inside a framework (netagents/frameworks) always use their own.
+
+On the suites with published findings (testset.HYPOTHESES) it checks each one: the paired difference of
+the two designs over seeds, a 95% bootstrap interval, and whether the finding is reproduced (the interval
+lies on the published side of zero), contradicted (on the other side) or inconclusive.
+
+Writes runs.jsonl, summary.md and (where there are findings to check) hypotheses.json to --out.
 """
 
 from __future__ import annotations
@@ -26,11 +34,13 @@ import json
 import os
 import statistics as st
 from collections import Counter
+from dataclasses import replace
 
 from .client import LocalEnv
 from .designs import DESIGNS
 from .frameworks import FRAMEWORK_DESIGNS
-from .testset import CALLS_PER_MEMBER, SUITES
+from .fidelity import bootstrap
+from .testset import CALLS_PER_MEMBER, HYPOTHESES, SUITES
 
 CHEAP = {"status", "who", "tasks", "inbox", "board", "keys", "get", "wait", "ls", "read", "log", "made",
          "signatures", "props", "similarity"}
@@ -50,10 +60,14 @@ def failure_signals(raw) -> dict:
             "stopped_early": 0 if raw.solved else sum(1 for a in raw.agents.values() if a.budget > 0)}
 
 
-def run_one(design, case, seed, model, settings, calls) -> dict:
+def run_one(design, case, seed, model, settings, calls, route: str | None = None) -> dict:
+    route = route or case.route
+    if design.network_route:  # a copy: the registry's designs stay as they are
+        design = replace(design, route=route)
     raw = case.build(design.variant)
     raw.reset(seed)
     reports = asyncio.run(design.play(LocalEnv(raw), model, settings, calls))
+    chan = design.chan.report() if hasattr(design, "chan") else {"route": "framework"}
     m = raw.metrics()
     msgs = Counter(e["op"] for e in raw.events if e.get("kind") == "op" and e["obs"].get("ok"))
     return {"design": design.name, "case": case.id, "seed": seed, "variant": design.variant, "call_budget": calls,
@@ -64,6 +78,7 @@ def run_one(design, case, seed, model, settings, calls) -> dict:
             "input_tokens": sum(r["input_tokens"] for r in reports),
             "output_tokens": sum(r["output_tokens"] for r in reports),
             "messages": msgs["send"], "posts": msgs["post"], "store_writes": msgs["put"],
+            "route": chan["route"] if design.network_route else "framework", "channel": chan,
             **failure_signals(raw), "members": reports}
 
 
@@ -87,6 +102,38 @@ def summarize(rows: list[dict]) -> str:
     return "\n".join(out) + "\n\nEach cell: share of seeds solved (share of tasks done).\n"
 
 
+def check_hypotheses(rows: list[dict]) -> list[dict]:
+    """Each published finding whose two designs ran on its case: the paired difference over seeds."""
+    out = []
+    for h in HYPOTHESES:
+        a = {r["seed"]: r[h.metric] for r in rows if r["design"] == h.design and r["case"] == h.case}
+        b = {r["seed"]: r[h.metric] for r in rows if r["design"] == h.baseline and r["case"] == h.case}
+        common = sorted(set(a) & set(b))
+        if not common:
+            continue
+        x, y = [float(a[s]) for s in common], [float(b[s]) for s in common]
+        lo, hi = bootstrap(x, y)
+        diff = (sum(x) - sum(y)) / len(common)
+        verdict = ("reproduced" if (lo > 0 if h.expect > 0 else hi < 0) else
+                   "contradicted" if (hi < 0 if h.expect > 0 else lo > 0) else "inconclusive")
+        out.append({"design": h.design, "baseline": h.baseline, "case": h.case, "metric": h.metric,
+                    "expect": "+" if h.expect > 0 else "-", "seeds": len(common), "difference": round(diff, 4),
+                    "ci95": [round(lo, 4), round(hi, 4)], "verdict": verdict, "source": h.source})
+    return out
+
+
+def hypotheses_markdown(checks: list[dict]) -> str:
+    if not checks:
+        return ""
+    rows = ["| case | design − baseline | published | difference [95% CI] | seeds | verdict |",
+            "|---|---|---|---|---|---|"]
+    for c in checks:
+        rows.append(f"| {c['case']} | {c['design']} − {c['baseline']} | {c['expect']} | {c['difference']:+.3f} "
+                    f"[{c['ci95'][0]:+.3f}, {c['ci95'][1]:+.3f}] | {c['seeds']} | {c['verdict']} |")
+    sources = "\n".join(f"- {s}" for s in dict.fromkeys(c["source"] for c in checks))
+    return "\n## Published findings\n\n" + "\n".join(rows) + "\n\nSources:\n" + sources + "\n"
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--suite", default="dev", choices=sorted(SUITES))
@@ -94,6 +141,8 @@ def main():
     ap.add_argument("--cases", nargs="*", default=None, help="only these case ids")
     ap.add_argument("--seeds", type=int, default=None, help="only the first N seeds of each case")
     ap.add_argument("--calls-per-member", type=int, default=CALLS_PER_MEMBER)
+    ap.add_argument("--route", choices=["case", "framework", "network"], default="case",
+                    help="how the designs' messages travel (default: as the case's track says)")
     ap.add_argument("--out", default="results/net/eval")
     a = ap.parse_args()
     from .llm import LLMConfig, make_model, make_settings
@@ -116,16 +165,22 @@ def main():
         calls = a.calls_per_member * case.team_size()
         for seed in case.seeds[:a.seeds] if a.seeds else case.seeds:
             for d in designs:
-                r = {"model": cfg.model, "suite": a.suite, **run_one(d, case, seed, model, settings, calls)}
+                r = {"model": cfg.model, "suite": a.suite, **run_one(d, case, seed, model, settings, calls,
+                                                                         None if a.route == "case" else a.route)}
                 rows.append(r)
                 with open(path, "a") as f:
                     f.write(json.dumps(r) + "\n")
                 print(f"{case.id:32s} seed {seed:3d} {d.name:13s} solved {r['solved']!s:5s} "
                       f"done {r['done']}/{r['tasks']} calls {r['llm_tool_calls']} "
                       f"tokens {r['input_tokens'] + r['output_tokens']}", flush=True)
+    checks = check_hypotheses(rows)
+    if checks:
+        with open(os.path.join(a.out, "hypotheses.json"), "w") as f:
+            json.dump(checks, f, indent=1)
+    text = summarize(rows) + hypotheses_markdown(checks)
     with open(os.path.join(a.out, "summary.md"), "w") as f:
-        f.write(f"# {a.suite} ({cfg.model})\n\n" + summarize(rows))
-    print(summarize(rows))
+        f.write(f"# {a.suite} ({cfg.model})\n\n" + text)
+    print(text)
 
 
 if __name__ == "__main__":

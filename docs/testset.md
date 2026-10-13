@@ -13,6 +13,25 @@ python -m netagents.evaluate --suite dev --designs all                    # any 
 SUITE=test sbatch slurm/net_eval.sh                                       # on Nibi, Qwen on vLLM
 ```
 
+## Two tracks
+
+The published designs assume settings this environment deliberately goes beyond: identical agents, answer-checked tasks, no deadline, and messages handed over by the framework for free. A design that fails here could fail because the design is weak, or because it was never meant for these settings. So every design runs on two tracks:
+
+- **Compatibility track** (`--suite compat`): the published settings. The presets `compat/*` give every agent every tool, set no deadline, and check answers. The designs' messages pass through their framework, as in the authors' code. On this track we first reproduce published findings; only a design whose finding reproduces is carried over to the network track.
+- **Network track** (every other suite): what this environment adds. Tools are split across roles, the agents share one world, and the network has a shape, latency, outages and costs. The designs' messages travel through the environment's network: a send is charged to the sender, reading it to the receiver, and a message to a non-neighbour is lost. Speakers that are not agents of the environment (Kim et al.'s orchestrator, LbMAS's control unit) speak from the first agent's seat.
+
+The switch is one object, `Channel` in `netagents/designs.py`, used by every multi-agent port, so the prompts and protocol are the same on both tracks. `--route framework|network` overrides the track, for example to run the compatibility cases through the network and isolate the cost of real communication. AutoGen and CAMEL pass their messages themselves and always use their own route; runs record which route was used (`route`, and the channel's delivered and lost counts).
+
+**Published findings checked on the compatibility track** (`testset.HYPOTHESES`):
+
+| finding | source | cases | check |
+|---|---|---|---|
+| every multi-agent architecture beats the single agent on decomposable tasks | [Kim et al. 2026](https://arxiv.org/abs/2512.08296), Sec. 4 (Finance-Agent, +57% to +81%) | `compat/math-decomposable`: 4 independent recurrences and a final sum | `independent`, `centralized`, `decentralized`, `hybrid` − `sas` > 0 |
+| every multi-agent architecture is worse than the single agent on sequential tasks | Kim et al. 2026, Sec. 4 (PlanCraft, −39% to −70%) | `compat/math-sequential`: the same 4 recurrences in one chain, each starting from the previous answer | the same differences < 0 |
+| debate beats a single agent on arithmetic word problems | [Du et al. 2024](https://arxiv.org/abs/2305.14325) | GSM8K itself | `netagents/fidelity.py`, against the authors' own code |
+
+The evaluation pairs runs by seed, computes the mean difference in task completion with a 95% bootstrap interval, and labels each finding *reproduced* (the interval lies on the published side of zero), *contradicted* (on the other side) or *inconclusive*. The table is added to `summary.md`, and `hypotheses.json` holds the numbers.
+
 ## Agent designs and how close they are to their sources
 
 Each design is labelled by how it was built:
@@ -26,12 +45,12 @@ The last column lists every known difference from the source; it is meant to go 
 |---|---|---|---|---|
 | `react` ReAct | Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; code: ysymyth/ReAct, noahshinn/reflexion (MIT) | port | solo | native tool calls instead of Thought/Action text lines; no few-shot examples (theirs are task-specific) |
 | `reflexion` Reflexion | Shinn et al., Reflexion: Language Agents with Verbal Reinforcement Learning, NeurIPS 2023; code: noahshinn/reflexion (MIT) | port | solo | trials share one episode and its budget instead of re-running the same task; a trial fails on a wrong submission or when its step quota runs out; the environment's verdict is the evaluator; no few-shot reflection examples |
-| `debate` Multiagent debate | Du et al., Improving Factuality and Reasoning in Language Models through Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt paraphrased) | port | team | agents use tools between rounds; a solution is what an agent states at the end of a round; solutions travel as network messages (charged, limited to neighbours); agents submit themselves instead of a majority vote over final answers; team size is the preset's, not 3 |
-| `moa` Mixture-of-Agents | Wang et al., Mixture-of-Agents Enhances Large Language Model Capabilities, arXiv 2406.04692 (2024); code: togethercomputer/MoA (Apache-2.0) | port | team | one model in every position instead of different open-source models; proposers use tools; their responses travel as network messages; the aggregate prompt is a user message, not a system message; the aggregator is one of the team, with its role's tools |
+| `debate` Multiagent debate | Du et al., Improving Factuality and Reasoning in Language Models through Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt paraphrased) | port | team | agents use tools between rounds; a solution is what an agent states at the end of a round; solutions pass through the design's channel (the framework, or the environment's network); agents submit themselves instead of a majority vote over final answers; team size is the preset's, not 3 |
+| `moa` Mixture-of-Agents | Wang et al., Mixture-of-Agents Enhances Large Language Model Capabilities, arXiv 2406.04692 (2024); code: togethercomputer/MoA (Apache-2.0) | port | team | one model in every position instead of different open-source models; proposers use tools; their responses pass through the design's channel; the aggregate prompt is a user message, not a system message; the aggregator is one of the team, with its role's tools |
 | `sas` Single-agent system (Kim et al.) | Kim et al., Towards a Science of Scaling Agent Systems, arXiv 2512.08296 v3 (2026); code: ybkim95/agent-scaling (MIT) | port | solo | iterations are tool calls; the single agent gets the team's whole pool of calls (the paper gives it proportionally more iterations) |
 | `independent` Independent (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | nonet | the agents act in one shared environment, not in a copy each; the synthesis-only aggregate is recorded but not submitted: our submissions need a task and an artifact, so each agent submits its own; team size is the preset's, not 3 |
-| `centralized` Centralized (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | the orchestrator reads the task list once through the first worker (one action); the final auto-submit is a turn of the first worker given the synthesis; orchestrator-worker messages pass through the framework, as in the authors' code, not the environment's network; team size is the preset's, not 3 |
-| `decentralized` Decentralized (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | the consensus vote over final answers is recorded; agents submit their own results; peer answers pass through the framework, not the environment's network; team size is the preset's, not 3 |
+| `centralized` Centralized (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | the orchestrator reads the task list once through the first worker (one action); the final auto-submit is a turn of the first worker given the synthesis; orchestrator-worker messages pass through the design's channel: the framework, as in the authors' code, or the environment's network; team size is the preset's, not 3 |
+| `decentralized` Decentralized (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | the consensus vote over final answers is recorded; agents submit their own results; peer answers pass through the design's channel (the framework, or the network); team size is the preset's, not 3 |
 | `hybrid` Hybrid (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | as centralized, plus the authors' final peer round; team size is the preset's, not 3 |
 | `blackboard` LbMAS blackboard system | Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture, arXiv 2507.01701v1 (2025); prompts from the paper (code not released) | port | team | the team's members (with the environment's tools) join as experts of their roles, besides 1-3 generated experts; one model for every agent instead of one drawn per agent from two models; no private spaces (debate, self-reflection); the decider's answer is handed to the team members to submit; solution by the decider only (not the similarity vote) |
 | `autogen-roundrobin` AutoGen round-robin group chat | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
@@ -88,6 +107,7 @@ Seeds 0–2 are for development. Seeds 100–109 are test seeds and must not be 
 | `scaling` | CodeWorld with 2, 4, 8, 16 developers | 100–104 | does the design hold up as the team grows? | [AgentsNet](https://arxiv.org/abs/2507.08616) (ICML 2025, up to 100 agents); MacNet, [Qian et al., ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/66a026c0d17040889b50f0dfa650e5e0-Abstract-Conference.html) |
 | `topology` | math with full, chain, star, tree, ring, random networks | 100–104 | how much does the shape of the network matter? | [MultiAgentBench](https://arxiv.org/abs/2503.01935) (ACL 2025: star, chain, tree, graph); AgentsNet |
 | `robustness` | CodeWorld with drifting laws, a client who changes their mind, a network with outages and latency | 100–104 | what breaks first? | [MAST](https://arxiv.org/abs/2503.13657) (NeurIPS 2025 D&B) |
+| `compat` | decomposable math, sequential math, CodeWorld with 6 independent projects; identical agents, no deadline, messages through the framework | 100–109 | do the published findings reproduce here? | Kim et al. 2026 |
 
 The tasks themselves follow established practice:
 - **Molecule tasks** cap the number of oracle calls through the assay cost, following the sample-efficiency argument of [PMO (Gao et al., NeurIPS 2022 D&B)](https://arxiv.org/abs/2206.12411).
@@ -108,6 +128,8 @@ The tasks themselves follow established practice:
   - `wrong_submissions`: rejected submissions (task verification);
   - `stopped_early`: members who stopped with budget left while the problem was unsolved.
 
+- **Route**: how the design's messages travelled, and how many were delivered or lost.
+
 `summary.md` gives one table per suite. The rows are designs and the columns are cases. Each cell shows the share of seeds solved, with the share of tasks done in brackets. Mean tokens and failure signals are added at the end of each row.
 
 ---
@@ -121,6 +143,22 @@ The tasks themselves follow established practice:
 - 量哪些指标。
 
 代码在 `netagents/designs.py`、`netagents/testset.py`、`netagents/evaluate.py`。
+
+## 两条赛道
+
+已发表的设计默认的条件，正是本环境有意超出的：每个智能体都一样、任务靠答案检验、没有截止时间、消息由框架免费转交。如果一个设计在这里表现差，可能是设计本身弱，也可能只是它本来就不是为这种条件设计的。所以每个设计都跑两条赛道：
+
+- **兼容赛道**（`--suite compat`）：原论文的条件。`compat/*` 配置让每人拥有全部工具、不设截止时间、只检验答案；设计之间的消息照原作代码那样由框架转交。先在这里复现已发表的结论，复现了的设计才拿到网络赛道上比较。
+- **网络赛道**（其余测试组）：本环境新增的东西。工具按角色拆分、共处一个世界、网络有形状、延迟、掉线和成本。设计的消息改走环境的网络：发送记在发送方账上，读收件箱记在接收方账上，发给非邻居的消息会丢。不是环境里智能体的说话者（Kim 等的调度者、LbMAS 的控制单元）借第一个智能体的位置发言。
+
+切换只靠一个对象：`netagents/designs.py` 里的 `Channel`，所有多智能体移植都用它，所以两条赛道上的提示词和协议完全一样。`--route framework|network` 可以覆盖赛道的默认值，例如让兼容用例改走网络，单独量出“真实通信”的代价。AutoGen 和 CAMEL 自己传消息，始终走框架；每次运行都记录实际走的路线，以及送达和丢失的条数。
+
+**兼容赛道上检验的已发表结论**（`testset.HYPOTHESES`）：
+- Kim 等 2026：可分解任务上，所有多智能体结构都优于单智能体（Finance-Agent，+57% 至 +81%）。对应 `compat/math-decomposable`：4 道互不相关的递推题加一个求和。
+- Kim 等 2026：顺序任务上，所有多智能体结构都差于单智能体（PlanCraft，−39% 至 −70%）。对应 `compat/math-sequential`：同样 4 道递推题连成一条链，每道的初值取自上一道的答案。
+- Du 等 2024：辩论在算术应用题上优于单智能体。直接在 GSM8K 上，用 `netagents/fidelity.py` 对照作者自己的代码检验。
+
+评测按种子配对，计算任务完成比例之差的均值和 95% bootstrap 区间，并判定为“复现”（区间整体落在论文给出的一侧）、“相反”（落在另一侧）或“不确定”。结果表写进 `summary.md`，数字在 `hypotheses.json`。
 
 ## 设计和它们与原作的接近程度
 
@@ -170,6 +208,7 @@ The tasks themselves follow established practice:
 | `scaling` | 2、4、8、16 人（参考 AgentsNet 和 MacNet） |
 | `topology` | 全连、链、星、树、环、随机（参考 MultiAgentBench 和 AgentsNet） |
 | `robustness` | 规律漂移、客户改需求、网络掉线和延迟（参考 MAST） |
+| `compat` | 兼容赛道：可分解数学、顺序数学、6 个独立项目的 CodeWorld |
 
 ## 指标
 

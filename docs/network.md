@@ -157,6 +157,12 @@ Every preset comes in three variants with the same total compute and the same de
 | `solo` | one agent with every tool and the whole team's budget, but the same time. A round is one action for one agent and n actions for a team of n, so solo can spend only 1/n of its budget before the deadline. |
 | `nonet` | the team with no messages, board or shared store: everyone works alone, in parallel |
 
+Compatibility presets (`compat/*`) meet the assumptions of the published multi-agent designs: every agent
+has every tool, there is no deadline, and tasks are checked by their answers. `compat/math-decomposable`
+has four independent recurrences; `compat/math-sequential` links the same four into one chain (the math
+provider's `linked=True`: each problem starts from the previous one's answer). They reproduce Kim et al.'s
+decomposable-versus-sequential finding before the harder presets (see `docs/testset.md`, "Two tracks").
+
 Held-out presets load tasks from `tasks/heldout/` that no scripted team was written for:
 - two math problem sets (number theory, combinatorics);
 - a to-do API website task;
@@ -267,3 +273,5 @@ How to read it:
 - 数学：10/10，26 个动作。
 - 网站：10/10，23 个动作。
 - 分子：8/10，205 个动作。
+
+**兼容配置**（`compat/*`）：满足已发表多智能体设计的前提——每人拥有全部工具、没有截止时间、按答案检验。`compat/math-decomposable` 是 4 道互不相关的递推题；`compat/math-sequential` 把同样 4 道题连成一条链（数学提供者的 `linked=True`：每道题的初值取自上一道的答案）。它们用来先复现 Kim 等关于“可分解 vs 顺序”任务的结论，再进入更难的配置（见 `docs/testset.md` 的“两条赛道”）。

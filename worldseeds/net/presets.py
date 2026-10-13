@@ -15,6 +15,9 @@ Variants (same total compute and the same deadline in every one):
             the same time: a round is one action for one agent, n actions for a team of n)
     nonet   the team, with no messages, board or shared store (each works alone, in parallel)
 
+Compatibility presets (``compat/*``) meet the published designs' assumptions (identical agents, no
+deadline, answer-checked tasks) for reproducing their findings before the harder settings.
+
 Held-out presets (``*/heldout-*``) load tasks from ``tasks/heldout/``: problems no scripted solver was
 written for, for testing whether what agents learned carries over.
 """
@@ -84,6 +87,25 @@ PRESETS: dict[str, dict] = {
                                         "biologists": 3},
         "net": {"budget": 160, "verify_cost": 5, "wrong_penalty": 0.5, **HARD_NET},
         "note": "Very noisy, expensive assays; every wrong submission costs."},
+    # ---------------------------------------------------------------- compatibility: the published settings
+    # What the published multi-agent designs assume: identical agents (every one has every tool), tasks
+    # checked by their answers, no deadline, a free and instant network (their messages pass through their
+    # framework anyway, see netagents/designs.py Channel). Decomposable and sequential are the two task
+    # structures of Kim et al. (2026): independent sub-problems vs one chain of dependent steps.
+    "compat/math-decomposable": {
+        "provider": "math", "opt": {"problems": ["recurrence"] * 4, "free_roles": True, "explorers": 3,
+                                    "algebraists": 0},
+        "net": {"budget": 60},
+        "note": "4 independent recurrences (12 lemmas) and a final sum; 3 identical agents."},
+    "compat/math-sequential": {
+        "provider": "math", "opt": {"problems": ["recurrence"] * 4, "linked": True, "free_roles": True,
+                                    "explorers": 3, "algebraists": 0},
+        "net": {"budget": 60},
+        "note": "The same 4 recurrences in one chain: each starts from the previous one's answer."},
+    "compat/codeworld": {
+        "provider": "codeworld", "opt": {"n_modules": 4, "n_projects": 6, "devs": 3},
+        "net": {"budget": 150},
+        "note": "6 independent projects, 3 developers who can study anything (= codeworld/easy)."},
     # ---------------------------------------------------------------- held out: tasks no script was written for
     "math/heldout-number-theory": {
         "provider": "math", "opt": {"problem_file": os.path.join(ROOT, "math_number_theory.json"),

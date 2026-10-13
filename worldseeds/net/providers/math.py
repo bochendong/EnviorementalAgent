@@ -11,7 +11,8 @@ Roles split the tools, so the work must be shared:
     algebraist  simplify, solve, rsolve symbols: rewrite, solve equations, solve recurrences
 
 Problems come from seeded generators (``recurrence``, ``sum``, any number of each, joined by a final
-``combine`` task) or from your own JSON file:
+``combine`` task; with ``linked=True``, recurrences in one chain, each starting from the previous one's
+answer) or from your own JSON file:
 
     {"title": "...", "tasks": [
         {"id": "L1", "text": "...", "answer": "n*(n+1)/2", "vars": ["n"]},
@@ -110,15 +111,21 @@ def same(answer, truth, vars_=()) -> bool:
 
 
 # ------------------------------------------------------------------ generators
-def gen_recurrence(rng: random.Random, tag: str) -> list[dict]:
+def gen_recurrence(rng: random.Random, tag: str, after: dict | None = None) -> list[dict]:
+    """``after``: a task whose answer sets a(0) (its answer mod 10), so this problem waits for that one."""
     p, q, r = rng.randint(2, 5), rng.randint(1, 9), rng.randint(0, 9)
+    if after is not None:
+        r = int(after["answer"]) % 10
     n = sp.Symbol("n")
     closed = sp.simplify((r + sp.Rational(q, p - 1)) * p ** n - sp.Rational(q, p - 1))
     a = lambda k: closed.subs(n, k)  # noqa: E731
     N, M = rng.choice([1000, 2024, 5000]), rng.choice([1009, 997, 10007])
     seq = f"a(0) = {r}, a(n+1) = {p}*a(n) + {q}"
+    if after is not None:
+        seq = f"a(0) = (the answer of {after['id']}) mod 10, a(n+1) = {p}*a(n) + {q}"
     return [
-        {"id": f"{tag}.L1", "text": f"For the sequence {seq}: what is a(6)?", "answer": str(a(6))},
+        {"id": f"{tag}.L1", "text": f"For the sequence {seq}: what is a(6)?", "answer": str(a(6)),
+         **({"deps": [after["id"]]} if after is not None else {})},
         {"id": f"{tag}.L2", "text": f"For the sequence {seq}: give a closed form for a(n) in terms of n.",
          "answer": str(closed), "vars": ["n"], "deps": [f"{tag}.L1"], "reward": 2},
         {"id": f"{tag}.T", "text": f"For the sequence {seq}: what is a({N}) mod {M}?",
@@ -150,8 +157,11 @@ class MathProvider(TaskProvider):
     name = "math"
 
     def __init__(self, problems: tuple[str, ...] | list[str] = ("recurrence", "sum"), problem_file: str = "",
-                 explorers: int = 2, algebraists: int = 1, timeout: float = 3.0, free_roles: bool = False):
-        self.kinds, self.problem_file = list(problems), problem_file
+                 explorers: int = 2, algebraists: int = 1, timeout: float = 3.0, free_roles: bool = False,
+                 linked: bool = False):
+        self.kinds, self.problem_file, self.linked = list(problems), problem_file, linked
+        if linked and set(self.kinds) != {"recurrence"}:
+            raise ValueError("linked problems are recurrences only")
         self.explorers, self.algebraists, self.timeout, self.free = explorers, algebraists, timeout, free_roles
 
     def reset(self, seed: int = 0) -> dict:
@@ -165,16 +175,21 @@ class MathProvider(TaskProvider):
             rng = random.Random(f"math/{seed}")
             raw = []
             for i, kind in enumerate(self.kinds):
-                raw += GENERATORS[kind](rng, f"P{i + 1}")
+                if self.linked and i:  # one chain: each problem starts from the previous problem's answer
+                    raw += gen_recurrence(rng, f"P{i + 1}", after=raw[-1])
+                else:
+                    raw += GENERATORS[kind](rng, f"P{i + 1}")
             finals = [t for t in raw if t.get("final_of")]
-            if len(finals) > 1:
+            if self.linked:
+                finals[-1]["final"] = True
+            elif len(finals) > 1:
                 total = sum(int(t["answer"]) for t in finals)
                 raw.append({"id": "FINAL", "text": "Add up the answers of " + ", ".join(t["id"] for t in finals)
                             + ".", "answer": str(total), "deps": [t["id"] for t in finals], "reward": 4,
                             "final": True})
             else:
                 finals[0]["final"] = True
-            title = " + ".join(self.kinds)
+            title = (" -> " if self.linked else " + ").join(self.kinds)
         self.raw = {t["id"]: t for t in raw}
         return {"world": "math", "problem": title, "tasks": len(raw), "answers": "SymPy expressions (strings)"}
 

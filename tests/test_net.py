@@ -213,7 +213,7 @@ def test_presets_and_variants_build():
     for name in PRESETS:
         for var in VARIANTS:
             prov, opt, net = resolve(name, var)
-            if var == "solo" and not name.endswith("/easy") and "heldout" not in name:
+            if var == "solo" and name.endswith(("/medium", "/hard")):
                 assert net["deadline"] == PRESETS[name]["net"]["budget"]
             if var == "nonet":
                 assert not (net["messaging"] or net["store"] or net["board"])
@@ -292,3 +292,17 @@ def test_town_replay_shows_what_the_environment_recorded():
     assert all(w["kind"] == "drift" and "fn" in w for w in r["sprints"][0]["world_events"])
     with pytest.raises(ValueError):
         town_replay(env_())
+
+
+def test_math_linked_problems_form_one_chain():
+    e = env_(NetConfig(budget=80), providers.make("math", problems=["recurrence"] * 3, linked=True, free_roles=True,
+                                                  explorers=1, algebraists=0))
+    raw = e.provider.raw
+    assert raw["P2.L1"]["deps"] == ["P1.T"] and raw["P3.L1"]["deps"] == ["P2.T"] and "FINAL" not in raw
+    assert e.tasks["P3.T"].final and not e.tasks["P1.T"].final
+    assert "P1.T" in raw["P2.L1"]["text"]
+    assert not e.step("a0", "submit", {"task": "P2.L1", "artifact": raw["P2.L1"]["answer"]})["ok"]  # not open
+    for t in ("P1.L1", "P1.L2", "P1.T", "P2.L1"):
+        assert e.step("a0", "submit", {"task": t, "artifact": raw[t]["answer"]})["ok"], t
+    with pytest.raises(ValueError):
+        providers.make("math", problems=["sum"], linked=True)

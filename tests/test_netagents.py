@@ -198,3 +198,68 @@ def test_fidelity_scoring_is_strict():
     assert vote(["3", "4", "3", None]) == "3" and correct("3.0", "3")
     lo, hi = bootstrap([True, True, False, True], [False, True, False, False])
     assert lo <= .5 <= hi
+
+
+def test_channel_routes_messages_through_the_framework_or_the_network():
+    from netagents.designs import Channel
+
+    raw = build("math/easy", net_change={"topology": "chain"})
+    raw.reset(0)
+    env = LocalEnv(raw)
+    a, b, c = list(raw.agents)
+    free = Channel(env, "framework")
+    assert free.send(a, c, "x = 3", "solution") == "x = 3"
+    free.post(a, "note")
+    assert free.read(b) == ["note"] and not [e for e in raw.events if e.get("kind") == "op"]
+    net = Channel(env, "network")
+    before = raw.agents[a].budget
+    assert net.send(a, b, "x = 3", "solution") == "x = 3"
+    assert raw.agents[a].budget < before  # the send is charged to the sender
+    assert {"send", "inbox"} <= {e["op"] for e in raw.events if e.get("kind") == "op"}
+    assert net.send(a, c, "x = 3", "solution") is None  # not a neighbour on a chain: lost
+    assert net.report() == {"route": "network", "delivered": 1, "lost": 1}
+    assert net.send("orchestrator", a, "hi", "guidance") == "hi"  # a non-agent speaks from the first seat
+    net.post(b, "on the board")
+    assert "on the board" in net.read(c)
+    net.remove({"on the board"})
+    assert "on the board" not in net.read(c)
+
+
+def test_compat_track_and_published_findings():
+    from netagents.designs import DESIGNS
+    from netagents.evaluate import check_hypotheses
+    from netagents.testset import HYPOTHESES, SUITES
+
+    compat = {c.id: c for c in SUITES["compat"]}
+    assert all(c.route == "framework" for c in compat.values())
+    assert all(c.route == "network" for c in SUITES["test"])
+    for h in HYPOTHESES:
+        assert h.case in compat and h.design in DESIGNS and h.baseline in DESIGNS
+    for name in ("compat/math-decomposable", "compat/math-sequential"):
+        raw = compat[name].build("team")
+        raw.reset(100)
+        assert set(raw.public()["agents"].values()) == {"mathematician"} and raw.cfg.deadline == 0
+    rows = [{"design": d, "case": "compat/math-decomposable", "seed": s, "completion": v}
+            for s in range(8) for d, v in (("sas", .4), ("centralized", .7 + .01 * s))]
+    rows += [{"design": d, "case": "compat/math-sequential", "seed": s, "completion": v}
+             for s in range(8) for d, v in (("sas", .4), ("centralized", .7))]
+    got = {(c["case"], c["design"]): c["verdict"] for c in check_hypotheses(rows)}
+    assert got == {("compat/math-decomposable", "centralized"): "reproduced",
+                   ("compat/math-sequential", "centralized"): "contradicted"}
+
+
+def test_designs_run_on_both_tracks(mock_llm):
+    from netagents.designs import DESIGNS
+    from netagents.evaluate import run_one
+    from netagents.testset import Case
+
+    model, settings = mock_llm
+    case = Case("compat/math-sequential", "compat/math-sequential", [0], track="compat")
+    calls = 3 * case.team_size()
+    for name in ("debate", "centralized", "decentralized", "blackboard"):
+        free = run_one(DESIGNS[name], case, 0, model, settings, calls)
+        assert free["route"] == "framework" and free["messages"] == 0 and free["posts"] == 0, name
+        net = run_one(DESIGNS[name], case, 0, model, settings, calls, route="network")
+        assert net["route"] == "network" and net["channel"]["delivered"] + net["channel"]["lost"] > 0, name
+        assert net["messages"] + net["posts"] > 0, name
+    assert DESIGNS["debate"].route == "framework"  # the registry's designs are not changed

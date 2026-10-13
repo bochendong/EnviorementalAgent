@@ -50,11 +50,14 @@ python -m netagents.baselines --seeds 10                                # 参考
 
 已发表的智能体设计在同一个环境、同等算力下运行，详见 [docs/testset.md](docs/testset.md)。
 
-设计包括：ReAct、Reflexion、Kim 等（2025）的独立/中心化/去中心化/混合结构、多智能体辩论、黑板系统、Mixture-of-Agents 和 MetaGPT。
+设计包括：ReAct、Reflexion、Kim 等（2026）的单智能体/独立/中心化/去中心化/混合结构、多智能体辩论、LbMAS 黑板系统、Mixture-of-Agents，以及在各自框架里运行的 AutoGen、Magentic-One 和 CAMEL 团队。
 
-测试组包括：开发、测试、留出任务、规模、网络拓扑和健壮性。
+分两条赛道：
+- 兼容赛道：原论文的条件（每人工具相同、无截止时间、消息由框架转交），先在这里复现已发表的结论；
+- 网络赛道：本环境新增的东西（工具按角色拆分、拓扑、延迟、成本），消息走环境的网络。测试组包括开发、测试、留出任务、规模、网络拓扑和健壮性。
 
 ```bash
+python -m netagents.evaluate --suite compat --designs sas independent centralized decentralized hybrid
 python -m netagents.evaluate --suite dev --designs all
 SUITE=test sbatch slurm/net_eval.sh                                       # 在 Nibi 上
 ```
