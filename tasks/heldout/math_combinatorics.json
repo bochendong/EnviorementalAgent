@@ -1,0 +1,14 @@
+{"title": "combinatorics sampler (held out)",
+ "tasks": [
+  {"id": "paths", "text": "How many lattice paths go from (0,0) to (8,6) with unit steps right or up?",
+   "answer": "3003"},
+  {"id": "paths-formula", "text": "Give the number of such paths from (0,0) to (n,n) as a formula in n.",
+   "answer": "binomial(2*n, n)", "vars": ["n"], "deps": ["paths"], "reward": 2},
+  {"id": "catalan", "text": "How many lattice paths from (0,0) to (10,10) never go above the diagonal y = x?",
+   "answer": "16796", "deps": ["paths-formula"], "reward": 2},
+  {"id": "domino2", "text": "In how many ways can a 2 x 12 board be tiled with 1 x 2 dominoes?", "answer": "233"},
+  {"id": "domino3", "text": "In how many ways can a 3 x 10 board be tiled with 1 x 2 dominoes?", "answer": "571",
+   "deps": ["domino2"], "reward": 3},
+  {"id": "final", "text": "Add up the answers of paths, catalan, domino2 and domino3.", "answer": "20603",
+   "deps": ["paths", "catalan", "domino2", "domino3"], "reward": 3, "final": true}
+ ]}

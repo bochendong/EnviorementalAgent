@@ -58,6 +58,8 @@ def briefing(env: NetworkEnv, agent: str) -> str:
             f"The problem: {info}\n"
             f"Others: {others or 'nobody'}. Your neighbours (who you can message): {', '.join(o['neighbours']) or 'none'}.\n"
             f"You have {o['budget']} actions; every operation costs actions as listed. The episode ends when the "
-            "final task is done or everyone's budget is spent. Tasks are listed by the 'tasks' operation; a task "
+            "final task is done or everyone's budget is spent"
+            + (f", or at round {o['deadline']} (a round passes when the team together has taken one action per "
+               "member)" if o.get("deadline") else "") + ". Tasks are listed by the 'tasks' operation; a task "
             "opens when the tasks it depends on are done. Submitting a correct result for a task scores it.\n"
             f"Operations:\n{ops}")

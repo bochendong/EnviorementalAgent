@@ -13,8 +13,9 @@ relationship, and ``oracle="package.module:function"`` replaces it with any SMIL
 Tasks climb a ladder (a hit, then a lead, then a candidate with low toxicity); thresholds are calibrated
 at reset by a search over the edit space, so every episode is solvable. Your own targets can come from
 JSON: {"start": [smiles...], "tasks": [{"id", "text", "deps", "final", "need": {"activity": 7,
-"qed": 0.5, "mw": 450, "tox": 0.3, "sim": 0.3}}]} (``mw`` and ``tox`` are maxima, the rest minima;
-``sim`` is the Tanimoto similarity to the first start molecule).
+"qed": 0.5, "mw": 450, "tox": 0.3, "sim": 0.3, "logp_max": 4}}]} (``mw``, ``tox`` and ``*_max`` are
+maxima, the rest minima; ``sim`` is the Tanimoto similarity to the first start molecule;
+``activity_gain`` asks for that much more activity than the first start molecule has).
 """
 
 from __future__ import annotations
@@ -145,11 +146,13 @@ class Biology:
 
 
 def meets(need: dict, v: dict) -> list[str]:
+    """``mw``, ``tox`` and any ``<name>_max`` are maxima; everything else is a minimum."""
     miss = []
     for k, lim in need.items():
-        x = v[k]
-        if (k in ("mw", "tox") and x > lim) or (k not in ("mw", "tox") and x < lim):
-            miss.append(f"{k} {x} {'>' if k in ('mw', 'tox') else '<'} {lim}")
+        name, top = (k[:-4], True) if k.endswith("_max") else (k, k in ("mw", "tox"))
+        x = v[name]
+        if (top and x > lim) or (not top and x < lim):
+            miss.append(f"{name} {x} {'>' if top else '<'} {lim}")
     return miss
 
 
@@ -171,6 +174,12 @@ class MoleculeProvider(TaskProvider):
                 data = json.load(f)
             self.starts = [canon(s) for s in data["start"]]
             self.raw = data["tasks"]
+            self.ref = fp(mol(self.starts[0]))
+            base = self.values(self.starts[0])["activity"]
+            for t in self.raw:  # "activity_gain": the hidden activity depends on the seed, so targets can be relative
+                if "activity_gain" in t["need"]:
+                    t["need"]["activity"] = round(base + t["need"].pop("activity_gain"), 2)
+                    t["text"] += f" (activity >= {t['need']['activity']})"
         else:
             self.starts = [canon(random.Random(f"start/{seed}").choice(STARTS))]
             self.raw = self._ladder()

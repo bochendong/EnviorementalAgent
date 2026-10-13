@@ -119,20 +119,60 @@ python scripts/run_net.py --provider website --policy llm --net budget=150 laten
 python scripts/run_net.py --provider molecule --serve 8090
 ```
 
-## Baselines (scripted teams, `worldseeds/net/solvers.py`, 10 seeds)
+## Presets: difficulty, held-out tasks, variants (`worldseeds/net/presets.py`)
 
-The scripted teams use only the public operations. They show that every provider can be solved, and
-they show the division of labour each provider was built around.
+Each provider has three difficulties. Difficulty grows along the same axes everywhere:
+- more work than one member's budget covers;
+- information split across roles;
+- a slower, sparser, less reliable network;
+- a world that changes;
+- costlier mistakes.
 
-| provider | team | solved | actions (mean) |
-|---|---|---|---|
-| codeworld | 3 devs, laws shared in the store | 10/10 | 128 |
-| codeworld | 3 devs, no sharing | 10/10 | 190 |
-| math | explorer + algebraist, by message and store | 10/10 | 26 |
-| website | PM asks the client and stores the answers; frontend and backend write | 10/10 | 23 |
-| molecule | single-edit SAR scan, then stack the helpful edits | 8/10 | 205 |
+Medium and hard run against the clock. The deadline, in rounds, equals one member's budget.
 
-Sharing in CodeWorld cuts the work by a third. This is the same effect the town experiments measured, now on the generic network.
+Every preset comes in three variants with the same total compute and the same deadline:
+
+| variant | what it is |
+|---|---|
+| `team` | the preset as written |
+| `solo` | one agent with every tool and the whole team's budget, but the same time. A round is one action for one agent and n actions for a team of n, so solo can spend only 1/n of its budget before the deadline. |
+| `nonet` | the team with no messages, board or shared store: everyone works alone, in parallel |
+
+Held-out presets load tasks from `tasks/heldout/` that no scripted team was written for:
+- two math problem sets (number theory, combinatorics);
+- a to-do API website task;
+- a molecule target profile around an aminopyrimidine.
+
+They test whether what agents learned carries over. The molecule targets are relative to the start
+(`activity_gain`). The preset lists the seeds on which a search over the edit space reaches every target.
+
+```bash
+python scripts/run_net.py --list-presets
+python scripts/run_net.py --preset math/hard --variant solo --policy llm
+python scripts/net_baselines.py --seeds 10 --out results/net/baselines    # the table below
+```
+
+## Reference teams (`worldseeds/net/solvers.py`)
+
+The scripted teams are reference solutions written for the built-in generators. They know the problem
+wording and what the client will say, so they are not baselines to beat. They work only on the built-in
+tasks, not the held-out ones.
+
+They are honest about the network:
+- they pick agents by what their role can do;
+- they claim tasks when the market requires it;
+- they wait out outages;
+- they move information between agents only through the network (store, else messages, else board). With those off, nothing travels.
+
+What they give:
+- proof that each built-in difficulty can be solved through the public operations;
+- a reference cost;
+- the effect of the network on a fixed strategy.
+
+The comparison that matters for learning agents is a learned team against the same agents in the
+`solo` and `nonet` variants, and performance on held-out tasks.
+
+Results: `results/net/baselines/baselines.md` (written by `scripts/net_baselines.py`).
 
 ---
 

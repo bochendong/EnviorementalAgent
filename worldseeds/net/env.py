@@ -8,7 +8,8 @@ them (who asks whom, what to share, how to split the work) is left to whatever d
 
 Each agent has a role (from the provider) and a budget of actions. Every call costs actions (the op's
 cost); a call that fails costs 1. A *round* passes when the agents together have spent ``n_agents``
-actions; message latency, outages and the provider's own changes run on rounds.
+actions; message latency, outages and the provider's own changes run on rounds. Waiting and calls
+made while offline take time but no budget.
 
 Network operations (each can be switched off in ``NetConfig``):
 
@@ -22,7 +23,7 @@ Network operations (each can be switched off in ``NetConfig``):
     put / get / keys   the shared store: versioned, every version kept, writer and round recorded
     transfer  give credits to someone
     submit    hand in an artifact for a task; checked by the provider (``verify_cost`` actions)
-    wait      do nothing for one action
+    wait      let time pass (costs no budget)
 
 Rewards: when a task is done its ``reward`` goes to the solver; ``NetConfig.team`` blends individual and
 team reward (0 = all own, 1 = everything shared equally). Credits are separate: bounties for done tasks,
@@ -47,6 +48,8 @@ ALL_NET_OPS = ("status", "who", "tasks", "claim", "release", "send", "inbox", "p
 class NetConfig:
     agents: dict[str, int] | None = None  # role -> how many (default: the provider's counts)
     budget: int = 200  # actions per agent
+    deadline: int = 0  # rounds until the episode ends (0: none). A round is one action per agent, so a
+    # team of n gets n times the actions of one agent in the same time: compute and time are separate.
     messaging: bool = True
     board: bool = True
     store: bool = True
@@ -185,12 +188,19 @@ class NetworkEnv:
         """What an agent sees without spending anything (for prompts and dashboards)."""
         a = self.agents[agent]
         return {"agent": agent, "role": a.role.name, "role_doc": a.role.doc, "round": self.round,
+                **({"deadline": self.cfg.deadline} if self.cfg.deadline else {}),
                 "budget": a.budget, "credits": a.credits, "reputation": round(a.rep, 2),
                 "unread": len(a.mail), "offline": a.offline, "neighbours": list(a.neighbours),
                 "open_tasks": [t for t, s in self.state.items() if s["status"] == "open"]}
 
     @property
+    def late(self) -> bool:
+        return bool(self.cfg.deadline) and self.round >= self.cfg.deadline
+
+    @property
     def done(self) -> bool:
+        if self.late:
+            return True
         finals = [t for t in self.tasks.values() if t.final]
         if finals and all(self.state[t.id]["status"] == "done" for t in finals):
             return True
@@ -208,8 +218,11 @@ class NetworkEnv:
             return {"ok": False, "error": f"no agent {agent!r}"}
         if a.budget <= 0:
             return {"ok": False, "error": "out of budget", "budget": 0}
+        if self.late:
+            return {"ok": False, "error": f"the deadline (round {self.cfg.deadline}) has passed", "budget": a.budget}
         if a.offline:
-            obs = {"ok": False, "error": f"you are offline for {a.offline} more round(s)", "_cost": 1}
+            # being offline costs time, not compute
+            obs = {"ok": False, "error": f"you are offline for {a.offline} more round(s)", "_cost": 0, "_time": 1}
         elif op in ALL_NET_OPS and op in self.cfg.enabled():
             try:
                 obs = getattr(self, f"_op_{op}")(a, **args)
@@ -230,12 +243,13 @@ class NetworkEnv:
             obs = {"ok": False, "error": f"unknown or forbidden operation {op!r}"}
         cost = max(0, int(obs.pop("_cost", 1)))
         cost = min(cost, a.budget)
+        time = max(cost, int(obs.pop("_time", 0)))
         a.budget -= cost
         a.spent += cost
         obs["budget"] = a.budget
         self._log({"kind": "op", "agent": agent, "op": op, "args": args if self.cfg.log_args else None,
                    "cost": cost, "obs": obs})
-        self._advance(cost)
+        self._advance(time)
         return obs
 
     # ------------------------------------------------------------------ time
@@ -382,7 +396,7 @@ class NetworkEnv:
         return {"ok": True, "credits": a.credits}
 
     def _op_wait(self, a: Agent) -> dict:
-        return {"ok": True}
+        return {"ok": True, "_cost": 0, "_time": 1, "round": self.round}
 
     def _op_submit(self, a: Agent, task: str, artifact: Any = None, key: str = "") -> dict:
         t, s = self.tasks.get(task), self.state.get(task)
@@ -459,7 +473,7 @@ class NetworkEnv:
                    {"task": _p(S, "task id"), "artifact": {**art, "description": "the result"},
                     "key": _p(S, "or: submit the latest value under this store key")}, ("task",),
                    cost=self.cfg.verify_cost),
-            OpSpec("wait", "Do nothing for one action."),
+            OpSpec("wait", "Let time pass (one action's worth of time; it costs no budget).", cost=0),
         ]
 
     def _log(self, e: dict):

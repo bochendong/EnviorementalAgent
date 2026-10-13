@@ -235,3 +235,76 @@ def test_tools_and_http_api():
         assert json.loads(urllib.request.urlopen(base + "/events?since=1").read())["events"]
     finally:
         srv.shutdown()
+
+
+# ---------------------------------------------------------------- presets, held-out tasks, time
+def test_presets_and_variants_build():
+    from worldseeds.net.presets import PRESETS, VARIANTS, build, resolve
+
+    for name in PRESETS:
+        for var in VARIANTS:
+            prov, opt, net = resolve(name, var)
+            if var == "solo" and not name.endswith("/easy") and "heldout" not in name:
+                assert net["deadline"] == PRESETS[name]["net"]["budget"]
+            if var == "nonet":
+                assert not (net["messaging"] or net["store"] or net["board"])
+    e = build("math/medium", "solo")
+    e.reset(0)
+    team = build("math/medium")
+    team.reset(0)
+    assert len(e.agents) == 1 and e.agents["a0"].budget == sum(a.budget for a in team.agents.values())
+    assert {"simplify", "evaluate"} <= {o.name for o in e.ops("a0")}
+
+
+def test_deadline_wait_and_outage_cost_time_not_budget():
+    e = env_(NetConfig(budget=50, deadline=4))
+    assert e.step("a0", "wait")["budget"] == 50
+    for _ in range(3 * 4):
+        e.step("a1", "wait")
+    assert e.late and e.done and "deadline" in e.step("a0", "poke")["error"]
+    e = env_(NetConfig(budget=50, outage=1.0, outage_rounds=3))
+    for _ in range(3):
+        e.step("a2", "wait")
+    assert e.agents["a0"].offline and e.step("a0", "poke")["budget"] == 50
+
+
+def test_heldout_tasks_are_solvable():
+    import sys
+    from pathlib import Path
+
+    from worldseeds.net.presets import build, seeds
+
+    sys.path.insert(0, str(Path(__file__).parent / "data"))
+    from todo_reference import ROUTES, RULES
+
+    e = build("website/heldout-todo")
+    e.reset(0)
+    assert not e.step("a0", "submit", {"task": "create"})["ok"]
+    e.step("a1", "write", {"path": "routes.py", "content": ROUTES})
+    e.step("a2", "write", {"path": "rules.py", "content": RULES})
+    for t in ("create", "validate", "list", "done", "release"):
+        assert e.step("a0", "submit", {"task": t})["ok"], t
+    for name in ("math/heldout-number-theory", "math/heldout-combinatorics"):
+        e = build(name)
+        e.reset(0)
+        for tid, t in e.provider.raw.items():
+            assert e.step("a2", "submit", {"task": tid, "artifact": t["answer"]})["ok"], (name, tid)
+        assert e.solved
+    e = build("molecule/heldout-kinase")
+    e.reset(seeds("molecule/heldout-kinase")[0])
+    need = e.provider.raw[0]["need"]
+    assert need["activity"] > e.provider.values(e.info["start"][0])["activity"]
+
+
+@pytest.mark.parametrize("name", ["codeworld/easy", "math/easy", "website/easy", "molecule/easy"])
+def test_reference_teams_need_the_network(name):
+    from worldseeds.net.presets import build
+    from worldseeds.net.solvers import SOLVERS
+
+    e = build(name)
+    e.reset(0)
+    assert SOLVERS[e.provider.name](e)["solved"]
+    if name != "codeworld/easy":  # without the network, information between roles does not travel
+        e = build(name, "nonet")
+        e.reset(0)
+        assert not SOLVERS[e.provider.name](e)["solved"]

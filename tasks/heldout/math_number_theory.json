@@ -1,0 +1,12 @@
+{"title": "number theory sampler (held out)",
+ "tasks": [
+  {"id": "sigma", "text": "What is the sum of all positive divisors of 360?", "answer": "1170"},
+  {"id": "tau", "text": "How many positive divisors does 10! have?", "answer": "270"},
+  {"id": "tau-formula", "text": "Give the number of positive divisors of 2^n * 3^n as a formula in n.",
+   "answer": "(n+1)**2", "vars": ["n"], "deps": ["tau"], "reward": 2},
+  {"id": "egypt", "text": "How many ordered pairs of positive integers (x, y) satisfy 1/x + 1/y = 1/12?",
+   "answer": "15", "reward": 2},
+  {"id": "power", "text": "What are the last three digits of 7^2024 (i.e. 7^2024 mod 1000)?", "answer": "401"},
+  {"id": "final", "text": "Add up the answers of sigma, tau, egypt and power.", "answer": "1856",
+   "deps": ["sigma", "tau", "egypt", "power"], "reward": 3, "final": true}
+ ]}

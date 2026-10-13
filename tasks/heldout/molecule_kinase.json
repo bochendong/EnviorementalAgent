@@ -1,0 +1,45 @@
+{
+ "start": [
+  "Nc1nccc(n1)-c1ccccc1"
+ ],
+ "tasks": [
+  {
+   "id": "hit",
+   "text": "Raise the activity by at least 1.0 over the starting aminopyrimidine.",
+   "need": {
+    "activity_gain": 1.0
+   }
+  },
+  {
+   "id": "lead",
+   "text": "A lead: activity at least 1.8 over the start, QED >= 0.6, logP <= 3.5, MW <= 400.",
+   "need": {
+    "activity_gain": 1.8,
+    "qed": 0.6,
+    "logp_max": 3.5,
+    "mw": 400
+   },
+   "deps": [
+    "hit"
+   ],
+   "reward": 2
+  },
+  {
+   "id": "candidate",
+   "text": "A candidate: activity at least 1.5 over the start, QED >= 0.6, logP <= 3.5, MW <= 400, toxicity <= 0.3, still similar to the start (Tanimoto >= 0.25).",
+   "need": {
+    "activity_gain": 1.5,
+    "qed": 0.6,
+    "logp_max": 3.5,
+    "mw": 400,
+    "tox": 0.3,
+    "sim": 0.25
+   },
+   "deps": [
+    "lead"
+   ],
+   "reward": 3,
+   "final": true
+  }
+ ]
+}

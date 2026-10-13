@@ -1,0 +1,30 @@
+{"title": "a to-do list JSON API (held out)",
+ "readonly": ["app.py", "harness.py"],
+ "roles": [
+  {"name": "pm", "doc": "Product manager: talks to the client, writes and runs tests.", "write": ["tests/"],
+   "ops": ["ls", "read", "log", "write", "run_tests", "ask_client"], "count": 1},
+  {"name": "api", "doc": "Writes the routes (routes.py).", "write": ["routes.py", "tests/"],
+   "ops": ["ls", "read", "log", "write", "run_tests"], "count": 1},
+  {"name": "rules", "doc": "Writes the business rules (rules.py): validation and ordering.",
+   "write": ["rules.py", "tests/"], "ops": ["ls", "read", "log", "write", "run_tests"], "count": 1}
+ ],
+ "client": [
+  {"keywords": ["create", "add", "new", "post", "fields", "id"],
+   "answer": "POST /api/todos with {\"title\", \"priority\"} creates a to-do and answers 201 with {\"id\", \"title\", \"priority\", \"done\"}. Ids are 1, 2, 3 ... in order of creation; done starts false."},
+  {"keywords": ["title", "validation", "valid", "invalid", "empty", "long", "length", "duplicate", "same"],
+   "answer": "Titles are trimmed of spaces. An empty title or one longer than 80 characters is refused with 400. A title that already exists (ignoring upper/lower case) is refused with 409."},
+  {"keywords": ["priority", "priorities", "urgent", "important", "default"],
+   "answer": "Priority is one of high, normal, low; when it is missing it is normal. Anything else is a 400."},
+  {"keywords": ["list", "order", "sort", "sorted", "get", "show"],
+   "answer": "GET /api/todos returns every to-do: high first, then normal, then low; within a priority, oldest (smallest id) first."},
+  {"keywords": ["done", "finish", "complete", "patch", "update", "tick", "missing", "unknown", "404"],
+   "answer": "PATCH /api/todos/<id> with {\"done\": true or false} sets it and answers 200 with the to-do. An id that does not exist is 404, and so is any path we did not talk about."}
+ ],
+ "features": [
+  {"id": "create", "text": "Create to-dos.", "tests": "hidden/test_create.py"},
+  {"id": "validate", "text": "Refuse bad to-dos the way the client wants.", "tests": "hidden/test_validate.py",
+   "deps": ["create"], "reward": 2},
+  {"id": "list", "text": "List to-dos in the client's order.", "tests": "hidden/test_list.py", "deps": ["create"],
+   "reward": 2},
+  {"id": "done", "text": "Mark to-dos done or not done.", "tests": "hidden/test_done.py", "deps": ["create"]}
+ ]}
