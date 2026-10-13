@@ -1,7 +1,7 @@
-"""World Seeds: growing, zoomable, memoryful agent environments."""
+"""World Seeds: an environment for networks of agents.
 
-from .laws import Laws
-from .seed import ALL_BLOCKS, WorldSeed
-from .world import World, grow
+    worldseeds.net         the network environment, its task providers, presets, server and town replays
+    worldseeds.codeworld   the CodeWorld world and its town (used by the codeworld provider)
 
-__all__ = ["Laws", "WorldSeed", "World", "grow", "ALL_BLOCKS"]
+Agents live apart, in netagents/.
+"""

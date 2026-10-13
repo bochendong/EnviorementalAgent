@@ -10,7 +10,7 @@ World Seeds 是一个**智能体网络的环境**，研究的对象包括任务�
 
 | | |
 |---|---|
-| `worldseeds/` | **环境**：网络（`worldseeds/net`）、任务提供者、难度配置和留出任务、世界（CodeWorld 和它的小镇、最早的 World Seeds 世界）、HTTP 服务、小镇回放 |
+| `worldseeds/` | **环境**：网络（`worldseeds/net`）、任务提供者、难度配置和留出任务、CodeWorld 世界和它的小镇、HTTP 服务、小镇回放 |
 | `netagents/` | **智能体**：只通过环境的公开接口（`step`、`ops`、`observe`、`public`）访问环境，同一进程或通过 HTTP 都行 |
 
 ## 环境：一个网络，可插拔的任务
@@ -79,13 +79,12 @@ sbatch slurm/net_llm.sh                                    # LLM 团队跑各个
 ```
 worldseeds/net/         网络环境：core.py（提供者接口）、env.py、presets.py、providers/、server.py、replay.py
 worldseeds/codeworld/   CodeWorld 世界和小镇：world.py、townmap.py、recipes.py、events.py、goals.py、economy.py
-worldseeds/*.py         最早的 World Seeds 世界（laws、seed、world、oracle、similarity）
 netagents/              智能体（客户端、工具、LLM 团队、参考团队、运行、基线、回放）
 tasks/heldout/          留出任务（数学、网站、分子）
 web/                    小镇回放页面（codeworld.html）和它的美术（web/tools：kairoart.py、make_people.py）
-scripts/run_net.py      提供环境服务；similarity_demo.py
+scripts/run_net.py      提供环境服务
 slurm/                  Nibi：setup_nibi.sh、start_vllm.sh、net_llm.sh
-docs/                   network.md、codeworld.md、研究笔记
+docs/                   network.md、codeworld.md
 ```
 
-早期实验的 agent 代码和 SeedVille 农场小镇已经删除，agent 代码包括 World Seeds 的记忆智能体、蜂群、CodeWorld 开发者、LLM 教程和阶梯。这些都还在 git 历史里，在提交 `290b93f` 之前。
+早期实验的 agent 代码、SeedVille 农场小镇和最早的 World Seeds 地牢世界已经删除，agent 代码包括 World Seeds 的记忆智能体、蜂群、CodeWorld 开发者、LLM 教程和阶梯。这些都还在 git 历史里，在提交 `290b93f` 之前。

@@ -13,7 +13,7 @@ The repository has two halves, kept apart on purpose:
 
 | | |
 |---|---|
-| `worldseeds/` | **the environment**: the network (`worldseeds/net`), its task providers, presets and held-out tasks, the worlds (CodeWorld and its town, the original World Seeds world), the HTTP server, town replays |
+| `worldseeds/` | **the environment**: the network (`worldseeds/net`), its task providers, presets and held-out tasks, the CodeWorld world and its town, the HTTP server, town replays |
 | `netagents/` | **the agents**: they reach the environment only through its public interface (`step`, `ops`, `observe`, `public`), in the same process or over HTTP |
 
 ## The environment: one network, pluggable tasks
@@ -85,14 +85,13 @@ worldseeds/net/         the network environment: core.py (provider interface), e
                         providers/ (codeworld, math, website, molecule), server.py, replay.py
 worldseeds/codeworld/   the CodeWorld world and its town: world.py, townmap.py, recipes.py, events.py,
                         goals.py, economy.py
-worldseeds/*.py         the original World Seeds worlds (laws, seed, world, oracle, similarity)
 netagents/              the agents (clients, tools, LLM team, reference teams, run, baselines, replays)
 tasks/heldout/          held-out tasks (math, website, molecule)
 web/                    the town replay page (codeworld.html), its art (web/tools: kairoart.py, make_people.py)
-scripts/run_net.py      serve the environment; similarity_demo.py
+scripts/run_net.py      serve the environment
 slurm/                  Nibi: setup_nibi.sh, start_vllm.sh, net_llm.sh
-docs/                   network.md, codeworld.md, research notes
+docs/                   network.md, codeworld.md
 ```
 
 The agent code of earlier experiments (World Seeds memory agents, hives, CodeWorld developers, the LLM
-tutorial and ladder) and the SeedVille farming town were removed; it is in the git history before commit `290b93f`.
+tutorial and ladder) the SeedVille farming town and the original World Seeds dungeon world were removed; it is in the git history before commit `290b93f`.
