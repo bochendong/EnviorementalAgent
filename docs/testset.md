@@ -13,6 +13,36 @@ python -m netagents.evaluate --suite dev --designs all                    # any 
 SUITE=test sbatch slurm/net_eval.sh                                       # on Nibi, Qwen on vLLM
 ```
 
+## Running every experiment on Nibi
+
+`slurm/run_all.sh` submits the paper's experiments from a login node, one GPU job per experiment and design, and lays out one directory per run:
+
+```bash
+bash slurm/setup_nibi.sh                                   # once: venvs and model weights
+ACCOUNT=def-yourpi DRY=1 STAGE=all bash slurm/run_all.sh   # see the jobs; nothing is submitted or written
+ACCOUNT=def-yourpi bash slurm/run_all.sh                   # stage 1: baselines, fidelity, compatibility track
+ACCOUNT=def-yourpi RUN=<run> STAGE=2 bash slurm/run_all.sh # stage 2: the network track, into the same run
+python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # rebuild the index at any time
+```
+
+Stage 1 is 22 jobs (baselines on CPU, the GSM8K fidelity check, 10 designs on `compat`, 8 on `compat` through the network, a summary job per experiment); stage 2 is 66. `FRAMEWORKS=1` adds AutoGen, Magentic-One and CAMEL to `compat-framework` and `test`; `SEEDS=2` makes a quick pass; `MODEL_ID` picks the model. Running the script again with the same `RUN` resumes: evaluation jobs skip runs already recorded, and finished baselines and fidelity checks are skipped.
+
+```
+$SCRATCH/worldseeds/results/net/runs/<date>-<model>/
+  README.md                 index: every experiment, its jobs, runs per design and main table
+  plan.tsv                  experiment, design, Slurm job id, command
+  commit.txt, env.txt       the commit (and local changes) and the settings of each submission
+  logs/                     Slurm and vLLM logs
+  baselines/                baselines.md, baselines.json (scripted teams)
+  fidelity/debate.json      official vs ported debate on GSM8K, with the paper's numbers
+  compat-framework/         compatibility track, messages through the framework
+    <design>/runs.jsonl     one job per design
+    summary.md              every design (written when the experiment's last job ends)
+    hypotheses.json         each published finding: reproduced, contradicted or inconclusive
+  compat-network/           the same cases, messages through the environment's network
+  test/ hard/ heldout/ scaling/ topology/ robustness/     the network track, same layout
+```
+
 ## Two tracks
 
 The published designs assume settings this environment deliberately goes beyond: identical agents, answer-checked tasks, no deadline, and messages handed over by the framework for free. A design that fails here could fail because the design is weak, or because it was never meant for these settings. So every design runs on two tracks:
@@ -159,6 +189,33 @@ The tasks themselves follow established practice:
 - 量哪些指标。
 
 代码在 `netagents/designs.py`、`netagents/testset.py`、`netagents/evaluate.py`。
+
+## 在 Nibi 上跑全部实验
+
+在登录节点上用 `slurm/run_all.sh` 提交，每个实验的每个设计一个 GPU 作业，结果全部写进一个运行目录：
+
+```bash
+bash slurm/setup_nibi.sh                                   # 只需一次：环境和模型权重
+ACCOUNT=def-yourpi DRY=1 STAGE=all bash slurm/run_all.sh   # 只打印作业，不提交也不写文件
+ACCOUNT=def-yourpi bash slurm/run_all.sh                   # 第 1 阶段：基线、还原度检查、兼容赛道
+ACCOUNT=def-yourpi RUN=<run> STAGE=2 bash slurm/run_all.sh # 第 2 阶段：网络赛道，写进同一个运行目录
+python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时重建索引
+```
+
+- 第 1 阶段 22 个作业：脚本基线（CPU）、GSM8K 还原度检查、10 个设计跑兼容赛道、8 个多智能体设计让兼容用例改走网络，每个实验再加一个汇总作业。
+- 第 2 阶段 66 个作业。
+- `FRAMEWORKS=1` 把 AutoGen、Magentic-One、CAMEL 加进兼容赛道和 `test`；`SEEDS=2` 只跑前 2 个种子，快速试跑；`MODEL_ID` 换模型。
+- 用同一个 `RUN` 再运行一次就是续跑：已完成的运行会跳过，已有结果的基线和还原度检查也不会重跑。
+
+目录结构（`$SCRATCH/worldseeds/results/net/runs/<日期>-<模型>/`）：
+- `README.md`：索引，每个实验的作业、各设计已完成的运行数和主表；
+- `plan.tsv`：实验、设计、Slurm 作业号、命令；
+- `commit.txt`、`env.txt`：代码版本（含未提交的改动）和每次提交时的设置；
+- `logs/`：Slurm 和 vLLM 日志；
+- `baselines/`：脚本团队基线；
+- `fidelity/debate.json`：辩论的还原度检查，附论文数字；
+- `compat-framework/`、`compat-network/`：兼容赛道（框架转交 / 走网络），每个设计一个子目录 `<设计>/runs.jsonl`，汇总在 `summary.md`，结论判定在 `hypotheses.json`；
+- `test/`、`hard/`、`heldout/`、`scaling/`、`topology/`、`robustness/`：网络赛道，结构相同。
 
 ## 两条赛道
 

@@ -263,3 +263,19 @@ def test_designs_run_on_both_tracks(mock_llm):
         assert net["route"] == "network" and net["channel"]["delivered"] + net["channel"]["lost"] > 0, name
         assert net["messages"] + net["posts"] > 0, name
     assert DESIGNS["debate"].route == "framework"  # the registry's designs are not changed
+
+
+def test_runs_resume_and_summaries_merge(tmp_path):
+    from netagents.evaluate import load_runs, write_summary
+
+    for design, v in (("sas", .2), ("centralized", .6)):
+        (tmp_path / design).mkdir()
+        with open(tmp_path / design / "runs.jsonl", "w") as f:
+            for s in range(6):
+                f.write(json.dumps({"design": design, "case": "compat/math-decomposable", "seed": s, "solved": False,
+                                    "completion": v + .01 * s, "input_tokens": 1, "output_tokens": 1,
+                                    "wrong_submissions": 0, "duplicate_work": 0, "route": "framework"}) + "\n")
+    rows = load_runs(str(tmp_path))
+    assert len(rows) == 12 and len(load_runs(str(tmp_path / "sas" / "runs.jsonl"))) == 6
+    text = write_summary(str(tmp_path), rows, "compat")
+    assert "reproduced" in text and (tmp_path / "hypotheses.json").exists()

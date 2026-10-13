@@ -27,5 +27,5 @@ ROUTE="${ROUTE:-case}"
 OUT="${OUT:-$WS_STORE/results/net/eval/$SERVED_NAME/$SUITE-$ROUTE/${SLURM_JOB_ID:-local}}"
 
 source slurm/start_vllm.sh
-python -m netagents.evaluate --suite "$SUITE" --designs $DESIGNS --route "$ROUTE" --out "$OUT"
+python -m netagents.evaluate --suite "$SUITE" --designs $DESIGNS --route "$ROUTE" --out "$OUT" ${SEEDS:+--seeds "$SEEDS"}
 echo "results in $OUT"

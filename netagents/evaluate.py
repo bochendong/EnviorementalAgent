@@ -23,7 +23,10 @@ On the suites with published findings (testset.HYPOTHESES) it checks each one: t
 the two designs over seeds, a 95% bootstrap interval, and whether the finding is reproduced (the interval
 lies on the published side of zero), contradicted (on the other side) or inconclusive.
 
-Writes runs.jsonl, summary.md and (where there are findings to check) hypotheses.json to --out.
+Writes runs.jsonl, summary.md and (where there are findings to check) hypotheses.json to --out. Runs
+already in --out/runs.jsonl are skipped, so a job that ran out of time can be resubmitted as it was.
+``--summarize DIR`` writes summary.md and hypotheses.json for every runs.jsonl under DIR (e.g. one per
+design, from parallel jobs) without running anything.
 """
 
 from __future__ import annotations
@@ -134,8 +137,31 @@ def hypotheses_markdown(checks: list[dict]) -> str:
     return "\n## Published findings\n\n" + "\n".join(rows) + "\n\nSources:\n" + sources + "\n"
 
 
+def load_runs(root: str) -> list[dict]:
+    """Every run in every runs.jsonl under ``root`` (a directory) or in ``root`` (a file)."""
+    paths = [root] if os.path.isfile(root) else sorted(
+        os.path.join(d, f) for d, _, fs in os.walk(root) for f in fs if f == "runs.jsonl")
+    rows = []
+    for p in paths:
+        with open(p) as f:
+            rows += [json.loads(line) for line in f if line.strip()]
+    return rows
+
+
+def write_summary(out: str, rows: list[dict], title: str) -> str:
+    checks = check_hypotheses(rows)
+    if checks:
+        with open(os.path.join(out, "hypotheses.json"), "w") as f:
+            json.dump(checks, f, indent=1)
+    text = summarize(rows) + hypotheses_markdown(checks)
+    with open(os.path.join(out, "summary.md"), "w") as f:
+        f.write(f"# {title}\n\n" + text)
+    return text
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--summarize", metavar="DIR", help="only tabulate the runs under DIR")
     ap.add_argument("--suite", default="dev", choices=sorted(SUITES))
     ap.add_argument("--designs", nargs="*", default=["all"])
     ap.add_argument("--cases", nargs="*", default=None, help="only these case ids")
@@ -145,6 +171,12 @@ def main():
                     help="how the designs' messages travel (default: as the case's track says)")
     ap.add_argument("--out", default="results/net/eval")
     a = ap.parse_args()
+    if a.summarize:
+        rows = load_runs(a.summarize)
+        if not rows:
+            raise SystemExit(f"no runs under {a.summarize}")
+        print(write_summary(a.summarize, rows, f"{rows[0].get('suite', '')} ({rows[0].get('model', '')})"))
+        return
     from .llm import LLMConfig, make_model, make_settings
 
     cfg = LLMConfig()
@@ -158,29 +190,30 @@ def main():
         designs = [every[d] for d in a.designs]
     os.makedirs(a.out, exist_ok=True)
     path = os.path.join(a.out, "runs.jsonl")
-    rows = []
+    rows = load_runs(path) if os.path.exists(path) else []
+    done = {(r["design"], r["case"], r["seed"], r.get("route")) for r in rows}
     for case in SUITES[a.suite]:
         if a.cases and case.id not in a.cases:
             continue
         calls = a.calls_per_member * case.team_size()
         for seed in case.seeds[:a.seeds] if a.seeds else case.seeds:
             for d in designs:
-                r = {"model": cfg.model, "suite": a.suite, **run_one(d, case, seed, model, settings, calls,
-                                                                         None if a.route == "case" else a.route)}
+                route = None if a.route == "case" else a.route
+                if (d.name, case.id, seed, (route or case.route) if d.network_route else "framework") in done:
+                    continue
+                try:
+                    r = {"model": cfg.model, "suite": a.suite, **run_one(d, case, seed, model, settings, calls, route)}
+                except Exception as e:  # noqa: BLE001 (one broken run must not stop the job; a rerun retries it)
+                    print(f"{case.id} seed {seed} {d.name} FAILED: {type(e).__name__}: {e}", flush=True)
+                    continue
                 rows.append(r)
                 with open(path, "a") as f:
                     f.write(json.dumps(r) + "\n")
                 print(f"{case.id:32s} seed {seed:3d} {d.name:13s} solved {r['solved']!s:5s} "
                       f"done {r['done']}/{r['tasks']} calls {r['llm_tool_calls']} "
                       f"tokens {r['input_tokens'] + r['output_tokens']}", flush=True)
-    checks = check_hypotheses(rows)
-    if checks:
-        with open(os.path.join(a.out, "hypotheses.json"), "w") as f:
-            json.dump(checks, f, indent=1)
-    text = summarize(rows) + hypotheses_markdown(checks)
-    with open(os.path.join(a.out, "summary.md"), "w") as f:
-        f.write(f"# {a.suite} ({cfg.model})\n\n" + text)
-    print(text)
+    if rows:
+        print(write_summary(a.out, rows, f"{a.suite} ({cfg.model})"))
 
 
 if __name__ == "__main__":

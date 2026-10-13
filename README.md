@@ -63,7 +63,7 @@ Network-track suites cover development, testing, held-out tasks, scaling, topolo
 ```bash
 python -m netagents.evaluate --suite compat --designs sas independent centralized decentralized hybrid
 python -m netagents.evaluate --suite dev --designs all
-SUITE=test sbatch slurm/net_eval.sh                                       # on Nibi
+ACCOUNT=def-yourpi bash slurm/run_all.sh                                   # every experiment on Nibi (docs/testset.md)
 ```
 
 ## Watching a run: SeedVille Workshops
@@ -103,7 +103,7 @@ netagents/              the agents (clients, tools, LLM team, reference teams, r
 tasks/heldout/          held-out tasks (math, website, molecule)
 web/                    the town replay page (codeworld.html), its art (web/tools: kairoart.py, make_people.py)
 scripts/run_net.py      serve the environment
-slurm/                  Nibi: setup_nibi.sh, start_vllm.sh, net_llm.sh, net_eval.sh
+slurm/                  Nibi: setup_nibi.sh, run_all.sh (every experiment), net_eval.sh, net_fidelity.sh
 docs/                   network.md, testset.md, codeworld.md
 ```
 

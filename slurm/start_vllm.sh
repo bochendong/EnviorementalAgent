@@ -5,7 +5,7 @@ export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1   # weights were downloaded by se
 export VLLM_NO_USAGE_STATS=1 DO_NOT_TRACK=1
 PORT=$((20000 + ${SLURM_JOB_ID:-0} % 20000))
 JOB=${SLURM_JOB_ID:-local}
-SERVER_LOG="logs/vllm-$JOB.log"
+SERVER_LOG="${SERVER_LOG:-${LOG_DIR:-logs}/vllm-$JOB.log}"
 
 VLLM_ARGS=(--host 127.0.0.1 --port "$PORT" --served-model-name "$SERVED_NAME"
            --tensor-parallel-size "$TP" --max-model-len "$MAX_MODEL_LEN"

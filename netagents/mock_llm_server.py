@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """A stand-in for an OpenAI-compatible chat server, for dry runs of LLM agents without a GPU.
 
-    python scripts/mock_llm_server.py --port 8011 &
+    python -m netagents.mock_llm_server --port 8011 &
     WS_BASE_URL=http://127.0.0.1:8011/v1 WS_MODEL=mock python scripts/run_codeworld.py --policy llm ...
 
 Every request is answered with one call to one of the tools it offers, with arguments that fit the tool's

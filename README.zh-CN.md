@@ -59,7 +59,7 @@ python -m netagents.baselines --seeds 10                                # 参考
 ```bash
 python -m netagents.evaluate --suite compat --designs sas independent centralized decentralized hybrid
 python -m netagents.evaluate --suite dev --designs all
-SUITE=test sbatch slurm/net_eval.sh                                       # 在 Nibi 上
+ACCOUNT=def-yourpi bash slurm/run_all.sh                                   # 在 Nibi 上跑全部实验（见 docs/testset.md）
 ```
 
 ## 观看运行：SeedVille Workshops
@@ -97,7 +97,7 @@ netagents/              智能体（客户端、工具、LLM 团队、参考团�
 tasks/heldout/          留出任务（数学、网站、分子）
 web/                    小镇回放页面（codeworld.html）和它的美术（web/tools：kairoart.py、make_people.py）
 scripts/run_net.py      提供环境服务
-slurm/                  Nibi：setup_nibi.sh、start_vllm.sh、net_llm.sh、net_eval.sh
+slurm/                  Nibi：setup_nibi.sh、run_all.sh（全部实验）、net_eval.sh、net_fidelity.sh
 docs/                   network.md、testset.md、codeworld.md
 ```
 
