@@ -310,102 +310,303 @@ class MixtureOfAgents(Design):
         return [m.report() for m in ms.values()]
 
 
-# ====================================================================== reimplementations from papers
-# Kim et al., Towards a Science of Scaling Agent Systems (arXiv 2512.08296): single, independent,
-# centralized, decentralized and hybrid architectures under standardised tools, prompts and compute. No
-# code was found; these follow the paper's names and summaries and must be checked against the paper.
-class Independent(Design):
+# ====================================================================== shared by the ports below
+NETWORK_OPS = {"send", "inbox", "post", "board", "put", "get", "keys", "transfer", "claim", "release"}
+
+
+def no_network(op: str) -> bool:
+    """In the ported frameworks, agents talk only through the framework (which passes messages for them),
+    never through the environment's network: their workers have the task's tools only."""
+    return op not in NETWORK_OPS
+
+
+def fill(messages, **values) -> list[list[str]]:
+    """Fill {{name}} variables of a [role, content] template (Kim et al.'s template syntax)."""
+    out = []
+    for role, content in messages:
+        for k, v in values.items():
+            content = content.replace("{{" + k + "}}", str(v))
+        out.append([role, content])
+    return out
+
+
+def split(messages) -> tuple[str, str]:
+    """(system text, user text) of a filled template."""
+    return ("\n\n".join(c for r, c in messages if r == "system"), "\n\n".join(c for r, c in messages if r != "system"))
+
+
+@dataclass
+class Talker:
+    """A model that only talks: Kim et al.'s orchestrator, LbMAS's control unit and predefined agents. No tools
+    and no actions in the environment: it costs tokens, not tool calls. Each call is stateless, as in the
+    authors' code (the template is compiled afresh every time)."""
+
+    model: object
+    settings: object
+    tokens: list = field(default_factory=lambda: [0, 0])
+    llm_requests: int = 0
+    name: str = "talker"
+
+    async def ask(self, system: str, user: str) -> str:
+        from agents import Agent, RunConfig, Runner
+
+        bot = Agent(name=self.name, instructions=system or None, model=self.model,
+                    model_settings=replace(self.settings, tool_choice=None))
+        try:
+            res = await Runner.run(bot, user, max_turns=1, run_config=RunConfig(tracing_disabled=True))
+        except Exception:  # noqa: BLE001
+            return ""
+        u = res.context_wrapper.usage
+        self.tokens[0] += u.input_tokens
+        self.tokens[1] += u.output_tokens
+        self.llm_requests += u.requests
+        return str(res.final_output or "")
+
+    def report(self) -> dict:
+        return {"agent": self.name, "tool_calls": 0, "llm_requests": self.llm_requests,
+                "input_tokens": self.tokens[0], "output_tokens": self.tokens[1]}
+
+
+def _json(text: str):
+    """The first JSON object in a model's answer (or None)."""
+    i = (text or "").find("{")
+    while i >= 0:
+        depth = 0
+        for j in range(i, len(text)):
+            depth += {"{": 1, "}": -1}.get(text[j], 0)
+            if depth == 0:
+                try:
+                    return json.loads(text[i:j + 1])
+                except json.JSONDecodeError:
+                    break
+        i = text.find("{", i + 1)
+    return None
+
+
+def problem_text(env) -> str:
+    """The problem as one text: the provider's description and the task list (read once, by the first agent)."""
+    pub = env.public()
+    first = next(iter(pub["agents"]))
+    tasks = env.step(first, "tasks", {}).get("tasks", [])
+    listing = "\n".join(f"- {t['id']} ({t['status']}): {t['text']}" for t in tasks)
+    return f"{json.dumps(pub['info'], default=str)}\nTasks:\n{listing}"
+
+
+# ====================================================================== Kim et al. 2025, ported
+# Kim et al., Towards a Science of Scaling Agent Systems (arXiv 2512.08296 v3): code github.com/ybkim95/
+# agent-scaling (MIT). Prompts: netagents/prompts/kim2025.py (their YAML templates). Control flow: their
+# agents/multiagent_{independent,centralized,decentralized,hybrid}.py and multiagent_components/
+# mas_lead_agent.py. Settings: the paper's Appendix E.2 (single agent: up to 10 iterations; independent: 3
+# agents, synthesis only; centralized: 3 sub-agents and an orchestrator, at most 5 rounds, 3 iterations per
+# agent per round; decentralized: 3 agents, 3 debate rounds, 3 iterations per round; hybrid: centralized
+# plus a peer round). Their repository's YAML configs use larger limits (25 iterations, 10 rounds); we
+# follow the paper. Iterations are tool calls here; every design stays inside the run's pool of calls.
+from .prompts import kim2025 as K  # noqa: E402
+
+
+def kim_worker(design, env, name, model, settings):
+    system, user = split(fill(K.SUBAGENT, task_description_with_tools=briefing(env, name), task_behavior="",
+                              task_instance="Use the 'tasks' operation to see the team's tasks."))
+    return design.member(env, name, model, settings, system + "\n\n" + user, keep=no_network)
+
+
+class KimSingle(Design):
     async def run(self, env, model, settings, calls):
-        ms = [self.member(env, a, model, settings, REACT_INSTRUCTION + " You work alone; nobody else's "
-                          "results reach you.") for a in env.public()["agents"]]
-        per = -(-calls // (len(ms) * self.rounds))
+        name = next(iter(env.public()["agents"]))
+        system, user = split(fill(K.SINGLE, task_description_with_tools=briefing(env, name), task_behavior="",
+                                  task_instance="Use the 'tasks' operation to see the tasks."))
+        m = self.member(env, name, model, settings, system + "\n\n" + user)
+        per = -(-calls // self.rounds)
         for r in range(self.rounds):
-            if _all_over(ms):
+            if m.finished():
                 break
-            await _together(ms, "Begin." if r == 0 else "Continue.", per)
+            await m.turn("Begin." if r == 0 else "Continue.", per)
+        return [m.report()]
+
+
+INDEPENDENT_MESSAGE = (  # multiagent_independent.py, quoted
+    "Solve the task completely on your own. Work systematically and submit when done.\n\n"
+    "CRITICAL: You MUST make changes and submit within your iteration budget. Do NOT spend more than half your "
+    "iterations on exploration/analysis. After understanding the problem, immediately start implementing the fix. "
+    "If you reach 50% of your budget without making changes, STOP exploring and START implementing your best "
+    "solution immediately.")
+
+
+class KimIndependent(Design):
+    async def run(self, env, model, settings, calls):
+        ms = [kim_worker(self, env, a, model, settings) for a in env.public()["agents"]]
+        await _together(ms, INDEPENDENT_MESSAGE, -(-calls // len(ms)))
+        # synthesis_only: the answers are concatenated, without voting or comparison (kept for the record)
+        self.synthesis = "\n\n".join([f"=== {m.name} ===\n{await m.say(K.SUBAGENT_SUMMARIZE[0][1])}" for m in ms])
         return [m.report() for m in ms]
 
 
-ORCH = ("You are the ORCHESTRATOR of this team. Look at the tasks, split the work, and assign it: tell each "
-        "worker by message exactly what to do (send). Collect their results (inbox, and the shared store if "
-        "they put things there), check them, and submit the results yourself: you are the only one who submits. "
-        "Do the work yourself only when no worker can.")
-WORK = ("You are a WORKER. Do what the orchestrator ({o}) assigns you, using your own tools. Report every "
-        "result to the orchestrator by message (send) and, for anything long, put it in the shared store and "
-        "send the key. You do not submit. {peers}")
-
-
-class Centralized(Design):
-    peers_talk = False
+class KimCentralized(Design):
+    peer_round = False
+    iterations = 3  # per agent per round (Appendix E.2)
 
     async def run(self, env, model, settings, calls):
         names = list(env.public()["agents"])
-        o = names[0]
-        peers = ("You may also message other workers when that saves work." if self.peers_talk else
-                 "Talk only to the orchestrator.")
-        boss = self.member(env, o, model, settings, REACT_INSTRUCTION + "\n" + ORCH)
-        workers = [self.member(env, a, model, settings, REACT_INSTRUCTION + "\n" + WORK.format(o=o, peers=peers),
-                               keep=lambda op: op != "submit") for a in names[1:]]
-        per = -(-calls // (len(names) * self.rounds))
-        for r in range(self.rounds):
-            if _all_over([boss] + workers):
+        problem = problem_text(env)
+        lead = Talker(model, settings, name="orchestrator")
+        tools = "\n".join(f"- {a} ({env.public()['agents'][a]}): " + ", ".join(o["name"] for o in env.ops(a)
+                                                                                if no_network(o["name"])) for a in names)
+        base = fill(K.LEAD, task_description_with_tools="Your team and the tools each member can use:\n" + tools,
+                    task_behavior="", task_instance=problem)
+
+        async def ask(template, **v):
+            return await lead.ask(*split(base + fill(template, **v)))
+
+        workers = {a: kim_worker(self, env, a, model, settings) for a in names}
+        ids = {f"agent_{i + 1}": a for i, a in enumerate(names)}
+        plan = _json(await ask(K.LEAD_PLANNING, num_agents=len(names))) or {}
+        sub = {ids.get(t.get("agent_id")): t for t in plan.get("subtasks", []) if ids.get(t.get("agent_id"))}
+        for i, a in enumerate(names):  # the authors' simple plan when planning fails
+            sub.setdefault(a, {"objective": f"Work on part {i + 1} of the task", "focus": f"Approach {i + 1}"})
+        findings: dict[str, list[str]] = {a: [] for a in names}
+        rounds = 0
+        for r in range(1, self.rounds + 1):
+            active = [a for a in names if not workers[a].finished()]
+            if not active:
                 break
-            await boss.turn("Plan and assign." if r == 0 else "Read your inbox, check results, submit what is "
-                            "ready, and assign the next work.", per)
-            await _together(workers, "Read your inbox and do what you were assigned.", per)
-        await boss.turn("Read your inbox and submit everything that is ready.", per)
-        return [m.report() for m in [boss] + workers]
-
-
-class Hybrid(Centralized):
-    peers_talk = True
-
-
-PEERS = ("You are one of several peers working the same problem; there is no leader. Work on the tasks with "
-         "your tools and share what you find with your neighbours (send) or everyone (post). Read what others "
-         "share before repeating their work. Anyone may submit.")
-
-
-class Decentralized(Design):
-    async def run(self, env, model, settings, calls):
-        ms = [self.member(env, a, model, settings, REACT_INSTRUCTION + "\n" + PEERS) for a in env.public()["agents"]]
-        per = -(-calls // (len(ms) * self.rounds))
-        for r in range(self.rounds):
-            if _all_over(ms):
+            rounds = r
+            team = "\n".join(f"{a}: {f[-1][:300]}" for a, f in findings.items() if f) or "(no findings yet)"
+            msgs = {}
+            for a in active:
+                guidance = await ask(K.LEAD_COORDINATION, original_query=problem, round_num=r, agent_id=a,
+                                     agent_objective=sub[a].get("objective", ""),
+                                     agent_strategy=sub[a].get("focus", ""), agent_iterations=workers[a].calls,
+                                     min_iterations=3, agent_status="active",
+                                     agent_findings_summary="\n".join(findings[a][-3:]) or "(none yet)",
+                                     team_context=team)
+                msgs[a] = (split(fill(K.SUBAGENT_START, orchestrator_objective=sub[a].get("objective", ""),
+                                      orchestrator_guidance=guidance))[1] if r == 1 else guidance)
+            await asyncio.gather(*(workers[a].turn(msgs[a], self.iterations) for a in active))
+            for a in active:
+                findings[a].append(await workers[a].say(K.SUBAGENT_SUMMARIZE[0][1]))
+            everything = "\n".join(f"{a} (round {i + 1}): {f}" for a, fs in findings.items() for i, f in enumerate(fs))
+            decision = await ask(K.LEAD_STOPPING, query=problem, round_num=r,
+                                 total_findings=sum(len(f) for f in findings.values()), total_agents=len(names),
+                                 current_round_summary="\n".join(f"{a}: {findings[a][-1][:300]}" for a in active),
+                                 all_findings=everything[-6000:])
+            if decision.strip().upper().startswith("STOP"):
                 break
-            await _together(ms, "Begin." if r == 0 else "Read what the others shared, then continue.", per)
-        return [m.report() for m in ms]
+        if self.peer_round:  # multiagent_hybrid.py: a final round with the peers' findings injected
+            peers = {a: "\n\n## Direct Peer Findings (shared peer-to-peer)\n" + "\n".join(
+                f"[PEER {b}]: {findings[b][-1][:400]}" for b in names if b != a and findings[b])
+                for a in names}
+            await asyncio.gather(*(workers[a].turn(
+                "Final round with peer insights. Review your peers' work and finalize your solution." + peers[a],
+                self.iterations) for a in names if not workers[a].finished()))
+        everything = "\n".join(f"{a}: {f}" for a, fs in findings.items() for f in fs)
+        synthesis = await ask(K.LEAD_SYNTHESIS, all_findings=everything[-8000:])
+        # the authors' auto-submit goes through the first sub-agent's environment
+        await workers[names[0]].turn("The lead agent's synthesis of the team's findings:\n" + synthesis +
+                                     "\n\nSubmit every result that is ready.", self.iterations)
+        self.rounds_used = rounds
+        return [lead.report()] + [w.report() for w in workers.values()]
 
 
-# Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture (arXiv 2507.01701):
-# a control unit, a blackboard and agents; the control unit picks the agents that act from the board's
-# contents, until consensus. The authors' code was announced but not found; their agent roles (planner,
-# critic, decider, ...) are not reproduced here.
-BOARD = ("Everything you share goes on the shared board (post, and board to read); there are no direct "
-         "messages. A control unit reads the board each round and decides who acts next. When you are called, "
-         "read the board first, contribute what you can with your tools, and post what you found. Anyone may "
-         "submit a task whose result the board makes clear.")
+class KimHybrid(KimCentralized):
+    peer_round = True
 
 
-class Blackboard(Design):
+def kim_debate_prompt(agent: str, r: int, rounds: int, answers: dict) -> str:
+    """multiagent_decentralized.py's _round_prompt, quoted."""
+    if r == 1:
+        return ("Round 1: produce your best candidate answer to the task independently. Use the available tools "
+                "and submit your final answer when ready.")
+    blocks = [f"--- Peer response from {a} (round {r - 1}) ---\n{t}" for a, t in answers.items() if a != agent and t]
+    peers = "\n\n".join(blocks) or "(no peer responses available from the previous round)"
+    return (f"Debate round {r} of {rounds}.\n\nBelow are your peers' answers from the previous round. Read them "
+            "carefully. Identify points where you agree, points where they erred, and points where you missed "
+            "something. Then produce your updated final answer for this round. You may defend your previous answer, "
+            f"refine it, or replace it.\n\n{peers}\n\nProduce your updated final answer now.")
+
+
+class KimDecentralized(Design):
+    iterations = 3
+
     async def run(self, env, model, settings, calls):
         names = list(env.public()["agents"])
-        ms = {a: self.member(env, a, model, settings, REACT_INSTRUCTION + "\n" + BOARD,
-                             keep=lambda op: op not in ("send", "inbox")) for a in names}
-        control = ms[names[0]]
-        per = -(-calls // (len(names) * self.rounds))
-        for r in range(self.rounds):
-            if _all_over(ms.values()):
+        ms = {a: kim_worker(self, env, a, model, settings) for a in names}
+        answers: dict[str, str] = {}
+        for r in range(1, self.rounds + 1):
+            active = [a for a in names if not ms[a].finished()]
+            if not active:
                 break
-            posts = env.step(names[0], "board", {}).get("posts", []) if r else []
-            pick = await control.say(
-                "You are the control unit. The board:\n" + json.dumps(posts[-20:])[:4000] +
-                f"\nAgents and roles: {json.dumps(env.public()['agents'])}.\nWhich agents should act next? Answer "
-                "with their names only, separated by spaces.")
-            chosen = [a for a in names if a in pick.split()] or names
-            await _together([ms[a] for a in chosen], "You were chosen to act: read the board and contribute.",
-                            per * len(names) // len(chosen))
+            await asyncio.gather(*(ms[a].turn(kim_debate_prompt(a, r, self.rounds, answers), self.iterations)
+                                   for a in active))
+            for a in active:
+                answers[a] = await ms[a].say(K.SUBAGENT_SUMMARIZE[0][1])
+        votes = [t.strip() for t in answers.values() if t.strip()]  # consensus: majority over final answers
+        self.consensus = max(set(votes), key=votes.count) if votes else ""
         return [m.report() for m in ms.values()]
+
+
+# ====================================================================== LbMAS (Han & Zhang 2025), ported
+# Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture (arXiv
+# 2507.01701v1). Algorithm 1 and Section 3: query-related experts are generated (1-3, by an LLM), the
+# predefined agents are decider, planner, critic, cleaner and conflict-resolver; each round the control unit
+# chooses agents from the blackboard's contents, each chosen agent reads the whole blackboard and writes its
+# output to it; the cleaner's useless messages are removed; the cycle stops when the decider gives an answer
+# or after K = 4 rounds. Prompts: netagents/prompts/han2025.py (the paper's Figures 4-6). Here the team's
+# members (who hold the environment's tools) join as experts of their role; the predefined and generated
+# agents only talk.
+from .prompts import han2025 as H  # noqa: E402
+
+
+class LbMAS(Design):
+    iterations = 3  # tool calls of a team member each time it is chosen
+
+    async def run(self, env, model, settings, calls):
+        pub = env.public()
+        names = list(pub["agents"])
+        question = problem_text(env)
+        talker = Talker(model, settings, name="lbmas-talkers")
+        experts = _json(await talker.ask("", H.AGENT_GENERATION.replace("{question}", question))) or {}
+        experts = {str(k)[:60]: str(v)[:300] for k, v in list(experts.items())[:3]}
+        roles = {**{k: v for k, v in H.DESCRIPTIONS.items()}, **experts,
+                 **{a: f"a team member ({pub['agents'][a]}) who can act in the environment with its tools"
+                    for a in names}}
+        team = {a: self.member(env, a, model, settings, H.SYSTEM.replace("{role_name}", a).replace(
+            "{question}", question) + "\n\n" + H.GENERATED_EXPERT.replace("{role}", pub["agents"][a]).replace(
+            "{roles_description}", env.observe(a)["role_doc"]), keep=no_network) for a in names}
+        board: list[dict] = []
+        decided = ""
+
+        def shown() -> str:
+            return "\n".join(f"[{m['agent']}] {m['message']}" for m in board)[-8000:] or "(empty)"
+
+        for _ in range(self.rounds):
+            listing = "\n".join(f"{k}: {v}" for k, v in roles.items())
+            pick = _json(await talker.ask("", H.CONTROL_UNIT.replace("{role_list}", listing).replace(
+                "{question}", question) + "\nBlackboard:\n" + shown())) or {}
+            chosen = [c for c in pick.get("chosen agents", []) if c in roles] or names
+            for c in chosen:  # Algorithm 1: chosen agents act one after another, each reading the blackboard
+                if c in team:
+                    m = team[c]
+                    await m.turn("The blackboard:\n" + shown() + "\n\nContribute with your tools.", self.iterations)
+                    text = await m.say("Write on the blackboard what you found, in the json form {\"output\":\"\"}.")
+                else:
+                    prompt = H.PREDEFINED.get(c) or H.GENERATED_EXPERT.replace("{role}", c).replace(
+                        "{roles_description}", roles[c])
+                    text = await talker.ask(H.SYSTEM.replace("{role_name}", c).replace("{question}", question),
+                                            prompt + "\n\nThe blackboard:\n" + shown())
+                if c == "cleaner":
+                    useless = {x.get("useless message") for x in (_json(text) or {}).get("clean list", [])
+                               if isinstance(x, dict)}
+                    board = [m for m in board if m["message"] not in useless]
+                    continue
+                board.append({"agent": c, "message": text[:2000]})
+                if c == "decider" and "boxed" in text:
+                    decided = text
+            if decided:
+                break
+        # the decider's solution is handed to the team members, who hold the submit tool
+        await _together(list(team.values()), "The blackboard's decision:\n" + (decided or shown()[-3000:]) +
+                        "\n\nSubmit every result that is ready.", self.iterations)
+        return [talker.report()] + [m.report() for m in team.values()]
 
 
 DESIGNS: dict[str, Design] = {d.name: d for d in [
@@ -430,19 +631,36 @@ DESIGNS: dict[str, Design] = {d.name: d for d in [
                      "proposers use tools; their responses travel as network messages",
                      "the aggregate prompt is a user message, not a system message",
                      "the aggregator is one of the team, with its role's tools"), rounds=1),
-    Independent("independent", "Independent", "Kim et al., Towards a Science of Scaling Agent Systems, arXiv "
-                "2512.08296 (2025)", "reimplementation", "nonet",
-                ("details of aggregation not checked against the paper",)),
-    Centralized("centralized", "Centralized", "Kim et al. 2025", "reimplementation", "team",
-                ("orchestrator protocol written from the paper's summary; prompts are ours",)),
-    Decentralized("decentralized", "Decentralized", "Kim et al. 2025", "reimplementation", "team",
-                  ("peer protocol written from the paper's summary; prompts are ours",)),
-    Hybrid("hybrid", "Hybrid", "Kim et al. 2025", "reimplementation", "team",
-           ("written from the paper's summary; prompts are ours",)),
-    Blackboard("blackboard", "Blackboard", "Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on "
-               "Blackboard Architecture, arXiv 2507.01701 (2025)", "reimplementation", "team",
-               ("the paper's agent roles are not reproduced", "one round per control step, a fixed number of rounds "
-                "instead of until consensus", "code not released at the time of writing")),
+    KimSingle("sas", "Single-agent system (Kim et al.)", "Kim et al., Towards a Science of Scaling Agent Systems, arXiv "
+              "2512.08296 v3 (2026); code: ybkim95/agent-scaling (MIT)", "port", "solo",
+              ("iterations are tool calls; the single agent gets the team's whole pool of calls (the paper gives it "
+               "proportionally more iterations)",), rounds=4),
+    KimIndependent("independent", "Independent (Kim et al.)", "Kim et al. 2026; code: ybkim95/agent-scaling (MIT)",
+                   "port", "nonet",
+                   ("the agents act in one shared environment, not in a copy each",
+                    "the synthesis-only aggregate is recorded but not submitted: our submissions need a task and "
+                    "an artifact, so each agent submits its own",
+                    "team size is the preset's, not 3")),
+    KimCentralized("centralized", "Centralized (Kim et al.)", "Kim et al. 2026; code: ybkim95/agent-scaling (MIT)",
+                   "port", "team",
+                   ("the orchestrator reads the task list once through the first worker (one action)",
+                    "the final auto-submit is a turn of the first worker given the synthesis",
+                    "orchestrator-worker messages pass through the framework, as in the authors' code, not the "
+                    "environment's network", "team size is the preset's, not 3"), rounds=5),
+    KimDecentralized("decentralized", "Decentralized (Kim et al.)", "Kim et al. 2026; code: ybkim95/agent-scaling "
+                     "(MIT)", "port", "team",
+                     ("the consensus vote over final answers is recorded; agents submit their own results",
+                      "peer answers pass through the framework, not the environment's network",
+                      "team size is the preset's, not 3"), rounds=3),
+    KimHybrid("hybrid", "Hybrid (Kim et al.)", "Kim et al. 2026; code: ybkim95/agent-scaling (MIT)", "port", "team",
+              ("as centralized, plus the authors' final peer round", "team size is the preset's, not 3"), rounds=5),
+    LbMAS("blackboard", "LbMAS blackboard system", "Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on "
+          "Blackboard Architecture, arXiv 2507.01701v1 (2025); prompts from the paper (code not released)", "port",
+          "team",
+          ("the team's members (with the environment's tools) join as experts of their roles, besides 1-3 "
+           "generated experts", "one model for every agent instead of one drawn per agent from two models",
+           "no private spaces (debate, self-reflection)", "the decider's answer is handed to the team members to "
+           "submit", "solution by the decider only (not the similarity vote)"), rounds=4),
 ]}
 
 

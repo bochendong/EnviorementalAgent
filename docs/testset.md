@@ -28,33 +28,40 @@ The last column lists every known difference from the source; it is meant to go 
 | `reflexion` Reflexion | Shinn et al., Reflexion: Language Agents with Verbal Reinforcement Learning, NeurIPS 2023; code: noahshinn/reflexion (MIT) | port | solo | trials share one episode and its budget instead of re-running the same task; a trial fails on a wrong submission or when its step quota runs out; the environment's verdict is the evaluator; no few-shot reflection examples |
 | `debate` Multiagent debate | Du et al., Improving Factuality and Reasoning in Language Models through Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt paraphrased) | port | team | agents use tools between rounds; a solution is what an agent states at the end of a round; solutions travel as network messages (charged, limited to neighbours); agents submit themselves instead of a majority vote over final answers; team size is the preset's, not 3 |
 | `moa` Mixture-of-Agents | Wang et al., Mixture-of-Agents Enhances Large Language Model Capabilities, arXiv 2406.04692 (2024); code: togethercomputer/MoA (Apache-2.0) | port | team | one model in every position instead of different open-source models; proposers use tools; their responses travel as network messages; the aggregate prompt is a user message, not a system message; the aggregator is one of the team, with its role's tools |
-| `independent` Independent | Kim et al., Towards a Science of Scaling Agent Systems, arXiv 2512.08296 (2025) | reimplementation | nonet | details of aggregation not checked against the paper |
-| `centralized` Centralized | Kim et al. 2025 | reimplementation | team | orchestrator protocol written from the paper's summary; prompts are ours |
-| `decentralized` Decentralized | Kim et al. 2025 | reimplementation | team | peer protocol written from the paper's summary; prompts are ours |
-| `hybrid` Hybrid | Kim et al. 2025 | reimplementation | team | written from the paper's summary; prompts are ours |
-| `blackboard` Blackboard | Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture, arXiv 2507.01701 (2025) | reimplementation | team | the paper's agent roles are not reproduced; one round per control step, a fixed number of rounds instead of until consensus; code not released at the time of writing |
+| `sas` Single-agent system (Kim et al.) | Kim et al., Towards a Science of Scaling Agent Systems, arXiv 2512.08296 v3 (2026); code: ybkim95/agent-scaling (MIT) | port | solo | iterations are tool calls; the single agent gets the team's whole pool of calls (the paper gives it proportionally more iterations) |
+| `independent` Independent (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | nonet | the agents act in one shared environment, not in a copy each; the synthesis-only aggregate is recorded but not submitted: our submissions need a task and an artifact, so each agent submits its own; team size is the preset's, not 3 |
+| `centralized` Centralized (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | the orchestrator reads the task list once through the first worker (one action); the final auto-submit is a turn of the first worker given the synthesis; orchestrator-worker messages pass through the framework, as in the authors' code, not the environment's network; team size is the preset's, not 3 |
+| `decentralized` Decentralized (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | the consensus vote over final answers is recorded; agents submit their own results; peer answers pass through the framework, not the environment's network; team size is the preset's, not 3 |
+| `hybrid` Hybrid (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | as centralized, plus the authors' final peer round; team size is the preset's, not 3 |
+| `blackboard` LbMAS blackboard system | Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture, arXiv 2507.01701v1 (2025); prompts from the paper (code not released) | port | team | the team's members (with the environment's tools) join as experts of their roles, besides 1-3 generated experts; one model for every agent instead of one drawn per agent from two models; no private spaces (debate, self-reflection); the decider's answer is handed to the team members to submit; solution by the decider only (not the similarity vote) |
 | `autogen-roundrobin` AutoGen round-robin group chat | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
 | `autogen-selector` AutoGen group chat with a model-selected speaker | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
 | `magentic-one` Magentic-One orchestrator | Fourney et al., Magentic-One, arXiv 2411.04468 (2024); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology); the orchestrator directs our role agents instead of Magentic-One's web, file and code agents |
 | `camel-roleplay` CAMEL role playing | Li et al., CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society, NeurIPS 2023; camel-ai 0.2.90 (Apache-2.0) | framework | solo | the assistant is the solo agent with every tool and the team's budget; the user agent has no tools; no task-specifier agent: the task given is already precise |
 
-Where a protocol needs it, the rules are enforced:
-- workers in `centralized` and `hybrid` have no `submit` tool;
-- `blackboard` members have no direct messages;
-- `independent` runs on the `nonet` variant.
+Every design uses the same model and the same tools, generated from the environment's op specs.
 
-Every design uses the same tools, generated from the environment's op specs, and the same model.
+How the ported frameworks pass messages:
+- In the Kim et al. designs and LbMAS, agents talk through the framework, as in the authors' code. The orchestrator's guidance, the peers' answers and the blackboard are passed by the framework. The workers hold the task's tools and the submit tool, but no network operations.
+- In the debate and Mixture-of-Agents ports, solutions travel as messages through the environment's network.
 
-Sources of the ports (read from the official repositories):
+Sources of the ports:
 - ReAct: `ysymyth/ReAct`, MIT.
-- Reflexion: `noahshinn/reflexion`, MIT. The instruction, reflection prompt and reflection header are taken from `hotpotqa_runs/prompts.py`.
-- Debate: `composable-models/llm_multiagent_debate`. The repository has no licence, so the prompt is paraphrased, not copied. Its `gsm/gen_gsm.py` uses 3 agents and 2 rounds.
-- Mixture-of-Agents: `togethercomputer/MoA`, Apache-2.0. The aggregate-and-synthesize system prompt is quoted from `utils.py`. The default is one round, i.e. two layers.
+- Reflexion: `noahshinn/reflexion`, MIT. The instruction, reflection prompt and header are taken from `hotpotqa_runs/prompts.py`.
+- Debate: `composable-models/llm_multiagent_debate`. The repository has no licence, so the prompt is paraphrased. `gsm/gen_gsm.py` uses 3 agents and 2 rounds.
+- Mixture-of-Agents: `togethercomputer/MoA`, Apache-2.0. The aggregate-and-synthesize prompt is quoted from `utils.py`. The default is one round, i.e. two layers.
+- Kim et al.: `ybkim95/agent-scaling`, MIT.
+  - Prompts come from their YAML templates (`netagents/prompts/kim2025.py`).
+  - Control flow comes from their `multiagent_*.py` and `mas_lead_agent.py`.
+  - Settings follow the paper's Appendix E.2: single agent up to 10 iterations; independent with 3 agents, synthesis only; centralized with an orchestrator, at most 5 rounds and 3 iterations per agent per round; decentralized with 3 debate rounds of 3 iterations; hybrid as centralized plus a peer round.
+  - Their repository's YAML configs use larger limits (25 iterations, 10 rounds). We follow the paper and note the difference.
+- LbMAS (Han & Zhang): the code has not been released. The prompts are transcribed from the paper's Figures 4–6 (`netagents/prompts/han2025.py`), and the cycle follows its Algorithm 1 with K = 4 rounds.
+
+Tool calls are matched across designs, but tokens are not, and cannot be by construction. An orchestrator, a control unit and the predefined blackboard agents only talk: they cost tokens but no tool calls. This coordination overhead is what Kim et al. measure, and every run records it.
 
 To do before publication:
-- Check the five reimplementations (Kim et al.'s four architectures and the blackboard) against the papers.
-- MetaGPT as a framework design (AutoGen, Magentic-One and CAMEL are done; see the note on MetaGPT below).
-- Run the fidelity checks on Nibi. Debate on GSM8K is ready: `python -m netagents.fidelity --check debate`, or `sbatch slurm/net_fidelity.sh`. The check runs the authors' own `construct_message` on 100 GSM8K questions next to our port, with one model and the same questions. It passes when the port's gain over a single agent falls inside the bootstrap interval of the official gain. Scoring is strict for every arm: an unparseable answer is wrong. This differs from the authors' `eval_gsm.py`, which counts an unparseable answer as correct.
+- Run the fidelity checks on Nibi. Debate on GSM8K is ready (`sbatch slurm/net_fidelity.sh`).
+- Decide on MetaGPT. Its released versions pin a dependency that has been removed from PyPI (`lancedb==0.4.0`).
 
 ## Matched compute
 
@@ -128,8 +135,8 @@ The tasks themselves follow established practice:
 | `reflexion` | Reflexion（Shinn 等，NeurIPS 2023），官方代码，MIT，反思提示词原文引用 | 移植 |
 | `debate` | 多智能体辩论（Du 等，ICML 2024），官方仓库无许可证，提示词为转述；原设定 3 人 2 轮 | 移植 |
 | `moa` | Mixture-of-Agents（Wang 等，arXiv 2406.04692），官方代码，Apache-2.0，聚合提示词原文引用 | 移植 |
-| `independent`、`centralized`、`decentralized`、`hybrid` | Kim 等 2025，未找到代码 | 重新实现，待核实 |
-| `blackboard` | Han & Zhang 2025，代码尚未发布 | 重新实现，待核实 |
+| `sas`、`independent`、`centralized`、`decentralized`、`hybrid` | Kim 等（arXiv 2512.08296 v3），官方代码 ybkim95/agent-scaling，MIT，提示词原文，参数按论文附录 E.2 | 移植 |
+| `blackboard` | LbMAS（Han & Zhang，arXiv 2507.01701），代码未发布；提示词按论文附录图 4–6 转录，流程按算法 1 | 移植 |
 | `autogen-roundrobin`、`autogen-selector` | AutoGen（Wu 等 2023），autogen-agentchat 0.7.5，MIT | 框架 |
 | `magentic-one` | Magentic-One（Fourney 等 2024）的协调者，autogen-agentchat 0.7.5，MIT | 框架 |
 | `camel-roleplay` | CAMEL 角色扮演（Li 等，NeurIPS 2023），camel-ai 0.2.90，Apache-2.0 | 框架 |
@@ -137,7 +144,6 @@ The tasks themselves follow established practice:
 与原作的每一处差异见上面英文表格的最后一列，可直接放进论文。
 
 发表前还要做三件事：
-- 对照论文核实五个重新实现；
 - 把 MetaGPT 也接成框架设计（AutoGen、Magentic-One、CAMEL 已完成）；
 - 在 Nibi 上跑还原度检查。辩论在 GSM8K 上的检查已经写好（`sbatch slurm/net_fidelity.sh`）：同一个模型、同一批题，作者自己的消息构造函数和我们的移植版放在一起比，看移植版相对单智能体的提升，是否落在官方提升的置信区间内。
 
