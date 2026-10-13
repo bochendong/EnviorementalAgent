@@ -1,4 +1,4 @@
-# Sourced by GPU job scripts (serve_and_run.sh, transfer_job.sh): starts a vLLM OpenAI-compatible server for
+# Sourced by GPU job scripts (net_llm.sh): starts a vLLM OpenAI-compatible server for
 # $MODEL_DIR on the job's GPU, waits until it answers, and exports WS_BASE_URL / WS_MODEL for the client.
 # Expects slurm/env.sh to be sourced and modules loaded. The server is killed when the job script exits.
 export HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1   # weights were downloaded by setup_nibi.sh

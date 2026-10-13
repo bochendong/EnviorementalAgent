@@ -1,9 +1,11 @@
-# Client side (the agent + environment). The vLLM server lives in its own venv (see slurm/setup_nibi.sh).
+# The environment (worldseeds/): the math and molecule providers need these
+sympy>=1.12
+rdkit>=2024.3
+pytest>=8
+# The agents (netagents/): LLM teams on any OpenAI-compatible server. The vLLM server lives in its own
+# venv (see slurm/setup_nibi.sh).
 openai-agents>=0.23
 openai>=3.0
 pydantic>=2.7
-pytest>=8
-pillow>=10.1   # pictures for vision-language agents (--context image) and the art tools
-# Optional, for the task providers of the agent network (worldseeds/net): math and molecule
-sympy>=1.12
-rdkit>=2024.3
+# The art tools of the web pages (web/tools)
+pillow>=10.1

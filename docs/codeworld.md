@@ -1,5 +1,16 @@
 # CodeWorld: networks of developer agents in a world too big for one mind
 
+> **Note (current state).** The CodeWorld *world* is still here: `world.py`, the town (`townmap.py`,
+> `recipes.py`), `events.py`, `goals.py` and `economy.py`. The developer agents, organisations,
+> LLM tools and experiments described below (`org.py`, `knowledge.py`, `llm_agent.py`, `town_llm.py`,
+> `experiment.py`, the tutorial and the ladder) were removed. They are in the git history before
+> commit `290b93f`, and their results below are kept as a record. Agents now work on CodeWorld through
+> the network environment (`codeworld` provider, [network.md](network.md)). Town replays are recorded with
+> `python -m netagents.replays`.
+>
+> **说明（当前状态）**：CodeWorld 的世界部分都还在，包括世界本身、小镇、事件、目标和经济。下文描述的开发者智能体、组织方式、LLM 工具和实验已经删除，代码在 git 历史里（提交 `290b93f` 之前），下文的结果作为记录保留。现在智能体通过网络环境的 `codeworld` 提供者使用 CodeWorld，小镇回放用 `python -m netagents.replays` 生成。
+
+
 [English] · [中文 below](#中文)
 
 ## Why

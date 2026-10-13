@@ -1,7 +1,7 @@
 """The festival: a dish cooked from a fresh crop, a visit two farmers make together, private perception, drop."""
 from worldseeds.town import TownLaws, TownSeed, grow_town
 from worldseeds.world import Obj
-from worldseeds.town.team import PERCEIVES, Team, Teammate, run_heuristic_team
+from worldseeds.town.team import PERCEIVES, Team, Teammate
 
 
 def _town(**kw):
@@ -89,86 +89,3 @@ def test_roles_split_perception():
     # the morning report knows a plot's soil once anyone who can tell soils has looked at it
     assert team.anyone_sees(plot.id, "soil")
     assert not team.anyone_sees(next(o.id for o in w.objs.values() if o.kind == "plot" and o is not plot), "soil")
-
-
-def test_heuristic_team_works_the_festival():
-    w = _town()
-    team = Team(w, 3, messages=True, roles=True)
-    m = run_heuristic_team(team, [None, None, None], rng_seed=1, messages=True)
-    assert m["board_together_done"] == 1
-    assert m["board_done"] >= 3 and m["roles"] == ["farmer", "socialite", "merchant"]
-
-
-def test_oracle_solves_festival_boards():
-    from worldseeds.town.agents import TownOracle
-
-    for surf in range(8):
-        for team in (False, True):
-            w = grow_town(TownSeed(laws=TownLaws.from_index(surf % 3), blocks=("farming", "gifting", "shop"), board=3,
-                                   surface_seed=surf), festival=True, max_actions=10_000)
-            if team:
-                Team(w, 2)
-            steps = TownOracle(w).solve()
-            assert steps > 0
-            together = _req(w, "together")
-            assert w.done == team and together["done"] == team  # a lone farmer cannot visit as two
-            assert all(r["done"] for r in w.requests if r["kind"] != "together")
-
-
-def _scripted(testing, calls):
-    return testing.ScriptedModel([[testing.function_call("act", c, call_id=f"c{k}")] for k, c in enumerate(calls)])
-
-
-def test_replays_follow_the_run_exactly():
-    import asyncio
-
-    import pytest
-
-    pytest.importorskip("agents")
-    testing = pytest.importorskip("agents.testing")
-    from agents import ModelSettings
-
-    from worldseeds.agent import run_episode
-    from worldseeds.town.replay import record_team, replay_team_trace, replay_trace
-
-    # one agent, drug skin, rainy nights: the replay translates its words back and grows the same world
-    seed = TownSeed(laws=TownLaws.from_index(1), blocks=("farming", "gifting"), board=3, surface_seed=4)
-    w = grow_town(seed, max_actions=200, festival=True, confounder=True)
-    s1 = next(o.id for o in w.objs.values() if o.kind == "seeds")
-    p1 = next(o.id for o in w.objs.values() if o.kind == "plot")
-    calls = [{"verb": "take", "target": s1}, {"verb": "dose", "target": p1, "instrument": s1},
-             {"verb": "go", "target": "atrium"}, {"verb": "go", "target": "lab"}, {"verb": "rest", "target": "cot"},
-             {"verb": "wait", "target": ""}]
-    m, ctx = asyncio.run(run_episode(w, "none", _scripted(testing, calls), ModelSettings(), max_turns=len(calls),
-                                     skin="drug"))
-    rep = replay_trace(seed.to_dict(), ctx.trace, max_actions=200, world_opts={"festival": True, "confounder": True},
-                       skin="drug")
-    last = rep["frames"][-1]["state"]
-    assert last["actions"] == m["actions"] == 6 and last["day"] == w.day and rep["skin"]["name"] == "drug"
-    assert "weather" in last and last["festival"]
-
-    # a team of two: calls replayed in the order they reached the world, through each teammate's body
-    w = grow_town(seed, max_actions=200, festival=True)
-    team = Team(w, 2, messages=True, roles=True)
-    plan = [[{"verb": "go", "target": "plaza"}, {"verb": "wait", "target": ""}, {"verb": "go", "target": "farm"}],
-            [{"verb": "take", "target": s1}, {"verb": "plant", "target": p1, "instrument": s1},
-             {"verb": "go", "target": "shop"}]]
-    outs = asyncio.run(_team_run(team, plan, testing, ModelSettings(), run_episode))
-    traces = [{"agent": team.bodies[i].name, "trace": ctx.trace} for i, (_, ctx) in enumerate(outs)]
-    rep = replay_team_trace(seed.to_dict(), traces, max_actions=200, world_opts={"festival": True}, roles=True,
-                            messages=True)
-    team.save()
-    roster = rep["frames"][-1]["state"]["team"]
-    assert [b["actions"] for b in roster] == [b.actions for b in team.bodies]
-    assert [b["room"] for b in roster] == [b.agent_room for b in team.bodies]
-    assert {f["who"] for f in rep["frames"][1:]} == {"Ana", "Bo"}
-
-    demo = record_team(seed, 3, roles=True, festival=True)
-    assert demo["frames"] and all("who" in f for f in demo["frames"][1:])
-
-
-async def _team_run(team, plan, testing, settings, run_episode):
-    import asyncio
-
-    return await asyncio.gather(*[run_episode(Teammate(team, i), "none", _scripted(testing, plan[i]), settings,
-                                              max_turns=len(plan[i])) for i in range(len(plan))])

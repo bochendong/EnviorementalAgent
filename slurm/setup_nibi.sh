@@ -40,4 +40,4 @@ if [ ! -f "$MODEL_DIR/config.json" ]; then
   (hf download "$MODEL_ID" --local-dir "$MODEL_DIR" || huggingface-cli download "$MODEL_ID" --local-dir "$MODEL_DIR")
 fi
 echo "Setup complete. Weights: $MODEL_DIR"
-echo "Next: sbatch slurm/serve_and_run.sh --protocol compgen --out \$SCRATCH/worldseeds/results/compgen"
+echo "Next: sbatch slurm/net_llm.sh   (set --account in slurm/net_llm.sh first)"

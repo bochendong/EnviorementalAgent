@@ -348,3 +348,9 @@ class Universe:
                             **self._room_at(m)} for m in mods]})
         return {"theme": self.theme, "districts": out, "levels": [self.types_at[lv] for lv in range(self.levels)],
                 "map": self.map.to_dict() if self.map else None}
+
+
+def town_world(index: int = 1, districts: int = 1, machines: int = 6, shortcuts: bool = False) -> Universe:
+    """The town-scale CodeWorld: 8 workshops per district, ``machines`` machines each."""
+    return Universe(index, n_modules=8 * districts, fns_per_module=machines, levels=5,
+                    types_per_level=3 if districts == 1 else 4, theme="town", shortcuts=shortcuts)

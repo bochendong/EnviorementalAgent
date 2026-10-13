@@ -1,7 +1,6 @@
-"""CodeWorld: a software ecosystem with hidden behaviour, for networks of developer agents (docs/codeworld.md)."""
+"""CodeWorld: a software ecosystem with hidden behaviour (docs/codeworld.md). The town theme, its maps,
+recipes, events, goals and economy are here too; agents live in netagents/."""
 
-from .knowledge import Notebook, fit
-from .org import MODES, Org
 from .world import P, Law, Project, Universe
 
-__all__ = ["Universe", "Project", "Law", "P", "Notebook", "fit", "Org", "MODES"]
+__all__ = ["P", "Law", "Project", "Universe"]

@@ -264,3 +264,31 @@ def test_heldout_tasks_are_solvable():
     need = e.provider.raw[0]["need"]
     assert need["activity"] > e.provider.values(e.info["start"][0])["activity"]
 
+
+
+def test_town_replay_shows_what_the_environment_recorded():
+    from worldseeds.net.replay import town_replay
+
+    e = NetworkEnv(providers.make("codeworld", theme="town", n_projects=3, drift=0.05),
+                   NetConfig(budget=60, latency=1))
+    e.reset(0)
+    p = e.provider
+    fn = sorted(p.u.functions)[0]
+    e.step("a0", "study", {"function": fn})
+    e.step("a0", "put", {"key": f"law/{fn}", "value": "x"})
+    e.step("a1", "get", {"key": f"law/{fn}"})
+    e.step("a1", "send", {"to": "a2", "text": "hello"})
+    e.step("a2", "post", {"text": "who knows the oven?"})
+    t = next(iter(p.projects))
+    e.step("a2", "submit", {"task": t, "artifact": list(p.projects[t].target)})
+    e.step("a0", "tasks")
+    r = town_replay(e, "test")
+    kinds = [x["kind"] for x in r["sprints"][0]["events"]]
+    for k in ("walk", "learn", "deposit", "read", "ask", "post", "start", "submit", "tool"):
+        assert k in kinds, k
+    sub = next(x for x in r["sprints"][0]["events"] if x["kind"] == "submit")
+    assert sub["ok"] and sub["project"] == t
+    assert r["world"]["map"] and len(r["devs"]) == 3 and r["sprints"][0]["metrics"]["done"] == 1
+    assert all(w["kind"] == "drift" and "fn" in w for w in r["sprints"][0]["world_events"])
+    with pytest.raises(ValueError):
+        town_replay(env_())

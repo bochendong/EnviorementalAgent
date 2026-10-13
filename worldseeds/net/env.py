@@ -271,7 +271,7 @@ class NetworkEnv:
                     a.offline = self.cfg.outage_rounds
                     self._log({"kind": "outage", "agent": a.name, "rounds": a.offline})
             for e in self.provider.tick(self.round):
-                self._log({"kind": "world", **e})
+                self._log({"kind": "world", "event": e})
                 if e.get("public"):
                     self.posts.append({"id": len(self.posts), "by": "world", "round": self.round,
                                        "text": e.get("text", json.dumps(e)), "tags": ["news"]})

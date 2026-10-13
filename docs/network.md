@@ -124,6 +124,20 @@ python scripts/run_net.py --preset molecule/hard --serve 8090          # the env
 python -m netagents.run --remote http://127.0.0.1:8090 --policy llm    # agents, in another
 ```
 
+## Watching a run in the town (`worldseeds/net/replay.py`)
+
+`town_replay(env)` turns the event log of a run on the codeworld provider with `theme="town"` into a
+replay for `web/codeworld.html`, whoever the agents were. Each operation becomes a scene:
+- `study`: walk to the workshop and learn the machine's rule;
+- `put` / `get`: the library;
+- `send`: a letter through the post office;
+- `post` / `board`: the notice board;
+- `claim` / `submit`: take and deliver an order;
+- anything else: a line in the log.
+
+The network charges nothing for walking, so walks are only drawn. `python -m netagents.replays` records
+reference teams, or LLM teams with `--llm`.
+
 ## Presets: difficulty, held-out tasks, variants (`worldseeds/net/presets.py`)
 
 Each provider has three difficulties. Difficulty grows along the same axes everywhere:
