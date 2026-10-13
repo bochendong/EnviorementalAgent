@@ -36,6 +36,7 @@ The last column lists every known difference from the source; it is meant to go 
 | `autogen-roundrobin` AutoGen round-robin group chat | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
 | `autogen-selector` AutoGen group chat with a model-selected speaker | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
 | `magentic-one` Magentic-One orchestrator | Fourney et al., Magentic-One, arXiv 2411.04468 (2024); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology); the orchestrator directs our role agents instead of Magentic-One's web, file and code agents |
+| `camel-roleplay` CAMEL role playing | Li et al., CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society, NeurIPS 2023; camel-ai 0.2.90 (Apache-2.0) | framework | solo | the assistant is the solo agent with every tool and the team's budget; the user agent has no tools; no task-specifier agent: the task given is already precise |
 
 Where a protocol needs it, the rules are enforced:
 - workers in `centralized` and `hybrid` have no `submit` tool;
@@ -52,7 +53,7 @@ Sources of the ports (read from the official repositories):
 
 To do before publication:
 - Check the five reimplementations (Kim et al.'s four architectures and the blackboard) against the papers.
-- Add CAMEL and MetaGPT as framework designs (AutoGen and Magentic-One are done).
+- MetaGPT as a framework design (AutoGen, Magentic-One and CAMEL are done; see the note on MetaGPT below).
 - Run a fidelity check of the ports on their original benchmarks, e.g. debate on GSM8K.
 
 ## Matched compute
@@ -131,12 +132,13 @@ The tasks themselves follow established practice:
 | `blackboard` | Han & Zhang 2025，代码尚未发布 | 重新实现，待核实 |
 | `autogen-roundrobin`、`autogen-selector` | AutoGen（Wu 等 2023），autogen-agentchat 0.7.5，MIT | 框架 |
 | `magentic-one` | Magentic-One（Fourney 等 2024）的协调者，autogen-agentchat 0.7.5，MIT | 框架 |
+| `camel-roleplay` | CAMEL 角色扮演（Li 等，NeurIPS 2023），camel-ai 0.2.90，Apache-2.0 | 框架 |
 
 与原作的每一处差异见上面英文表格的最后一列，可直接放进论文。
 
 发表前还要做三件事：
 - 对照论文核实五个重新实现；
-- 把 CAMEL 和 MetaGPT 也接成框架设计（AutoGen 和 Magentic-One 已完成）；
+- 把 MetaGPT 也接成框架设计（AutoGen、Magentic-One、CAMEL 已完成）；
 - 把移植版放回原论文的基准上验证还原度（比如辩论在 GSM8K 上）。
 
 ## 同等算力

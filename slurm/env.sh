@@ -7,6 +7,8 @@ export VLLM_VENV="${VLLM_VENV:-$WS_STORE/venv-vllm}"            # server env (vL
 export AGENT_VENV="${AGENT_VENV:-$WS_STORE/venv-agent}"         # client env (openai-agents)
 export AUTOGEN_VENV="${AUTOGEN_VENV:-$WS_STORE/venv-autogen}"   # AutoGen, for the framework designs
 export NETAGENTS_PY_AUTOGEN="${NETAGENTS_PY_AUTOGEN:-$AUTOGEN_VENV/bin/python}"
+export CAMEL_VENV="${CAMEL_VENV:-$WS_STORE/venv-camel}"         # CAMEL, for the framework designs
+export NETAGENTS_PY_CAMEL="${NETAGENTS_PY_CAMEL:-$CAMEL_VENV/bin/python}"
 export HF_HOME="${HF_HOME:-$WS_STORE/hf}"
 
 # Free open-weight model served by vLLM. Good options on one H100-80GB:

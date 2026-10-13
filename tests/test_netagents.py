@@ -166,6 +166,24 @@ def test_autogen_teams_run_through_the_http_api(mock_llm, monkeypatch):
         assert rep[0]["tool_calls"] == len(ops) and 0 < len(ops) <= 9, (name, rep)
 
 
+@pytest.mark.skipif(not __import__("os").environ.get("NETAGENTS_PY_CAMEL"),
+                    reason="set NETAGENTS_PY_CAMEL to a Python with camel-ai 0.2.90")
+def test_camel_role_play_runs_through_the_http_api(mock_llm, monkeypatch):
+    import asyncio
+
+    from netagents.frameworks import FRAMEWORK_DESIGNS
+
+    model, _ = mock_llm
+    monkeypatch.setenv("WS_BASE_URL", str(model.__dict__.get("_client").base_url).rstrip("/"))
+    monkeypatch.setenv("WS_MODEL", "mock")
+    d = FRAMEWORK_DESIGNS["camel-roleplay"]
+    raw = build("math/easy", d.variant)
+    raw.reset(0)
+    rep = asyncio.run(d.play(LocalEnv(raw), None, None, 9))
+    ops = [e for e in raw.events if e.get("kind") == "op"]
+    assert rep[0]["tool_calls"] == len(ops) and 0 < len(ops) <= 9 and len(raw.agents) == 1
+
+
 def presets_build(name):
     raw = build(name)
     raw.reset(0)

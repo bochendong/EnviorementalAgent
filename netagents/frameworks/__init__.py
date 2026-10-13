@@ -51,6 +51,12 @@ def _autogen(name, label, team, source, deviations):
     return d
 
 
+def _camel(name, label, team, source, deviations):
+    d = FrameworkDesign(name, label, source, "framework", "solo", deviations)
+    d.module, d.team, d.python_var = "netagents.frameworks.camel_teams", team, "NETAGENTS_PY_CAMEL"
+    return d
+
+
 COMMON = ("members talk in the framework's shared conversation, outside the environment's network (not charged, "
           "no topology)",)
 FRAMEWORK_DESIGNS = {d.name: d for d in [
@@ -62,4 +68,9 @@ FRAMEWORK_DESIGNS = {d.name: d for d in [
              "Fourney et al., Magentic-One, arXiv 2411.04468 (2024); autogen-agentchat 0.7.5 (MIT)",
              COMMON + ("the orchestrator directs our role agents instead of Magentic-One's web, file and code "
                        "agents",)),
+    _camel("camel-roleplay", "CAMEL role playing", "roleplay",
+           "Li et al., CAMEL: Communicative Agents for \"Mind\" Exploration of Large Language Model Society, "
+           "NeurIPS 2023; camel-ai 0.2.90 (Apache-2.0)",
+           ("the assistant is the solo agent with every tool and the team's budget; the user agent has no tools",
+            "no task-specifier agent: the task given is already precise")),
 ]}

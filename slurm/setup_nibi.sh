@@ -25,6 +25,12 @@ if [ ! -d "$AUTOGEN_VENV" ]; then
 fi
 "$AUTOGEN_VENV/bin/pip" install -q "autogen-agentchat==0.7.5" "autogen-ext[openai]==0.7.5" sympy rdkit
 "$AUTOGEN_VENV/bin/python" -c "import autogen_agentchat; print('AutoGen', autogen_agentchat.__version__)"
+# CAMEL (camel-ai 0.2.90 needs mcp < 2)
+if [ ! -d "$CAMEL_VENV" ]; then
+  virtualenv --no-download "$CAMEL_VENV" 2>/dev/null || python -m venv "$CAMEL_VENV"
+fi
+"$CAMEL_VENV/bin/pip" install -q "camel-ai==0.2.90" "mcp>=1.3,<2" sympy rdkit
+"$CAMEL_VENV/bin/python" -c "import camel; print('CAMEL', camel.__version__)"
 
 # ---------------------------------------------------------------- 2. vLLM (server) env
 if [ "$SERVER_MODE" = "apptainer" ]; then
