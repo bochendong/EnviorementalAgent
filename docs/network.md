@@ -172,7 +172,33 @@ What they give:
 The comparison that matters for learning agents is a learned team against the same agents in the
 `solo` and `nonet` variants, and performance on held-out tasks.
 
-Results: `results/net/baselines/baselines.md` (written by `scripts/net_baselines.py`).
+Ten seeds per cell. Each cell shows the share of seeds solved, and in brackets the share of tasks done:
+
+| preset | team | solo | nonet | team rounds |
+|---|---|---|---|---|
+| codeworld/easy | 1.0 (1.00) | 1.0 (1.00) | 1.0 (1.00) | 44 |
+| codeworld/medium | 1.0 (1.00) | 0.0 (0.03) | 0.0 (0.41) | 83 |
+| codeworld/hard | 0.0 (0.72) | 0.0 (0.01) | 0.0 (0.00) | 66 |
+| math/easy | 1.0 (1.00) | 1.0 (1.00) | 0.0 (0.57) | 8 |
+| math/medium | 1.0 (1.00) | 1.0 (1.00) | 0.0 (0.62) | 10 |
+| math/hard | 0.9 (1.00) | 0.0 (0.35) | 0.0 (0.64) | 26 |
+| website/easy | 1.0 (1.00) | 1.0 (1.00) | 0.0 (0.00) | 5 |
+| website/medium | 0.9 (0.95) | 0.7 (0.87) | 0.0 (0.00) | 4 |
+| website/hard | 0.7 (0.90) | 0.2 (0.65) | 0.0 (0.00) | 7 |
+| molecule/easy | 0.8 (0.80) | 0.8 (0.80) | 0.0 (0.00) | 51 |
+| molecule/medium | 0.7 (0.70) | 0.1 (0.20) | 0.0 (0.00) | 59 |
+| molecule/hard | 0.6 (0.67) | 0.0 (0.00) | 0.0 (0.00) | 84 |
+
+How to read it:
+- **Easy** has no deadline: team and solo both solve it, and nonet already fails wherever roles must exchange information.
+- **Medium and hard** separate the variants.
+  - Under the same deadline, `solo` falls behind: it has the compute but not the time.
+  - `nonet` fails wherever roles hold different information or tools. In CodeWorld without owners, it only wastes work (everyone studies the same functions).
+- **The reference teams do not max out hard.** Laws drift (CodeWorld), the client changes their mind (website), assays are noisy (molecule), and the scripts do not adapt to any of it. That is the room left for agents that learn.
+- **Exceptions:**
+  - On math/medium, solo still makes the deadline (38 of 40 rounds).
+  - The website tasks are small enough that solo solves most seeds.
+
 
 ---
 

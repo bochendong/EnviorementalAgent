@@ -53,7 +53,7 @@ PRESETS: dict[str, dict] = {
     "math/medium": {
         "provider": "math", "opt": {"problems": ["recurrence", "sum"] * 2, "explorers": 3, "algebraists": 2},
         "net": {"budget": 40, "latency": 1},
-        "note": "4 problems (12 lemmas); no single agent has the tools or budget for all of it."},
+        "note": "4 problems (12 lemmas), a deadline; tools split between explorers and algebraists."},
     "math/hard": {
         "provider": "math", "opt": {"problems": ["recurrence", "sum"] * 4, "explorers": 4, "algebraists": 2},
         "net": {"budget": 30, "wrong_penalty": 0.2, "exclusive": True, **HARD_NET},
