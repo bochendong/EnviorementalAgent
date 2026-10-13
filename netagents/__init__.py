@@ -13,7 +13,8 @@ works with either.
     team.py        an LLM team (every agent concurrently) and a random policy (fuzzing)
     scripted.py    reference teams written for the built-in task generators
     designs.py     published agent designs (ReAct, Reflexion, Kim et al.'s architectures, debate,
-                   blackboard, Mixture-of-Agents, MetaGPT) with matched compute
+                   LbMAS blackboard, Mixture-of-Agents) with matched compute; frameworks/ runs AutoGen,
+                   Magentic-One and CAMEL teams
     testset.py     the test suites; evaluate.py runs designs on them (docs/testset.md)
     run.py         command line: run a policy on a preset or provider
     baselines.py   the reference teams on every preset and variant

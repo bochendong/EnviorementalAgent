@@ -80,7 +80,9 @@ Tool calls are matched across designs, but tokens are not, and cannot be by cons
 
 To do before publication:
 - Run the fidelity checks on Nibi. Debate on GSM8K is ready (`sbatch slurm/net_fidelity.sh`).
-- Decide on MetaGPT. Its released versions pin a dependency that has been removed from PyPI (`lancedb==0.4.0`).
+- Check the ports' settings against the papers of ReAct, Reflexion, debate, Mixture-of-Agents, AutoGen, Magentic-One and CAMEL.
+
+MetaGPT ([Hong et al., ICLR 2024](https://arxiv.org/abs/2308.00352)) is cited as related work, not run: its released versions pin a dependency that has been removed from PyPI (`lancedb==0.4.0`), and its fixed software-company roles (product manager, architect, engineer) are close to what the website provider's roles already test.
 
 ## Matched compute
 
@@ -181,9 +183,11 @@ The tasks themselves follow established practice:
 
 与原作的每一处差异见上面英文表格的最后一列，可直接放进论文。
 
-发表前还要做三件事：
-- 把 MetaGPT 也接成框架设计（AutoGen、Magentic-One、CAMEL 已完成）；
+发表前还要做两件事：
+- 对照 ReAct、Reflexion、辩论、Mixture-of-Agents、AutoGen、Magentic-One、CAMEL 的原论文，核对移植时用的参数；
 - 在 Nibi 上跑还原度检查。辩论在 GSM8K 上的检查已经写好（`sbatch slurm/net_fidelity.sh`）：同一个模型、同一批题，作者自己的消息构造函数和我们的移植版放在一起比，看移植版相对单智能体的提升，是否落在官方提升的置信区间内。
+
+MetaGPT（Hong 等，ICLR 2024）只作为相关工作引用，不在环境里运行：它发布的版本都锁定了一个已从 PyPI 下架的依赖（`lancedb==0.4.0`），而且它固定的软件公司角色（产品经理、架构师、工程师）和网站任务里的角色分工已经很接近。
 
 ## 同等算力
 
