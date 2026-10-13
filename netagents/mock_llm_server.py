@@ -21,6 +21,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 MACHINE = re.compile(r"\b([a-z]+(?:_[a-z]+)*\.[a-z]+(?:_[a-z]+)*)\b")
 PERSON = re.compile(r"\bdev\d+\b")
 PART = re.compile(r"\bg\d+\.\d+\b")
+AGENT = re.compile(r"\ba\d+\b")
 
 
 def text_of(messages) -> str:
@@ -72,7 +73,15 @@ class Handler(BaseHTTPRequestHandler):
         rng = self.rng
         msg = {"role": "assistant", "content": "I am done."}
         finish = "stop"
-        if tools:
+        last = text_of(body.get("messages", [])[-1:])
+        if not tools and '"next_speaker"' in last:  # an orchestrator's progress ledger (Magentic-One)
+            names = sorted(set(AGENT.findall(last))) or ["a0"]
+            yes = lambda a, r="ok": {"reason": r, "answer": a}  # noqa: E731
+            msg["content"] = json.dumps({"is_request_satisfied": yes(False), "is_in_loop": yes(False),
+                                         "is_progress_being_made": yes(True),
+                                         "next_speaker": yes(rng.choice(names)),
+                                         "instruction_or_question": yes("Work on the open tasks.")})
+        elif tools:
             f = rng.choice(tools)
             props = f.get("parameters", {}).get("properties", {})
             args = {k: fill(v, words, rng, k) for k, v in props.items()}

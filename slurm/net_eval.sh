@@ -9,7 +9,8 @@
 #
 # Serves a Qwen model with vLLM, then runs the published agent designs (netagents/designs.py) on a test
 # suite (netagents/testset.py) with matched compute.
-#   sbatch slurm/net_eval.sh                                   # SUITE=dev, every design
+#   sbatch slurm/net_eval.sh                                   # SUITE=dev, every design here
+#   DESIGNS=everything sbatch slurm/net_eval.sh                # also AutoGen and Magentic-One (setup_nibi.sh)
 #   SUITE=test DESIGNS="react centralized decentralized" sbatch slurm/net_eval.sh
 #   SUITE=scaling MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 sbatch slurm/net_eval.sh
 set -euo pipefail

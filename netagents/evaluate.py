@@ -2,6 +2,7 @@
 
     python -m netagents.evaluate --suite dev --designs react centralized decentralized
     python -m netagents.evaluate --suite test --designs all --out results/net/eval/qwen3-8b
+    NETAGENTS_PY_AUTOGEN=.../venv-autogen/bin/python python -m netagents.evaluate --designs everything
 
 Every design on a case gets the same total LLM tool calls and environment budget (netagents/testset.py).
 Per run it records: solved, the share of tasks done, environment actions, LLM tool calls and tokens,
@@ -28,6 +29,7 @@ from collections import Counter
 
 from .client import LocalEnv
 from .designs import DESIGNS
+from .frameworks import FRAMEWORK_DESIGNS
 from .testset import CALLS_PER_MEMBER, SUITES
 
 CHEAP = {"status", "who", "tasks", "inbox", "board", "keys", "get", "wait", "ls", "read", "log", "made",
@@ -98,7 +100,13 @@ def main():
 
     cfg = LLMConfig()
     model, settings = make_model(cfg), make_settings(cfg)
-    designs = list(DESIGNS.values()) if a.designs == ["all"] else [DESIGNS[d] for d in a.designs]
+    every = {**DESIGNS, **FRAMEWORK_DESIGNS}
+    if a.designs == ["all"]:
+        designs = list(DESIGNS.values())
+    elif a.designs == ["everything"]:  # including the framework designs (their Python environments must exist)
+        designs = list(every.values())
+    else:
+        designs = [every[d] for d in a.designs]
     os.makedirs(a.out, exist_ok=True)
     path = os.path.join(a.out, "runs.jsonl")
     rows = []

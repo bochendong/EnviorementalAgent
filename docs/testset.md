@@ -18,7 +18,7 @@ SUITE=test sbatch slurm/net_eval.sh                                       # on N
 Each design is labelled by how it was built:
 - **port**: from the authors' released code. Their prompts are quoted under the code's licence, and their settings are used. It is adapted to tool use where the original answered in text.
 - **reimplementation**: from the paper's description, because no code was released or found. It must be checked against the paper before publication.
-- **framework**: the authors' own framework, driving our tools through an adapter (`netagents/frameworks/`, in progress).
+- **framework**: the authors' own framework, used as released, driving our tools through an adapter (`netagents/frameworks/`). It runs in its own Python environment against the environment served over HTTP, with the same model server and the same pool of tool calls.
 
 The last column lists every known difference from the source; it is meant to go into the paper as is. The table is generated from `netagents/designs.py` (`cards_markdown()`).
 
@@ -33,6 +33,9 @@ The last column lists every known difference from the source; it is meant to go 
 | `decentralized` Decentralized | Kim et al. 2025 | reimplementation | team | peer protocol written from the paper's summary; prompts are ours |
 | `hybrid` Hybrid | Kim et al. 2025 | reimplementation | team | written from the paper's summary; prompts are ours |
 | `blackboard` Blackboard | Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture, arXiv 2507.01701 (2025) | reimplementation | team | the paper's agent roles are not reproduced; one round per control step, a fixed number of rounds instead of until consensus; code not released at the time of writing |
+| `autogen-roundrobin` AutoGen round-robin group chat | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
+| `autogen-selector` AutoGen group chat with a model-selected speaker | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
+| `magentic-one` Magentic-One orchestrator | Fourney et al., Magentic-One, arXiv 2411.04468 (2024); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology); the orchestrator directs our role agents instead of Magentic-One's web, file and code agents |
 
 Where a protocol needs it, the rules are enforced:
 - workers in `centralized` and `hybrid` have no `submit` tool;
@@ -49,7 +52,7 @@ Sources of the ports (read from the official repositories):
 
 To do before publication:
 - Check the five reimplementations (Kim et al.'s four architectures and the blackboard) against the papers.
-- Run AutoGen, MetaGPT and CAMEL through their own frameworks.
+- Add CAMEL and MetaGPT as framework designs (AutoGen and Magentic-One are done).
 - Run a fidelity check of the ports on their original benchmarks, e.g. debate on GSM8K.
 
 ## Matched compute
@@ -116,7 +119,7 @@ The tasks themselves follow established practice:
 每个设计都标了是怎么做出来的：
 - **移植（port）**：照作者公开的代码做，提示词按代码许可原文引用，参数也照原样；原作只输出文字的，改成了用工具。
 - **重新实现（reimplementation）**：作者没有公开代码（或没找到），按论文描述写的，发表前必须对照论文核实。
-- **框架（framework）**：直接用作者自己的框架，通过适配层驱动我们的工具（正在做）。
+- **框架（framework）**：直接用作者自己的框架（原样使用），通过适配层驱动我们的工具；在各自的 Python 环境里运行，通过 HTTP 连接环境，模型服务和调用池与其他设计相同。
 
 | 设计 | 出处 | 接近程度 |
 |---|---|---|
@@ -126,12 +129,14 @@ The tasks themselves follow established practice:
 | `moa` | Mixture-of-Agents（Wang 等，arXiv 2406.04692），官方代码，Apache-2.0，聚合提示词原文引用 | 移植 |
 | `independent`、`centralized`、`decentralized`、`hybrid` | Kim 等 2025，未找到代码 | 重新实现，待核实 |
 | `blackboard` | Han & Zhang 2025，代码尚未发布 | 重新实现，待核实 |
+| `autogen-roundrobin`、`autogen-selector` | AutoGen（Wu 等 2023），autogen-agentchat 0.7.5，MIT | 框架 |
+| `magentic-one` | Magentic-One（Fourney 等 2024）的协调者，autogen-agentchat 0.7.5，MIT | 框架 |
 
 与原作的每一处差异见上面英文表格的最后一列，可直接放进论文。
 
 发表前还要做三件事：
 - 对照论文核实五个重新实现；
-- 用 AutoGen、MetaGPT、CAMEL 自己的框架来跑；
+- 把 CAMEL 和 MetaGPT 也接成框架设计（AutoGen 和 Magentic-One 已完成）；
 - 把移植版放回原论文的基准上验证还原度（比如辩论在 GSM8K 上）。
 
 ## 同等算力

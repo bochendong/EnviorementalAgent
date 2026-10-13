@@ -18,6 +18,14 @@ python -c "import agents, openai; print('openai-agents OK', agents.__version__ i
 (cd "$WS_ROOT" && python -m pytest -q tests)   # CPU tests, no GPU/LLM needed
 deactivate
 
+# ---------------------------------------------------------------- 1b. agent frameworks (each in its own env)
+# AutoGen (and Magentic-One): the framework designs of netagents/frameworks run in this env.
+if [ ! -d "$AUTOGEN_VENV" ]; then
+  virtualenv --no-download "$AUTOGEN_VENV" 2>/dev/null || python -m venv "$AUTOGEN_VENV"
+fi
+"$AUTOGEN_VENV/bin/pip" install -q "autogen-agentchat==0.7.5" "autogen-ext[openai]==0.7.5" sympy rdkit
+"$AUTOGEN_VENV/bin/python" -c "import autogen_agentchat; print('AutoGen', autogen_agentchat.__version__)"
+
 # ---------------------------------------------------------------- 2. vLLM (server) env
 if [ "$SERVER_MODE" = "apptainer" ]; then
   module load apptainer 2>/dev/null || true
@@ -40,4 +48,4 @@ if [ ! -f "$MODEL_DIR/config.json" ]; then
   (hf download "$MODEL_ID" --local-dir "$MODEL_DIR" || huggingface-cli download "$MODEL_ID" --local-dir "$MODEL_DIR")
 fi
 echo "Setup complete. Weights: $MODEL_DIR"
-echo "Next: sbatch slurm/net_llm.sh   (set --account in slurm/net_llm.sh first)"
+echo "Next: sbatch slurm/net_eval.sh   (set --account in slurm/net_eval.sh first)"

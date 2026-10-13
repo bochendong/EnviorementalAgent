@@ -448,8 +448,10 @@ DESIGNS: dict[str, Design] = {d.name: d for d in [
 
 def cards_markdown() -> str:
     """The table of designs, their sources, fidelity and deviations (for docs/testset.md and the paper)."""
+    from .frameworks import FRAMEWORK_DESIGNS
+
     rows = ["| design | source | fidelity | runs on | differs from the source |", "|---|---|---|---|---|"]
-    for d in DESIGNS.values():
+    for d in [*DESIGNS.values(), *FRAMEWORK_DESIGNS.values()]:
         rows.append(f"| `{d.name}` {d.label} | {d.source} | {d.fidelity} | {d.variant} | "
                     + "; ".join(d.deviations) + " |")
     return "\n".join(rows)

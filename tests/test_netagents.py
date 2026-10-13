@@ -147,3 +147,26 @@ def test_test_set_is_well_formed():
             assert raw.tasks, (suite, c.id)
     sizes = [c.team_size() for c in SUITES["scaling"]]
     assert sizes == [2, 4, 8, 16]
+
+
+@pytest.mark.skipif(not __import__("os").environ.get("NETAGENTS_PY_AUTOGEN"),
+                    reason="set NETAGENTS_PY_AUTOGEN to a Python with autogen-agentchat 0.7.5")
+def test_autogen_teams_run_through_the_http_api(mock_llm, monkeypatch):
+    import asyncio
+
+    from netagents.frameworks import FRAMEWORK_DESIGNS
+
+    model, _ = mock_llm
+    monkeypatch.setenv("WS_BASE_URL", str(model.__dict__.get("_client").base_url).rstrip("/"))
+    monkeypatch.setenv("WS_MODEL", "mock")
+    for name in ("autogen-roundrobin", "autogen-selector", "magentic-one"):
+        raw = presets_build("math/easy")
+        rep = asyncio.run(FRAMEWORK_DESIGNS[name].play(LocalEnv(raw), None, None, 9))
+        ops = [e for e in raw.events if e.get("kind") == "op"]
+        assert rep[0]["tool_calls"] == len(ops) and 0 < len(ops) <= 9, (name, rep)
+
+
+def presets_build(name):
+    raw = build(name)
+    raw.reset(0)
+    return raw
