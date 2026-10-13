@@ -52,6 +52,16 @@ python -m netagents.run --remote http://127.0.0.1:8090 --policy llm      # again
 python -m netagents.baselines --seeds 10                                # reference teams on every preset
 ```
 
+Published agent designs run on the same environment with matched compute ([docs/testset.md](docs/testset.md)): ReAct,
+Reflexion, the independent / centralized / decentralized / hybrid architectures of Kim et al. (2025), multiagent
+debate, a blackboard system, Mixture-of-Agents and MetaGPT, on suites for development, testing, held-out tasks,
+scaling, network topology and robustness:
+
+```bash
+python -m netagents.evaluate --suite dev --designs all
+SUITE=test sbatch slurm/net_eval.sh                                       # on Nibi
+```
+
 ## Watching a run: SeedVille Workshops
 
 Any run on the CodeWorld provider in the town theme can be watched in the browser: agents walk to
@@ -89,8 +99,8 @@ netagents/              the agents (clients, tools, LLM team, reference teams, r
 tasks/heldout/          held-out tasks (math, website, molecule)
 web/                    the town replay page (codeworld.html), its art (web/tools: kairoart.py, make_people.py)
 scripts/run_net.py      serve the environment
-slurm/                  Nibi: setup_nibi.sh, start_vllm.sh, net_llm.sh
-docs/                   network.md, codeworld.md
+slurm/                  Nibi: setup_nibi.sh, start_vllm.sh, net_llm.sh, net_eval.sh
+docs/                   network.md, testset.md, codeworld.md
 ```
 
 The agent code of earlier experiments (World Seeds memory agents, hives, CodeWorld developers, the LLM

@@ -90,3 +90,60 @@ def test_the_same_team_over_http():
     finally:
         srv.shutdown()
     assert there["solved"] and there["actions"] == here["actions"]
+
+
+# ---------------------------------------------------------------- published agent designs
+@pytest.fixture(scope="module")
+def mock_llm():
+    pytest.importorskip("agents")
+    from http.server import ThreadingHTTPServer
+
+    from netagents.mock_llm_server import Handler
+
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    from netagents.llm import LLMConfig, make_model, make_settings
+
+    cfg = LLMConfig(base_url=f"http://127.0.0.1:{srv.server_address[1]}/v1", model="mock", timeout=30)
+    yield make_model(cfg), make_settings(cfg)
+    srv.shutdown()
+
+
+def test_every_design_runs_within_the_same_call_budget(mock_llm):
+    from netagents.designs import DESIGNS
+    from netagents.evaluate import run_one
+    from netagents.testset import Case
+
+    model, settings = mock_llm
+    case = Case("math/easy", "math/easy", [0])
+    calls = 3 * case.team_size()
+    for d in DESIGNS.values():
+        r = run_one(d, case, 0, model, settings, calls)
+        assert 0 < r["llm_tool_calls"] <= calls, (d.name, r["llm_tool_calls"])
+        assert r["agents"] == (1 if d.variant == "solo" else 3)
+        assert {"duplicate_work", "unread_messages", "wrong_submissions", "stopped_early"} <= set(r)
+
+
+def test_designs_restrict_what_members_may_do(mock_llm):
+    from netagents.designs import Member
+
+    model, settings = mock_llm
+    raw, env = local("math", budget=30)
+    worker = Member(env, "a1", model, settings, "", keep=lambda op: op != "submit")
+    board_only = Member(env, "a2", model, settings, "", keep=lambda op: op not in ("send", "inbox"))
+    assert "submit" not in {t.name for t in worker.agent.tools}
+    assert not {"send", "inbox"} & {t.name for t in board_only.agent.tools}
+    assert "post" in {t.name for t in board_only.agent.tools}
+
+
+def test_test_set_is_well_formed():
+    from netagents.testset import DEV_SEEDS, SUITES, TEST_SEEDS
+
+    assert not set(DEV_SEEDS) & set(TEST_SEEDS)
+    for suite, cases in SUITES.items():
+        for c in cases:
+            raw = c.build("team")
+            raw.reset(c.seeds[0])
+            assert raw.tasks, (suite, c.id)
+    sizes = [c.team_size() for c in SUITES["scaling"]]
+    assert sizes == [2, 4, 8, 16]

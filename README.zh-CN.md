@@ -48,6 +48,17 @@ python -m netagents.run --remote http://127.0.0.1:8090 --policy llm      # 连�
 python -m netagents.baselines --seeds 10                                # 参考团队跑所有配置
 ```
 
+已发表的智能体设计在同一个环境、同等算力下运行，详见 [docs/testset.md](docs/testset.md)。
+
+设计包括：ReAct、Reflexion、Kim 等（2025）的独立/中心化/去中心化/混合结构、多智能体辩论、黑板系统、Mixture-of-Agents 和 MetaGPT。
+
+测试组包括：开发、测试、留出任务、规模、网络拓扑和健壮性。
+
+```bash
+python -m netagents.evaluate --suite dev --designs all
+SUITE=test sbatch slurm/net_eval.sh                                       # 在 Nibi 上
+```
+
 ## 观看运行：SeedVille Workshops
 
 CodeWorld 提供者用小镇主题时，任何一次运行都能在浏览器里看。智能体会：
@@ -83,8 +94,8 @@ netagents/              智能体（客户端、工具、LLM 团队、参考团�
 tasks/heldout/          留出任务（数学、网站、分子）
 web/                    小镇回放页面（codeworld.html）和它的美术（web/tools：kairoart.py、make_people.py）
 scripts/run_net.py      提供环境服务
-slurm/                  Nibi：setup_nibi.sh、start_vllm.sh、net_llm.sh
-docs/                   network.md、codeworld.md
+slurm/                  Nibi：setup_nibi.sh、start_vllm.sh、net_llm.sh、net_eval.sh
+docs/                   network.md、testset.md、codeworld.md
 ```
 
 早期实验的 agent 代码、SeedVille 农场小镇和最早的 World Seeds 地牢世界已经删除，agent 代码包括 World Seeds 的记忆智能体、蜂群、CodeWorld 开发者、LLM 教程和阶梯。这些都还在 git 历史里，在提交 `290b93f` 之前。

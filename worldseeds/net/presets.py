@@ -116,13 +116,18 @@ for _name, _p in PRESETS.items():
 VARIANTS = ("team", "solo", "nonet")
 
 
-def resolve(name: str, variant: str = "team") -> tuple[str, dict, dict]:
-    """(provider name, provider options, NetConfig fields) for a preset and variant."""
+def resolve(name: str, variant: str = "team", opt: dict | None = None, net: dict | None = None
+            ) -> tuple[str, dict, dict]:
+    """(provider name, provider options, NetConfig fields) for a preset and variant. ``opt`` and ``net``
+    change the preset first (a bigger team, another topology), so the variant is built from the changed
+    team: solo still gets the whole (changed) team's budget."""
     if name not in PRESETS:
         raise ValueError(f"unknown preset {name!r}; known: {sorted(PRESETS)}")
     if variant not in VARIANTS:
         raise ValueError(f"unknown variant {variant!r}; known: {VARIANTS}")
     p = copy.deepcopy(PRESETS[name])
+    p["opt"].update(opt or {})
+    p["net"].update(net or {})
     opt, net = p["opt"], p["net"]
     if variant == "nonet":
         net.update(messaging=False, board=False, store=False)
@@ -156,8 +161,9 @@ def team_size(provider: str, opt: dict) -> int:
     return sum(r.count for r in pr.roles())
 
 
-def build(name: str, variant: str = "team", **net_overrides) -> NetworkEnv:
-    prov, opt, net = resolve(name, variant)
+def build(name: str, variant: str = "team", opt: dict | None = None, net_change: dict | None = None,
+          **net_overrides) -> NetworkEnv:
+    prov, opt, net = resolve(name, variant, opt, net_change)
     known = {f.name for f in fields(NetConfig)}
     return NetworkEnv(providers.make(prov, **opt), NetConfig(**{k: v for k, v in {**net, **net_overrides}.items()
                                                                  if k in known}))

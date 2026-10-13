@@ -12,6 +12,9 @@ works with either.
     llm.py         model factory (any OpenAI-compatible server, e.g. vLLM with Qwen)
     team.py        an LLM team (every agent concurrently) and a random policy (fuzzing)
     scripted.py    reference teams written for the built-in task generators
+    designs.py     published agent designs (ReAct, Reflexion, Kim et al.'s architectures, debate,
+                   blackboard, Mixture-of-Agents, MetaGPT) with matched compute
+    testset.py     the test suites; evaluate.py runs designs on them (docs/testset.md)
     run.py         command line: run a policy on a preset or provider
     baselines.py   the reference teams on every preset and variant
 """

@@ -28,11 +28,14 @@ def call(env, agent: str, name: str, arguments: str | dict | None, limit: int = 
     return text if len(text) <= limit else text[:limit] + " ...(cut)"
 
 
-def function_tools(env, agent: str, limit: int = 6000) -> list:
+def function_tools(env, agent: str, limit: int = 6000, keep=None) -> list:
+    """``keep(op_name) -> bool`` narrows the tools (agent designs that restrict who may do what)."""
     from agents import FunctionTool  # the OpenAI Agents SDK (pip package "openai-agents")
 
     tools = []
     for op in env.ops(agent):
+        if keep is not None and not keep(op["name"]):
+            continue
         async def invoke(ctx, arguments, _op=op["name"]):
             return call(env, agent, _op, arguments, limit)
 

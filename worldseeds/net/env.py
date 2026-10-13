@@ -55,7 +55,7 @@ class NetConfig:
     store: bool = True
     market: str = "open"  # "open" (anyone submits anything), "claim" (claim first), "assigned" (round robin)
     exclusive: bool = False  # a claim locks the task for others
-    topology: str = "full"  # full | ring | star | random
+    topology: str = "full"  # full | chain | ring | star | tree | random
     degree: int = 2  # neighbours each in a random topology
     latency: int = 0  # rounds before a message arrives
     max_message: int = 4000  # characters
@@ -155,6 +155,15 @@ class NetworkEnv:
             for i, a in enumerate(names):
                 if n > 1:
                     nb[a] |= {names[(i - 1) % n], names[(i + 1) % n]} - {a}
+        elif topo == "chain":
+            for a, b in zip(names, names[1:]):
+                nb[a].add(b)
+                nb[b].add(a)
+        elif topo == "tree":  # a binary tree: a0 at the root
+            for i, a in enumerate(names[1:], 1):
+                parent = names[(i - 1) // 2]
+                nb[a].add(parent)
+                nb[parent].add(a)
         elif topo == "star":
             for a in names[1:]:
                 nb[a].add(names[0])
