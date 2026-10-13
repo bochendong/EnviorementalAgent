@@ -187,11 +187,17 @@ class NetworkEnv:
     def observe(self, agent: str) -> dict:
         """What an agent sees without spending anything (for prompts and dashboards)."""
         a = self.agents[agent]
-        return {"agent": agent, "role": a.role.name, "role_doc": a.role.doc, "round": self.round,
+        return {"agent": agent, "role": a.role.name, "role_doc": a.role.doc, "scope": a.role.scope,
+                "round": self.round, "episode_over": self.done,
                 **({"deadline": self.cfg.deadline} if self.cfg.deadline else {}),
                 "budget": a.budget, "credits": a.credits, "reputation": round(a.rep, 2),
                 "unread": len(a.mail), "offline": a.offline, "neighbours": list(a.neighbours),
                 "open_tasks": [t for t, s in self.state.items() if s["status"] == "open"]}
+
+    def public(self) -> dict:
+        """What every participant may know: the problem, who is who, and the rules of the network."""
+        return {"provider": self.provider.name, "info": self.info, "seed": self.seed,
+                "agents": {a.name: a.role.name for a in self.agents.values()}, "config": asdict(self.cfg)}
 
     @property
     def late(self) -> bool:

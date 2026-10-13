@@ -35,7 +35,7 @@ SLURM 脚本，可以直接在 Nibi 集群（Compute Canada / Alliance）上跑�
 LLM 工具和 HTTP 接口根据各提供者的操作说明自动生成。
 
 ```bash
-python scripts/run_net.py --provider math --policy scripted --seeds 0 1 2
+python -m netagents.run --preset math/hard --policy scripted --seeds 0 1 2
 ```
 
 ## 新方向：CodeWorld，开发者 agent 网络

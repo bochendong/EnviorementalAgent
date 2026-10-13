@@ -1,6 +1,6 @@
 """A small HTTP JSON API around one NetworkEnv, so agents in any language or framework can take part.
 
-    GET  /info                  provider, config, agents
+    GET  /info                  provider, problem, agents and the network's rules (config)
     POST /reset   {"seed": 0}
     GET  /ops?agent=a0          the agent's operations (and the same as OpenAI "tools")
     GET  /observe?agent=a0      free summary of the agent's state
@@ -18,7 +18,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from .env import NetworkEnv
-from .tools import openai_tools
 
 
 def make_handler(env: NetworkEnv):
@@ -45,11 +44,10 @@ def make_handler(env: NetworkEnv):
             q = parse_qs(u.query)
             try:
                 if u.path == "/info":
-                    return self._send(200, {"provider": env.provider.name, "info": env.info,
-                                            "agents": {a.name: a.role.name for a in env.agents.values()}})
+                    return self._send(200, env.public())
                 if u.path == "/ops":
-                    a = self._agent(q)
-                    return self._send(200, {"ops": [s.to_dict() for s in env.ops(a)], "tools": openai_tools(env, a)})
+                    ops = env.ops(self._agent(q))
+                    return self._send(200, {"ops": [s.to_dict() for s in ops], "tools": [s.to_openai() for s in ops]})
                 if u.path == "/observe":
                     return self._send(200, env.observe(self._agent(q)))
                 if u.path == "/events":

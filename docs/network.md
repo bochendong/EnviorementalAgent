@@ -100,23 +100,28 @@ Every call is logged (`env.events`, `save_events`). `metrics()` sums up the run.
 - The tasks are hit → lead → candidate. Their thresholds are calibrated at reset by a search over the edit space, so the episode is solvable.
 - You can load your own targets from JSON (`target_file=`).
 
-## Adapters
+## Agents live elsewhere (`netagents/`)
 
-- `worldseeds/net/tools.py`:
-  - `openai_tools(env, agent)` gives the OpenAI chat "tools" list.
+The environment holds no agent code. Agents are in `netagents/` and reach the environment only through its public interface (`step`, `ops`, `observe`, `public`), in the same process (`LocalEnv`) or over HTTP (`RemoteEnv`). The environment's HTTP server (`worldseeds/net/server.py`, `scripts/run_net.py`) also returns each agent's operations in OpenAI tool format.
+
+## Adapters (in `netagents/`)
+
+- `netagents/tools.py`:
+  - `env.tools(agent)` gives the OpenAI chat "tools" list.
   - `function_tools(env, agent)` gives Agents SDK tools.
   - `briefing(env, agent)` gives neutral instructions with no strategy.
   - All of these are generated from the op specs, so new providers get tools for free.
-- `worldseeds/net/team.py`:
+- `netagents/team.py`:
   - `run_llm_team` runs every agent concurrently on its own conversation.
   - `random_policy` fuzzes a provider.
 - `worldseeds/net/server.py` is the HTTP JSON API (`/info`, `/reset`, `/ops`, `/observe`, `/step`, `/events`, `/metrics`) for agents in any language.
-- `scripts/run_net.py` is the command line:
+- `python -m netagents.run` runs agents; `scripts/run_net.py` serves the environment:
 
 ```bash
-python scripts/run_net.py --provider math --policy scripted --seeds 0 1 2
-python scripts/run_net.py --provider website --policy llm --net budget=150 latency=1 team=0.5 --opt change=0.05
-python scripts/run_net.py --provider molecule --serve 8090
+python -m netagents.run --provider math --policy scripted --seeds 0 1 2
+python -m netagents.run --provider website --policy llm --net budget=150 latency=1 team=0.5 --opt change=0.05
+python scripts/run_net.py --preset molecule/hard --serve 8090          # the environment, in its own process
+python -m netagents.run --remote http://127.0.0.1:8090 --policy llm    # agents, in another
 ```
 
 ## Presets: difficulty, held-out tasks, variants (`worldseeds/net/presets.py`)
@@ -148,11 +153,11 @@ They test whether what agents learned carries over. The molecule targets are rel
 
 ```bash
 python scripts/run_net.py --list-presets
-python scripts/run_net.py --preset math/hard --variant solo --policy llm
-python scripts/net_baselines.py --seeds 10 --out results/net/baselines    # the table below
+python -m netagents.run --preset math/hard --variant solo --policy llm
+python -m netagents.baselines --seeds 10 --out results/net/baselines     # the table below
 ```
 
-## Reference teams (`worldseeds/net/solvers.py`)
+## Reference teams (`netagents/scripted.py`)
 
 The scripted teams are reference solutions written for the built-in generators. They know the problem
 wording and what the client will say, so they are not baselines to beat. They work only on the built-in
@@ -241,7 +246,7 @@ How to read it:
 - LLM 团队并发运行。
 - 随机策略用来做健壮性测试。
 - HTTP 服务任何语言都能接入。
-- 命令行工具：`scripts/run_net.py`。
+- 智能体全部在 `netagents/`，只通过公开接口（本进程或 HTTP）访问环境；`python -m netagents.run` 运行智能体，`scripts/run_net.py` 只负责提供环境服务。
 
 **基线**（脚本团队，10 个种子）：
 - CodeWorld：共享规律 128 个动作，不共享 190 个，都 10/10 解出。

@@ -9,8 +9,6 @@ import urllib.request
 import pytest
 
 from worldseeds.net import NetConfig, NetworkEnv, OpSpec, Role, Score, Task, TaskProvider, providers
-from worldseeds.net.team import random_policy
-from worldseeds.net.tools import call, openai_tools
 
 
 class Toy(TaskProvider):
@@ -124,34 +122,10 @@ def test_provider_op_clash_is_refused():
         env_(provider=Bad())
 
 
-@pytest.mark.parametrize("name,seed,budget", [("codeworld", 0, 400), ("math", 0, 200), ("website", 0, 100),
-                                              ("molecule", 0, 600)])
-def test_scripted_teams_solve_every_provider(name, seed, budget):
-    from worldseeds.net.solvers import SOLVERS
-
-    e = env_(NetConfig(budget=budget), providers.make(name), seed)
-    m = SOLVERS[name](e)
-    assert m["solved"], m
 
 
-def test_sharing_laws_saves_work_in_codeworld():
-    from worldseeds.net.solvers import solve_codeworld
-
-    spent = []
-    for share in (True, False):
-        e = env_(NetConfig(budget=400), providers.make("codeworld"), 1)
-        m = solve_codeworld(e, share)
-        assert m["solved"]
-        spent.append(m["actions"])
-    assert spent[0] < spent[1]
 
 
-@pytest.mark.parametrize("name", sorted(providers.PROVIDERS))
-def test_random_calls_never_break_a_provider(name):
-    cfg = NetConfig(budget=60, market="claim", topology="random", latency=1, outage=.1, store_price=1, credits=2)
-    e = env_(cfg, providers.make(name), 2)
-    random_policy(e, 120, 2)
-    assert not [ev for ev in e.events if ev["kind"] == "provider_error"]
 
 
 def test_math_roles_safety_and_json(tmp_path):
@@ -205,16 +179,10 @@ def test_molecule_needs_made_molecules_and_targets(tmp_path):
     assert e.step("a0", "submit", {"task": "small", "artifact": "Oc1ccccc1"})["ok"]
 
 
-def test_tools_and_http_api():
+def test_http_api():
     e = env_(NetConfig(budget=30), providers.make("codeworld"))
-    tools = openai_tools(e, "a0")
+    tools = [o.to_openai() for o in e.ops("a0")]
     assert {"submit", "run", "study"} <= {t["function"]["name"] for t in tools}
-    assert json.loads(call(e, "a0", "signatures", "{}"))["ok"]
-    assert "not JSON" in call(e, "a0", "run", "{oops")
-    pytest.importorskip("agents")
-    from worldseeds.net.tools import function_tools
-
-    assert len(function_tools(e, "a0")) == len(tools)
 
     from http.server import HTTPServer
 
@@ -229,7 +197,8 @@ def test_tools_and_http_api():
         return json.loads(urllib.request.urlopen(req).read())
 
     try:
-        assert json.loads(urllib.request.urlopen(base + "/info").read())["provider"] == "codeworld"
+        info = json.loads(urllib.request.urlopen(base + "/info").read())
+        assert info["provider"] == "codeworld" and info["config"]["budget"] == 30
         assert post("/step", {"agent": "a1", "op": "tasks"})["ok"]
         assert json.loads(urllib.request.urlopen(base + "/ops?agent=a1").read())["tools"]
         assert json.loads(urllib.request.urlopen(base + "/events?since=1").read())["events"]
@@ -295,16 +264,3 @@ def test_heldout_tasks_are_solvable():
     need = e.provider.raw[0]["need"]
     assert need["activity"] > e.provider.values(e.info["start"][0])["activity"]
 
-
-@pytest.mark.parametrize("name", ["codeworld/easy", "math/easy", "website/easy", "molecule/easy"])
-def test_reference_teams_need_the_network(name):
-    from worldseeds.net.presets import build
-    from worldseeds.net.solvers import SOLVERS
-
-    e = build(name)
-    e.reset(0)
-    assert SOLVERS[e.provider.name](e)["solved"]
-    if name != "codeworld/easy":  # without the network, information between roles does not travel
-        e = build(name, "nonet")
-        e.reset(0)
-        assert not SOLVERS[e.provider.name](e)["solved"]

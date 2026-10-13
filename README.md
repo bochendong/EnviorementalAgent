@@ -34,8 +34,8 @@ Four providers are included:
 LLM tools and an HTTP API are generated from each provider's operations.
 
 ```bash
-python scripts/run_net.py --provider math --policy scripted --seeds 0 1 2
-python scripts/run_net.py --provider website --policy llm --net budget=150 latency=1
+python -m netagents.run --preset math/hard --policy scripted --seeds 0 1 2
+python -m netagents.run --preset website/medium --policy llm
 ```
 
 ## New direction: CodeWorld, networks of developer agents

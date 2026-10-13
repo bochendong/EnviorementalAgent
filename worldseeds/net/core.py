@@ -41,6 +41,12 @@ class OpSpec:
     def to_dict(self) -> dict:
         return {"name": self.name, "doc": self.doc, "parameters": self.schema(), "cost": self.cost}
 
+    def to_openai(self) -> dict:
+        """The OpenAI chat-completions tool format (any compatible client understands it)."""
+        cost = f" [costs {self.cost} action{'s' if self.cost != 1 else ''}]"
+        return {"type": "function", "function": {"name": self.name, "description": self.doc + cost,
+                                                 "parameters": self.schema()}}
+
 
 @dataclass
 class Role:
