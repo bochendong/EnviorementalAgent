@@ -1,0 +1,481 @@
+diff --git a/slurm/env.sh b/slurm/env.sh
+index aead0e1..739a1fc 100755
+--- a/slurm/env.sh
++++ b/slurm/env.sh
+@@ -29,4 +29,5 @@ export VLLM_SIF="${VLLM_SIF:-$WS_STORE/vllm-openai.sif}"
+ 
+ load_modules() {
+   module load StdEnv/2023 python/3.11 gcc cuda/12.6 2>/dev/null || module load python/3.11
++  module load opencv/4.13.0
+ }
+diff --git a/slurm/serve_and_run.sh b/slurm/serve_and_run.sh
+index ce96258..0c7c251 100755
+--- a/slurm/serve_and_run.sh
++++ b/slurm/serve_and_run.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ #SBATCH --job-name=worldseeds
+-#SBATCH --account=def-CHANGE_ME
++#SBATCH --account=def-hup-ab_gpu
+ #SBATCH --gpus-per-node=h100:1
+ #SBATCH --cpus-per-task=8
+ #SBATCH --mem=64G
+diff --git a/web/codeworld.js b/web/codeworld.js
+index bc7c7a6..3ee0c57 100644
+--- a/web/codeworld.js
++++ b/web/codeworld.js
+@@ -606,6 +606,13 @@ function apply(e, ms) {
+   if (e.budget !== undefined) S.budget[who] = e.budget;
+   S.fresh[who] = null; S.gone[who] = [];
+   switch (e.kind) {
++    case "tool":
++      if (e.tool === "study" && e.args.function && !e.out.startsWith("Out of budget")) {
++        sc.study(who, e.args.function, ms);
++      }
++      sc.emote(who, e.out.startsWith("Out of budget") || e.out.startsWith("Could not read") ? "emote_bang" : "emote_note", ms);
++      say(`${nick(who)}: ${e.tool}(${JSON.stringify(e.args)}) → ${e.out}`);
++      break;
+     case "goal_start": {
+       const g = S.goals.find(x => x.id === e.goal);
+       sc.emote(who, "emote_note", ms);
+diff --git a/worldseeds/codeworld/experiment.py b/worldseeds/codeworld/experiment.py
+index f55b98c..333589c 100644
+--- a/worldseeds/codeworld/experiment.py
++++ b/worldseeds/codeworld/experiment.py
+@@ -113,21 +113,46 @@ def _buildings(cfg: CWConfig) -> dict:
+ 
+ 
+ def run(cfg: CWConfig) -> Path:
++    import asyncio
++    # One loop owns the model client for every universe, variant and sprint.
++    return asyncio.run(_run(cfg))
++
++
++async def _run(cfg: CWConfig) -> Path:
+     out = Path(cfg.out_dir)
+     out.mkdir(parents=True, exist_ok=True)
++    if (out / "codeworld.jsonl").exists():
++        raise FileExistsError(f"Use a new output directory; existing results: {out}")
+     (out / "config.json").write_text(json.dumps(asdict(cfg), indent=1))
+     f = open(out / "codeworld.jsonl", "a")
+     tf = open(out / "traces.jsonl", "a") if cfg.save_traces else None
+     model = settings = None
+     llm_name = "heuristic"
++    from ..recording import ACTIVE_RECORDING, EventLog
++    log = EventLog(out / "events.jsonl") if cfg.save_traces else None
++    from .recording import start_replay, sprint_snapshot
++    replays = []
++    failed_players = []
+     if cfg.policy == "llm":
+-        import asyncio
+-
+         from ..llm import LLMConfig, make_model, make_settings
+         from .llm_agent import llm_sprint
+ 
+         lc = LLMConfig()
+         model, settings, llm_name = make_model(lc), make_settings(lc), lc.model
++        if log:
++            # Deliberately omit API keys from provenance.
++            import platform
++            import importlib.metadata
++            import hashlib
++            root = Path(__file__).resolve().parents[1]
++            sources = [Path(__file__), Path(__file__).with_name("llm_agent.py"),
++                       Path(__file__).with_name("town_llm.py"), root / "llm.py", root / "recording.py"]
++            log.write("experiment_start", config=asdict(cfg), model=lc.model, base_url=lc.base_url,
++                      thinking=lc.thinking, max_tokens=lc.max_tokens, settings=settings,
++                      python=platform.python_version(),
++                      versions={p: importlib.metadata.version(p) for p in ("openai-agents", "openai", "pydantic")},
++                      source_sha256={str(p.relative_to(root.parent)): hashlib.sha256(p.read_bytes()).hexdigest()
++                                     for p in sources})
+     for u in cfg.universes:
+         for mods in cfg.modules:
+             world = _universe(u, mods, cfg.fns_per_module, cfg.theme, cfg.shortcuts)
+@@ -141,31 +166,46 @@ def run(cfg: CWConfig) -> Path:
+                         wv, plan = _plan(cfg, world, sprints, u, mods, n)
+                         if v.startswith("solo"):
+                             org = Org(wv, 1, None if v == "solo_unbounded" else cap, "solo", cfg.learn, cfg.seed,
+-                                      walk=cfg.walk, batch=cfg.batch, **_buildings(cfg))
++                                      walk=cfg.walk, record=cfg.save_traces, batch=cfg.batch, **_buildings(cfg))
+                             budget = cfg.budget * n  # the team's compute, in one head
+                         else:
+                             if n < 2:
+                                 continue
+                             org = Org(wv, n, cap, v, cfg.learn, cfg.seed, walk=cfg.walk, batch=cfg.batch,
+-                                      **_buildings(cfg))
++                                      record=cfg.save_traces, **_buildings(cfg))
+                             budget = cfg.budget
+                         goals = None
+                         if cfg.goals:
+                             from .goals import make_goals
+                             goals = make_goals(wv, cfg.goals, cfg.seed, deadline=cfg.goal_deadline, fund=cfg.fund or None)
++                        replay = start_replay(org, {"universe": u, "variant": v}, budget) if tf else None
++                        if replay:
++                            replay["policy"] = cfg.policy
++                            replay["goals"] = [g.to_dict() for g in goals] if goals else []
++                            replays.append(replay)
+                         for s, (projects, events) in enumerate(plan):
++                            tags = {"universe": u, "modules": mods, "capacity": cap, "team": n,
++                                    "variant": v, "sprint": s + 1}
++                            start = len(org.events)
++                            snapshot = sprint_snapshot(org, projects, goals) if replay else None
++                            token = ACTIVE_RECORDING.set((log, tags)) if log else None
++                            if log:
++                                log.write("sprint_start", tags, snapshot=snapshot, budget=budget,
++                                          world=wv.layout(), devs=replay["devs"] if replay else [])
+                             if cfg.policy == "llm":
+                                 if cfg.theme == "town":  # apprentices with the town's tools (money, goals, buildings)
+                                     from .town_llm import llm_town_sprint
+-                                    res = asyncio.run(llm_town_sprint(org, projects, budget, model, settings, events,
+-                                                                      goals, cfg.max_turns))
++                                    res = await llm_town_sprint(org, projects, budget, model, settings, events,
++                                                               goals, cfg.max_turns)
+                                 else:
+                                     org.apply_events(events or [])
+-                                    res = asyncio.run(llm_sprint(org, projects, budget, model, settings, cfg.max_turns))
++                                    res = await llm_sprint(org, projects, budget, model, settings, cfg.max_turns)
+                                 m = res["metrics"]
++                                failed_players += [x for x in m["statuses"] if x.startswith("error:")]
+                                 if tf is not None:
+                                     tf.write(json.dumps({"universe": u, "modules": mods, "capacity": cap, "team": n,
+                                                          "variant": v, "sprint": s + 1, "traces": res["traces"]}) + "\n")
++                                    tf.flush()
+                             else:
+                                 m = org.sprint(projects, budget, events, goals=goals)
+                             row = {"universe": u, "modules": mods, "functions": world.n_functions, "capacity": cap,
+@@ -178,8 +218,24 @@ def run(cfg: CWConfig) -> Path:
+                                    "districts": world.n_districts,
+                                    "world_over_capacity": world.n_functions / cap, **m, "time": time.time()}
+                             f.write(json.dumps(row) + "\n")
++                            f.flush()
++                            if replay:
++                                replay["sprints"].append({**snapshot, "index": s + 1, "budget": budget,
++                                    "events": org.events[start:], "metrics": m, "world_events": events or [],
++                                    "broken": sorted(wv.broken), "storm": sorted(wv.storm), "demand": wv.demand,
++                                    "goals": [g.to_dict() for g in goals] if goals else []})
++                                tmp = out / "replay.tmp"
++                                tmp.write_text(json.dumps({"replays": replays}))
++                                tmp.replace(out / "replay.json")
++                            if log:
++                                log.write("sprint_end", tags, metrics=m, engine_events=org.events[start:])
++                                ACTIVE_RECORDING.reset(token)
+                     f.flush()
+     f.close()
+     if tf is not None:
+         tf.close()
++    if log:
++        log.write("experiment_end", failed_players=failed_players)
++    if failed_players:
++        raise RuntimeError(f"{len(failed_players)} player runtime errors; results and records preserved: {failed_players}")
+     return out
+diff --git a/worldseeds/codeworld/llm_agent.py b/worldseeds/codeworld/llm_agent.py
+index 9f3bab5..855815b 100644
+--- a/worldseeds/codeworld/llm_agent.py
++++ b/worldseeds/codeworld/llm_agent.py
+@@ -23,6 +23,7 @@ from __future__ import annotations
+ import asyncio
+ import re
+ import time
++import traceback
+ from dataclasses import dataclass, field
+ 
+ from .knowledge import study_inputs
+@@ -30,6 +31,10 @@ from .org import Dev, Org, OutOfBudget
+ from .world import P, Law, Project
+ 
+ _AFF = r"(-?\d+)\s*\*\s*x\s*(?:([+-])\s*(\d+))?"
++LAW_HELP = ("Use concrete integer coefficients, not the letters a or b. Examples of syntax only: "
++            "'3*x + 5' or '7*x + 1 if x % 3 == 0 else 2*x + 9'. "
++            "All outputs are modulo 101; infer the numbers from your observed samples. "
++            "Do not copy these example numbers as a machine's law.")
+ 
+ 
+ def parse_law(text: str) -> Law | None:
+@@ -60,6 +65,11 @@ You have {budget} actions this sprint. Running a function costs 1, studying one
+ costs 1. Knowing laws makes building cheap: compute(program, x) is free with laws you know. Your notebook holds at
+ most {capacity} laws; when it is full the least recently used law is forgotten. Write laws with
+ remember(function, law) in the form "a*x + b" or "a2*x + b2 if x % m == 0 else a*x + b".
++Replace a, b, a2, b2 and m with actual integers inferred from observations. For example, the syntax is
++"3*x + 5", not the literal string "a*x + b". Arithmetic wraps modulo 101. After studying a function,
++infer and remember its rule before studying another; avoid repeating a study with identical inputs.
++If study is too expensive, run(function, x) costs only 1 action. Use known rules to compute candidate
++chains against the project's examples and submit a matching chain. Signatures are already listed below.
+ {team}
+ FUNCTIONS (module: function: input type -> output type):
+ {signatures}
+@@ -89,6 +99,10 @@ class Session:
+     submits: int = 0
+     trace: list = field(default_factory=list)
+     explained: dict = field(default_factory=dict)  # this project's working memory: laws teammates explained
++    blocked_budget: int = 0
++    repeated_failure: int = 0
++    _last_failure: object = None
++    model_requests: int = 0
+ 
+     @property
+     def u(self):
+@@ -105,8 +119,39 @@ class Session:
+                 + (p.text() if p else "no projects left") + "]")
+ 
+     def log(self, tool, args, out) -> str:
+-        self.trace.append({"tool": tool, "args": args, "out": out[:1500], "t": time.monotonic()})
+-        return out + self.status()
++        import json
++        budget_error = out.startswith("Out of budget")
++        self.blocked_budget = self.blocked_budget + 1 if budget_error else 0
++        failure = budget_error or out.startswith(("Could not read", "Rejected:", "No function"))
++        key = (tool, json.dumps(args, sort_keys=True)) if failure else None
++        self.repeated_failure = self.repeated_failure + 1 if key and key == self._last_failure else int(failure)
++        self._last_failure = key
++        if budget_error:
++            out += (f" This operation cannot be afforded with {self.dev.budget} actions left. "
++                    "Do not repeat it. Use a cheaper action (run costs 1), compute with known rules, "
++                    "submit if possible, or buy overtime if available. Two consecutive unaffordable "
++                    "calls end this player's run.")
++        returned = out + self.status()
++        entry = {"tool": tool, "args": args, "out": out, "returned": returned, "t": time.monotonic(),
++                 "time": time.time(), "budget_after": self.dev.budget, "location": self.dev.loc,
++                 "project": self.project.id if self.project else None}
++        self.trace.append(entry)
++        from ..recording import ACTIVE_RECORDING
++        active = ACTIVE_RECORDING.get()
++        if active:
++            active[0].write("tool_result", active[1], **entry)
++        return returned
++
++    def stop_reason(self, more) -> str | None:
++        if not more():
++            return "completed"
++        if self.dev.budget <= 0:
++            return "out_of_budget"
++        if self.blocked_budget >= 2:
++            return "blocked_budget"
++        if self.repeated_failure >= 3:
++            return "repeated_tool_failure"
++        return None
+ 
+     def _law(self, fn: str) -> Law | None:
+         return self.dev.notebook.get(fn) or self.explained.get(fn)
+@@ -143,7 +188,7 @@ class Session:
+         parsed = parse_law(law)
+         if parsed is None:
+             return self.log("remember", {"function": function, "law": law},
+-                            "Could not read that law. Use 'a*x + b' or 'a2*x + b2 if x % m == 0 else a*x + b'.")
++                            "Could not read that law. " + LAW_HELP)
+         gone = self.dev.notebook.put(function, parsed)
+         return self.log("remember", {"function": function, "law": law},
+                         f"Noted {function}: {parsed.describe()}." + (f" Forgot: {', '.join(gone)}." if gone else ""))
+@@ -227,7 +272,7 @@ def _tools(session: Session):
+ 
+     @function_tool
+     def remember(function: str, law: str) -> str:
+-        """Write a law into your notebook: 'a*x + b' or 'a2*x + b2 if x % m == 0 else a*x + b'. Free."""
++        """Write a rule with numeric coefficients, e.g. '3*x + 5'; never literal a or b. Modulo 101. Free."""
+         return session.remember(function, law)
+ 
+     @function_tool
+@@ -276,41 +321,85 @@ def instructions(session: Session) -> str:
+ async def run_dev(session: Session, model, settings, max_turns: int = 200, tools=None, text=None, more=None) -> dict:
+     """Run one developer's sprint. ``tools`` / ``text`` replace the default tools and instructions; ``more()``
+     says whether there is work left (default: projects in the queue)."""
+-    from agents import Agent, MaxTurnsExceeded, RunConfig, Runner, ToolsToFinalOutputResult
++    from agents import Agent, MaxTurnsExceeded, RunConfig, RunHooks, Runner, ToolsToFinalOutputResult
++    from ..recording import ACTIVE_RECORDING
+ 
+     more = more or (lambda: bool(session.queue))
+ 
+     def stop(ctx, results):
+-        if not more() or session.dev.budget <= 0:
+-            return ToolsToFinalOutputResult(is_final_output=True, final_output="DONE")
++        reason = session.stop_reason(more)
++        if reason:
++            return ToolsToFinalOutputResult(is_final_output=True, final_output=reason)
+         return ToolsToFinalOutputResult(is_final_output=False)
+ 
++    active = ACTIVE_RECORDING.get()
++    if active:
++        token = ACTIVE_RECORDING.set((active[0], {**active[1], "dev": session.dev.name}))
++    else:
++        token = None
++
++    def event(kind, **data):
++        a = ACTIVE_RECORDING.get()
++        if a:
++            a[0].write(kind, a[1], **data)
++
++    class RecordingHooks(RunHooks):
++        async def on_llm_start(self, context, agent, system_prompt, input_items):
++            session.model_requests += 1
++            event("llm_start", turn=session.model_requests, system_prompt=system_prompt,
++                  input_items=input_items, settings=settings)
++
++        async def on_llm_end(self, context, agent, response):
++            # Count each response immediately, even if a later turn fails or hits the limit.
++            usage[0] += response.usage.input_tokens
++            usage[1] += response.usage.output_tokens
++            event("llm_end", turn=session.model_requests, response=response)
++
+     agent = Agent(name=session.dev.name, instructions=text or instructions(session),
+                   tools=tools if tools is not None else _tools(session), model=model,
+                   model_settings=settings, tool_use_behavior=stop, reset_tool_choice=False)
+     status, usage, nudges = "finished", [0, 0], 0
+     run_input, turns_left = "Begin." + session.status(), max_turns
++    event("agent_start", instructions=agent.instructions, input=run_input, budget=session.dev.budget,
++          max_turns=max_turns, tools=[{"name": t.name, "description": t.description,
++                                    "schema": t.params_json_schema} for t in agent.tools])
+     fields = getattr(RunConfig, "__dataclass_fields__", {})
+     rc = RunConfig(**{k: v for k, v in {"tracing_disabled": True,
+                                         "tool_not_found_behavior": "return_error_to_model"}.items() if k in fields})
+     while True:
+         res = None
++        reason = session.stop_reason(more)
++        if reason:
++            status = reason
++            break
+         try:
+-            res = await Runner.run(agent, run_input, max_turns=turns_left, run_config=rc)
+-            u = res.context_wrapper.usage
+-            usage[0] += u.input_tokens
+-            usage[1] += u.output_tokens
++            res = await Runner.run(agent, run_input, max_turns=turns_left, run_config=rc, hooks=RecordingHooks())
+         except MaxTurnsExceeded:
+             status = "max_turns"
++            event("agent_limit", status=status)
+         except Exception as e:  # a broken run must not end the sprint for everyone
+             status = f"error: {type(e).__name__}: {e}"[:300]
+-        if res is None or not more() or session.dev.budget <= 0 or nudges >= 3:
++            event("agent_error", error_type=type(e).__name__, message=str(e), traceback=traceback.format_exc())
++        reason = session.stop_reason(more)
++        if reason and not status.startswith("error:"):
++            status = reason
++        if res is None or reason or nudges >= 3:
++            if res is not None and not reason:
++                status = "stopped_with_work_left"
+             break
+         # the model stopped talking with work left: nudge it to keep going
+         nudges += 1
+-        turns_left = max(1, turns_left - len([i for i in res.new_items if i.type == "tool_call_item"]) - 1)
++        turns_left = max_turns - session.model_requests
++        if turns_left <= 0:
++            status = "max_turns"
++            break
+         run_input = res.to_input_list() + [{"role": "user", "content": "Work is left and you have budget. "
+                                             "Keep going: call a tool." + session.status()}]
++    event("agent_end", status=status, done=session.done, remaining_orders=len(session.queue),
++          budget=session.dev.budget, model_requests=session.model_requests,
++          input_tokens=usage[0], output_tokens=usage[1])
++    if token is not None:
++        ACTIVE_RECORDING.reset(token)
+     return {"dev": session.dev.name, "done": session.done, "status": status, "nudges": nudges,
+             "input_tokens": usage[0],
+             "output_tokens": usage[1], "trace": session.trace}
+diff --git a/worldseeds/codeworld/org.py b/worldseeds/codeworld/org.py
+index 8136c9c..4f5f776 100644
+--- a/worldseeds/codeworld/org.py
++++ b/worldseeds/codeworld/org.py
+@@ -135,8 +135,13 @@ class Org:
+ 
+     def _ev(self, kind: str, dev: Dev, **kw) -> None:
+         if self.record:
+-            self.events.append({"i": len(self.events), "kind": kind, "dev": dev.name, "loc": dev.loc,
+-                                "budget": dev.budget, "project": self._project, **kw})
++            event = {"i": len(self.events), "kind": kind, "dev": dev.name, "loc": dev.loc,
++                     "budget": dev.budget, "project": self._project, **kw}
++            self.events.append(event)
++            from ..recording import ACTIVE_RECORDING
++            active = ACTIVE_RECORDING.get()
++            if active:
++                active[0].write("engine_event", {**active[1], "dev": dev.name}, event=event)
+ 
+     def _go(self, dev: Dev, place: str | None) -> None:
+         if dev.loc == place:
+diff --git a/worldseeds/codeworld/town_llm.py b/worldseeds/codeworld/town_llm.py
+index 3a53b57..39551e8 100644
+--- a/worldseeds/codeworld/town_llm.py
++++ b/worldseeds/codeworld/town_llm.py
+@@ -30,7 +30,7 @@ import time
+ from dataclasses import dataclass, field
+ 
+ from .goals import check
+-from .llm_agent import Session, parse_law, run_dev
++from .llm_agent import LAW_HELP, Session, parse_law, run_dev
+ from .org import Org, OutOfBudget
+ from .world import Project
+ 
+@@ -48,6 +48,11 @@ TIME: {budget} actions this sprint. Running a machine on one grade costs 1, stud
+ walking costs actions too (to a workshop to use its machines, to a person to ask them). Your notebook holds at most
+ {capacity} rules (write them with remember(machine, rule) as "a*x + b" or "a2*x + b2 if x % m == 0 else a*x + b";
+ the least recently used is forgotten). compute(program, x) is free with rules you know.
++Write actual integer coefficients: "3*x + 5" is an example of syntax, whereas literal "a*x + b" is invalid.
++Infer the numbers from the observed grades, remembering that arithmetic wraps modulo 101. After studying
++a machine, infer and remember its rule; do not repeatedly request the same samples. If you cannot afford
++study (8 actions plus walking), use run for a single grade (1 plus walking). Use compute to check a chain
++against the current order's examples, then submit it. The complete machine list is already shown below.
+ {team}
+ MONEY: you have {coins} coins. Customers pay for orders: half to who delivers, a royalty to the masters of the
+ machines used, the rest is tax for the treasury ({treasury} coins). The treasury pays a bounty of {bounty} coins for each
+@@ -82,6 +87,12 @@ class TownSession(Session):
+     started: set = field(default_factory=set)
+ 
+     # ------------------------------------------------------------ helpers
++    def log(self, tool, args, out):
++        # Include every actual tool call in the browser replay, even unsuccessful ones.
++        self.org._project = self.project.id if self.project else ""
++        self.org._ev("tool", self.dev, tool=tool, args=args, out=out)
++        return super().log(tool, args, out)
++
+     def status(self) -> str:
+         p = self.project
+         e = self.org.econ
+@@ -103,6 +114,7 @@ class TownSession(Session):
+         self.org._ev("exploit", self.dev, what=what)
+ 
+     def _walk(self, place) -> str | None:
++        self.org._project = self.project.id if self.project else ""
+         try:
+             self.org._go(self.dev, place)
+         except OutOfBudget:
+@@ -419,7 +431,7 @@ class TownSession(Session):
+             return self.log("library_write", args, "There is no library in this town.")
+         parsed = parse_law(law)
+         if parsed is None or function not in self.u.functions:
+-            return self.log("library_write", args, "Could not read that (machine name, rule as 'a*x + b' ...).")
++            return self.log("library_write", args, "Could not read that machine name or rule. " + LAW_HELP)
+         err = self._walk(o._nearest(d, "library"))
+         if err:
+             return self.log("library_write", args, err)
+diff --git a/worldseeds/llm.py b/worldseeds/llm.py
+index 0d088f8..57a1a77 100644
+--- a/worldseeds/llm.py
++++ b/worldseeds/llm.py
+@@ -19,7 +19,7 @@ import os
+ from dataclasses import dataclass
+ 
+ from agents import ModelSettings, OpenAIChatCompletionsModel, set_tracing_disabled
+-from openai import AsyncOpenAI
++from openai import AsyncOpenAI, DefaultAsyncHttpxClient
+ 
+ 
+ @dataclass
+@@ -28,7 +28,7 @@ class LLMConfig:
+     model: str = os.environ.get("WS_MODEL", "qwen3-8b")
+     api_key: str = os.environ.get("WS_API_KEY", "EMPTY")
+     temperature: float = 0.3
+-    max_tokens: int = 1024
++    max_tokens: int = int(os.environ.get("WS_MAX_TOKENS", "1024"))
+     thinking: bool = os.environ.get("WS_THINKING", "0") == "1"
+     # "required" forces a tool call every turn (episodes end via the environment, not by
+     # the model chatting). Set WS_TOOL_CHOICE=auto for servers without support.
+@@ -39,7 +39,11 @@ class LLMConfig:
+ def make_model(cfg: LLMConfig) -> OpenAIChatCompletionsModel:
+     # Tracing would try to upload to OpenAI's servers; there is no OpenAI key on Nibi.
+     set_tracing_disabled(True)
+-    client = AsyncOpenAI(base_url=cfg.base_url, api_key=cfg.api_key, timeout=cfg.timeout, max_retries=3)
++    from .recording import record_request, record_response
++
++    client = AsyncOpenAI(base_url=cfg.base_url, api_key=cfg.api_key, timeout=cfg.timeout, max_retries=3,
++                         http_client=DefaultAsyncHttpxClient(timeout=cfg.timeout,
++                             event_hooks={"request": [record_request], "response": [record_response]}))
+     return OpenAIChatCompletionsModel(model=cfg.model, openai_client=client)
+ 
+ 

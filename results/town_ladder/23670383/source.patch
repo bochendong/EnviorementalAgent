@@ -1,0 +1,110 @@
+diff --git a/docs/ladder.md b/docs/ladder.md
+index 33c968d..8e4e7a8 100644
+--- a/docs/ladder.md
++++ b/docs/ladder.md
+@@ -31,6 +31,12 @@ Outputs as for the tutorial (`events.jsonl`, `traces.jsonl`, `replay.json`, `cod
+ `summary.json`: per level, seeds passed and whether it was climbed. Rows record the level, statuses, tool
+ counts, rules noted and how many were right, and the number of chains per order.
+ 
++Ending statuses distinguish `completed` (delivered orders, with no handovers), `orders_transferred`
++(no work left after handing over one or more orders), and `no_orders` (no orders and no deliveries).
++The per-player `done` and `handed_over` counts remain separate; passing always uses actual deliveries.
++Level 6 uses 100 actions and two orders per player, plus a relevant-machine hint; the old full-town pilot
++used 40 actions and one order per player. These are different conditions despite sharing the larger town.
++
+ ---
+ 
+ ## 中文
+diff --git a/slurm/serve_and_run.sh b/slurm/serve_and_run.sh
+index ce96258..0c7c251 100755
+--- a/slurm/serve_and_run.sh
++++ b/slurm/serve_and_run.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ #SBATCH --job-name=worldseeds
+-#SBATCH --account=def-CHANGE_ME
++#SBATCH --account=def-hup-ab_gpu
+ #SBATCH --gpus-per-node=h100:1
+ #SBATCH --cpus-per-task=8
+ #SBATCH --mem=64G
+diff --git a/tests/test_codeworld_recording.py b/tests/test_codeworld_recording.py
+index d0cce41..4daffab 100644
+--- a/tests/test_codeworld_recording.py
++++ b/tests/test_codeworld_recording.py
+@@ -184,3 +184,24 @@ def test_rejected_note_never_appears_as_learning_in_replay():
+     s.remember(fn, '11*x + 91')
+     assert not any(e['kind'] == 'learn' for e in org.events)
+     assert s.trace[-1]['out'].startswith('Rejected:')
++
++
++def test_handing_over_orders_is_not_reported_as_delivery():
++    from worldseeds.codeworld.replay import town_world
++    from worldseeds.codeworld.town_llm import TownSession
++    org = Org(town_world(1), 2, 12, 'owners', record=True)
++    org.begin_sprint(40, [])
++    order = org.u.project(random.Random(2))
++    sender = TownSession(org, org.devs[0], [order])
++    receiver = TownSession(org, org.devs[1], [])
++    org.sessions = {s.dev.name: s for s in (sender, receiver)}
++    assert receiver.stop_reason(lambda: bool(receiver.queue)) == 'no_orders'
++    assert 'now' in sender.hand_over(receiver.dev.name)
++    assert sender.done == 0 and sender.handed_over == 1
++    assert receiver.queue == [order]
++    assert sender.stop_reason(lambda: bool(sender.queue)) == 'orders_transferred'
++    # A player who delivered some orders and transferred the rest must still be distinguished.
++    sender.done = 1
++    assert sender.stop_reason(lambda: bool(sender.queue)) == 'orders_transferred'
++    receiver.submit(list(order.target))
++    assert receiver.stop_reason(lambda: bool(receiver.queue)) == 'completed'
+diff --git a/worldseeds/codeworld/llm_agent.py b/worldseeds/codeworld/llm_agent.py
+index 88bdd07..59f5ac0 100644
+--- a/worldseeds/codeworld/llm_agent.py
++++ b/worldseeds/codeworld/llm_agent.py
+@@ -109,6 +109,7 @@ class Session:
+     model_requests: int = 0
+     observations: dict = field(default_factory=dict)  # this sprint's actual machine samples, not task targets
+     failed_programs: dict = field(default_factory=dict)  # persists across intervening free computations
++    handed_over: int = 0
+ 
+     @property
+     def u(self):
+@@ -150,7 +151,9 @@ class Session:
+ 
+     def stop_reason(self, more) -> str | None:
+         if not more():
+-            return "completed"
++            if self.handed_over:
++                return "orders_transferred"
++            return "completed" if self.done else "no_orders"
+         if self.dev.budget <= 0:
+             return "out_of_budget"
+         if self.blocked_budget >= 2:
+@@ -442,12 +445,14 @@ async def run_dev(session: Session, model, settings, max_turns: int = 200, tools
+         raw_usage = bound[0].http_usage.get(bound[0].usage_key(bound[1]))
+         if raw_usage is not None:
+             usage = list(raw_usage)
+-    event("agent_end", status=status, done=session.done, remaining_orders=len(session.queue),
++    event("agent_end", status=status, done=session.done, handed_over=session.handed_over,
++          remaining_orders=len(session.queue),
+           budget=session.dev.budget, model_requests=session.model_requests,
+           input_tokens=usage[0], output_tokens=usage[1])
+     if token is not None:
+         ACTIVE_RECORDING.reset(token)
+-    return {"dev": session.dev.name, "done": session.done, "status": status, "nudges": nudges,
++    return {"dev": session.dev.name, "done": session.done, "handed_over": session.handed_over,
++            "status": status, "nudges": nudges,
+             "input_tokens": usage[0],
+             "output_tokens": usage[1], "trace": session.trace}
+ 
+diff --git a/worldseeds/codeworld/town_llm.py b/worldseeds/codeworld/town_llm.py
+index 6f12a09..79ef299 100644
+--- a/worldseeds/codeworld/town_llm.py
++++ b/worldseeds/codeworld/town_llm.py
+@@ -374,6 +374,7 @@ class TownSession(Session):
+         p = self.queue.pop(0)
+         self.explained = {}
+         other.queue.append(p)
++        self.handed_over += 1
+         o._ev("hire", d, to=mate.name, project=p.id)
+         if coins and o.econ:
+             o.pay(d, mate, int(coins), "wage")

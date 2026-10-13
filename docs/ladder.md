@@ -31,6 +31,26 @@ Outputs as for the tutorial (`events.jsonl`, `traces.jsonl`, `replay.json`, `cod
 `summary.json`: per level, seeds passed and whether it was climbed. Rows record the level, statuses, tool
 counts, rules noted and how many were right, and the number of chains per order.
 
+Ending statuses distinguish `completed` (delivered orders, with no handovers), `orders_transferred`
+(no work left after handing over one or more orders), and `no_orders` (no orders and no deliveries).
+The per-player `done` and `handed_over` counts remain separate; passing always uses actual deliveries.
+Level 6 uses 100 actions and two orders per player, plus a relevant-machine hint; the old full-town pilot
+used 40 actions and one order per player. These are different conditions despite sharing the larger town.
+
+## First recorded Qwen run
+
+[Nibi job 23670383](../results/town_ladder/23670383/README.md) completed normally but stopped at level 1:
+zero of three seeds passed. The players repeatedly proposed incorrect affine coefficients or collected
+the same observations again, reaching the turn or action limit before any computation/submission.
+This localizes the observed failure to rule inference, before chain selection or team communication.
+
+Level 1 also changes the coefficient distribution relative to the earlier tutorial: `tiny_world` used
+`a=2..5, b=1..7`, whereas the ladder uses the general universe generator and its observations wrap modulo
+101. Prompts and notebook capacities differ too. The tutorial-versus-level-1 comparison therefore does
+not isolate removal of the tutorial's workflow gates. Likewise, the levels are diagnostic stages rather
+than a strict cumulative single-factor design: level 4 returns to affine rules after level 3's edge cases,
+and upper levels change budgets, order counts and hints along with scale.
+
 ---
 
 ## 中文

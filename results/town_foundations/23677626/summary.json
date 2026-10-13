@@ -1,0 +1,13 @@
+{
+  "conditions": [
+    {
+      "condition": "wrapped_open_calculator",
+      "cases": 3,
+      "orders_passed": 3,
+      "learning_passed": 3,
+      "statuses": {
+        "completed": 3
+      }
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+diff --git a/slurm/serve_and_run.sh b/slurm/serve_and_run.sh
+index ce96258..0c7c251 100755
+--- a/slurm/serve_and_run.sh
++++ b/slurm/serve_and_run.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ #SBATCH --job-name=worldseeds
+-#SBATCH --account=def-CHANGE_ME
++#SBATCH --account=def-hup-ab_gpu
+ #SBATCH --gpus-per-node=h100:1
+ #SBATCH --cpus-per-task=8
+ #SBATCH --mem=64G

@@ -184,3 +184,24 @@ def test_rejected_note_never_appears_as_learning_in_replay():
     s.remember(fn, '11*x + 91')
     assert not any(e['kind'] == 'learn' for e in org.events)
     assert s.trace[-1]['out'].startswith('Rejected:')
+
+
+def test_handing_over_orders_is_not_reported_as_delivery():
+    from worldseeds.codeworld.replay import town_world
+    from worldseeds.codeworld.town_llm import TownSession
+    org = Org(town_world(1), 2, 12, 'owners', record=True)
+    org.begin_sprint(40, [])
+    order = org.u.project(random.Random(2))
+    sender = TownSession(org, org.devs[0], [order])
+    receiver = TownSession(org, org.devs[1], [])
+    org.sessions = {s.dev.name: s for s in (sender, receiver)}
+    assert receiver.stop_reason(lambda: bool(receiver.queue)) == 'no_orders'
+    assert 'now' in sender.hand_over(receiver.dev.name)
+    assert sender.done == 0 and sender.handed_over == 1
+    assert receiver.queue == [order]
+    assert sender.stop_reason(lambda: bool(sender.queue)) == 'orders_transferred'
+    # A player who delivered some orders and transferred the rest must still be distinguished.
+    sender.done = 1
+    assert sender.stop_reason(lambda: bool(sender.queue)) == 'orders_transferred'
+    receiver.submit(list(order.target))
+    assert receiver.stop_reason(lambda: bool(receiver.queue)) == 'completed'

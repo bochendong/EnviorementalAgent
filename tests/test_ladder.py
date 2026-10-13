@@ -54,3 +54,22 @@ def test_ladder_records_and_stops_at_the_first_failing_level(tmp_path):
     rows = [json.loads(x) for x in (out / "codeworld.jsonl").read_text().splitlines()]
     assert len(rows) == 3 and all(not r["passed"] for r in rows)
     assert json.loads((out / "replay.json").read_text())["replays"]
+
+
+def test_ladder_calculator_is_optional_and_records_actual_usage(tmp_path):
+    from agents import ModelSettings
+    from agents.testing import ScriptedModel, function_call
+    _, _, orders, _ = make_case(11, LEVELS[0])
+    model = ScriptedModel([
+        [function_call('calculate', {'expression': '(53-69)%101'}, call_id='c1')],
+        [function_call('submit', {'program': list(orders[0].target)}, call_id='c2')],
+    ])
+    out = run(LadderConfig(seeds=(11,), levels=(1,), out_dir=str(tmp_path), calculator=True),
+              model, ModelSettings())
+    row = json.loads((out / 'codeworld.jsonl').read_text())
+    assert row['done'] == 1 and row['tool_calls']['calculate'] == 1
+    events = [json.loads(line) for line in (out / 'events.jsonl').read_text().splitlines()]
+    feedback = next(r for r in events if r['kind'] == 'tool_result' and r['tool'] == 'calculate')
+    assert feedback['out'] == '(53-69)%101 = 85'
+    assert feedback['budget_after'] == LEVELS[0].budget
+    assert LadderConfig().calculator is False

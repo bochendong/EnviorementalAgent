@@ -1,0 +1,3 @@
+server_ready_seconds=100
+experiment_seconds=53
+exit_code=0
