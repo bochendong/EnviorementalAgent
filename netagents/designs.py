@@ -355,7 +355,9 @@ class Debate(Design):
 # Mixture-of-Agents: togethercomputer/MoA (Apache-2.0). AGGREGATE is the system prompt of
 # utils.inject_references_to_messages, quoted. Layers: in layer 1 every proposer answers on its own; in
 # later layers every proposer is given the previous layer's responses with that prompt; the last layer is
-# one aggregator. The repository's default is rounds=1 (two layers: four proposers and one aggregator).
+# one aggregator. rounds=1 gives two layers, the paper's MoA-Lite (Sec. 3.1; the repository's default);
+# rounds=2 gives the paper's default of three. One model in every position is the paper's single-proposer
+# setting (Sec. 2.2 and Table 3: one model, several samples at temperature 0.7).
 AGGREGATE = ("You have been provided with a set of responses from various open-source models to the latest user "
              "query. Your task is to synthesize these responses into a single, high-quality response. It is "
              "crucial to critically evaluate the information provided in these responses, recognizing that some "
@@ -717,8 +719,9 @@ DESIGNS: dict[str, Design] = {d.name: d for d in [
             "agents submit themselves instead of a majority vote over final answers",
             "team size is the preset's, not 3"), rounds=2),
     MixtureOfAgents("moa", "Mixture-of-Agents", "Wang et al., Mixture-of-Agents Enhances Large Language Model "
-                    "Capabilities, arXiv 2406.04692 (2024); code: togethercomputer/MoA (Apache-2.0)", "port", "team",
-                    ("one model in every position instead of different open-source models",
+                    "Capabilities, ICLR 2025 (arXiv 2406.04692); code: togethercomputer/MoA (Apache-2.0)", "port", "team",
+                    ("one model in every position: the paper's single-proposer setting, not its default of six "
+                     "different open-source models", "two layers (MoA-Lite) by default, not three",
                      "proposers use tools; their responses pass through the design's channel",
                      "the aggregate prompt is a user message, not a system message",
                      "the aggregator is one of the team, with its role's tools"), rounds=1),

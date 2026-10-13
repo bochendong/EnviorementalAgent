@@ -71,7 +71,8 @@ FRAMEWORK_DESIGNS = {d.name: d for d in [
     _autogen("magentic-one", "Magentic-One orchestrator", "magentic",
              "Fourney et al., Magentic-One, arXiv 2411.04468 (2024); autogen-agentchat 0.7.5 (MIT)",
              COMMON + ("the orchestrator directs our role agents instead of Magentic-One's web, file and code "
-                       "agents",)),
+                       "agents", "one model for the orchestrator and the agents (the paper: GPT-4o, or o1-preview "
+                       "for the outer loop)", "no time limit; the turn limit is the call budget")),
     _camel("camel-roleplay", "CAMEL role playing", "roleplay",
            "Li et al., CAMEL: Communicative Agents for \"Mind\" Exploration of Large Language Model Society, "
            "NeurIPS 2023; camel-ai 0.2.90 (Apache-2.0)",

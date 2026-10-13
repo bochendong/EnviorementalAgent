@@ -89,7 +89,8 @@ async def main_async(a):
     elif a.team == "selector":
         team = SelectorGroupChat(members, client, termination_condition=term)
     else:
-        team = MagenticOneGroupChat(members, client, termination_condition=term, max_turns=a.calls)
+        # max_stalls=3: the paper re-plans once the stall counter exceeds 2 (Sec. 4.1, inner loop)
+        team = MagenticOneGroupChat(members, client, termination_condition=term, max_turns=a.calls, max_stalls=3)
     task = ("Solve the team's tasks. Use the 'tasks' operation to see them; submit results with 'submit'. "
             f"The problem: {json.dumps(env.public()['info'], default=str)}")
     error = ""
