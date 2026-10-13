@@ -188,3 +188,13 @@ def presets_build(name):
     raw = build(name)
     raw.reset(0)
     return raw
+
+
+def test_fidelity_scoring_is_strict():
+    from netagents.fidelity import bootstrap, correct, parse, vote
+
+    assert parse("so the answer is \\boxed{1,234}") == "1234" and parse("it is 18 eggs") == "18"
+    assert parse("no idea") is None and not correct(None, "3")  # unparseable is wrong (unlike eval_gsm.py)
+    assert vote(["3", "4", "3", None]) == "3" and correct("3.0", "3")
+    lo, hi = bootstrap([True, True, False, True], [False, True, False, False])
+    assert lo <= .5 <= hi

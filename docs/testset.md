@@ -54,7 +54,7 @@ Sources of the ports (read from the official repositories):
 To do before publication:
 - Check the five reimplementations (Kim et al.'s four architectures and the blackboard) against the papers.
 - MetaGPT as a framework design (AutoGen, Magentic-One and CAMEL are done; see the note on MetaGPT below).
-- Run a fidelity check of the ports on their original benchmarks, e.g. debate on GSM8K.
+- Run the fidelity checks on Nibi. Debate on GSM8K is ready: `python -m netagents.fidelity --check debate`, or `sbatch slurm/net_fidelity.sh`. The check runs the authors' own `construct_message` on 100 GSM8K questions next to our port, with one model and the same questions. It passes when the port's gain over a single agent falls inside the bootstrap interval of the official gain. Scoring is strict for every arm: an unparseable answer is wrong. This differs from the authors' `eval_gsm.py`, which counts an unparseable answer as correct.
 
 ## Matched compute
 
@@ -139,7 +139,7 @@ The tasks themselves follow established practice:
 发表前还要做三件事：
 - 对照论文核实五个重新实现；
 - 把 MetaGPT 也接成框架设计（AutoGen、Magentic-One、CAMEL 已完成）；
-- 把移植版放回原论文的基准上验证还原度（比如辩论在 GSM8K 上）。
+- 在 Nibi 上跑还原度检查。辩论在 GSM8K 上的检查已经写好（`sbatch slurm/net_fidelity.sh`）：同一个模型、同一批题，作者自己的消息构造函数和我们的移植版放在一起比，看移植版相对单智能体的提升，是否落在官方提升的置信区间内。
 
 ## 同等算力
 
