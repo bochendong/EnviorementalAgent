@@ -22,6 +22,22 @@ World Seeds 是一个研究环境，研究的是 agent 能不能**弄懂一个�
 实现，可以接任何兼容 OpenAI 接口的模型服务。默认用免费的 **Qwen3-8B，由 vLLM 提供服务**。仓库里有现成的
 SLURM 脚本，可以直接在 Nibi 集群（Compute Canada / Alliance）上跑完整实验。
 
+## 可插拔任务的智能体网络
+
+详见 [docs/network.md](docs/network.md)（含中文）。`worldseeds/net/` 是一个通用的多智能体网络环境。网络层负责消息、公告板、依赖图上的任务市场、版本化共享库、额度、信誉、拓扑、延迟和掉线，它不关心具体做什么工作。工作由"任务提供者"决定，接口是 `reset`、`roles`、`ops`、`apply`、`tasks`、`verify`。
+
+内置四个提供者：
+- **codeworld**：合成的对照任务。
+- **math**：引理依赖图，用 SymPy 检验，可以从 JSON 载入自己的题目。
+- **website**：版本化工作区，沙箱测试加隐藏验收测试，可以问客户，可以从目录载入自己的任务。
+- **molecule**：RDKit 结构修改，带噪声的实验，隐藏的构效关系，可以换成自己的目标或模型。
+
+LLM 工具和 HTTP 接口根据各提供者的操作说明自动生成。
+
+```bash
+python scripts/run_net.py --provider math --policy scripted --seeds 0 1 2
+```
+
 ## 新方向：CodeWorld，开发者 agent 网络
 
 详见 [docs/codeworld.md](docs/codeworld.md)（含中文）。目标是一个 agent 网络：整体知识量超过任何单个 agent 能装下的量，为以后多 agent 并行、跨领域开发打基础。CodeWorld 是一个程序化生成的软件生态：模块暴露函数，签名公开、行为隐藏；项目是功能需求，要用到多个模块的函数；开发者的笔记本容量有限，靠实验或问同事来学规律。它检验一个命题：只有当世界大到一个人装不下时，网络才会胜过等算力的单个 agent，而且前提是网络知道"谁知道什么"。规则开发者的结果：64 个函数、每人能记 16 条规律时，按模块负责人提问的 4 人团队完成 0.96 的项目，拿全队算力的单人 0.32，同一团队随机提问 0.27。

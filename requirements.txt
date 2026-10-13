@@ -4,3 +4,6 @@ openai>=3.0
 pydantic>=2.7
 pytest>=8
 pillow>=10.1   # pictures for vision-language agents (--context image) and the art tools
+# Optional, for the task providers of the agent network (worldseeds/net): math and molecule
+sympy>=1.12
+rdkit>=2024.3

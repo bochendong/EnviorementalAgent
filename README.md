@@ -21,6 +21,23 @@ Everything runs on a laptop CPU. LLM agents use the
 OpenAI-compatible server; the default is the free model **Qwen3-8B on vLLM**, and ready-made
 SLURM scripts run the full study on the Nibi cluster (Compute Canada / Alliance).
 
+## The agent network with pluggable tasks
+
+[docs/network.md](docs/network.md). `worldseeds/net/` is a general environment for agent networks. The network layer handles messages, the notice board, a task market over a dependency graph, a versioned shared store, credits, reputation, topology, latency and outages. It knows nothing about the work. The work comes from a *task provider* (`reset`, `roles`, `ops`, `apply`, `tasks`, `verify`).
+
+Four providers are included:
+- **codeworld**, the synthetic twin;
+- **math**, lemma graphs checked by SymPy, with your own problems from JSON;
+- **website**, a versioned workspace, sandboxed and hidden tests, and a client to ask, with your own tasks from a directory;
+- **molecule**, RDKit edits and noisy assays against a hidden structure-activity function, with your own targets or oracle.
+
+LLM tools and an HTTP API are generated from each provider's operations.
+
+```bash
+python scripts/run_net.py --provider math --policy scripted --seeds 0 1 2
+python scripts/run_net.py --provider website --policy llm --net budget=150 latency=1
+```
+
 ## New direction: CodeWorld, networks of developer agents
 
 [docs/codeworld.md](docs/codeworld.md). The goal is an agent network whose collective knowledge exceeds

@@ -1,0 +1,184 @@
+# The agent network: one environment, pluggable tasks
+
+`worldseeds/net/` is the environment for studying networks of agents: task distribution, information
+sharing, many agents attacking one problem, division of labour. It is a simulator. It moves messages,
+runs the task market and the shared store, charges every action and keeps score. It never says how
+agents should cooperate; that is left to whatever drives them (scripts, LLMs, a policy being trained).
+
+The work itself comes from a **task provider**. Swap the provider and the work changes, while
+everything else stays: the network switches, the event log, the LLM tools and the HTTP API.
+
+```
+            agents (LLM / RL / scripts / anything over HTTP)
+                 │  step(agent, op, args) -> observation
+        ┌────────┴─────────────────────────────────────────┐
+        │ NetworkEnv  messages · board · task market (DAG)  │
+        │             versioned store · credits · reputation│
+        │             topology · latency · outages · budget │
+        └────────┬─────────────────────────────────────────┘
+                 │  roles · ops · apply · tasks · verify · tick
+        ┌────────┴──────┬────────────┬─────────────┬───────────┐
+        │ codeworld     │ math       │ website     │ molecule  │  … your own
+        └───────────────┴────────────┴─────────────┴───────────┘
+```
+
+## The provider interface (`worldseeds/net/core.py`)
+
+```python
+class TaskProvider:
+    def reset(self, seed) -> dict              # a fresh instance; a public description
+    def roles(self) -> list[Role]              # who takes part, which ops each role may use, how many
+    def ops(self) -> list[OpSpec]              # name, help text, JSON-schema parameters, cost in actions
+    def apply(self, agent, role, op, args) -> dict   # do one op, return what the agent sees
+    def tasks(self) -> list[Task]              # a DAG: a task opens when its deps are done; `final` ends it
+    def verify(self, task, artifact, agent) -> Score # the ground truth lives only here
+    def tick(self, round) -> list[dict]        # optional: the world changes (drift, new requirements)
+    def artifact_schema(self) -> dict          # what `submit` takes
+```
+
+To put a new kind of work on the network, write these few methods. A real task needs a checker
+(`verify`) and a set of operations with costs. Everything else is already there.
+
+## The network (`worldseeds/net/env.py`)
+
+`env.step(agent, op, args)` returns a JSON-able observation and charges the op's cost to the agent's
+budget. A *round* passes when the agents together have spent as many actions as there are agents.
+Latency, outages and `tick` run on rounds.
+
+| op | what it does |
+|---|---|
+| `status`, `who` | own state; everyone's role, reputation, online status (free) |
+| `tasks` | the market: open, blocked and done tasks, deps, claims, tries |
+| `claim`, `release` | take a task (`market="claim"`; `exclusive` locks it) |
+| `send`, `inbox` | messages to neighbours (or `*`), delivered after `latency` rounds |
+| `post`, `board` | public notice board (world events are posted there too) |
+| `put`, `get`, `keys` | shared store; every version kept with writer and round; `store_price` pays the writer |
+| `transfer` | give credits |
+| `submit` | hand in an artifact (or a store key); checked by the provider (`verify_cost`) |
+| `wait` | pass |
+
+Switches in `NetConfig` include:
+- `agents`: how many of each role.
+- `budget`.
+- `messaging`, `board`, `store`.
+- `market`: `open`, `claim` or `assigned`.
+- `topology`: `full`, `ring`, `star` or `random` (with `degree`).
+- `latency`, `outage`, `outage_rounds`.
+- `credits`, `bounty`, `store_price`, `transfers`.
+- `reputation`, `verify_cost`, `wrong_penalty`.
+- `team`: 0 gives each reward to the solver, 1 shares it equally.
+
+Every call is logged (`env.events`, `save_events`). `metrics()` sums up the run.
+
+## The providers
+
+**codeworld**: the synthetic twin.
+- Functions have hidden laws. Projects ask for a chain of functions that fits some examples.
+- Ops: `signatures`, `run` (cost 1), `study` (learn a law, cost 8).
+- `owners=True` gives each module an owner role, and only the owner can study that module, so knowledge must travel. `drift` re-tunes laws.
+
+**math**: a problem cut into lemmas, checked by SymPy.
+- Roles split the tools. The explorer has `evaluate` and `sequence`; the algebraist has `simplify`, `solve` and `rsolve`.
+- Answers are checked symbolically after a numeric screen. Expressions go through a whitelist parser that refuses attribute access, with a time limit.
+- Seeded problem families are `recurrence` and `sum`. Any number of them can be joined by a final `combine` task.
+- You can load your own problem from JSON (`problem_file=`). Tasks of kind `lean` are checked by a `lean` executable if one is installed.
+
+**website**: building software.
+- The team shares a versioned workspace: `ls`, `read`, `write`, `log`. Roles own path prefixes.
+- `run_tests` runs the public tests and the team's own `tests/` in a sandbox. The sandbox is a temp dir, a separate `python -I` process, CPU, memory and time limits, and a stripped environment. It is not a security boundary, so run untrusted agents in a container.
+- `ask_client` answers from hidden notes, and only the PM may ask.
+- Features have hidden acceptance tests. The final `release` task runs them all.
+- The built-in task is a small WSGI shop. Its name, hours, products and discount are drawn from the seed.
+- `change` makes the client change a price mid-episode.
+- You can load any task from a directory with `task.json`, `starter/` and `hidden/` (`task_dir=`).
+
+**molecule**: design with RDKit.
+- Chemists `edit` molecules with named edits (add a group to an aromatic carbon, aza, remove a substituent …) and compute `props`.
+- Biologists run `assay` (activity, noisy, cost 5) and `tox` (noisy, cost 3).
+- Only molecules someone has made can be assayed.
+- The hidden structure–activity function is drawn from the seed: helpful and harmful motifs, a preferred logP and a size penalty. `oracle="pkg.mod:fn"` swaps in a real model.
+- The tasks are hit → lead → candidate. Their thresholds are calibrated at reset by a search over the edit space, so the episode is solvable.
+- You can load your own targets from JSON (`target_file=`).
+
+## Adapters
+
+- `worldseeds/net/tools.py`:
+  - `openai_tools(env, agent)` gives the OpenAI chat "tools" list.
+  - `function_tools(env, agent)` gives Agents SDK tools.
+  - `briefing(env, agent)` gives neutral instructions with no strategy.
+  - All of these are generated from the op specs, so new providers get tools for free.
+- `worldseeds/net/team.py`:
+  - `run_llm_team` runs every agent concurrently on its own conversation.
+  - `random_policy` fuzzes a provider.
+- `worldseeds/net/server.py` is the HTTP JSON API (`/info`, `/reset`, `/ops`, `/observe`, `/step`, `/events`, `/metrics`) for agents in any language.
+- `scripts/run_net.py` is the command line:
+
+```bash
+python scripts/run_net.py --provider math --policy scripted --seeds 0 1 2
+python scripts/run_net.py --provider website --policy llm --net budget=150 latency=1 team=0.5 --opt change=0.05
+python scripts/run_net.py --provider molecule --serve 8090
+```
+
+## Baselines (scripted teams, `worldseeds/net/solvers.py`, 10 seeds)
+
+The scripted teams use only the public operations. They show that every provider can be solved, and
+they show the division of labour each provider was built around.
+
+| provider | team | solved | actions (mean) |
+|---|---|---|---|
+| codeworld | 3 devs, laws shared in the store | 10/10 | 128 |
+| codeworld | 3 devs, no sharing | 10/10 | 190 |
+| math | explorer + algebraist, by message and store | 10/10 | 26 |
+| website | PM asks the client and stores the answers; frontend and backend write | 10/10 | 23 |
+| molecule | single-edit SAR scan, then stack the helpful edits | 8/10 | 205 |
+
+Sharing in CodeWorld cuts the work by a third. This is the same effect the town experiments measured, now on the generic network.
+
+---
+
+# 智能体网络：一个环境，可插拔的任务（中文）
+
+`worldseeds/net/` 是研究智能体网络的环境，研究的对象包括任务分发、信息共享、多个智能体一起攻克一道题，以及分工协作。
+
+它是模拟器，负责的事情是：传递消息，运行任务市场和共享库，给每个动作计费，记分。它不规定智能体该怎么合作，这留给驱动智能体的东西（脚本、LLM、将来要训练的策略）。
+
+具体做什么工作，由**任务提供者**决定。换一个提供者，工作就换了，其余的都不变：网络开关、事件日志、自动生成的 LLM 工具和 HTTP 接口。
+
+**接口**：一个提供者只需实现这几个方法：`reset`、`roles`、`ops`、`apply`、`tasks`、`verify`，可选 `tick`。真实任务只需要两样东西：一个检验器（`verify`），一组带成本的操作。
+
+**网络层**：
+- 每个操作都扣行动预算；所有智能体合计花掉的动作数等于人数时，算过了一轮。
+- 内置操作：
+  - 消息：`send`/`inbox`，有延迟和拓扑限制。
+  - 公告板：`post`/`board`。
+  - 任务市场：`tasks`/`claim`，任务是依赖图。
+  - 版本化共享库：`put`/`get`/`keys`，可以设读取付费。
+  - 转账：`transfer`。
+  - 提交检验：`submit`。
+- 都能在 `NetConfig` 里开关，包括：拓扑、延迟、掉线、额度、信誉、检验成本、错误惩罚，以及团队/个人奖励的混合比例。
+
+**四个提供者**：
+- **codeworld**：合成的对照任务。打开 `owners` 后只有模块主人能研究本模块，知识必须在网络里流动。
+- **math**：题目拆成引理依赖图，用 SymPy 检验。探索者只能算数，代数手只能做符号推导。可以用 JSON 载入自己的题目，Lean 是可选的。
+- **website**：
+  - 共享的版本化工作区，角色只能写自己的文件。
+  - 测试在沙箱里跑，验收测试是隐藏的。
+  - 只有产品经理能"问客户"，客户还会中途改需求。
+  - 可以从目录载入任意编程任务。
+- **molecule**：
+  - 用 RDKit。化学家做结构修改，生物学家做带噪声、成本高的活性和毒性实验。
+  - 隐藏的构效关系由种子决定，也可以换成真实模型。
+  - 阈值在重置时校准过，保证有解。
+
+**对外接口**：
+- 根据操作说明自动生成 OpenAI tools 和 Agents SDK 工具。
+- LLM 团队并发运行。
+- 随机策略用来做健壮性测试。
+- HTTP 服务任何语言都能接入。
+- 命令行工具：`scripts/run_net.py`。
+
+**基线**（脚本团队，10 个种子）：
+- CodeWorld：共享规律 128 个动作，不共享 190 个，都 10/10 解出。
+- 数学：10/10，26 个动作。
+- 网站：10/10，23 个动作。
+- 分子：8/10，205 个动作。
