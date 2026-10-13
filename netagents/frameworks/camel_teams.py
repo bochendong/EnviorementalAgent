@@ -66,6 +66,7 @@ def main():
     ap.add_argument("--team", choices=["roleplay"], default="roleplay")
     ap.add_argument("--calls", type=int, default=100)
     ap.add_argument("--tool-iterations", type=int, default=3, help="tool calls the assistant may chain in one step")
+    ap.add_argument("--max-messages", type=int, default=40, help="the paper's limit (Sec. 4, termination conditions)")
     a = ap.parse_args()
     from camel.models import ModelFactory
     from camel.societies import RolePlaying
@@ -95,13 +96,18 @@ def main():
 
     try:
         msg = society.init_chat()
-        for _ in range(a.calls * 2):
+        idle = 0  # the paper's "user no instruct": the chat ends after 3 rounds without an instruction
+        for _ in range(a.max_messages // 2):  # a step is two messages, the user's and the assistant's
             assistant, user = society.step(msg)
             count(assistant)
             count(user)
             if assistant.terminated or user.terminated or pool[0] <= 0 or env.observe(me)["episode_over"]:
                 break
-            if "CAMEL_TASK_DONE" in (user.msg.content if user.msg else ""):
+            said = user.msg.content if user.msg else ""
+            if "CAMEL_TASK_DONE" in said:
+                break
+            idle = 0 if "Instruction:" in said else idle + 1
+            if idle >= 3:
                 break
             msg = assistant.msg
     except Exception as e:  # noqa: BLE001 (report what was spent even when the framework fails)

@@ -62,9 +62,12 @@ COMMON = ("members talk in the framework's shared conversation, outside the envi
           "no topology)",)
 FRAMEWORK_DESIGNS = {d.name: d for d in [
     _autogen("autogen-roundrobin", "AutoGen round-robin group chat", "roundrobin",
-             "Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT)", COMMON),
+             "Wu et al., AutoGen, COLM 2024 (arXiv 2308.08155); autogen-agentchat 0.7.5 (MIT)",
+             COMMON + ("a fixed speaking order: a team of the AutoGen library, not one evaluated in the paper",)),
     _autogen("autogen-selector", "AutoGen group chat with a model-selected speaker", "selector",
-             "Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT)", COMMON),
+             "Wu et al., AutoGen, COLM 2024 (arXiv 2308.08155): the dynamic group chat of Sec. 3 (A5), where a "
+             "manager selects the next speaker and broadcasts its message; autogen-agentchat 0.7.5 (MIT)",
+             COMMON + ("SelectorGroupChat of AutoGen 0.7 stands for the paper's GroupChatManager (AutoGen 0.2)",)),
     _autogen("magentic-one", "Magentic-One orchestrator", "magentic",
              "Fourney et al., Magentic-One, arXiv 2411.04468 (2024); autogen-agentchat 0.7.5 (MIT)",
              COMMON + ("the orchestrator directs our role agents instead of Magentic-One's web, file and code "
@@ -73,5 +76,7 @@ FRAMEWORK_DESIGNS = {d.name: d for d in [
            "Li et al., CAMEL: Communicative Agents for \"Mind\" Exploration of Large Language Model Society, "
            "NeurIPS 2023; camel-ai 0.2.90 (Apache-2.0)",
            ("the assistant is the solo agent with every tool and the team's budget; the user agent has no tools",
-            "no task-specifier agent: the task given is already precise")),
+            "no task-specifier agent: the task given is already precise",
+            "the paper's termination conditions are kept (40 messages, 3 rounds without an instruction, the "
+            "end-of-task token) except role reversal, which is not detected")),
 ]}

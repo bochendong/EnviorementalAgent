@@ -16,7 +16,9 @@ nothing of it is copied into this repository. Every arm is scored the same way: 
 that cannot be parsed is wrong. (The authors' eval_gsm.py counts an unparseable answer as correct.)
 
 The check passes when the port's gain over its single agent is close to the official gain over its single
-agent (within the bootstrap interval written to the report).
+agent (within the bootstrap interval written to the report). For reference, the paper (Du et al. 2024,
+Table 1: 100 GSM8K problems, gpt-3.5-turbo-0301, 3 agents, 2 rounds, zero-shot) reports 77.0 +- 4.2 for
+a single agent and 85.0 +- 3.5 for debate: a gain of 8 points.
 """
 
 from __future__ import annotations
@@ -33,6 +35,7 @@ import urllib.request
 
 GSM8K = "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl"
 DEBATE = "https://raw.githubusercontent.com/composable-models/llm_multiagent_debate/main/gsm/gen_gsm.py"
+PAPER = {"single": 0.770, "debate": 0.850, "model": "gpt-3.5-turbo-0301", "n": 100}  # Du et al., Table 1
 FIRST = ("Can you solve the following math problem? {} Explain your reasoning. Your final answer should be a single "
          "numerical number, in the form \\boxed{{answer}}, at the end of your response. ")
 
@@ -156,7 +159,8 @@ def main():
     lo, hi = bootstrap(arms["official-debate"], arms["official-single"])
     report = {"check": a.check, "model": cfg.model, "n": len(qs), "accuracy": acc, "official_gain": gain_off,
               "official_gain_95": [lo, hi], "port_gain": gain_port, "port_gain_within_official_interval":
-              lo <= gain_port <= hi, "per_question": arms}
+              lo <= gain_port <= hi, "paper": {**PAPER, "gain": PAPER["debate"] - PAPER["single"]},
+              "per_question": arms}
     with open(os.path.join(a.out, f"{a.check}.json"), "w") as f:
         json.dump(report, f, indent=1)
     print(json.dumps({k: v for k, v in report.items() if k != "per_question"}, indent=1))

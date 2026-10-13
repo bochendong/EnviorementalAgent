@@ -43,8 +43,8 @@ The last column lists every known difference from the source; it is meant to go 
 
 | design | source | fidelity | runs on | differs from the source |
 |---|---|---|---|---|
-| `react` ReAct | Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; code: ysymyth/ReAct, noahshinn/reflexion (MIT) | port | solo | native tool calls instead of Thought/Action text lines; no few-shot examples (theirs are task-specific) |
-| `reflexion` Reflexion | Shinn et al., Reflexion: Language Agents with Verbal Reinforcement Learning, NeurIPS 2023; code: noahshinn/reflexion (MIT) | port | solo | trials share one episode and its budget instead of re-running the same task; a trial fails on a wrong submission or when its step quota runs out; the environment's verdict is the evaluator; no few-shot reflection examples |
+| `react` ReAct | Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; code: ysymyth/ReAct, noahshinn/reflexion (MIT) | port | solo | native tool calls instead of Thought/Action text lines; no few-shot examples (theirs are task-specific); the step limit is the call budget (the paper: 7 steps on HotpotQA, 5 on FEVER, 50 on ALFWorld), and the agent is prompted to continue when it stops with tasks left; no back-off to CoT-SC |
+| `reflexion` Reflexion | Shinn et al., Reflexion: Language Agents with Verbal Reinforcement Learning, NeurIPS 2023; code: noahshinn/reflexion (MIT) | port | solo | trials share one episode and its budget instead of re-running the same task; a trial fails on a wrong submission or when its step quota runs out; the environment's verdict is the evaluator, not the paper's ALFWorld heuristic (the same action and observation more than 3 times, or more than 30 actions); no few-shot reflection examples |
 | `debate` Multiagent debate | Du et al., Improving Factuality and Reasoning in Language Models through Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt paraphrased) | port | team | agents use tools between rounds; a solution is what an agent states at the end of a round; solutions pass through the design's channel (the framework, or the environment's network); agents submit themselves instead of a majority vote over final answers; team size is the preset's, not 3 |
 | `moa` Mixture-of-Agents | Wang et al., Mixture-of-Agents Enhances Large Language Model Capabilities, arXiv 2406.04692 (2024); code: togethercomputer/MoA (Apache-2.0) | port | team | one model in every position instead of different open-source models; proposers use tools; their responses pass through the design's channel; the aggregate prompt is a user message, not a system message; the aggregator is one of the team, with its role's tools |
 | `sas` Single-agent system (Kim et al.) | Kim et al., Towards a Science of Scaling Agent Systems, arXiv 2512.08296 v3 (2026); code: ybkim95/agent-scaling (MIT) | port | solo | iterations are tool calls; the single agent gets the team's whole pool of calls (the paper gives it proportionally more iterations) |
@@ -53,10 +53,10 @@ The last column lists every known difference from the source; it is meant to go 
 | `decentralized` Decentralized (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | the consensus vote over final answers is recorded; agents submit their own results; peer answers pass through the design's channel (the framework, or the network); team size is the preset's, not 3 |
 | `hybrid` Hybrid (Kim et al.) | Kim et al. 2026; code: ybkim95/agent-scaling (MIT) | port | team | as centralized, plus the authors' final peer round; team size is the preset's, not 3 |
 | `blackboard` LbMAS blackboard system | Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture, arXiv 2507.01701v1 (2025); prompts from the paper (code not released) | port | team | the team's members (with the environment's tools) join as experts of their roles, besides 1-3 generated experts; one model for every agent instead of one drawn per agent from two models; no private spaces (debate, self-reflection); the decider's answer is handed to the team members to submit; solution by the decider only (not the similarity vote) |
-| `autogen-roundrobin` AutoGen round-robin group chat | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
-| `autogen-selector` AutoGen group chat with a model-selected speaker | Wu et al., AutoGen, arXiv 2308.08155 (2023); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology) |
+| `autogen-roundrobin` AutoGen round-robin group chat | Wu et al., AutoGen, COLM 2024 (arXiv 2308.08155); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology); a fixed speaking order: a team of the AutoGen library, not one evaluated in the paper |
+| `autogen-selector` AutoGen group chat with a model-selected speaker | Wu et al., AutoGen, COLM 2024 (arXiv 2308.08155): the dynamic group chat of Sec. 3 (A5), where a manager selects the next speaker and broadcasts its message; autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology); SelectorGroupChat of AutoGen 0.7 stands for the paper's GroupChatManager (AutoGen 0.2) |
 | `magentic-one` Magentic-One orchestrator | Fourney et al., Magentic-One, arXiv 2411.04468 (2024); autogen-agentchat 0.7.5 (MIT) | framework | team | members talk in the framework's shared conversation, outside the environment's network (not charged, no topology); the orchestrator directs our role agents instead of Magentic-One's web, file and code agents |
-| `camel-roleplay` CAMEL role playing | Li et al., CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society, NeurIPS 2023; camel-ai 0.2.90 (Apache-2.0) | framework | solo | the assistant is the solo agent with every tool and the team's budget; the user agent has no tools; no task-specifier agent: the task given is already precise |
+| `camel-roleplay` CAMEL role playing | Li et al., CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society, NeurIPS 2023; camel-ai 0.2.90 (Apache-2.0) | framework | solo | the assistant is the solo agent with every tool and the team's budget; the user agent has no tools; no task-specifier agent: the task given is already precise; the paper's termination conditions are kept (40 messages, 3 rounds without an instruction, the end-of-task token) except role reversal, which is not detected |
 
 Every design uses the same model and the same tools, generated from the environment's op specs.
 
@@ -77,6 +77,18 @@ Sources of the ports:
 - LbMAS (Han & Zhang): the code has not been released. The prompts are transcribed from the paper's Figures 4–6 (`netagents/prompts/han2025.py`), and the cycle follows its Algorithm 1 with K = 4 rounds.
 
 Tool calls are matched across designs, but tokens are not, and cannot be by construction. An orchestrator, a control unit and the predefined blackboard agents only talk: they cost tokens but no tool calls. This coordination overhead is what Kim et al. measure, and every run records it.
+
+### Settings checked against the papers
+
+| design | the paper's setting | here |
+|---|---|---|
+| ReAct (Yao et al., ICLR 2023) | PaLM-540B, few-shot, greedy decoding; at most 7 steps (HotpotQA), 5 (FEVER), 50 (ALFWorld); back-off to CoT-SC with 21 samples at temperature 0.7 | zero-shot with tools; the step limit is the call budget; no CoT-SC back-off |
+| Reflexion (Shinn et al., NeurIPS 2023) | memory bounded to Ω = 1–3 reflections (3 on HotPotQA and ALFWorld, 1 for code); reflect after a failed trial (exact-match grading) or, on ALFWorld, after the same action and observation more than 3 times or more than 30 actions; 2-shot reflections | Ω = 3; reflect after a rejected submission or an unfinished trial; zero-shot reflections |
+| Multiagent debate (Du et al., ICML 2024) | 3 agents, 2 rounds (Table 1), zero-shot, gpt-3.5-turbo-0301, answer from a box, 100 GSM8K problems: single 77.0, debate 85.0 | 3 agents and 2 rounds on the compatibility track and in the fidelity check, which reports the paper's numbers next to ours |
+| AutoGen (Wu et al., COLM 2024) | GroupChatManager: select a speaker (role-play prompt), ask it to respond, broadcast (Sec. 3, A5) | `autogen-selector` (SelectorGroupChat, the same protocol in AutoGen 0.7); `autogen-roundrobin` is a library team the paper does not evaluate |
+| CAMEL (Li et al., NeurIPS 2023) | inception prompts; task specifier; the chat ends at 40 messages, after 3 rounds without an instruction, on the end-of-task token, on role reversal or at the token limit | the framework's own prompts; no task specifier; every termination condition but role reversal |
+
+Every design uses one temperature (0.3), so that the comparison does not hinge on decoding; the papers used greedy decoding (ReAct), 0.7 (Reflexion's retries) or the API default (debate, CAMEL). Mixture-of-Agents (Wang et al.) and Magentic-One (Fourney et al.) are still to be checked against their papers.
 
 To do before publication:
 - Run the fidelity checks on Nibi. Debate on GSM8K is ready (`sbatch slurm/net_fidelity.sh`).
@@ -182,6 +194,15 @@ The tasks themselves follow established practice:
 | `camel-roleplay` | CAMEL 角色扮演（Li 等，NeurIPS 2023），camel-ai 0.2.90，Apache-2.0 | 框架 |
 
 与原作的每一处差异见上面英文表格的最后一列，可直接放进论文。
+
+**已对照原论文核对的设置**：
+- ReAct：论文用贪心解码，最多 7 步（HotpotQA）、5 步（FEVER）、50 步（ALFWorld），失败时退回 CoT-SC。我们零样本、步数上限即调用预算、不退回 CoT-SC。
+- Reflexion：论文的记忆上限 Ω 为 1–3 条（HotPotQA 和 ALFWorld 用 3 条），已从原来的 8 条改为 3 条。触发反思的条件：我们用“提交被拒或这一轮没做完”，没用论文 ALFWorld 上的启发式（同一动作和结果重复 3 次以上，或超过 30 步）。
+- 辩论：论文 3 个智能体、2 轮，GSM8K 100 题上单智能体 77.0、辩论 85.0。兼容赛道和还原度检查都用 3 人 2 轮，还原度报告里并列给出论文数字。
+- AutoGen：论文的动态群聊（管理者选下一位发言者，再广播），对应 `autogen-selector`；`autogen-roundrobin` 是框架自带的团队，论文里没有评测过。
+- CAMEL：论文的终止条件已加上——40 条消息、连续 3 轮用户不下指令、结束标记；只有“角色反转”没有检测。
+
+所有设计统一用温度 0.3，避免比较结果取决于解码方式。Mixture-of-Agents 和 Magentic-One 的论文还没核对。
 
 发表前还要做两件事：
 - 对照 ReAct、Reflexion、辩论、Mixture-of-Agents、AutoGen、Magentic-One、CAMEL 的原论文，核对移植时用的参数；

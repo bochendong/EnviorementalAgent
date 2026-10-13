@@ -267,7 +267,9 @@ class ReAct(Design):
 # Reflexion: noahshinn/reflexion (MIT licence). REFLECT_INSTRUCTION and REFLECTION_HEADER are quoted from
 # hotpotqa_runs/prompts.py (the Docstore variant), with "Finish[<answer>]" read as "submit" and the
 # Docstore API as "an environment". As in ReactReflectAgent.run: after a failed trial the agent reflects,
-# the reflection is added to its memory, and the next trial starts from a fresh scratchpad.
+# the reflection is added to its memory, and the next trial starts from a fresh scratchpad. The memory
+# shown is bounded to the last 3 reflections (the paper's Omega, Sec. 3 and 4.1-4.2: "the last 3
+# self-reflections").
 REFLECT_INSTRUCTION = ("You are an advanced reasoning agent that can improve based on self refection. You will be "
                        "given a previous reasoning trial in which you were given access to an environment and a "
                        "task to solve. You were unsuccessful in solving the task either because you submitted a "
@@ -280,6 +282,7 @@ REFLECTION_HEADER = ("You have attempted to answer following question before and
 
 
 class Reflexion(Design):
+    memory_size = 3  # Omega
     memory_path = ""  # a JSON file: reflections carried from episode to episode (set before running)
 
     async def run(self, env, model, settings, calls):
@@ -291,7 +294,7 @@ class Reflexion(Design):
         for trial in range(self.rounds):
             if m.finished():
                 break
-            notes = (REFLECTION_HEADER + "Reflections:\n- " + "\n- ".join(memory[-8:]) + "\n\n") if memory else ""
+            notes = (REFLECTION_HEADER + "Reflections:\n- " + "\n- ".join(memory[-self.memory_size:]) + "\n\n") if memory else ""
             await m.turn(notes + ("Begin." if trial == 0 else "Continue with the tasks still open."), per)
             fails = sum(1 for e in env.events() if e.get("kind") == "op" and e.get("agent") == name
                         and e.get("op") == "submit" and not e["obs"].get("ok"))
@@ -697,12 +700,15 @@ class LbMAS(Design):
 DESIGNS: dict[str, Design] = {d.name: d for d in [
     ReAct("react", "ReAct", "Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; "
           "code: ysymyth/ReAct, noahshinn/reflexion (MIT)", "port", "solo",
-          ("native tool calls instead of Thought/Action text lines", "no few-shot examples (theirs are task-specific)")),
+          ("native tool calls instead of Thought/Action text lines", "no few-shot examples (theirs are task-specific)",
+           "the step limit is the call budget (the paper: 7 steps on HotpotQA, 5 on FEVER, 50 on ALFWorld), and "
+           "the agent is prompted to continue when it stops with tasks left", "no back-off to CoT-SC")),
     Reflexion("reflexion", "Reflexion", "Shinn et al., Reflexion: Language Agents with Verbal Reinforcement "
               "Learning, NeurIPS 2023; code: noahshinn/reflexion (MIT)", "port", "solo",
               ("trials share one episode and its budget instead of re-running the same task",
                "a trial fails on a wrong submission or when its step quota runs out; the environment's verdict is "
-               "the evaluator", "no few-shot reflection examples")),
+               "the evaluator, not the paper's ALFWorld heuristic (the same action and observation more than 3 "
+               "times, or more than 30 actions)", "no few-shot reflection examples")),
     Debate("debate", "Multiagent debate", "Du et al., Improving Factuality and Reasoning in Language Models through "
            "Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt "
            "paraphrased)", "port", "team",
