@@ -13,32 +13,44 @@ python -m netagents.evaluate --suite dev --designs all                    # any 
 SUITE=test sbatch slurm/net_eval.sh                                       # on Nibi, Qwen on vLLM
 ```
 
-## Agent designs (each from a published paper)
+## Agent designs and how close they are to their sources
 
-| name | design | source |
-|---|---|---|
-| `react` | one agent that reasons and acts with one tool call at a time | Yao et al., [ReAct](https://arxiv.org/abs/2210.03629), ICLR 2023 |
-| `reflexion` | ReAct, plus a verbal self-reflection after every rejected submission. Reflections are kept in an episodic memory, optionally across episodes. | Shinn et al., Reflexion, NeurIPS 2023 (arXiv 2303.11366) |
-| `independent` | n agents in parallel with no communication | Kim et al., [Towards a Science of Scaling Agent Systems](https://arxiv.org/abs/2512.08296), 2025 ("independent") |
-| `centralized` | an orchestrator assigns work by message; workers report back; only the orchestrator submits | Kim et al. 2025 ("centralized"). Orchestrator-worker as in AutoGen's group chat manager ([Wu et al. 2023](https://arxiv.org/abs/2308.08155)). |
-| `decentralized` | peers work, publish their results on the board each round, read and critique the others' results, and revise | Kim et al. 2025 ("decentralized"); Du et al., [Multiagent Debate](https://proceedings.mlr.press/v235/du24e.html), ICML 2024 |
-| `hybrid` | an orchestrator, and workers who may also message each other | Kim et al. 2025 ("hybrid") |
-| `blackboard` | all communication goes through the board; a control unit reads it each round and picks who acts | Han & Zhang, [blackboard LLM multi-agent systems](https://arxiv.org/abs/2507.01701), 2025; Salemi et al., [blackboard system for information discovery](https://arxiv.org/abs/2510.01285), 2025 |
-| `moa` | layers of proposers, each reading the previous layer's outputs; an aggregator submits | Wang et al., [Mixture-of-Agents](https://arxiv.org/abs/2406.04692), 2024 |
-| `metagpt` | roles act in the provider's order (a standard operating procedure). Each role publishes a structured document to a shared pool and reads only the roles before it (publish-subscribe). | Hong et al., [MetaGPT](https://proceedings.iclr.cc/paper_files/paper/2024/hash/6507b115562bb0a305f1958ccc87355a-Abstract-Conference.html), ICLR 2024 |
+Each design is labelled by how it was built:
+- **port**: from the authors' released code. Their prompts are quoted under the code's licence, and their settings are used. It is adapted to tool use where the original answered in text.
+- **reimplementation**: from the paper's description, because no code was released or found. It must be checked against the paper before publication.
+- **framework**: the authors' own framework, driving our tools through an adapter (`netagents/frameworks/`, in progress).
 
-The prompts paraphrase each paper's protocol and say nothing specific to a task provider. Rules are
-enforced where the protocol needs them:
+The last column lists every known difference from the source; it is meant to go into the paper as is. The table is generated from `netagents/designs.py` (`cards_markdown()`).
+
+| design | source | fidelity | runs on | differs from the source |
+|---|---|---|---|---|
+| `react` ReAct | Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; code: ysymyth/ReAct, noahshinn/reflexion (MIT) | port | solo | native tool calls instead of Thought/Action text lines; no few-shot examples (theirs are task-specific) |
+| `reflexion` Reflexion | Shinn et al., Reflexion: Language Agents with Verbal Reinforcement Learning, NeurIPS 2023; code: noahshinn/reflexion (MIT) | port | solo | trials share one episode and its budget instead of re-running the same task; a trial fails on a wrong submission or when its step quota runs out; the environment's verdict is the evaluator; no few-shot reflection examples |
+| `debate` Multiagent debate | Du et al., Improving Factuality and Reasoning in Language Models through Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt paraphrased) | port | team | agents use tools between rounds; a solution is what an agent states at the end of a round; solutions travel as network messages (charged, limited to neighbours); agents submit themselves instead of a majority vote over final answers; team size is the preset's, not 3 |
+| `moa` Mixture-of-Agents | Wang et al., Mixture-of-Agents Enhances Large Language Model Capabilities, arXiv 2406.04692 (2024); code: togethercomputer/MoA (Apache-2.0) | port | team | one model in every position instead of different open-source models; proposers use tools; their responses travel as network messages; the aggregate prompt is a user message, not a system message; the aggregator is one of the team, with its role's tools |
+| `independent` Independent | Kim et al., Towards a Science of Scaling Agent Systems, arXiv 2512.08296 (2025) | reimplementation | nonet | details of aggregation not checked against the paper |
+| `centralized` Centralized | Kim et al. 2025 | reimplementation | team | orchestrator protocol written from the paper's summary; prompts are ours |
+| `decentralized` Decentralized | Kim et al. 2025 | reimplementation | team | peer protocol written from the paper's summary; prompts are ours |
+| `hybrid` Hybrid | Kim et al. 2025 | reimplementation | team | written from the paper's summary; prompts are ours |
+| `blackboard` Blackboard | Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture, arXiv 2507.01701 (2025) | reimplementation | team | the paper's agent roles are not reproduced; one round per control step, a fixed number of rounds instead of until consensus; code not released at the time of writing |
+
+Where a protocol needs it, the rules are enforced:
 - workers in `centralized` and `hybrid` have no `submit` tool;
 - `blackboard` members have no direct messages;
-- `independent` runs on the `nonet` variant (no messages, board or store).
+- `independent` runs on the `nonet` variant.
 
 Every design uses the same tools, generated from the environment's op specs, and the same model.
 
-Not implemented as separate designs:
-- **Network shape** is a property of the environment, not of a design: the `topology` suite runs designs on full, chain, star, tree, ring and random networks.
-- **CAMEL's two-agent role play** (an AI user instructing an AI assistant) is close to `centralized` with one worker.
-- **GPTSwarm** ([Zhuge et al., ICML 2024](https://proceedings.mlr.press/v235/zhuge24a.html)), DyLAN and other designs that optimise the graph would be trained on the dev suite and evaluated on the test suite like any other design.
+Sources of the ports (read from the official repositories):
+- ReAct: `ysymyth/ReAct`, MIT.
+- Reflexion: `noahshinn/reflexion`, MIT. The instruction, reflection prompt and reflection header are taken from `hotpotqa_runs/prompts.py`.
+- Debate: `composable-models/llm_multiagent_debate`. The repository has no licence, so the prompt is paraphrased, not copied. Its `gsm/gen_gsm.py` uses 3 agents and 2 rounds.
+- Mixture-of-Agents: `togethercomputer/MoA`, Apache-2.0. The aggregate-and-synthesize system prompt is quoted from `utils.py`. The default is one round, i.e. two layers.
+
+To do before publication:
+- Check the five reimplementations (Kim et al.'s four architectures and the blackboard) against the papers.
+- Run AutoGen, MetaGPT and CAMEL through their own frameworks.
+- Run a fidelity check of the ports on their original benchmarks, e.g. debate on GSM8K.
 
 ## Matched compute
 
@@ -99,19 +111,28 @@ The tasks themselves follow established practice:
 
 代码在 `netagents/designs.py`、`netagents/testset.py`、`netagents/evaluate.py`。
 
-## 设计（每个都对应一篇论文）
+## 设计和它们与原作的接近程度
 
-| 名字 | 做法 | 论文 |
+每个设计都标了是怎么做出来的：
+- **移植（port）**：照作者公开的代码做，提示词按代码许可原文引用，参数也照原样；原作只输出文字的，改成了用工具。
+- **重新实现（reimplementation）**：作者没有公开代码（或没找到），按论文描述写的，发表前必须对照论文核实。
+- **框架（framework）**：直接用作者自己的框架，通过适配层驱动我们的工具（正在做）。
+
+| 设计 | 出处 | 接近程度 |
 |---|---|---|
-| `react` | 单个智能体，边推理边调用工具 | Yao 等，ReAct，ICLR 2023 |
-| `reflexion` | ReAct 加上提交失败后的自我反思，反思存进记忆，可以跨局保留 | Shinn 等，Reflexion，NeurIPS 2023 |
-| `independent` | 多个智能体并行，互不通信 | Kim 等 2025 的"independent" |
-| `centralized` | 协调者通过消息分派任务，工人回报结果，只有协调者能提交 | Kim 等 2025；AutoGen 的群聊管理者 |
-| `decentralized` | 平级的智能体每轮把结果贴到公告板，读别人的、批评、修改 | Kim 等 2025；Du 等的多智能体辩论，ICML 2024 |
-| `hybrid` | 有协调者，工人之间也能直接交流 | Kim 等 2025 |
-| `blackboard` | 所有交流只走公告板，控制单元每轮读板决定谁行动 | Han & Zhang 2025；Salemi 等 2025 |
-| `moa` | 多层提议者，每层读上一层的结果，最后由聚合者提交 | Wang 等，Mixture-of-Agents，2024 |
-| `metagpt` | 按标准流程像流水线一样依次行动，结构化文档发到共享池，只订阅前面角色的文档 | Hong 等，MetaGPT，ICLR 2024 |
+| `react` | ReAct（Yao 等，ICLR 2023），官方代码，MIT | 移植 |
+| `reflexion` | Reflexion（Shinn 等，NeurIPS 2023），官方代码，MIT，反思提示词原文引用 | 移植 |
+| `debate` | 多智能体辩论（Du 等，ICML 2024），官方仓库无许可证，提示词为转述；原设定 3 人 2 轮 | 移植 |
+| `moa` | Mixture-of-Agents（Wang 等，arXiv 2406.04692），官方代码，Apache-2.0，聚合提示词原文引用 | 移植 |
+| `independent`、`centralized`、`decentralized`、`hybrid` | Kim 等 2025，未找到代码 | 重新实现，待核实 |
+| `blackboard` | Han & Zhang 2025，代码尚未发布 | 重新实现，待核实 |
+
+与原作的每一处差异见上面英文表格的最后一列，可直接放进论文。
+
+发表前还要做三件事：
+- 对照论文核实五个重新实现；
+- 用 AutoGen、MetaGPT、CAMEL 自己的框架来跑；
+- 把移植版放回原论文的基准上验证还原度（比如辩论在 GSM8K 上）。
 
 ## 同等算力
 

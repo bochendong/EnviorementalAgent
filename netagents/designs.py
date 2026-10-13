@@ -1,31 +1,20 @@
-"""Published agent designs, run on the network environment with the same tools and the same budgets.
+"""Agent designs from published work, run on the network environment with matched compute.
 
 Every design gets the same model, the same environment (a preset), the same total number of LLM tool
-calls (``calls``, split over its members and rounds) and the same total environment budget (the preset's
-variant: one agent with the team's budget for single-agent designs, the team otherwise). They differ only
-in what the papers differ in: who may do what, what each member is told about the protocol, and the
-order in which members act. The environment is never changed by a design.
+calls (``calls``: one pool for the whole team) and the same total environment budget (the preset's variant:
+one agent with the team's budget for single-agent designs, the team otherwise). The environment is never
+changed by a design.
 
-    react         Yao et al., ReAct (ICLR 2023): one agent interleaving reasoning and tool calls.
-    reflexion     Shinn et al., Reflexion (NeurIPS 2023): ReAct plus verbal self-reflection after
-                  failures, kept in an episodic memory (optionally across episodes).
-    independent   Kim et al., Towards a Science of Scaling Agent Systems (2025), "independent": n agents
-                  in parallel, no communication (the nonet variant).
-    centralized   Kim et al. 2025 "centralized"; the orchestrator-worker pattern of AutoGen's group chat
-                  manager (Wu et al. 2023) and MetaGPT's managers: one orchestrator assigns, workers
-                  report, only the orchestrator submits.
-    decentralized Kim et al. 2025 "decentralized"; Du et al., multiagent debate (ICML 2024): peers work,
-                  publish their current results each round, read the others' and revise.
-    hybrid        Kim et al. 2025 "hybrid": an orchestrator, and workers who may also talk to each other.
-    blackboard    Han & Zhang 2025; Salemi et al. 2025: all communication through a shared board; a
-                  control unit reads the board each round and chooses who acts.
-    moa           Wang et al., Mixture-of-Agents (2024): layers of proposers, each layer reading the
-                  previous layer's outputs; an aggregator gives the final answers.
-    metagpt       Hong et al., MetaGPT (ICLR 2024): an assembly line of roles following a standard
-                  operating procedure, publishing structured documents to a shared pool and reading
-                  only the roles they depend on (publish-subscribe).
+How close each design is to its source is stated, not assumed (``Design.fidelity``):
 
-Prompts paraphrase the papers' protocols; nothing in them is specific to a task provider.
+    port            built from the authors' released code: their prompts (quoted, with the code's licence)
+                    and their settings; adapted to tool use where the original answered in text
+    reimplementation  built from the paper's description; no code was released (or found). To be checked
+                    against the paper before publication
+    framework       (netagents/frameworks/) the authors' own framework, driving our tools through an adapter
+
+``Design.deviations`` lists what differs from the source, for a table in the paper. docs/testset.md has the
+same list with the sources.
 """
 
 from __future__ import annotations
@@ -36,6 +25,7 @@ import os
 from dataclasses import dataclass, field, replace
 
 from .tools import briefing, function_tools
+
 
 @dataclass
 class Member:
@@ -70,21 +60,28 @@ class Member:
 
         self.calls += len(results)
         self._left -= len(results)
-        if self.pool is not None:
-            self.pool[0] -= len(results)
         if self._left <= 0 or self.finished():
             return ToolsToFinalOutputResult(is_final_output=True, final_output="pause")
         return ToolsToFinalOutputResult(is_final_output=False)
 
     async def turn(self, message: str, max_calls: int) -> str:
         """Let the agent act for up to ``max_calls`` tool calls, continuing its conversation."""
-        from agents import MaxTurnsExceeded, RunConfig, Runner
-
-        if self.pool is not None:
+        if self.pool is not None:  # reserve from the team's pool (members run concurrently); refund the rest
             max_calls = min(max_calls, self.pool[0])
         if max_calls <= 0 or self.finished():
             return ""
+        if self.pool is not None:
+            self.pool[0] -= max_calls
         self._left = max_calls
+        try:
+            return await self._turn(message, max_calls)
+        finally:
+            if self.pool is not None:
+                self.pool[0] += max(0, self._left)
+
+    async def _turn(self, message: str, max_calls: int) -> str:
+        from agents import MaxTurnsExceeded, RunConfig, Runner
+
         try:
             res = await Runner.run(self.agent, self.history + [{"role": "user", "content": message}],
                                    max_turns=max_calls + 3, run_config=RunConfig(tracing_disabled=True))
@@ -116,9 +113,14 @@ class Member:
         self.tokens[1] += u.output_tokens
         self.llm_requests += u.requests
 
+    def forget(self):
+        """Start a fresh conversation (a new trial); tokens and calls keep counting."""
+        self.history = []
+
     def report(self) -> dict:
         return {"agent": self.name, "tool_calls": self.calls, "llm_requests": self.llm_requests,
                 "input_tokens": self.tokens[0], "output_tokens": self.tokens[1]}
+
 
 
 def _all_over(members) -> bool:
@@ -129,11 +131,18 @@ async def _together(members, message, k):
     await asyncio.gather(*(m.turn(message(m) if callable(message) else message, k) for m in members))
 
 
+SOLUTION = ("Stop and state your current solution: for every task you worked on, what you found and your answer "
+            "or result so far. Do not call tools.")
+
+
 @dataclass
 class Design:
     name: str
-    paper: str
-    variant: str  # the preset variant it runs on: "solo" (single agent), "nonet" or "team"
+    label: str
+    source: str
+    fidelity: str  # "port" | "reimplementation" | "framework"
+    variant: str  # the preset variant it runs on: "solo", "nonet" or "team"
+    deviations: tuple = ()
     rounds: int = 4
 
     async def run(self, env, model, settings, calls: int) -> list[dict]:
@@ -147,12 +156,23 @@ class Design:
     def member(self, env, name, model, settings, protocol="", keep=None) -> Member:
         return Member(env, name, model, settings, protocol, keep, pool=self._pool)
 
+    def card(self) -> dict:
+        return {"name": self.name, "label": self.label, "source": self.source, "fidelity": self.fidelity,
+                "variant": self.variant, "deviations": list(self.deviations)}
 
-# ---------------------------------------------------------------------- single agent
+
+# ====================================================================== ports of released code
+# ReAct: ysymyth/ReAct and the ReAct agent of noahshinn/reflexion (MIT licence). The instruction below is
+# REACT_INSTRUCTION of reflexion/hotpotqa_runs/prompts.py with the three Wikipedia actions replaced by
+# "one of your tools".
+REACT_INSTRUCTION = ("Solve the task with interleaving Thought, Action, Observation steps. Thought can reason about "
+                     "the current situation, and Action is one call of one of your tools; its result is the "
+                     "Observation. You may take as many steps as necessary.")
+
+
 class ReAct(Design):
     async def run(self, env, model, settings, calls):
-        m = self.member(env, next(iter(env.public()["agents"])), model, settings,
-                   "Think step by step about what to do next, then act with one tool call at a time.")
+        m = self.member(env, next(iter(env.public()["agents"])), model, settings, REACT_INSTRUCTION)
         per = -(-calls // self.rounds)
         msg = "Begin."
         for _ in range(self.rounds):
@@ -163,30 +183,43 @@ class ReAct(Design):
         return [m.report()]
 
 
+# Reflexion: noahshinn/reflexion (MIT licence). REFLECT_INSTRUCTION and REFLECTION_HEADER are quoted from
+# hotpotqa_runs/prompts.py (the Docstore variant), with "Finish[<answer>]" read as "submit" and the
+# Docstore API as "an environment". As in ReactReflectAgent.run: after a failed trial the agent reflects,
+# the reflection is added to its memory, and the next trial starts from a fresh scratchpad.
+REFLECT_INSTRUCTION = ("You are an advanced reasoning agent that can improve based on self refection. You will be "
+                       "given a previous reasoning trial in which you were given access to an environment and a "
+                       "task to solve. You were unsuccessful in solving the task either because you submitted a "
+                       "wrong answer, or you used up your set number of reasoning steps. In a few sentences, "
+                       "Diagnose a possible reason for failure and devise a new, concise, high level plan that aims "
+                       "to mitigate the same failure. Use complete sentences.")
+REFLECTION_HEADER = ("You have attempted to answer following question before and failed. The following "
+                     "reflection(s) give a plan to avoid failing to answer the question in the same way you did "
+                     "previously. Use them to improve your strategy of correctly answering the given question.\n")
+
+
 class Reflexion(Design):
     memory_path = ""  # a JSON file: reflections carried from episode to episode (set before running)
 
     async def run(self, env, model, settings, calls):
         name = next(iter(env.public()["agents"]))
         memory = _load(self.memory_path)
-        m = self.member(env, name, model, settings,
-                   "Think step by step, then act with one tool call at a time. After a failure you will be asked "
-                   "to reflect; your reflections are kept and shown to you before you continue.")
+        m = self.member(env, name, model, settings, REACT_INSTRUCTION)
         per = -(-calls // self.rounds)
         seen_fail = 0
-        for r in range(self.rounds):
+        for trial in range(self.rounds):
             if m.finished():
                 break
-            notes = ("Reflections from earlier attempts:\n- " + "\n- ".join(memory[-8:])) if memory else ""
-            await m.turn((notes + "\n\n" if notes else "") + ("Begin." if r == 0 else "Continue."), per)
+            notes = (REFLECTION_HEADER + "Reflections:\n- " + "\n- ".join(memory[-8:]) + "\n\n") if memory else ""
+            await m.turn(notes + ("Begin." if trial == 0 else "Continue with the tasks still open."), per)
             fails = sum(1 for e in env.events() if e.get("kind") == "op" and e.get("agent") == name
                         and e.get("op") == "submit" and not e["obs"].get("ok"))
-            if fails > seen_fail:  # a failed submission since the last reflection: reflect
+            if fails > seen_fail or not m.finished():  # a failed trial: a wrong submission, or steps used up
                 seen_fail = fails
-                text = await m.say("A submission was rejected. In two or three sentences, say what went wrong and "
-                                   "what you will do differently. Do not call tools.")
+                text = await m.say(REFLECT_INSTRUCTION + "\n\nReflection:")
                 if text:
-                    memory.append(text.strip()[:600])
+                    memory.append(text.strip()[:800])
+                m.forget()  # a new trial starts from a fresh scratchpad, with the reflections
         _save(self.memory_path, memory)
         return [m.report()]
 
@@ -204,11 +237,87 @@ def _save(path, memory):
             json.dump(memory[-50:], f, indent=1)
 
 
-# ---------------------------------------------------------------------- teams
+# Multiagent debate: composable-models/llm_multiagent_debate (no licence file: the prompt is paraphrased,
+# not copied). Its gsm/gen_gsm.py: 3 agents, 2 rounds; in every round after the first, each agent is shown
+# the other agents' solutions ("These are the solutions to the problem from other agents ... Using the
+# solutions from other agents as additional information, can you provide your answer ...?") and answers
+# again. Here every agent works with tools; its solution is what it states at the end of a round, and the
+# solutions travel as messages through the network (charged and subject to its topology).
+class Debate(Design):
+    async def run(self, env, model, settings, calls):
+        names = list(env.public()["agents"])
+        ms = {a: self.member(env, a, model, settings, REACT_INSTRUCTION) for a in names}
+        per = -(-calls // (len(names) * self.rounds))
+        for r in range(self.rounds):
+            if _all_over(ms.values()):
+                break
+            if r == 0:
+                await _together(list(ms.values()), "Can you solve the tasks? Explain your reasoning.", per)
+            else:
+                async def again(m):
+                    got = env.step(m.name, "inbox", {}).get("messages", [])
+                    others = "".join(f"\n\n One agent solution: ```{x['text']}```" for x in got
+                                     if x["text"].startswith("solution:"))
+                    await m.turn("These are the solutions to the tasks from other agents:" + others +
+                                 "\n\n Using the solutions from other agents as additional information, can you "
+                                 "provide your answer to the tasks? Submit the answers you are confident in.", per)
+                await asyncio.gather(*(again(m) for m in ms.values()))
+            if r < self.rounds - 1:
+                for m in ms.values():
+                    text = await m.say(SOLUTION)
+                    env.step(m.name, "send", {"to": "*", "text": "solution: " + text[:3000]})
+        return [m.report() for m in ms.values()]
+
+
+# Mixture-of-Agents: togethercomputer/MoA (Apache-2.0). AGGREGATE is the system prompt of
+# utils.inject_references_to_messages, quoted. Layers: in layer 1 every proposer answers on its own; in
+# later layers every proposer is given the previous layer's responses with that prompt; the last layer is
+# one aggregator. The repository's default is rounds=1 (two layers: four proposers and one aggregator).
+AGGREGATE = ("You have been provided with a set of responses from various open-source models to the latest user "
+             "query. Your task is to synthesize these responses into a single, high-quality response. It is "
+             "crucial to critically evaluate the information provided in these responses, recognizing that some "
+             "of it may be biased or incorrect. Your response should not simply replicate the given answers but "
+             "should offer a refined, accurate, and comprehensive reply to the instruction. Ensure your response "
+             "is well-structured, coherent, and adheres to the highest standards of accuracy and reliability."
+             "\n\nResponses from models:")
+
+
+class MixtureOfAgents(Design):
+    async def run(self, env, model, settings, calls):
+        names = list(env.public()["agents"])
+        ms = {a: self.member(env, a, model, settings, REACT_INSTRUCTION) for a in names}
+        agg = ms[names[0]]
+        layers = self.rounds  # proposer layers; then the aggregator
+        per = -(-calls // (len(names) * layers + len(names)))
+
+        def refs(m):
+            got = env.step(m.name, "inbox", {}).get("messages", [])
+            return "".join(f"\n{i + 1}. {x['text'][9:]}" for i, x in enumerate(
+                [x for x in got if x["text"].startswith("response:")]))
+
+        for layer in range(layers):
+            if _all_over(ms.values()):
+                break
+            if layer == 0:
+                await _together(list(ms.values()), "Work on the tasks.", per)
+            else:
+                await asyncio.gather(*(m.turn(AGGREGATE + refs(m) + "\n\nWork on the tasks.", per)
+                                       for m in ms.values()))
+            for m in ms.values():  # this layer's responses go to the next layer
+                text = await m.say(SOLUTION)
+                env.step(m.name, "send", {"to": "*", "text": "response: " + text[:3000]})
+        await agg.turn(AGGREGATE + refs(agg) + "\n\nSynthesise the final answers and submit them.", per * len(names))
+        return [m.report() for m in ms.values()]
+
+
+# ====================================================================== reimplementations from papers
+# Kim et al., Towards a Science of Scaling Agent Systems (arXiv 2512.08296): single, independent,
+# centralized, decentralized and hybrid architectures under standardised tools, prompts and compute. No
+# code was found; these follow the paper's names and summaries and must be checked against the paper.
 class Independent(Design):
     async def run(self, env, model, settings, calls):
-        ms = [self.member(env, a, model, settings, "You work alone; nobody else's results reach you.")
-              for a in env.public()["agents"]]
+        ms = [self.member(env, a, model, settings, REACT_INSTRUCTION + " You work alone; nobody else's "
+                          "results reach you.") for a in env.public()["agents"]]
         per = -(-calls // (len(ms) * self.rounds))
         for r in range(self.rounds):
             if _all_over(ms):
@@ -234,9 +343,9 @@ class Centralized(Design):
         o = names[0]
         peers = ("You may also message other workers when that saves work." if self.peers_talk else
                  "Talk only to the orchestrator.")
-        boss = self.member(env, o, model, settings, ORCH)
-        workers = [self.member(env, a, model, settings, WORK.format(o=o, peers=peers), keep=lambda op: op != "submit")
-                   for a in names[1:]]
+        boss = self.member(env, o, model, settings, REACT_INSTRUCTION + "\n" + ORCH)
+        workers = [self.member(env, a, model, settings, REACT_INSTRUCTION + "\n" + WORK.format(o=o, peers=peers),
+                               keep=lambda op: op != "submit") for a in names[1:]]
         per = -(-calls // (len(names) * self.rounds))
         for r in range(self.rounds):
             if _all_over([boss] + workers):
@@ -252,26 +361,26 @@ class Hybrid(Centralized):
     peers_talk = True
 
 
-DEBATE = ("You are one of several peers working the same problem; there is no leader. Work on the tasks with "
-          "your tools. At the end of every round you will be asked to publish your current results on the "
-          "board; at the start of the next you read the others' posts, critique them, and update your own "
-          "answers. Submit a task when you are confident and, where the others have results, when they agree.")
+PEERS = ("You are one of several peers working the same problem; there is no leader. Work on the tasks with "
+         "your tools and share what you find with your neighbours (send) or everyone (post). Read what others "
+         "share before repeating their work. Anyone may submit.")
 
 
 class Decentralized(Design):
     async def run(self, env, model, settings, calls):
-        ms = [self.member(env, a, model, settings, DEBATE) for a in env.public()["agents"]]
-        per = max(1, -(-calls // (len(ms) * self.rounds)) - 1)
+        ms = [self.member(env, a, model, settings, REACT_INSTRUCTION + "\n" + PEERS) for a in env.public()["agents"]]
+        per = -(-calls // (len(ms) * self.rounds))
         for r in range(self.rounds):
             if _all_over(ms):
                 break
-            await _together(ms, "Begin." if r == 0 else "Read the board: the others' results from the last "
-                            "round. Critique them, update yours, and continue.", per)
-            await _together(ms, "End of round: post your current results and answers on the board "
-                            f"(tag round{r + 1}).", 1)
+            await _together(ms, "Begin." if r == 0 else "Read what the others shared, then continue.", per)
         return [m.report() for m in ms]
 
 
+# Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on Blackboard Architecture (arXiv 2507.01701):
+# a control unit, a blackboard and agents; the control unit picks the agents that act from the board's
+# contents, until consensus. The authors' code was announced but not found; their agent roles (planner,
+# critic, decider, ...) are not reproduced here.
 BOARD = ("Everything you share goes on the shared board (post, and board to read); there are no direct "
          "messages. A control unit reads the board each round and decides who acts next. When you are called, "
          "read the board first, contribute what you can with your tools, and post what you found. Anyone may "
@@ -281,83 +390,66 @@ BOARD = ("Everything you share goes on the shared board (post, and board to read
 class Blackboard(Design):
     async def run(self, env, model, settings, calls):
         names = list(env.public()["agents"])
-        ms = {a: self.member(env, a, model, settings, BOARD, keep=lambda op: op not in ("send", "inbox"))
-              for a in names}
+        ms = {a: self.member(env, a, model, settings, REACT_INSTRUCTION + "\n" + BOARD,
+                             keep=lambda op: op not in ("send", "inbox")) for a in names}
         control = ms[names[0]]
         per = -(-calls // (len(names) * self.rounds))
         for r in range(self.rounds):
             if _all_over(ms.values()):
                 break
             posts = env.step(names[0], "board", {}).get("posts", []) if r else []
-            roles = env.public()["agents"]
             pick = await control.say(
                 "You are the control unit. The board:\n" + json.dumps(posts[-20:])[:4000] +
-                f"\nAgents and roles: {json.dumps(roles)}.\nWhich agents should act next? Answer with their names "
-                "only, separated by spaces.")
-            chosen = [a for a in names if a in pick.split() or a in pick] or names
+                f"\nAgents and roles: {json.dumps(env.public()['agents'])}.\nWhich agents should act next? Answer "
+                "with their names only, separated by spaces.")
+            chosen = [a for a in names if a in pick.split()] or names
             await _together([ms[a] for a in chosen], "You were chosen to act: read the board and contribute.",
                             per * len(names) // len(chosen))
         return [m.report() for m in ms.values()]
 
 
-class MixtureOfAgents(Design):
-    async def run(self, env, model, settings, calls):
-        names = list(env.public()["agents"])
-        ms = [self.member(env, a, model, settings,
-                     "You are a proposer in a layered team. In each layer you work on the tasks and write your "
-                     "results to the shared store under the key you are given; from the second layer on you "
-                     "first read the previous layer's results (keys) and improve on them.") for a in names]
-        agg = ms[0]
-        per = -(-calls // (len(names) * (self.rounds + 1)))
-        for layer in range(self.rounds):
-            if _all_over(ms):
-                break
-            prev = f"Read the previous layer's results: keys moa/layer{layer}/<agent>. " if layer else ""
-            await _together(ms, lambda m: f"Layer {layer + 1}. {prev}Work on the tasks, then put your results "
-                            f"under key moa/layer{layer + 1}/{m.name}.", per)
-        await agg.turn(f"You are the aggregator. Read every moa/layer{self.rounds}/<agent> result, synthesise the "
-                       "best answer for each task, and submit them.", per * len(names))
-        return [m.report() for m in ms]
-
-
-class MetaGPT(Design):
-    async def run(self, env, model, settings, calls):
-        pub = env.public()
-        names = list(pub["agents"])
-        order = list(dict.fromkeys(pub["agents"].values()))  # the provider's roles, in its order: the SOP
-        ms = {a: self.member(env, a, model, settings,
-                        "Your team follows a standard operating procedure: roles act one after another, like an "
-                        "assembly line. Publish your work as a structured document in the shared store under "
-                        "sop/<your role>/<your name> (what you did, results, open questions for the next role), "
-                        "and read only the documents of the roles before you.") for a in names}
-        per = -(-calls // (len(names) * self.rounds))
-        for r in range(self.rounds):
-            for i, role in enumerate(order):
-                group = [ms[a] for a in names if pub["agents"][a] == role]
-                if _all_over(ms.values()):
-                    break
-                before = ", ".join(f"sop/{x}/" for x in order[:i]) or "none yet"
-                await _together(group, f"Cycle {r + 1}, your step ({role}). Read the documents of earlier roles "
-                                f"({before}), do your part, submit tasks you can finish, and publish your "
-                                f"document.", per)
-        return [m.report() for m in ms.values()]
-
-
 DESIGNS: dict[str, Design] = {d.name: d for d in [
-    ReAct("react", "Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023", "solo"),
-    Reflexion("reflexion", "Shinn et al., Reflexion: Language Agents with Verbal Reinforcement Learning, "
-                           "NeurIPS 2023", "solo"),
-    Independent("independent", "Kim et al., Towards a Science of Scaling Agent Systems, arXiv 2512.08296 "
-                               "(2025): independent", "nonet"),
-    Centralized("centralized", "Kim et al. 2025: centralized; Wu et al., AutoGen, arXiv 2308.08155 (2023)",
-                "team"),
-    Decentralized("decentralized", "Kim et al. 2025: decentralized; Du et al., Improving Factuality and "
-                                   "Reasoning through Multiagent Debate, ICML 2024", "team"),
-    Hybrid("hybrid", "Kim et al. 2025: hybrid", "team"),
-    Blackboard("blackboard", "Han & Zhang, LLM Multi-Agent Systems Based on Blackboard Architecture, arXiv "
-                             "2507.01701 (2025); Salemi et al., arXiv 2510.01285 (2025)", "team"),
-    MixtureOfAgents("moa", "Wang et al., Mixture-of-Agents Enhances Large Language Model Capabilities, arXiv "
-                           "2406.04692 (2024)", "team", rounds=3),
-    MetaGPT("metagpt", "Hong et al., MetaGPT: Meta Programming for a Multi-Agent Collaborative Framework, "
-                       "ICLR 2024", "team", rounds=3),
+    ReAct("react", "ReAct", "Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; "
+          "code: ysymyth/ReAct, noahshinn/reflexion (MIT)", "port", "solo",
+          ("native tool calls instead of Thought/Action text lines", "no few-shot examples (theirs are task-specific)")),
+    Reflexion("reflexion", "Reflexion", "Shinn et al., Reflexion: Language Agents with Verbal Reinforcement "
+              "Learning, NeurIPS 2023; code: noahshinn/reflexion (MIT)", "port", "solo",
+              ("trials share one episode and its budget instead of re-running the same task",
+               "a trial fails on a wrong submission or when its step quota runs out; the environment's verdict is "
+               "the evaluator", "no few-shot reflection examples")),
+    Debate("debate", "Multiagent debate", "Du et al., Improving Factuality and Reasoning in Language Models through "
+           "Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt "
+           "paraphrased)", "port", "team",
+           ("agents use tools between rounds; a solution is what an agent states at the end of a round",
+            "solutions travel as network messages (charged, limited to neighbours)",
+            "agents submit themselves instead of a majority vote over final answers",
+            "team size is the preset's, not 3"), rounds=2),
+    MixtureOfAgents("moa", "Mixture-of-Agents", "Wang et al., Mixture-of-Agents Enhances Large Language Model "
+                    "Capabilities, arXiv 2406.04692 (2024); code: togethercomputer/MoA (Apache-2.0)", "port", "team",
+                    ("one model in every position instead of different open-source models",
+                     "proposers use tools; their responses travel as network messages",
+                     "the aggregate prompt is a user message, not a system message",
+                     "the aggregator is one of the team, with its role's tools"), rounds=1),
+    Independent("independent", "Independent", "Kim et al., Towards a Science of Scaling Agent Systems, arXiv "
+                "2512.08296 (2025)", "reimplementation", "nonet",
+                ("details of aggregation not checked against the paper",)),
+    Centralized("centralized", "Centralized", "Kim et al. 2025", "reimplementation", "team",
+                ("orchestrator protocol written from the paper's summary; prompts are ours",)),
+    Decentralized("decentralized", "Decentralized", "Kim et al. 2025", "reimplementation", "team",
+                  ("peer protocol written from the paper's summary; prompts are ours",)),
+    Hybrid("hybrid", "Hybrid", "Kim et al. 2025", "reimplementation", "team",
+           ("written from the paper's summary; prompts are ours",)),
+    Blackboard("blackboard", "Blackboard", "Han & Zhang, Exploring Advanced LLM Multi-Agent Systems Based on "
+               "Blackboard Architecture, arXiv 2507.01701 (2025)", "reimplementation", "team",
+               ("the paper's agent roles are not reproduced", "one round per control step, a fixed number of rounds "
+                "instead of until consensus", "code not released at the time of writing")),
 ]}
+
+
+def cards_markdown() -> str:
+    """The table of designs, their sources, fidelity and deviations (for docs/testset.md and the paper)."""
+    rows = ["| design | source | fidelity | runs on | differs from the source |", "|---|---|---|---|---|"]
+    for d in DESIGNS.values():
+        rows.append(f"| `{d.name}` {d.label} | {d.source} | {d.fidelity} | {d.variant} | "
+                    + "; ".join(d.deviations) + " |")
+    return "\n".join(rows)
