@@ -306,3 +306,25 @@ def test_runs_resume_and_summaries_merge(tmp_path):
     assert len(rows) == 12 and len(load_runs(str(tmp_path / "sas" / "runs.jsonl"))) == 6
     text = write_summary(str(tmp_path), rows, "compat")
     assert "reproduced" in text and (tmp_path / "hypotheses.json").exists()
+
+
+def test_history_is_trimmed_without_orphan_tool_results():
+    from netagents.designs import _tokens, trim
+
+    h = [{"role": "user", "content": "the task"}]
+    for i in range(40):
+        h += [{"type": "function_call", "call_id": f"c{i}", "name": "tasks", "arguments": "{}"},
+              {"type": "function_call_output", "call_id": f"c{i}", "output": "x" * 400}]
+    out, cut = trim(h, 2000)
+    assert cut and out[0] == h[0] and _tokens(out) <= 2000
+    assert out[2].get("type") != "function_call_output"  # after the note, never a result without its call
+    assert trim(h[:3], 2000) == (h[:3], False)
+
+
+def test_llm_settings_are_shared():
+    from netagents.llm import LLMConfig
+
+    cfg = LLMConfig(model="qwen3-8b", thinking=True, temperature=0.6, top_p=0.95, top_k=20, max_tokens=4096)
+    s = cfg.sampling()
+    assert s["extra_body"] == {"top_k": 20, "chat_template_kwargs": {"enable_thinking": True}}
+    assert s["temperature"] == 0.6 and s["max_tokens"] == 4096

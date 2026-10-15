@@ -14,6 +14,13 @@ Teams (autogen_agentchat 0.7.5, used as released; only the participants and thei
 
 Every member is an AssistantAgent with the operations of its role as tools. Tool calls come out of one pool
 of ``--calls``; when it is empty, or the episode is over, the team is stopped.
+
+Sampling and thinking are those of every other design (netagents/llm.py LLMConfig). Each member and the
+selector see the task and the most recent messages of the shared conversation (AutoGen's own
+HeadAndTailChatCompletionContext / BufferedChatCompletionContext), so a long run does not overflow the
+model's context window, which ended most AutoGen runs of 20261013-qwen3-8b-ea182dd. Magentic-One's ledgers
+are requested as structured JSON (the server's guided decoding), which Qwen3-8B could not produce reliably
+free-form.
 """
 
 from __future__ import annotations
@@ -27,7 +34,10 @@ from typing import Any
 from pydantic import ConfigDict, create_model
 
 from netagents.client import RemoteEnv
+from netagents.llm import LLMConfig
 from netagents.tools import briefing
+
+RECENT = int(os.environ.get("NETAGENTS_AUTOGEN_RECENT", "30"))  # messages of the conversation each model sees
 
 
 def make_tools(env, agent, pool, stop):
@@ -63,15 +73,15 @@ async def main_async(a):
     from autogen_agentchat.agents import AssistantAgent
     from autogen_agentchat.conditions import ExternalTermination, MaxMessageTermination
     from autogen_agentchat.teams import MagenticOneGroupChat, RoundRobinGroupChat, SelectorGroupChat
+    from autogen_core.model_context import BufferedChatCompletionContext, HeadAndTailChatCompletionContext
     from autogen_ext.models.openai import OpenAIChatCompletionClient
 
     env = RemoteEnv(a.remote)
+    cfg = LLMConfig()
     client = OpenAIChatCompletionClient(
-        model=os.environ.get("WS_MODEL", "qwen3-8b"), base_url=os.environ.get("WS_BASE_URL", "http://localhost:8000/v1"),
-        api_key=os.environ.get("WS_API_KEY", "EMPTY"), temperature=0.3,
-        max_tokens=int(os.environ.get("WS_MAX_TOKENS", "1024")),
-        model_info={"vision": False, "function_calling": True, "json_output": False, "family": "unknown",
-                    "structured_output": False})
+        model=cfg.model, base_url=cfg.base_url, api_key=cfg.api_key, **cfg.sampling(),
+        model_info={"vision": False, "function_calling": True, "json_output": True, "family": "unknown",
+                    "structured_output": True})
     pool, stop_cond = [a.calls], ExternalTermination()
 
     class Stop:
@@ -81,13 +91,15 @@ async def main_async(a):
     names = list(env.public()["agents"])
     members = [AssistantAgent(n, client, tools=make_tools(env, n, pool, Stop()), system_message=briefing(env, n),
                               description=f"{n}, the team's {env.public()['agents'][n]}",
-                              reflect_on_tool_use=False, max_tool_iterations=a.tool_iterations)
+                              reflect_on_tool_use=False, max_tool_iterations=a.tool_iterations,
+                              model_context=HeadAndTailChatCompletionContext(head_size=1, tail_size=RECENT))
                for n in names]
     term = stop_cond | MaxMessageTermination(a.calls * 4)
     if a.team == "roundrobin":
         team = RoundRobinGroupChat(members, termination_condition=term)
     elif a.team == "selector":
-        team = SelectorGroupChat(members, client, termination_condition=term)
+        team = SelectorGroupChat(members, client, termination_condition=term,
+                                 model_context=BufferedChatCompletionContext(buffer_size=RECENT))
     else:
         # max_stalls=3: the paper re-plans once the stall counter exceeds 2 (Sec. 4.1, inner loop)
         team = MagenticOneGroupChat(members, client, termination_condition=term, max_turns=a.calls, max_stalls=3)

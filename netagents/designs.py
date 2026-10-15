@@ -27,9 +27,33 @@ from dataclasses import dataclass, field, replace
 from .tools import briefing, function_tools
 
 
+CONTEXT_TOKENS = int(os.environ.get("WS_CONTEXT_TOKENS", "40000"))  # history kept before a turn (estimated)
+
+
+def _tokens(items) -> int:
+    """A rough token count of conversation items (3.5 characters a token), for trimming only."""
+    return int(len(json.dumps(items, default=str)) / 3.5)
+
+
+def trim(history: list, limit: int) -> tuple[list, bool]:
+    """Drop the oldest steps of a conversation until it fits ``limit`` tokens, keeping its first message
+    (the task) and never leaving a tool result without its call. Returns (history, trimmed)."""
+    if _tokens(history) <= limit or len(history) < 3:
+        return history, False
+    head, rest = history[:1], history[1:]
+    note = {"role": "user", "content": "[Earlier steps were dropped to fit the context window. Use your tools "
+                                       "(tasks, status, board, inbox, ...) to recall what you need.]"}
+    while rest and _tokens(head + [note] + rest) > limit:
+        rest = rest[1:]
+    while rest and isinstance(rest[0], dict) and rest[0].get("type") == "function_call_output":
+        rest = rest[1:]  # its call was dropped
+    return head + [note] + rest, True
+
+
 @dataclass
 class Member:
-    """One LLM agent: its conversation persists across the segments a design schedules."""
+    """One LLM agent: its conversation persists across the segments a design schedules. The history is
+    trimmed to ``CONTEXT_TOKENS`` before each turn (oldest steps first); errors are recorded, not raised."""
 
     env: object
     name: str
@@ -42,6 +66,9 @@ class Member:
     tokens: list = field(default_factory=lambda: [0, 0])
     calls: int = 0
     llm_requests: int = 0
+    errors: list = field(default_factory=list)
+    trims: int = 0
+    peak_context: int = 0  # the largest history sent at the start of a turn (estimated tokens)
 
     def __post_init__(self):
         from agents import Agent
@@ -82,13 +109,21 @@ class Member:
     async def _turn(self, message: str, max_calls: int) -> str:
         from agents import MaxTurnsExceeded, RunConfig, Runner
 
+        self.history, cut = trim(self.history, CONTEXT_TOKENS)
+        self.trims += cut
+        start = self.history + [{"role": "user", "content": message}]
+        self.peak_context = max(self.peak_context, _tokens(start))
         try:
-            res = await Runner.run(self.agent, self.history + [{"role": "user", "content": message}],
-                                   max_turns=max_calls + 3, run_config=RunConfig(tracing_disabled=True))
+            res = await Runner.run(self.agent, start, max_turns=max_calls + 3,
+                                   run_config=RunConfig(tracing_disabled=True))
         except MaxTurnsExceeded:
             return ""
         except Exception as e:  # noqa: BLE001 (one broken call must not stop the team)
-            return f"error: {type(e).__name__}: {e}"[:300]
+            self.errors.append(f"{type(e).__name__}: {e}"[:300])
+            if "context" in str(e).lower() and "length" in str(e).lower():  # too long after all: halve it
+                self.history, _ = trim(self.history, _tokens(self.history) // 2)
+                self.trims += 1
+            return f"error: {self.errors[-1]}"
         self._account(res)
         self.history = res.to_input_list()
         return str(res.final_output or "")
@@ -99,10 +134,13 @@ class Member:
 
         talker = Agent(name=f"{self.name}-text", instructions=self.agent.instructions, model=self.model,
                        model_settings=replace(self.settings, tool_choice=None))
+        self.history, cut = trim(self.history, CONTEXT_TOKENS)
+        self.trims += cut
         try:
             res = await Runner.run(talker, self.history + [{"role": "user", "content": message}], max_turns=1,
                                    run_config=RunConfig(tracing_disabled=True))
-        except Exception:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
+            self.errors.append(f"{type(e).__name__}: {e}"[:300])
             return ""
         self._account(res)
         return str(res.final_output or "")
@@ -119,7 +157,9 @@ class Member:
 
     def report(self) -> dict:
         return {"agent": self.name, "tool_calls": self.calls, "llm_requests": self.llm_requests,
-                "input_tokens": self.tokens[0], "output_tokens": self.tokens[1]}
+                "input_tokens": self.tokens[0], "output_tokens": self.tokens[1], "errors": len(self.errors),
+                "error": self.errors[-1] if self.errors else "", "trims": self.trims,
+                "peak_context": self.peak_context}
 
 
 
@@ -429,6 +469,7 @@ class Talker:
     tokens: list = field(default_factory=lambda: [0, 0])
     llm_requests: int = 0
     name: str = "talker"
+    errors: list = field(default_factory=list)
 
     async def ask(self, system: str, user: str) -> str:
         from agents import Agent, RunConfig, Runner
@@ -437,7 +478,8 @@ class Talker:
                     model_settings=replace(self.settings, tool_choice=None))
         try:
             res = await Runner.run(bot, user, max_turns=1, run_config=RunConfig(tracing_disabled=True))
-        except Exception:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
+            self.errors.append(f"{type(e).__name__}: {e}"[:300])
             return ""
         u = res.context_wrapper.usage
         self.tokens[0] += u.input_tokens
@@ -447,7 +489,8 @@ class Talker:
 
     def report(self) -> dict:
         return {"agent": self.name, "tool_calls": 0, "llm_requests": self.llm_requests,
-                "input_tokens": self.tokens[0], "output_tokens": self.tokens[1]}
+                "input_tokens": self.tokens[0], "output_tokens": self.tokens[1], "errors": len(self.errors),
+                "error": self.errors[-1] if self.errors else "", "trims": 0, "peak_context": 0}
 
 
 def _json(text: str):

@@ -63,7 +63,17 @@ def failure_signals(raw) -> dict:
             "stopped_early": 0 if raw.solved else sum(1 for a in raw.agents.values() if a.budget > 0)}
 
 
-def run_one(design, case, seed, model, settings, calls, route: str | None = None) -> dict:
+def save_trace(raw, path: str):
+    """Every event of a run (gzipped JSON lines): what each agent did and what it saw."""
+    import gzip
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with gzip.open(path, "wt") as f:
+        for e in raw.events:
+            f.write(json.dumps(e, default=str) + "\n")
+
+
+def run_one(design, case, seed, model, settings, calls, route: str | None = None, trace: str = "") -> dict:
     route = route or case.route
     if design.network_route:  # a copy: the registry's designs stay as they are
         design = replace(design, route=route)
@@ -71,8 +81,12 @@ def run_one(design, case, seed, model, settings, calls, route: str | None = None
     raw.reset(seed)
     reports = asyncio.run(design.play(LocalEnv(raw), model, settings, calls))
     chan = design.chan.report() if hasattr(design, "chan") else {"route": "framework"}
+    if trace:
+        save_trace(raw, trace)
     m = raw.metrics()
     msgs = Counter(e["op"] for e in raw.events if e.get("kind") == "op" and e["obs"].get("ok"))
+    ops = Counter(e["op"] for e in raw.events if e.get("kind") == "op")
+    failed = Counter(e["op"] for e in raw.events if e.get("kind") == "op" and not e["obs"].get("ok"))
     return {"design": design.name, "case": case.id, "seed": seed, "variant": design.variant, "call_budget": calls,
             "agents": len(raw.agents), "solved": m["solved"], "done": m["done"], "tasks": m["tasks"],
             "completion": round(m["done"] / max(1, m["tasks"]), 3), "actions": m["actions"], "rounds": m["rounds"],
@@ -82,7 +96,11 @@ def run_one(design, case, seed, model, settings, calls, route: str | None = None
             "output_tokens": sum(r["output_tokens"] for r in reports),
             "messages": msgs["send"], "posts": msgs["post"], "store_writes": msgs["put"],
             "route": chan["route"] if design.network_route else "framework", "channel": chan,
-            **failure_signals(raw), "members": reports}
+            **failure_signals(raw), "ops": dict(ops), "failed_ops": dict(failed),
+            "llm_errors": sum(r.get("errors", 0) for r in reports),
+            "context_trims": sum(r.get("trims", 0) for r in reports),
+            "peak_context": max([r.get("peak_context", 0) for r in reports] or [0]),
+            "trace": os.path.basename(trace) if trace else "", "members": reports}
 
 
 def summarize(rows: list[dict]) -> str:
@@ -103,6 +121,23 @@ def summarize(rows: list[dict]) -> str:
                    f" | {st.mean(r['wrong_submissions'] for r in mine):.1f}"
                    f" | {st.mean(r['duplicate_work'] for r in mine):.1f} |")
     return "\n".join(out) + "\n\nEach cell: share of seeds solved (share of tasks done).\n"
+
+
+def diagnostics(rows: list[dict]) -> str:
+    """Per design: how runs went wrong (LLM errors, trimmed context, submissions) and the most used tools."""
+    out = ["| design | runs | runs with LLM errors | context trims | peak context (k tok.) | submissions | "
+           "most used operations |", "|---|---|---|---|---|---|---|"]
+    for d in dict.fromkeys(r["design"] for r in rows):
+        mine = [r for r in rows if r["design"] == d]
+        ops = Counter()
+        for r in mine:
+            ops.update(r.get("ops", {}))
+        errs = sum(1 for r in mine if r.get("llm_errors") or any(m.get("error") for m in r.get("members", [])))
+        top = ", ".join(f"{k} {v / len(mine):.0f}" for k, v in ops.most_common(5)) or "(not recorded)"
+        out.append(f"| {d} | {len(mine)} | {errs} | {st.mean(r.get('context_trims', 0) for r in mine):.1f} | "
+                   f"{max(r.get('peak_context', 0) for r in mine) / 1000:.0f} | "
+                   f"{st.mean(r.get('done', 0) + r['wrong_submissions'] for r in mine):.1f} | {top} |")
+    return "\n## Diagnostics\n\n" + "\n".join(out) + "\n\nOperations: mean calls per run.\n"
 
 
 def check_hypotheses(rows: list[dict]) -> list[dict]:
@@ -153,7 +188,7 @@ def write_summary(out: str, rows: list[dict], title: str) -> str:
     if checks:
         with open(os.path.join(out, "hypotheses.json"), "w") as f:
             json.dump(checks, f, indent=1)
-    text = summarize(rows) + hypotheses_markdown(checks)
+    text = summarize(rows) + hypotheses_markdown(checks) + diagnostics(rows)
     with open(os.path.join(out, "summary.md"), "w") as f:
         f.write(f"# {title}\n\n" + text)
     return text
@@ -167,6 +202,7 @@ def main():
     ap.add_argument("--cases", nargs="*", default=None, help="only these case ids")
     ap.add_argument("--seeds", type=int, default=None, help="only the first N seeds of each case")
     ap.add_argument("--calls-per-member", type=int, default=CALLS_PER_MEMBER)
+    ap.add_argument("--traces", type=int, default=1, help="save every event of the first N seeds of each case")
     ap.add_argument("--route", choices=["case", "framework", "network"], default="case",
                     help="how the designs' messages travel (default: as the case's track says)")
     ap.add_argument("--out", default="results/net/eval")
@@ -196,13 +232,16 @@ def main():
         if a.cases and case.id not in a.cases:
             continue
         calls = a.calls_per_member * case.team_size()
-        for seed in case.seeds[:a.seeds] if a.seeds else case.seeds:
+        for k, seed in enumerate(case.seeds[:a.seeds] if a.seeds else case.seeds):
             for d in designs:
                 route = None if a.route == "case" else a.route
                 if (d.name, case.id, seed, (route or case.route) if d.network_route else "framework") in done:
                     continue
                 try:
-                    r = {"model": cfg.model, "suite": a.suite, **run_one(d, case, seed, model, settings, calls, route)}
+                    r = {"model": cfg.model, "suite": a.suite, **run_one(
+                        d, case, seed, model, settings, calls, route,
+                        os.path.join(a.out, "traces", f"{d.name}__{case.id.replace('/', '_')}__{seed}.jsonl.gz")
+                        if k < a.traces else "")}
                 except Exception as e:  # noqa: BLE001 (one broken run must not stop the job; a rerun retries it)
                     print(f"{case.id} seed {seed} {d.name} FAILED: {type(e).__name__}: {e}", flush=True)
                     continue
@@ -211,7 +250,8 @@ def main():
                     f.write(json.dumps(r) + "\n")
                 print(f"{case.id:32s} seed {seed:3d} {d.name:13s} solved {r['solved']!s:5s} "
                       f"done {r['done']}/{r['tasks']} calls {r['llm_tool_calls']} "
-                      f"tokens {r['input_tokens'] + r['output_tokens']}", flush=True)
+                      f"tokens {r['input_tokens'] + r['output_tokens']} errors {r['llm_errors']} "
+                      f"ops {dict(Counter(r['ops']).most_common(4))}", flush=True)
     if rows:
         print(write_summary(a.out, rows, f"{a.suite} ({cfg.model})"))
 

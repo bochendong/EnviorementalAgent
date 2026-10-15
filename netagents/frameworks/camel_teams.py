@@ -17,9 +17,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 
 from netagents.client import RemoteEnv
+from netagents.llm import LLMConfig
 from netagents.tools import briefing
 
 
@@ -74,12 +74,11 @@ def main():
 
     env = RemoteEnv(a.remote)
     me = next(iter(env.public()["agents"]))
-    model = ModelFactory.create(model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL,
-                                model_type=os.environ.get("WS_MODEL", "qwen3-8b"),
-                                url=os.environ.get("WS_BASE_URL", "http://localhost:8000/v1"),
-                                api_key=os.environ.get("WS_API_KEY", "EMPTY"), token_counter=offline_counter(),
-                                model_config_dict={"temperature": 0.3,
-                                                   "max_tokens": int(os.environ.get("WS_MAX_TOKENS", "1024"))})
+    cfg = LLMConfig()  # the sampling of every other design; thinking follows the server's chat template
+    model = ModelFactory.create(model_platform=ModelPlatformType.OPENAI_COMPATIBLE_MODEL, model_type=cfg.model,
+                                url=cfg.base_url, api_key=cfg.api_key, token_counter=offline_counter(),
+                                model_config_dict={"temperature": cfg.temperature, "top_p": cfg.top_p,
+                                                   "max_tokens": cfg.max_tokens})
     pool = [a.calls]
     task = briefing(env, me) + "\nSolve the tasks: list them with 'tasks' and submit results with 'submit'."
     society = RolePlaying(assistant_role_name="Problem solver with the team's tools", user_role_name="Instructor",

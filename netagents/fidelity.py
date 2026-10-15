@@ -10,6 +10,10 @@ shuffle of the authors' gsm/gen_gsm.py (random.seed(0)). Four arms, one model, s
     port-single       our ReAct design on the question as a one-task math problem (solo)
     port-debate       our debate design on the same, 3 agents, 2 rounds
 
+Every arm uses the same model settings (netagents/llm.py: Qwen3's thinking mode and its sampling), so the
+official and ported arms differ only in protocol and harness. (In 20261013-qwen3-8b-ea182dd they did not:
+the official arms ran with the chat template's default, thinking on, and the ports with thinking off.)
+
 The authors' module is fetched from GitHub at run time and imported (it only defines functions at import);
 nothing of it is copied into this repository. Every arm is scored the same way: the last \\boxed{} number
 (else the last number) against the reference, majority over agents where there are several; an answer
@@ -80,7 +84,7 @@ def vote(preds: list) -> str | None:
 
 
 # ---------------------------------------------------------------- the authors' protocol
-def official(qs, agents: int, rounds: int, module, client, model: str) -> list[bool]:
+def official(qs, agents: int, rounds: int, module, client, cfg) -> list[bool]:
     out = []
     for q in qs:
         ctx = [[{"role": "user", "content": FIRST.format(q["question"])}] for _ in range(agents)]
@@ -88,7 +92,7 @@ def official(qs, agents: int, rounds: int, module, client, model: str) -> list[b
             for i, c in enumerate(ctx):
                 if r != 0:
                     c.append(module.construct_message(ctx[:i] + ctx[i + 1:], q["question"], 2 * r - 1))
-                res = client.chat.completions.create(model=model, messages=c, n=1)
+                res = client.chat.completions.create(model=cfg.model, messages=c, n=1, **cfg.sampling())
                 c.append({"role": "assistant", "content": res.choices[0].message.content})
         out.append(correct(vote([parse(c[-1]["content"]) for c in ctx]), q["answer"]))
     return out
@@ -102,7 +106,7 @@ def port(qs, design_name: str, calls_per_question: int, cache: str) -> list[bool
     from .designs import DESIGNS
     from .llm import LLMConfig, make_model, make_settings
 
-    cfg = LLMConfig(temperature=1.0)  # the authors' default (no temperature given)
+    cfg = LLMConfig()  # the same sampling and thinking as the official arms
     model, settings = make_model(cfg), make_settings(cfg)
     d = DESIGNS[design_name]
     out = []
@@ -149,15 +153,16 @@ def main():
     spec.loader.exec_module(module)
     qs = gsm8k(a.n, cache)
     arms = {
-        "official-single": official(qs, 1, 1, module, client, cfg.model),
-        "official-debate": official(qs, 3, 2, module, client, cfg.model),
+        "official-single": official(qs, 1, 1, module, client, cfg),
+        "official-debate": official(qs, 3, 2, module, client, cfg),
         "port-single": port(qs, "react", a.calls, tempfile.mkdtemp(dir=cache)),
         "port-debate": port(qs, "debate", a.calls, tempfile.mkdtemp(dir=cache)),
     }
     acc = {k: sum(v) / len(v) for k, v in arms.items()}
     gain_off, gain_port = (acc["official-debate"] - acc["official-single"], acc["port-debate"] - acc["port-single"])
     lo, hi = bootstrap(arms["official-debate"], arms["official-single"])
-    report = {"check": a.check, "model": cfg.model, "n": len(qs), "accuracy": acc, "official_gain": gain_off,
+    report = {"check": a.check, "model": cfg.model, "n": len(qs),
+              "settings": {**cfg.sampling(), "thinking": cfg.thinking}, "accuracy": acc, "official_gain": gain_off,
               "official_gain_95": [lo, hi], "port_gain": gain_port, "port_gain_within_official_interval":
               lo <= gain_port <= hi, "paper": {**PAPER, "gain": PAPER["debate"] - PAPER["single"]},
               "per_question": arms}

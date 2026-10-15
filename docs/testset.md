@@ -120,11 +120,18 @@ Tool calls are matched across designs, but tokens are not, and cannot be by cons
 | Magentic-One (Fourney et al., 2024) | an orchestrator with an outer loop (task ledger: facts, guesses, plan; agents reset at each re-plan) and an inner loop (progress ledger: done? looping? progress? next speaker, instruction); re-plan when the stall counter exceeds 2; GPT-4o for every agent, or o1-preview for the outer loop | AutoGen's MagenticOneGroupChat with `max_stalls=3` (the same threshold); one model throughout; our role agents instead of the web, file and code agents |
 | CAMEL (Li et al., NeurIPS 2023) | inception prompts; task specifier; the chat ends at 40 messages, after 3 rounds without an instruction, on the end-of-task token, on role reversal or at the token limit | the framework's own prompts; no task specifier; every termination condition but role reversal |
 
-Every design uses one temperature (0.3), so that the comparison does not hinge on decoding; the papers used greedy decoding (ReAct), 0.7 (Reflexion's retries) or the API default (debate, CAMEL). Every design has now been checked against its paper.
+Every design has now been checked against its paper.
 
-To do before publication:
-- Run the fidelity checks on Nibi. Debate on GSM8K is ready (`sbatch slurm/net_fidelity.sh`).
-- Check the ports' settings against the papers of ReAct, Reflexion, debate, Mixture-of-Agents, AutoGen, Magentic-One and CAMEL.
+**Model settings, shared by every design and framework** (`netagents/llm.py`): Qwen3's thinking mode with its recommended sampling (temperature 0.6, top_p 0.95, top_k 20) and up to 4096 output tokens; vLLM's reasoning parser keeps the reasoning out of answers and histories. The papers used greedy decoding (ReAct), 0.7 (Reflexion's retries) or the API default (debate, CAMEL).
+- The first full run (`20261013-qwen3-8b-ea182dd`) had thinking off while every step had to be a tool call, so agents could not reason at all. The same model scored 90% on GSM8K in plain chat and 51% through our harness.
+- Fixed with it:
+  - each agent's history is trimmed to 60% of the window before a turn, oldest steps first;
+  - the window is 64k (YaRN);
+  - AutoGen models see the task and the last 30 messages (most AutoGen runs had overflowed the context);
+  - Magentic-One's ledgers use structured JSON output (every Magentic-One run had failed to parse them).
+- Every run now records its tool-call counts, errors, context trims and peak context, and keeps a full trace for the first seed of each case.
+
+To do before publication: rerun the fidelity check with the fixed harness (`STAGE=fidelity`) and, once the port's single agent is close to plain chat, rerun everything.
 
 MetaGPT ([Hong et al., ICLR 2024](https://arxiv.org/abs/2308.00352)) is cited as related work, not run: its released versions pin a dependency that has been removed from PyPI (`lancedb==0.4.0`), and its fixed software-company roles (product manager, architect, engineer) are close to what the website provider's roles already test.
 
@@ -261,14 +268,21 @@ python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时
 - AutoGen：论文的动态群聊（管理者选下一位发言者，再广播），对应 `autogen-selector`；`autogen-roundrobin` 是框架自带的团队，论文里没有评测过。
 - CAMEL：论文的终止条件已加上——40 条消息、连续 3 轮用户不下指令、结束标记；只有“角色反转”没有检测。
 
-所有设计统一用温度 0.3，避免比较结果取决于解码方式。- Mixture-of-Agents：论文默认 3 层、6 个不同的开源模型；MoA-Lite 是 2 层。我们用 2 层（即 MoA-Lite，也是官方代码的默认值），只用一个模型，对应论文里的“单一提议者”设置。
+- Mixture-of-Agents：论文默认 3 层、6 个不同的开源模型；MoA-Lite 是 2 层。我们用 2 层（即 MoA-Lite，也是官方代码的默认值），只用一个模型，对应论文里的“单一提议者”设置。
 - Magentic-One：外层循环维护任务账本（事实、猜测、计划，重订计划时所有智能体清空上下文），内层循环维护进度账本；停滞计数超过 2 就重订计划。我们用 AutoGen 的实现，显式设 `max_stalls=3`，阈值与论文相同；只用一个模型。
 
 所有设计都已对照过原论文。
 
-发表前还要做两件事：
-- 对照 ReAct、Reflexion、辩论、Mixture-of-Agents、AutoGen、Magentic-One、CAMEL 的原论文，核对移植时用的参数；
-- 在 Nibi 上跑还原度检查。辩论在 GSM8K 上的检查已经写好（`sbatch slurm/net_fidelity.sh`）：同一个模型、同一批题，作者自己的消息构造函数和我们的移植版放在一起比，看移植版相对单智能体的提升，是否落在官方提升的置信区间内。
+**统一的模型设置**：所有设计和框架用同一套设置——Qwen3 的思考模式，温度 0.6、top_p 0.95、top_k 20（Qwen 对思考模式推荐的值），单次输出上限 4096 token；思考内容由 vLLM 的推理解析器分离，不进入答案和对话历史。
+- 原因：第一次正式运行（`20261013-qwen3-8b-ea182dd`）关掉了思考、又要求每步必须调用工具，智能体完全没有推理的机会。同一个模型在 GSM8K 上直接对话 90%，放进我们的环境只有 51%。
+- 同时修了：
+  - 每个智能体的对话历史在每轮开始前裁到窗口的 60%，先丢最早的步骤；
+  - 上下文窗口开到 64k（YaRN）；
+  - AutoGen 每个模型只看任务和最近 30 条消息（那次运行里 AutoGen 大多因超出上下文而中断）；
+  - Magentic-One 的账本改用结构化 JSON 输出（那次全部因账本解析失败而中断）。
+- 每次运行还会记录工具调用分布、错误、上下文裁剪次数和峰值，并为每个用例保存一条完整轨迹。
+
+发表前还要做一件事：用修好的运行框架重跑还原度检查（`STAGE=fidelity`）。同一个模型、同一批题，作者自己的消息构造函数和我们的移植版放在一起比，看移植版相对单智能体的提升，是否落在官方提升的置信区间内。等我们的单智能体接近直接对话的准确率后，再重跑全部实验。
 
 MetaGPT（Hong 等，ICLR 2024）只作为相关工作引用，不在环境里运行：它发布的版本都锁定了一个已从 PyPI 下架的依赖（`lancedb==0.4.0`），而且它固定的软件公司角色（产品经理、架构师、工程师）和网站任务里的角色分工已经很接近。
 
