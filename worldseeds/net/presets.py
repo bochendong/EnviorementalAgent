@@ -158,6 +158,7 @@ def resolve(name: str, variant: str = "team", opt: dict | None = None, net: dict
         net["budget"] = net.get("budget", NetConfig.budget) * n
         net["market"] = "open"
         net["exclusive"] = False
+        net["org"] = 0  # a team of one has no organisation
         if p["provider"] == "codeworld":
             opt.update(owners=False, devs=1)
         else:

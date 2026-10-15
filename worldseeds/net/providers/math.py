@@ -125,11 +125,14 @@ def gen_recurrence(rng: random.Random, tag: str, after: dict | None = None) -> l
         seq = f"a(0) = (the answer of {after['id']}) mod 10, a(n+1) = {p}*a(n) + {q}"
     return [
         {"id": f"{tag}.L1", "text": f"For the sequence {seq}: what is a(6)?", "answer": str(a(6)),
+         "hint": "Tabulate the sequence with 'sequence' (a recurrence and its initial value) and read off a(6).",
          **({"deps": [after["id"]]} if after is not None else {})},
         {"id": f"{tag}.L2", "text": f"For the sequence {seq}: give a closed form for a(n) in terms of n.",
-         "answer": str(closed), "vars": ["n"], "deps": [f"{tag}.L1"], "reward": 2},
+         "answer": str(closed), "vars": ["n"], "deps": [f"{tag}.L1"], "reward": 2,
+         "hint": "Solve the recurrence with 'rsolve' and its initial value; check it against a(6)."},
         {"id": f"{tag}.T", "text": f"For the sequence {seq}: what is a({N}) mod {M}?",
-         "answer": str(int(a(N)) % M), "deps": [f"{tag}.L2"], "reward": 3, "final_of": tag},
+         "answer": str(int(a(N)) % M), "deps": [f"{tag}.L2"], "reward": 3, "final_of": tag,
+         "hint": "Evaluate Mod(closed form with n set, M) with 'evaluate'; SymPy handles the big power."},
     ]
 
 
@@ -142,11 +145,15 @@ def gen_sum(rng: random.Random, tag: str) -> list[dict]:
     first = next(m for m in range(1, 10 ** 6) if S.subs(n, m) > T)
     desc = f"S(n) = sum of ({a}*k^2 + {b}*k + {c}) for k = 1..n"
     return [
-        {"id": f"{tag}.L1", "text": f"Let {desc}. What is S(10)?", "answer": str(S.subs(n, 10))},
+        {"id": f"{tag}.L1", "text": f"Let {desc}. What is S(10)?", "answer": str(S.subs(n, 10)),
+         "hint": "Evaluate Sum(term, (k, 1, 10)) with 'evaluate'."},
         {"id": f"{tag}.L2", "text": f"Let {desc}. Give S(n) as a polynomial in n.", "answer": str(S),
-         "vars": ["n"], "deps": [f"{tag}.L1"], "reward": 2},
+         "vars": ["n"], "deps": [f"{tag}.L1"], "reward": 2,
+         "hint": "Sum(term, (k, 1, n)) with 'evaluate' or 'simplify' gives S(n); check it against S(10)."},
         {"id": f"{tag}.T", "text": f"Let {desc}. What is the smallest n with S(n) > {T}?", "answer": str(first),
-         "deps": [f"{tag}.L2"], "reward": 3, "final_of": tag},
+         "deps": [f"{tag}.L2"], "reward": 3, "final_of": tag,
+         "hint": f"Estimate n from the leading term of S(n), then tabulate S(n) around it with 'sequence' "
+                 f"and take the first n where it exceeds {T}."},
     ]
 
 
@@ -270,7 +277,8 @@ class MathProvider(TaskProvider):
 
     def tasks(self) -> list[Task]:
         return [Task(t["id"], t["text"], t.get("kind", "answer"), tuple(t.get("deps", ())), t.get("reward", 1.0),
-                     {"vars": t.get("vars", [])}, bool(t.get("final"))) for t in self.raw.values()]
+                     {"vars": t.get("vars", []), **({"hint": t["hint"]} if t.get("hint") else {})},
+                     bool(t.get("final"))) for t in self.raw.values()]
 
     def verify(self, task: Task, artifact, agent: str) -> Score:
         t = self.raw[task.id]

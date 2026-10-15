@@ -165,6 +165,11 @@ Seeds 0–2 are for development. Seeds 100–109 are test seeds and must not be 
 | `scaling` | CodeWorld with 2, 4, 8, 16 developers | 100–104 | does the design hold up as the team grows? | [AgentsNet](https://arxiv.org/abs/2507.08616) (ICML 2025, up to 100 agents); MacNet, [Qian et al., ICLR 2025](https://proceedings.iclr.cc/paper_files/paper/2025/hash/66a026c0d17040889b50f0dfa650e5e0-Abstract-Conference.html) |
 | `topology` | math with full, chain, star, tree, ring, random networks | 100–104 | how much does the shape of the network matter? | [MultiAgentBench](https://arxiv.org/abs/2503.01935) (ACL 2025: star, chain, tree, graph); AgentsNet |
 | `robustness` | CodeWorld with drifting laws, a client who changes their mind, a network with outages and latency | 100–104 | what breaks first? | [MAST](https://arxiv.org/abs/2503.13657) (NeurIPS 2025 D&B) |
+| `org` | math and CodeWorld at medium with 0, 1 or 2 levels of managers | 100–104 | does a deeper hierarchy help at equal compute? | El Agente Q (Zou et al. 2025) |
+| `faults` | the same with tool results that are silently wrong (15%) or fail loudly (15%) | 100–104 | who checks, and is it worth it? | El Agente Q; MAST (task verification) |
+| `report` | a final report with every answer, scored per field; math also with the provenance rule | 100–104 | are results lost before the end? | El Agente Q (missing report items) |
+| `guidance` | math easy and medium, CodeWorld medium, with and without procedural hints | 100–104 | how much do the hints matter? | El Agente Q (two levels per exercise) |
+| `memory` | math and CodeWorld at medium, ten episodes in a row with a memory that carries over | 100–109 | do agents write down and reuse procedures? | |
 | `compat` | decomposable math, sequential math, CodeWorld with 6 independent projects; identical agents, no deadline, messages through the framework | 100–109 | do the published findings reproduce here? | Kim et al. 2026 |
 
 The tasks themselves follow established practice:
@@ -184,7 +189,10 @@ The tasks themselves follow established practice:
   - `duplicate_work`: the same costly operation with the same arguments by more than one agent (system design: step repetition);
   - `unread_messages`: messages delivered but never read (inter-agent misalignment);
   - `wrong_submissions`: rejected submissions (task verification);
-  - `stopped_early`: members who stopped with budget left while the problem was unsolved.
+  - `stopped_early`: members who stopped with budget left while the problem was unsolved;
+  - `unsupported`: submissions whose value appears nowhere the team computed or passed on (a guess or an assumption);
+  - `unseen`: submissions of a value only a teammate had computed and never passed on;
+  - `used_faulty`: submissions taken from a silently wrong result.
 
 - **Route**: how the design's messages travelled, and how many were delivered or lost.
 
@@ -318,6 +326,11 @@ MetaGPT（Hong 等，ICLR 2024）只作为相关工作引用，不在环境里�
 | `scaling` | 2、4、8、16 人（参考 AgentsNet 和 MacNet） |
 | `topology` | 全连、链、星、树、环、随机（参考 MultiAgentBench 和 AgentsNet） |
 | `robustness` | 规律漂移、客户改需求、网络掉线和延迟（参考 MAST） |
+| `org` | 中等档数学和 CodeWorld，上面加 0、1、2 层经理（参考 El Agente Q） |
+| `faults` | 工具结果有 15% 静默出错或 15% 直接报错，可用 `check` 检查 |
+| `report` | 最后交一份包含所有答案的报告，逐项打分；数学另有一组要求答案必须有出处 |
+| `guidance` | 同样的任务，给或不给操作提示 |
+| `memory` | 连续十个回合，共享一个跨回合保留的记忆 |
 | `compat` | 兼容赛道：可分解数学、顺序数学、6 个独立项目的 CodeWorld |
 
 ## 指标
@@ -329,4 +342,7 @@ MetaGPT（Hong 等，ICLR 2024）只作为相关工作引用，不在环境里�
   - 重复劳动（系统设计）；
   - 未读消息（智能体之间不协调）；
   - 错误提交（任务检验）；
-  - 有预算却提前停下。
+  - 有预算却提前停下；
+  - 无出处的提交（猜的或假设的值，团队里谁都没算出也没传过）；
+  - 只有队友算过、却从没传过来的值；
+  - 用了静默出错的结果。

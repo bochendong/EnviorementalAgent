@@ -306,3 +306,93 @@ def test_math_linked_problems_form_one_chain():
         assert e.step("a0", "submit", {"task": t, "artifact": raw[t]["answer"]})["ok"], t
     with pytest.raises(ValueError):
         providers.make("math", problems=["sum"], linked=True)
+
+
+# ---------------------------------------------------------------- El Agente-style mechanisms
+def _math(**cfg):
+    e = NetworkEnv(providers.make("math", problems=["recurrence"], free_roles=True, explorers=4, algebraists=0),
+                   NetConfig(budget=60, **cfg))
+    e.reset(0)
+    return e
+
+
+def test_organisation_delegates_down_the_tree():
+    e = _math(org=2, org_span=2)
+    managers = [a for a in e.agents if a.startswith("m")]
+    assert len(managers) == 3 and e.root == managers[-1] and len(e.children[e.root]) == 2
+    mid, worker = e.children[e.root][0], e.children[e.children[e.root][0]][0]
+    assert set(e.agents[worker].neighbours) == {mid} and e.parent[mid] == e.root
+    assert not {o.name for o in e.ops(e.root)} & {"evaluate", "rsolve"}  # managers have no task tools
+    assert e.step(worker, "tasks")["tasks"] == []  # a worker sees only what it is given
+    assert not e.step(worker, "submit", {"task": "P1.L1", "artifact": "1"})["ok"]
+    assert not e.step(mid, "assign", {"task": "P1.L1", "to": worker})["ok"]  # not its to hand out yet
+    assert not e.step(e.root, "assign", {"task": "P1.L1", "to": worker})["ok"]  # one level at a time
+    assert e.step(e.root, "assign", {"task": "P1.L1", "to": mid})["ok"]
+    assert e.step(mid, "assign", {"task": "P1.L1", "to": worker})["ok"]
+    assert [t["id"] for t in e.step(worker, "tasks")["tasks"]] == ["P1.L1"]
+    ans = e.provider.raw["P1.L1"]["answer"]
+    assert e.step(worker, "submit", {"task": "P1.L1", "artifact": ans})["ok"]
+    assert not e.step(worker, "send", {"to": e.root, "text": "hi"})["ok"]  # only parent and children
+
+
+def test_faults_are_silent_until_checked():
+    e = _math(faults=1.0)
+    r = e.step("a0", "evaluate", {"expr": "2+3"})
+    assert r["ok"] and r["value"] != "5" and r["result_id"] == "r0"
+    assert e.step("a1", "check", {"result": "r0"})["sound"] is False
+    assert e.metrics()["faulty_results"] == 1
+    loud = _math(loud_faults=1.0).step("a0", "evaluate", {"expr": "2+3"})
+    assert not loud["ok"] and "try again" in loud["error"]
+    assert "check" not in {o.name for o in _math().ops("a0")}
+
+
+def test_provenance_is_recorded_and_can_be_required():
+    e = _math()
+    ans = e.provider.raw["P1.L1"]["answer"]
+    e.step("a0", "submit", {"task": "P1.L1", "artifact": ans})
+    assert e.events[-1]["provenance"]["source"] == "none"  # a guess (here: the test knows the answer)
+    e = _math(provenance=True)
+    assert not e.step("a0", "submit", {"task": "P1.L1", "artifact": ans})["ok"]
+    seq = e.step("a1", "sequence", {"rec": e.provider.raw["P1.L1"]["text"].split("a(n+1) = ")[1].split(":")[0]
+                                    .replace("a(n)", "a(n)"), "init": e.provider.raw["P1.L1"]["text"]
+                                    .split("a(0) = ")[1].split(",")[0], "count": 7})
+    assert seq["ok"] and seq["values"][6] == ans
+    assert not e.step("a0", "submit", {"task": "P1.L1", "artifact": ans})["ok"]  # a1 computed it, a0 never saw it
+    e.step("a1", "send", {"to": "a0", "text": f"a(6) = {ans}"})
+    e.step("a0", "inbox")
+    assert e.step("a0", "submit", {"task": "P1.L1", "artifact": ans})["ok"]
+    assert e.events[-1]["provenance"]["source"] == "received"
+
+
+def test_report_is_scored_field_by_field():
+    e = _math(report=True)
+    raw = e.provider.raw
+    assert "REPORT" in e.tasks and e.tasks["REPORT"].final
+    half = {k: raw[k]["answer"] for k in list(raw)[:2]}
+    r = e.step("a0", "submit", {"task": "REPORT", "artifact": half})
+    assert not r["ok"] and abs(r["value"] - 2 / 3) < 1e-9 and r["missing"] == [list(raw)[2]]
+    assert abs(e.metrics()["report_score"] - 2 / 3) < 1e-9
+    for t in raw:
+        e.step("a0", "submit", {"task": t, "artifact": raw[t]["answer"]})
+    assert not e.solved  # the work is done, the report is not
+    assert e.step("a0", "submit", {"task": "REPORT", "artifact": {k: v["answer"] for k, v in raw.items()}})["ok"]
+    assert e.solved
+
+
+def test_hints_only_with_guidance():
+    plain = _math().step("a0", "tasks")["tasks"]
+    hinted = _math(guidance=1).step("a0", "tasks")["tasks"]
+    assert all("hint" not in t["spec"] for t in plain) and all("hint" in t["spec"] for t in hinted)
+
+
+def test_memory_carries_over_episodes(tmp_path):
+    path = str(tmp_path / "m.json")
+    e = NetworkEnv(providers.make("math", free_roles=True, explorers=1, algebraists=0),
+                   NetConfig(budget=20, memory_file=path))
+    e.reset(0)
+    assert {"put", "get"} <= {o.name for o in e.ops("a0")}  # a team of one keeps its notebook
+    e.step("a0", "put", {"key": "memory/how", "value": "rsolve first"})
+    e.step("a0", "put", {"key": "scratch", "value": "gone next time"})
+    e.reset(1)
+    assert e.step("a0", "get", {"key": "memory/how"})["value"] == "rsolve first"
+    assert not e.step("a0", "get", {"key": "scratch"})["ok"]

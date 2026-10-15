@@ -20,6 +20,11 @@ design. Held-out cases use tasks no scripted solver was written for (tasks/heldo
                 AgentsNet)
     robustness  changing worlds and an unreliable network (cf. MAST, NeurIPS 2025 D&B)
     compat      the compatibility track: decomposable vs sequential math, CodeWorld, test seeds
+    org         a hierarchy of managers above the workers, 0-2 levels (cf. El Agente Q, Zou et al. 2025)
+    faults      tool results that are silently wrong, or fail loudly; a check operation
+    report      a final report with every answer, scored field by field; and a provenance rule
+    guidance    the same tasks with and without procedural hints
+    memory      ten episodes in a row sharing a memory in the store ("memory/" keys)
     calibration easy and medium presets on dev seeds, for a few designs: is the difficulty in the range where
                 designs can differ (CALIBRATION_BAND of tasks done) for the model at hand? The presets were
                 tuned on scripted teams; this checks them against LLM agents before the real runs
@@ -55,14 +60,15 @@ class Case:
     opt: dict = field(default_factory=dict)
     net: dict = field(default_factory=dict)
     track: str = "network"
+    memory: bool = False  # the seeds run in order, sharing a memory file (NetConfig.memory_file)
 
     @property
     def route(self) -> str:
         """How the designs' messages travel on this case (netagents/designs.py Channel)."""
         return "framework" if self.track == "compat" else "network"
 
-    def build(self, variant: str):
-        return presets.build(self.preset, variant, opt=self.opt, net_change=self.net)
+    def build(self, variant: str, **net):
+        return presets.build(self.preset, variant, opt=self.opt, net_change={**self.net, **net})
 
     def team_size(self) -> int:
         prov, opt, _ = presets.resolve(self.preset, "team", self.opt, self.net)
@@ -88,6 +94,17 @@ SUITES: dict[str, list[Case]] = {
         Case("math/medium/unreliable-network", "math/medium", TEST_SEEDS[:5], net={"outage": 0.1, "latency": 2}),
     ],
     "compat": [Case(p, p, TEST_SEEDS, track="compat") for p in COMPAT],
+    "org": [Case(f"{p}/org{d}", p, TEST_SEEDS[:5], net={"org": d}) for p in ("math/medium", "codeworld/medium")
+            for d in (0, 1, 2)],
+    "faults": [Case(f"{p}/{name}", p, TEST_SEEDS[:5], net=net) for p in ("math/medium", "codeworld/medium")
+               for name, net in (("silent", {"faults": 0.15}), ("loud", {"loud_faults": 0.15}))],
+    "report": [Case("math/medium/report", "math/medium", TEST_SEEDS[:5], net={"report": True}),
+               Case("math/medium/report-provenance", "math/medium", TEST_SEEDS[:5],
+                    net={"report": True, "provenance": True}),
+               Case("codeworld/medium/report", "codeworld/medium", TEST_SEEDS[:5], net={"report": True})],
+    "guidance": [Case(f"{p}/guidance{g}", p, TEST_SEEDS[:5], net={"guidance": g})
+                 for p in ("math/easy", "math/medium", "codeworld/medium") for g in (0, 1)],
+    "memory": [Case(f"{p}/memory", p, TEST_SEEDS, memory=True) for p in ("math/medium", "codeworld/medium")],
     "calibration": [Case(p, p, DEV_SEEDS) for p in EASY + MEDIUM]
     + [Case(p, p, DEV_SEEDS, track="compat") for p in COMPAT],
 }

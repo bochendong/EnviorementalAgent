@@ -353,3 +353,22 @@ def test_calibration_verdicts():
             for d in ("sas", "centralized")]
     text = calibration(rows)
     assert "| a | 2 | 0.05" in text and "too hard" in text and "in range" in text and "too easy" in text
+
+
+def test_designs_run_under_the_new_mechanisms(mock_llm, tmp_path):
+    from netagents.designs import DESIGNS
+    from netagents.evaluate import run_one
+    from netagents.testset import SUITES
+
+    model, settings = mock_llm
+    cases = {c.id: c for s in ("org", "faults", "report", "memory") for c in SUITES[s]}
+    for cid in ("math/medium/org2", "math/medium/silent", "math/medium/report-provenance", "math/medium/memory"):
+        c = cases[cid]
+        for name in ("sas", "centralized", "debate"):
+            mem = str(tmp_path / f"{name}.json") if c.memory else ""
+            r = run_one(DESIGNS[name], c, c.seeds[0], model, settings, 2 * c.team_size(), memory=mem)
+            assert {"unsupported", "unseen", "used_faulty"} <= set(r), (cid, name)
+            if "org" in cid and name != "sas":
+                assert r["agents"] > c.team_size()  # the workers and their managers
+            if "report" in cid:
+                assert "report_score" in r

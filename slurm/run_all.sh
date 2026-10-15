@@ -16,7 +16,8 @@
 #          "sas reflexion centralized debate", on easy and medium presets and the compat cases, dev seeds)
 #   1    baselines (scripted teams, CPU), fidelity (debate on GSM8K), compat-framework, compat-network
 #   2    test, hard, heldout, scaling, topology, robustness (the network track)
-#   all  both
+#   3    org, faults, report, guidance, memory (mechanisms modelled on El Agente Q; network track)
+#   all  1, 2 and 3
 # Other settings: MODEL_ID (slurm/env.sh), DESIGNS (default: every ported design), FRAMEWORKS=1 (also
 # AutoGen, Magentic-One, CAMEL on compat-framework and test), TIME (per job, default 1-00:00), SEEDS (only
 # the first N seeds of each case, for a quick pass), N (GSM8K questions, default 100).
@@ -58,7 +59,8 @@ case "$STAGE" in
   check) EXPERIMENTS="fidelity calibration" ;;
   1) EXPERIMENTS="baselines fidelity compat-framework compat-network" ;;
   2) EXPERIMENTS="test hard heldout scaling topology robustness" ;;
-  all) EXPERIMENTS="baselines fidelity compat-framework compat-network test hard heldout scaling topology robustness" ;;
+  3) EXPERIMENTS="org faults report guidance memory" ;;
+  all) EXPERIMENTS="baselines fidelity compat-framework compat-network test hard heldout scaling topology robustness org faults report guidance memory" ;;
   *) EXPERIMENTS="$STAGE" ;;  # or name experiments directly: STAGE="compat-framework test"
 esac
 

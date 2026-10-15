@@ -14,6 +14,10 @@ messages, board posts and store writes, and failure signals in the spirit of MAS
     unread_messages      messages delivered but never read by the end (inter-agent misalignment)
     wrong_submissions    submissions the environment rejected (task verification)
     stopped_early        members that stopped with budget left while the problem was unsolved
+    unsupported          submissions whose value appears in nothing the team computed or passed on: a
+                         guess or an assumption (cf. El Agente Q's "unverified assumptions")
+    unseen               submissions whose value only a teammate had computed, never passed on
+    used_faulty          submissions taken from a silently wrong result (with NetConfig.faults)
 
 The designs' messages travel as the case's track says (the framework on the compatibility track, the
 environment's network on the network track; --route overrides it, e.g. to run the compatibility cases
@@ -46,7 +50,7 @@ from .fidelity import bootstrap
 from .testset import CALIBRATION_BAND, CALLS_PER_MEMBER, HYPOTHESES, SUITES
 
 CHEAP = {"status", "who", "tasks", "inbox", "board", "keys", "get", "wait", "ls", "read", "log", "made",
-         "signatures", "props", "similarity"}
+         "signatures", "props", "similarity", "assign", "check"}
 
 
 def failure_signals(raw) -> dict:
@@ -60,7 +64,10 @@ def failure_signals(raw) -> dict:
     return {"duplicate_work": sum(len(a) - 1 for a in by_call.values() if len(a) > 1),
             "unread_messages": sum(len(a.mail) for a in raw.agents.values()) + len(raw.transit),
             "wrong_submissions": sum(1 for e in ops if e["op"] == "submit" and not e["obs"].get("ok")),
-            "stopped_early": 0 if raw.solved else sum(1 for a in raw.agents.values() if a.budget > 0)}
+            "stopped_early": 0 if raw.solved else sum(1 for a in raw.agents.values() if a.budget > 0),
+            "unsupported": sum(1 for e in ops if e.get("provenance", {}).get("source") == "none"),
+            "unseen": sum(1 for e in ops if e.get("provenance", {}).get("source") == "team"),
+            "used_faulty": sum(1 for e in ops if e.get("provenance", {}).get("faulty"))}
 
 
 def save_trace(raw, path: str):
@@ -73,11 +80,12 @@ def save_trace(raw, path: str):
             f.write(json.dumps(e, default=str) + "\n")
 
 
-def run_one(design, case, seed, model, settings, calls, route: str | None = None, trace: str = "") -> dict:
+def run_one(design, case, seed, model, settings, calls, route: str | None = None, trace: str = "",
+            memory: str = "") -> dict:
     route = route or case.route
     if design.network_route:  # a copy: the registry's designs stay as they are
         design = replace(design, route=route)
-    raw = case.build(design.variant)
+    raw = case.build(design.variant, **({"memory_file": memory} if memory else {}))
     raw.reset(seed)
     reports = asyncio.run(design.play(LocalEnv(raw), model, settings, calls))
     chan = design.chan.report() if hasattr(design, "chan") else {"route": "framework"}
@@ -100,7 +108,8 @@ def run_one(design, case, seed, model, settings, calls, route: str | None = None
             "llm_errors": sum(r.get("errors", 0) for r in reports),
             "context_trims": sum(r.get("trims", 0) for r in reports),
             "peak_context": max([r.get("peak_context", 0) for r in reports] or [0]),
-            "trace": os.path.basename(trace) if trace else "", "members": reports}
+            "trace": os.path.basename(trace) if trace else "",
+            **{k: m[k] for k in ("report_score", "faulty_results") if k in m}, "members": reports}
 
 
 def summarize(rows: list[dict]) -> str:
@@ -154,7 +163,22 @@ def diagnostics(rows: list[dict]) -> str:
         out.append(f"| {d} | {len(mine)} | {errs} | {st.mean(r.get('context_trims', 0) for r in mine):.1f} | "
                    f"{max(r.get('peak_context', 0) for r in mine) / 1000:.0f} | "
                    f"{st.mean(r.get('done', 0) + r['wrong_submissions'] for r in mine):.1f} | {top} |")
-    return "\n## Diagnostics\n\n" + "\n".join(out) + "\n\nOperations: mean calls per run.\n"
+    text = "\n## Diagnostics\n\n" + "\n".join(out) + "\n\nOperations: mean calls per run.\n"
+    if any("unsupported" in r for r in rows):
+        out = ["| design | submissions with no source | from an unshared teammate result | from a faulty "
+               "result | checks | report score |", "|---|---|---|---|---|---|"]
+        for d in dict.fromkeys(r["design"] for r in rows):
+            mine = [r for r in rows if r["design"] == d]
+            rep = [r["report_score"] for r in mine if "report_score" in r]
+            out.append(f"| {d} | {st.mean(r.get('unsupported', 0) for r in mine):.1f} | "
+                       f"{st.mean(r.get('unseen', 0) for r in mine):.1f} | "
+                       f"{st.mean(r.get('used_faulty', 0) for r in mine):.1f} | "
+                       f"{st.mean(r.get('ops', {}).get('check', 0) for r in mine):.1f} | "
+                       + (f"{st.mean(rep):.2f}" if rep else "-") + " |")
+        text += ("\n## Where submitted answers came from\n\n" + "\n".join(out)
+                 + "\n\nMeans per run. A value with no source was guessed or assumed: it appears in no tool result, "
+                   "message, post or store entry the submitter saw, nor in any teammate's results.\n")
+    return text
 
 
 def check_hypotheses(rows: list[dict]) -> list[dict]:
@@ -255,13 +279,18 @@ def main():
         for k, seed in enumerate(case.seeds[:a.seeds] if a.seeds else case.seeds):
             for d in designs:
                 route = None if a.route == "case" else a.route
+                memory = os.path.join(a.out, "memory", f"{d.name}__{case.id.replace('/', '_')}.json") \
+                    if case.memory else ""
+                if memory and k == 0 and os.path.exists(memory) and not any(
+                        r["design"] == d.name and r["case"] == case.id for r in rows):
+                    os.remove(memory)  # a fresh series starts with an empty memory
                 if (d.name, case.id, seed, (route or case.route) if d.network_route else "framework") in done:
                     continue
                 try:
                     r = {"model": cfg.model, "suite": a.suite, **run_one(
                         d, case, seed, model, settings, calls, route,
                         os.path.join(a.out, "traces", f"{d.name}__{case.id.replace('/', '_')}__{seed}.jsonl.gz")
-                        if k < a.traces else "")}
+                        if k < a.traces else "", memory)}
                 except Exception as e:  # noqa: BLE001 (one broken run must not stop the job; a rerun retries it)
                     print(f"{case.id} seed {seed} {d.name} FAILED: {type(e).__name__}: {e}", flush=True)
                     continue

@@ -88,7 +88,10 @@ class CodeWorldProvider(TaskProvider):
 
     def tasks(self) -> list[Task]:
         return [Task(p.id, p.text(), "program", reward=1.0,
-                     spec={"in": p.in_type, "out": p.out_type, "length": p.length, "examples": p.examples})
+                     spec={"in": p.in_type, "out": p.out_type, "length": p.length, "examples": p.examples,
+                           "hint": f"Find {p.length} functions that chain from {p.in_type} to {p.out_type} "
+                                   "('signatures'), learn what each does ('study', or ask whoever studied it), "
+                                   "then 'run' your chain on the examples before you submit it."})
                 for p in self.projects.values()]
 
     def verify(self, task: Task, artifact, agent: str) -> Score:

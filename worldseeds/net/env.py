@@ -24,6 +24,26 @@ Network operations (each can be switched off in ``NetConfig``):
     transfer  give credits to someone
     submit    hand in an artifact for a task; checked by the provider (``verify_cost`` actions)
     wait      let time pass (costs no budget)
+    assign    (organisation only) a manager hands a task to someone it manages
+    check     (with faults only) is a result sound? (``check_cost`` actions)
+
+Mechanisms modelled on what real multi-agent systems run into (cf. El Agente Q, Zou et al. 2025: a
+hierarchy of specialists, files handed between them, silent tool failures, missing report items,
+unverified assumptions). Each is off by default:
+
+    org          levels of managers above the provider's workers. Managers have no task tools; they see
+                 the tasks of their subtree and ``assign`` them down, one level at a time; a worker sees
+                 and may submit only what was assigned to it. The network is the tree (parent and children)
+    faults       chance that a task operation's result is silently wrong (its numbers are altered; the
+                 world is not). ``loud_faults``: chance that it fails with an error instead. Every result
+                 has a result_id; ``check`` tells whether a result is sound
+    report       a final REPORT task: one JSON object with the answer of every task, scored field by field
+                 (partial credit); the episode is solved only when it is complete and right
+    provenance   a submission is accepted only if its value appears in something the submitter has seen: a
+                 result of its own, a message, the board or the store. Without this rule the environment
+                 still records where every submitted value came from (own, received, team, none)
+    guidance     tasks carry procedural hints (``Task.spec["hint"]``); without it hints are withheld
+    memory_file  store keys under "memory/" persist in this file from one episode to the next
 
 Rewards: when a task is done its ``reward`` goes to the solver; ``NetConfig.team`` blends individual and
 team reward (0 = all own, 1 = everything shared equally). Credits are separate: bounties for done tasks,
@@ -41,7 +61,9 @@ from typing import Any
 from .core import OpSpec, Role, Score, Task, TaskProvider
 
 ALL_NET_OPS = ("status", "who", "tasks", "claim", "release", "send", "inbox", "post", "board", "put", "get",
-               "keys", "transfer", "submit", "wait")
+               "keys", "transfer", "submit", "wait", "assign", "check")
+MANAGER = "manager"
+REPORT = "REPORT"
 
 
 @dataclass
@@ -71,6 +93,15 @@ class NetConfig:
     outage_rounds: int = 2
     seed: int = 0
     log_args: bool = True
+    org: int = 0  # levels of managers above the workers (0: a flat team)
+    org_span: int = 0  # people each manager manages (0: spread evenly over the levels)
+    faults: float = 0.0  # chance a task operation's result is silently wrong
+    loud_faults: float = 0.0  # chance a task operation fails with an error (nothing happens; retry)
+    check_cost: int = 1
+    report: bool = False  # a final REPORT task with every answer, scored field by field
+    provenance: bool = False  # accept only submissions whose value the submitter has seen
+    guidance: int = 0  # 1: tasks carry procedural hints
+    memory_file: str = ""  # store keys under "memory/" persist here across episodes
 
     def enabled(self) -> set[str]:
         off = set()
@@ -82,8 +113,12 @@ class NetConfig:
             off |= {"put", "get", "keys"}
         if not self.transfers:
             off |= {"transfer"}
-        if self.market == "open":
+        if self.market == "open" or self.org:
             off |= {"claim", "release"}
+        if not self.org:
+            off |= {"assign"}
+        if not (self.faults or self.loud_faults):
+            off |= {"check"}
         return set(ALL_NET_OPS) - off
 
 
@@ -129,6 +164,10 @@ class NetworkEnv:
             for _ in range(n):
                 name = f"a{len(self.agents)}"
                 self.agents[name] = Agent(name, self.roles[rname], cfg.budget, cfg.credits)
+        self.parent: dict[str, str] = {}
+        self.children: dict[str, list[str]] = {}
+        if cfg.org:
+            self._organise()
         self._wire()
         self.actions = 0
         self.round = 0
@@ -137,15 +176,55 @@ class NetworkEnv:
         self.store: dict[str, list[dict]] = {}
         self.posts: list[dict] = []
         self.transit: list[tuple[int, str, dict]] = []  # (arrival round, to, message)
+        self.results: list[dict] = []  # every task-operation result: agent, op, faulty
+        self.seen: dict[str, list[tuple[str, str, bool]]] = {a: [] for a in self.agents}  # (source, text, faulty)
         self.events = []
+        self._load_memory()
         self._sync_tasks()
         self._log({"kind": "reset", "seed": self.seed, "provider": self.provider.name, "info": self.info,
                    "agents": {a.name: a.role.name for a in self.agents.values()},
                    "config": asdict(cfg)})
         return {"info": self.info, "agents": {a.name: a.role.name for a in self.agents.values()}}
 
+    def _organise(self):
+        """Managers above the workers: ``org`` levels, each manager over ``org_span`` people (or as many as
+        spreads the workers evenly), one manager at the top."""
+        import math
+
+        role = Role(MANAGER, "You manage: you plan, hand tasks to the people you manage ('assign') and report "
+                             "to your own manager. You have no task tools; the people at the bottom do the work.",
+                    ops=(), count=0)
+        self.roles[MANAGER] = role
+        level = list(self.agents)
+        for depth in range(self.cfg.org, 0, -1):
+            span = self.cfg.org_span or max(2, math.ceil(len(level) ** (1 / depth)))
+            groups = [level] if depth == 1 else [level[i:i + span] for i in range(0, len(level), span)]
+            above = []
+            for g in groups:
+                m = f"m{sum(1 for a in self.agents if a.startswith('m'))}"
+                self.agents[m] = Agent(m, role, self.cfg.budget, self.cfg.credits)
+                self.children[m] = list(g)
+                for x in g:
+                    self.parent[x] = m
+                above.append(m)
+            level = above
+        self.root = level[0]
+
+    def _subtree(self, m: str) -> set[str]:
+        out, todo = set(), [m]
+        while todo:
+            x = todo.pop()
+            out.add(x)
+            todo += self.children.get(x, [])
+        return out
+
     def _wire(self):
         names = list(self.agents)
+        if self.cfg.org:  # the organisation is the network: everyone talks to its manager and its people
+            for a in names:
+                self.agents[a].neighbours = tuple(([self.parent[a]] if a in self.parent else [])
+                                                  + self.children.get(a, []))
+            return
         n, topo = len(names), self.cfg.topology
         nb: dict[str, set] = {a: set() for a in names}
         if topo == "full":
@@ -194,7 +273,7 @@ class NetworkEnv:
         neighbours. An agent is never shown, or charged for, an operation that cannot work."""
         on = set(self.cfg.enabled())
         if len(self.agents) == 1:
-            on -= self.SHARING
+            on -= self.SHARING - ({"put", "get", "keys"} if self.cfg.memory_file else set())
         elif not self.agents[agent].neighbours:
             on -= {"send", "inbox"}
         return on
@@ -257,6 +336,10 @@ class NetworkEnv:
             except TypeError as e:
                 obs = {"ok": False, "error": f"bad arguments: {e}"}
             obs.setdefault("_cost", self._net_cost(op))
+        elif op in self.pops and (a.role.ops is None or op in a.role.ops) and self.cfg.loud_faults \
+                and self.rng.random() < self.cfg.loud_faults:
+            obs = {"ok": False, "error": f"{op} failed (transient error {self.rng.randrange(100, 999)}); nothing "
+                                        "was done, try again"}
         elif op in self.pops and (a.role.ops is None or op in a.role.ops):
             try:
                 obs = self.provider.apply(agent, a.role, op, args)
@@ -267,8 +350,11 @@ class NetworkEnv:
                 self._log({"kind": "provider_error", "op": op, "error": repr(e), "trace": traceback.format_exc()})
             obs.setdefault("ok", "error" not in obs)
             obs.setdefault("_cost", self.pops[op].cost if obs["ok"] else 1)
+            if obs["ok"]:
+                obs = self._result(a, op, obs)
         else:
             obs = {"ok": False, "error": f"unknown or forbidden operation {op!r}"}
+        prov = obs.pop("_provenance", None)
         cost = max(0, int(obs.pop("_cost", 1)))
         cost = min(cost, a.budget)
         time = max(cost, int(obs.pop("_time", 0)))
@@ -276,9 +362,104 @@ class NetworkEnv:
         a.spent += cost
         obs["budget"] = a.budget
         self._log({"kind": "op", "agent": agent, "op": op, "args": args if self.cfg.log_args else None,
-                   "cost": cost, "obs": obs})
+                   "cost": cost, "obs": obs, **({"provenance": prov} if prov else {})})
         self._advance(time)
         return obs
+
+    # ------------------------------------------------------------------ results, faults, provenance, memory
+    def _result(self, a: Agent, op: str, obs: dict) -> dict:
+        """Give a task-operation result an id, maybe corrupt it (``faults``), and remember who saw it."""
+        faulty = False
+        if self.cfg.faults and self.rng.random() < self.cfg.faults:
+            bad = self._corrupt(obs)
+            faulty = bad != obs
+            obs = bad
+        rid = f"r{len(self.results)}"
+        self.results.append({"id": rid, "agent": a.name, "op": op, "faulty": faulty, "round": self.round})
+        obs["result_id"] = rid
+        self._saw(a.name, "own", obs, faulty)
+        return obs
+
+    _QUIET = {"ok", "budget", "result_id", "_cost", "_time"}
+
+    def _corrupt(self, x, key: str = ""):
+        """The same observation with its numbers altered (the first number of a text too)."""
+        import re
+
+        if key in self._QUIET:
+            return x
+        if isinstance(x, dict):
+            return {k: self._corrupt(v, k) for k, v in x.items()}
+        if isinstance(x, list):
+            return [self._corrupt(v) for v in x]
+        if isinstance(x, bool):
+            return x
+        if isinstance(x, int):
+            return x + self.rng.choice([-1, 1]) * max(1, abs(x) // 7 + 1)
+        if isinstance(x, float):
+            return x * self.rng.choice([0.8, 0.9, 1.1, 1.25])
+        if isinstance(x, str):
+            m = re.search(r"\d+", x)
+            if m:
+                v = int(m.group()) + self.rng.choice([1, 2, 3])
+                return x[:m.start()] + str(v) + x[m.end():]
+        return x
+
+    def _saw(self, agent: str, source: str, what, faulty: bool = False):
+        if agent in self.seen:
+            text = json.dumps({k: v for k, v in what.items() if k not in self._QUIET} if isinstance(what, dict)
+                              else what, default=str)
+            self.seen[agent].append((source, self._norm(text), faulty))
+
+    @staticmethod
+    def _norm(x) -> str:
+        return "".join(str(x).split()).replace("**", "^").lower()
+
+    def _provenance(self, agent: str, artifact) -> tuple[str, bool]:
+        """Where a submitted value came from: "own" (a result of the submitter's), "received" (a message, the
+        board or the store it read), "team" (only in a result of someone else's, never passed on), or
+        "none". The second value: the match was a corrupted result."""
+        import re
+
+        if artifact is None:
+            return "none", False
+        v = self._norm(artifact if isinstance(artifact, str) else json.dumps(artifact, default=str)).strip('"')
+        if not v:
+            return "none", False
+        pat = re.compile(r"(?<![\d.])" + re.escape(v) + r"(?![\d.])") if re.fullmatch(r"-?[\d.]+", v) else None
+
+        def found(items):
+            for _, text, faulty in items:
+                if (pat.search(text) if pat else v in text):
+                    return True, faulty
+            return False, False
+
+        mine = self.seen.get(agent, [])
+        for label, items in (("own", [s for s in mine if s[0] == "own"]),
+                             ("received", [s for s in mine if s[0] != "own"]),
+                             ("team", [s for b, ss in self.seen.items() if b != agent for s in ss if s[0] == "own"])):
+            hit, faulty = found(items)
+            if hit:
+                return label, faulty
+        return "none", False
+
+    def _load_memory(self):
+        import os
+
+        path = self.cfg.memory_file
+        if path and os.path.exists(path):
+            with open(path) as f:
+                for k, v in json.load(f).items():
+                    self.store[k] = [{"version": 0, "by": "memory", "round": 0, "value": v}]
+
+    def _save_memory(self):
+        import os
+
+        path = self.cfg.memory_file
+        if path:
+            os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+            with open(path, "w") as f:
+                json.dump({k: vs[-1]["value"] for k, vs in self.store.items() if k.startswith("memory/")}, f)
 
     # ------------------------------------------------------------------ time
     def _advance(self, cost: int):
@@ -307,10 +488,18 @@ class NetworkEnv:
         self.transit = keep
 
     def _sync_tasks(self):
-        for t in self.provider.tasks():
+        ts = self.provider.tasks()
+        if self.cfg.report:
+            ts.append(Task(REPORT, "Hand in the team's report: one JSON object mapping the id of every other task to "
+                                   "its answer (as you would submit it). It is scored field by field; you may "
+                                   "hand it in again until every field is right.", "report", reward=1.0,
+                           spec={"fields": [t.id for t in ts]}, final=True))
+        for t in ts:
             if t.id not in self.tasks:
                 self.state[t.id] = {"status": "open", "by": None, "claims": [], "tries": 0, "value": 0.0}
-                if self.cfg.market == "assigned":
+                if self.cfg.org:
+                    self.state[t.id]["claims"] = [self.root] if t.id == REPORT else []
+                elif self.cfg.market == "assigned":
                     names = [a for a in self.agents]
                     self.state[t.id]["claims"] = [names[len(self.tasks) % len(names)]]
             self.tasks[t.id] = t  # a provider may re-issue a task with new text or spec
@@ -330,15 +519,24 @@ class NetworkEnv:
                                         "online": not b.offline, "neighbour": b.name in a.neighbours}
                                        for b in self.agents.values()]}
 
+    def _visible(self, a: Agent, s: dict) -> bool:
+        """In an organisation one sees the tasks of one's subtree (the top manager sees every task)."""
+        if not self.cfg.org or a.name == self.root:
+            return True
+        return bool(set(s["claims"]) & self._subtree(a.name))
+
     def _op_tasks(self, a: Agent, status: str = "") -> dict:
         out = []
         for t in self.tasks.values():
             s = self.state[t.id]
+            if not self._visible(a, s):
+                continue
             st = s["status"] if self._ready(t) or s["status"] == "done" else "blocked"
             if status and st != status:
                 continue
+            spec = t.spec if self.cfg.guidance else {k: v for k, v in t.spec.items() if k != "hint"}
             out.append({"id": t.id, "kind": t.kind, "text": t.text, "deps": list(t.deps), "status": st,
-                        "reward": t.reward, "final": t.final, "spec": t.spec, "by": s["by"],
+                        "reward": t.reward, "final": t.final, "spec": spec, "by": s["by"],
                         "claimed_by": s["claims"], "tries": s["tries"]})
         return {"ok": True, "tasks": out}
 
@@ -375,6 +573,7 @@ class NetworkEnv:
 
     def _op_inbox(self, a: Agent) -> dict:
         mail, a.mail = a.mail, []
+        self._saw(a.name, "message", mail)
         return {"ok": True, "messages": mail}
 
     def _op_post(self, a: Agent, text: str, tags: list | None = None) -> dict:
@@ -386,6 +585,7 @@ class NetworkEnv:
 
     def _op_board(self, a: Agent, tag: str = "", since: int = 0) -> dict:
         ps = [p for p in self.posts if p["id"] >= since and (not tag or tag in p["tags"])]
+        self._saw(a.name, "board", ps[-50:])
         return {"ok": True, "posts": ps[-50:]}
 
     def _op_put(self, a: Agent, key: str, value: Any) -> dict:
@@ -393,6 +593,8 @@ class NetworkEnv:
             return {"ok": False, "error": "value too large"}
         vs = self.store.setdefault(key, [])
         vs.append({"version": len(vs), "by": a.name, "round": self.round, "value": value})
+        if key.startswith("memory/"):
+            self._save_memory()
         return {"ok": True, "key": key, "version": len(vs) - 1}
 
     def _op_get(self, a: Agent, key: str, version: int = -1) -> dict:
@@ -407,7 +609,9 @@ class NetworkEnv:
             if a.credits < price:
                 return {"ok": False, "error": f"it costs {price} credits; you have {a.credits}"}
             a.credits -= price
-            self.agents[v["by"]].credits += price
+            if v["by"] in self.agents:
+                self.agents[v["by"]].credits += price
+        self._saw(a.name, "store", v["value"])
         return {"ok": True, "key": key, **v, "versions": len(vs), "paid": price}
 
     def _op_keys(self, a: Agent, prefix: str = "") -> dict:
@@ -423,6 +627,28 @@ class NetworkEnv:
         self.agents[to].credits += amount
         return {"ok": True, "credits": a.credits}
 
+    def _op_assign(self, a: Agent, task: str, to: str) -> dict:
+        s = self.state.get(task)
+        if s is None:
+            return {"ok": False, "error": f"no task {task!r}"}
+        if a.role.name != MANAGER:
+            return {"ok": False, "error": "only managers assign tasks"}
+        if to not in self.children.get(a.name, []):
+            return {"ok": False, "error": f"you can assign to the people you manage: {self.children.get(a.name, [])}"}
+        if s["status"] == "done":
+            return {"ok": False, "error": "already done"}
+        mine = a.name in s["claims"] or (a.name == self.root and not s["claims"])
+        if not mine:
+            return {"ok": False, "error": "it is not yours to hand out"}
+        s["claims"] = [to]
+        return {"ok": True, "task": task, "assigned_to": to}
+
+    def _op_check(self, a: Agent, result: str) -> dict:
+        r = next((x for x in self.results if x["id"] == result), None)
+        if r is None:
+            return {"ok": False, "error": f"no result {result!r} (results are named r0, r1, ...)"}
+        return {"ok": True, "result_id": result, "sound": not r["faulty"], "_cost": self.cfg.check_cost}
+
     def _op_wait(self, a: Agent) -> dict:
         return {"ok": True, "_cost": 0, "_time": 1, "round": self.round}
 
@@ -434,7 +660,9 @@ class NetworkEnv:
             return {"ok": False, "error": f"already done by {s['by']}"}
         if not self._ready(t):
             return {"ok": False, "error": f"waits for {[d for d in t.deps if self.state[d]['status'] != 'done']}"}
-        if self.cfg.market != "open" and a.name not in s["claims"]:
+        if self.cfg.org and a.name not in s["claims"]:
+            return {"ok": False, "error": f"assigned to {s['claims']}" if s["claims"] else "not assigned to you"}
+        if not self.cfg.org and self.cfg.market != "open" and a.name not in s["claims"]:
             return {"ok": False, "error": "claim the task first" if self.cfg.market == "claim" else
                     f"assigned to {s['claims']}"}
         if key:
@@ -443,8 +671,17 @@ class NetworkEnv:
                 return {"ok": False, "error": f"no key {key!r}"}
             artifact = vs[-1]["value"]
         s["tries"] += 1
+        prov = None
+        if t.id != REPORT:
+            where, faulty = self._provenance(a.name, artifact)
+            prov = {"source": where, "faulty": faulty}
+            if self.cfg.provenance and where in ("none", "team"):
+                return {"ok": False, "task": t.id, "_provenance": prov,
+                        "error": "this value appears in nothing you have computed or been given; hand in a value "
+                                 "from one of your results, a message, the board or the store"}
         try:
-            score: Score = self.provider.verify(t, artifact, a.name)
+            score: Score = self._report(t, artifact, a.name) if t.id == REPORT else \
+                self.provider.verify(t, artifact, a.name)
         except Exception as e:  # noqa: BLE001 (a malformed artifact is a wrong answer; the bug is logged)
             score = Score(False, 0.0, {"error": f"could not check this artifact ({type(e).__name__})"})
             self._log({"kind": "provider_error", "op": "verify", "error": repr(e), "trace": traceback.format_exc()})
@@ -458,12 +695,39 @@ class NetworkEnv:
             self._log({"kind": "done", "agent": a.name, "task": t.id, "value": score.value})
             self._sync_tasks()
         else:
+            s["value"] = max(s["value"], score.value)  # partial credit (the report)
             if self.cfg.wrong_penalty:
                 self._reward(a, -self.cfg.wrong_penalty)
             if self.cfg.reputation:
                 a.rep -= 0.25
         return {"ok": score.ok, "task": t.id, "value": score.value, **score.info,
-                **({} if score.ok else {"error": score.info.get("error", "not accepted")})}
+                **({} if score.ok else {"error": score.info.get("error", "not accepted")}),
+                **({"_provenance": prov} if prov else {})}
+
+    def _report(self, t: Task, artifact, agent: str) -> Score:
+        """Score the report field by field with the provider's own checks."""
+        if isinstance(artifact, str):
+            try:
+                artifact = json.loads(artifact)
+            except ValueError:
+                pass
+        if not isinstance(artifact, dict):
+            return Score(False, 0.0, {"error": "the report is one JSON object: {task id: answer, ...}"})
+        fields = t.spec["fields"]
+        right, missing, wrong = [], [], []
+        for f in fields:
+            if f not in artifact:
+                missing.append(f)
+                continue
+            try:
+                ok = self.provider.verify(self.tasks[f], artifact[f], agent).ok
+            except Exception:  # noqa: BLE001
+                ok = False
+            (right if ok else wrong).append(f)
+        value = len(right) / len(fields) if fields else 1.0
+        return Score(value == 1.0, value, {"right": len(right), "missing": missing, "wrong": wrong,
+                                           **({} if value == 1.0 else {"error": f"{len(right)} of {len(fields)} "
+                                                                                "fields right"})})
 
     def _reward(self, a: Agent, r: float):
         team = self.cfg.team
@@ -502,6 +766,13 @@ class NetworkEnv:
                     "key": _p(S, "or: submit the latest value under this store key")}, ("task",),
                    cost=self.cfg.verify_cost),
             OpSpec("wait", "Let time pass (one action's worth of time; it costs no budget).", cost=0),
+            OpSpec("assign", "Hand a task to one of the people you manage (managers only). They see and may "
+                             "submit only what is assigned to them.",
+                   {"task": _p(S, "task id"), "to": _p(S, "someone you manage")}, ("task", "to")),
+            OpSpec("check", "Check whether a result is sound (every task-tool result carries a result_id: r0, r1, "
+                            "...). Tool results are sometimes silently wrong.", {"result": _p(S, "a result_id")},
+                   ("result",),
+                   cost=self.cfg.check_cost),
         ]
 
     def _log(self, e: dict):
@@ -515,7 +786,10 @@ class NetworkEnv:
                 "actions": self.actions, "tasks": len(self.tasks), "done": len(done),
                 "tries": sum(s["tries"] for s in self.state.values()), "messages": msgs,
                 "posts": sum(1 for p in self.posts if p["by"] != "world"),
-                "store_keys": len(self.store), "reward": {a.name: round(a.reward, 3) for a in self.agents.values()},
+                "store_keys": len(self.store),
+                **({"report_score": self.state[REPORT]["value"] if self.state[REPORT]["status"] != "done" else 1.0}
+                   if REPORT in self.state else {}),
+                "faulty_results": sum(r["faulty"] for r in self.results), "reward": {a.name: round(a.reward, 3) for a in self.agents.values()},
                 "credits": {a.name: a.credits for a in self.agents.values()},
                 "spent": {a.name: a.spent for a in self.agents.values()}, **self.provider.summary()}
 

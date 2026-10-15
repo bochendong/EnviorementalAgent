@@ -17,8 +17,8 @@ from collections import Counter
 
 from .evaluate import load_runs
 
-ORDER = ["baselines", "fidelity", "calibration", "compat-framework", "compat-network", "test", "hard", "heldout", "scaling",
-         "topology", "robustness"]
+ORDER = ["baselines", "fidelity", "calibration", "compat-framework", "compat-network", "test", "hard", "heldout",
+         "scaling", "topology", "robustness", "org", "faults", "report", "guidance", "memory"]
 WHAT = {
     "baselines": "scripted reference teams on every preset and variant (CPU)",
     "fidelity": "multiagent debate on GSM8K: the authors' code vs our port",
@@ -31,6 +31,11 @@ WHAT = {
     "scaling": "CodeWorld with 2, 4, 8, 16 developers",
     "topology": "math with six network shapes",
     "robustness": "drifting laws, a changing client, an unreliable network",
+    "org": "a hierarchy of managers above the workers, 0, 1 or 2 levels",
+    "faults": "tool results that are silently wrong or fail loudly, with a check operation",
+    "report": "a final report with every answer, scored field by field; with and without a provenance rule",
+    "guidance": "the same tasks with and without procedural hints",
+    "memory": "ten episodes in a row with a memory that carries over",
 }
 
 

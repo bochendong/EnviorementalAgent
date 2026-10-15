@@ -70,6 +70,25 @@ Switches in `NetConfig` include:
 
 Every call is logged (`env.events`, `save_events`). `metrics()` sums up the run.
 
+## Mechanisms from real agent systems (all off by default)
+
+Modelled on what a deployed hierarchical system runs into: El Agente Q (Zou et al., arXiv 2505.02484, 2025) is a tree of specialist agents for quantum chemistry. It reports that its hierarchy had to be designed by hand, that details were lost in message passing, that tools failed silently, that final reports missed items, and that agents made unverified assumptions. Each mechanism is a `NetConfig` field and works with every provider.
+
+| field | what changes | what it lets us measure |
+|---|---|---|
+| `org` (levels), `org_span` | Managers are added above the provider's workers. Managers have no task tools. They see the tasks of their subtree and `assign` them down one level at a time. A worker sees and may submit only what was assigned to it. The network becomes the tree: parent and children. | Does a deeper hierarchy help at equal compute? Where does information stop? |
+| `faults`, `loud_faults`, `check_cost` | A task tool's result can be silently wrong (its numbers are altered; the world is not), or can fail with an error. Every result has a `result_id`, and `check` tells whether a result is sound. | Who verifies, at which level, and at what cost? Failure signal `used_faulty`. |
+| `report` | A final `REPORT` task: one JSON object with every task's answer, scored field by field with the provider's own checks. The run is solved only when the report is complete and right. | Missing report items, as El Agente Q's most common failure; metric `report_score`. |
+| `provenance` | A submission is accepted only if its value appears in something the submitter has seen: its own results, a message, the board, the store. | Hand-off between agents is required, not optional. |
+| (always on) | The environment records where every submitted value came from: own, received, team (a teammate computed it but never passed it on) or none. | Guesses and assumptions (`unsupported`), unshared work (`unseen`). |
+| `guidance` | Tasks carry procedural hints (`Task.spec["hint"]`, math and CodeWorld so far); without it the hints are withheld. | El Agente Q's guided vs open-ended levels. |
+| `memory_file` | Store keys under `memory/` persist across episodes. A team of one keeps the store for this. | Do agents write down procedures and reuse them? |
+
+Notes:
+- The provenance match is textual: a normalised value is searched for in what the agent saw. It is a signal, not proof. A small number can match by chance; an answer rewritten by hand into another form does not match.
+- Managers draw from the same LLM call pool as the workers, so a hierarchy costs coordination, not extra compute.
+- The scripted reference teams do not use these mechanisms.
+
 ## The providers
 
 **codeworld**: the synthetic twin.
@@ -275,3 +294,22 @@ How to read it:
 - 分子：8/10，205 个动作。
 
 **兼容配置**（`compat/*`）：满足已发表多智能体设计的前提——每人拥有全部工具、没有截止时间、按答案检验。`compat/math-decomposable` 是 4 道互不相关的递推题；`compat/math-sequential` 把同样 4 道题连成一条链（数学提供者的 `linked=True`：每道题的初值取自上一道的答案）。它们用来先复现 Kim 等关于“可分解 vs 顺序”任务的结论，再进入更难的配置（见 `docs/testset.md` 的“两条赛道”）。
+
+**借鉴真实智能体系统的机制**（全部默认关闭，`NetConfig` 里的开关，对所有任务提供者都适用）。灵感来自 El Agente Q（Zou 等，2025）：它是一棵分工明确的专家智能体树，论文承认层级是手工设计的，消息传递中会丢细节，工具会静默出错，最终报告会漏项，智能体会做未经验证的假设。
+- `org`、`org_span`：
+  - 在任务提供者的干活角色上面加几层经理。经理没有任务工具，只能看到自己下属范围内的任务，并用 `assign` 一级一级往下派；
+  - 干活的人只能看到、只能提交派给自己的任务；
+  - 网络就是这棵树，每人只能和上级、下级说话。
+- `faults`、`loud_faults`、`check_cost`：
+  - 任务工具的结果可能静默出错（结果里的数字被改，世界本身不变），也可能直接报错；
+  - 每个结果都有 `result_id`，用 `check` 可以查它是否可靠。
+- `report`：最后多一个 `REPORT` 任务，要交一个包含所有任务答案的 JSON，用任务提供者自己的检验逐项打分；报告完整且全对才算解出。
+- `provenance`：提交的值必须出现在提交者见过的东西里（自己的结果、收到的消息、公告板、共享库），否则拒收。
+- 始终开启：环境会记录每个提交值的来源——自己算的、别人传来的、只有队友算过但没传、哪里都没有。
+- `guidance`：任务带操作提示（目前有数学和 CodeWorld），不开则不显示。
+- `memory_file`：共享库里 `memory/` 开头的条目跨回合保留；独自一人时也保留共享库，作为笔记本。
+
+说明：
+- 来源判断是按文字匹配的，只是信号，不是证明。小数字可能碰巧匹配；手工改写成另一种形式的答案则匹配不上。
+- 经理和干活的人共用同一个 LLM 调用池，所以层级带来的是协调成本，不是额外算力。
+- 脚本参考团队不使用这些机制。
