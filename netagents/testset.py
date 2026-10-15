@@ -20,6 +20,9 @@ design. Held-out cases use tasks no scripted solver was written for (tasks/heldo
                 AgentsNet)
     robustness  changing worlds and an unreliable network (cf. MAST, NeurIPS 2025 D&B)
     compat      the compatibility track: decomposable vs sequential math, CodeWorld, test seeds
+    calibration easy and medium presets on dev seeds, for a few designs: is the difficulty in the range where
+                designs can differ (CALIBRATION_BAND of tasks done) for the model at hand? The presets were
+                tuned on scripted teams; this checks them against LLM agents before the real runs
 
 Compute is matched (Kim et al. 2025; Tran & Kiela 2026): every design on a case gets the same total LLM
 tool calls (``CALLS_PER_MEMBER`` times the team's size) and the same total environment budget (the
@@ -37,6 +40,8 @@ TEST_SEEDS = list(range(100, 110))
 CALLS_PER_MEMBER = 40
 MEDIUM = ["codeworld/medium", "math/medium", "website/medium", "molecule/medium"]
 HARD = ["codeworld/hard", "math/hard", "website/hard", "molecule/hard"]
+EASY = ["codeworld/easy", "math/easy", "website/easy", "molecule/easy"]
+CALIBRATION_BAND = (0.2, 0.8)  # mean share of tasks done in which designs can still be told apart
 COMPAT = ["compat/math-decomposable", "compat/math-sequential", "compat/codeworld"]
 HELDOUT = ["math/heldout-number-theory", "math/heldout-combinatorics", "website/heldout-todo",
            "molecule/heldout-kinase"]
@@ -83,6 +88,8 @@ SUITES: dict[str, list[Case]] = {
         Case("math/medium/unreliable-network", "math/medium", TEST_SEEDS[:5], net={"outage": 0.1, "latency": 2}),
     ],
     "compat": [Case(p, p, TEST_SEEDS, track="compat") for p in COMPAT],
+    "calibration": [Case(p, p, DEV_SEEDS) for p in EASY + MEDIUM]
+    + [Case(p, p, DEV_SEEDS, track="compat") for p in COMPAT],
 }
 
 

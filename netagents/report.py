@@ -17,11 +17,12 @@ from collections import Counter
 
 from .evaluate import load_runs
 
-ORDER = ["baselines", "fidelity", "compat-framework", "compat-network", "test", "hard", "heldout", "scaling",
+ORDER = ["baselines", "fidelity", "calibration", "compat-framework", "compat-network", "test", "hard", "heldout", "scaling",
          "topology", "robustness"]
 WHAT = {
     "baselines": "scripted reference teams on every preset and variant (CPU)",
     "fidelity": "multiagent debate on GSM8K: the authors' code vs our port",
+    "calibration": "easy and medium presets, dev seeds, a few designs: is the difficulty right for this model?",
     "compat-framework": "compatibility track: the papers' settings, messages through the framework",
     "compat-network": "the compatibility cases with messages through the environment's network",
     "test": "network track, medium difficulty, test seeds (the main table)",

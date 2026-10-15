@@ -19,11 +19,16 @@ SUITE=test sbatch slurm/net_eval.sh                                       # on N
 
 ```bash
 bash slurm/setup_nibi.sh                                   # once: venvs and model weights
+ACCOUNT=def-yourpi STAGE=check bash slurm/run_all.sh       # first: fidelity and calibration (see below)
 ACCOUNT=def-yourpi DRY=1 STAGE=all bash slurm/run_all.sh   # see the jobs; nothing is submitted or written
 ACCOUNT=def-yourpi bash slurm/run_all.sh                   # stage 1: baselines, fidelity, compatibility track
 ACCOUNT=def-yourpi RUN=<run> STAGE=2 bash slurm/run_all.sh # stage 2: the network track, into the same run
 python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # rebuild the index at any time
 ```
+
+`STAGE=check` runs before anything else, and its two answers decide whether the real runs are worth their GPU hours:
+- **fidelity**: is our harness as good as plain chat? The port's single agent should be close to the official single agent on GSM8K.
+- **calibration**: four designs (`sas`, `reflexion`, `centralized`, `debate`) on the easy and medium presets and the compatibility cases, dev seeds. The presets were tuned on scripted teams. A case where these designs complete on average under 20% or over 80% of the tasks is marked too hard or too easy in `calibration/summary.md`: designs cannot be told apart there, and the preset should be adjusted for this model before the test runs.
 
 Stage 1 is 22 jobs (baselines on CPU, the GSM8K fidelity check, 10 designs on `compat`, 8 on `compat` through the network, a summary job per experiment); stage 2 is 66. `FRAMEWORKS=1` adds AutoGen, Magentic-One and CAMEL to `compat-framework` and `test`; `SEEDS=2` makes a quick pass; `MODEL_ID` picks the model. Running the script again with the same `RUN` resumes: evaluation jobs skip runs already recorded, and finished baselines and fidelity checks are skipped.
 
@@ -203,12 +208,16 @@ The tasks themselves follow established practice:
 
 ```bash
 bash slurm/setup_nibi.sh                                   # 只需一次：环境和模型权重
+ACCOUNT=def-yourpi STAGE=check bash slurm/run_all.sh       # 最先跑：还原度检查和难度校准（见下）
 ACCOUNT=def-yourpi DRY=1 STAGE=all bash slurm/run_all.sh   # 只打印作业，不提交也不写文件
 ACCOUNT=def-yourpi bash slurm/run_all.sh                   # 第 1 阶段：基线、还原度检查、兼容赛道
 ACCOUNT=def-yourpi RUN=<run> STAGE=2 bash slurm/run_all.sh # 第 2 阶段：网络赛道，写进同一个运行目录
 python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时重建索引
 ```
 
+- `STAGE=check` 最先跑，它的两个结果决定正式实验值不值得花 GPU 时间：
+  - 还原度检查：我们的运行框架是否和直接对话一样好？移植版单智能体在 GSM8K 上应接近作者代码的单智能体；
+  - 难度校准：`sas`、`reflexion`、`centralized`、`debate` 四个设计在简单档、中等档和兼容用例上跑开发种子。预设是按脚本团队校准的；平均完成率低于 20% 或高于 80% 的用例，在 `calibration/summary.md` 里标为“太难”或“太简单”，那里分不出设计高下，正式跑之前要先按这个模型调整预设。
 - 第 1 阶段 22 个作业：脚本基线（CPU）、GSM8K 还原度检查、10 个设计跑兼容赛道、8 个多智能体设计让兼容用例改走网络，每个实验再加一个汇总作业。
 - 第 2 阶段 66 个作业。
 - `FRAMEWORKS=1` 把 AutoGen、Magentic-One、CAMEL 加进兼容赛道和 `test`；`SEEDS=2` 只跑前 2 个种子，快速试跑；`MODEL_ID` 换模型。

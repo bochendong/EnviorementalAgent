@@ -328,3 +328,28 @@ def test_llm_settings_are_shared():
     s = cfg.sampling()
     assert s["extra_body"] == {"top_k": 20, "chat_template_kwargs": {"enable_thinking": True}}
     assert s["temperature"] == 0.6 and s["max_tokens"] == 4096
+
+
+def test_a_team_of_one_is_not_shown_sharing_tools():
+    from netagents.tools import briefing
+
+    raw = build("compat/math-decomposable", "solo")
+    raw.reset(0)
+    names = {o["name"] for o in LocalEnv(raw).ops("a0")}
+    assert not names & {"send", "inbox", "post", "board", "put", "get", "keys", "transfer"}
+    assert {"tasks", "submit", "rsolve"} <= names and "alone" in briefing(LocalEnv(raw), "a0")
+    assert not raw.step("a0", "put", {"key": "k", "value": "v"})["ok"]
+    team = build("math/medium", "team")
+    team.reset(0)
+    assert {"send", "put", "board"} <= {o["name"] for o in LocalEnv(team).ops("a0")}
+
+
+def test_calibration_verdicts():
+    from netagents.evaluate import calibration
+    from netagents.testset import SUITES
+
+    assert {c.id for c in SUITES["calibration"]} >= {"math/easy", "math/medium", "compat/math-sequential"}
+    rows = [{"case": c, "design": d, "completion": v} for c, v in (("a", .05), ("b", .5), ("c", .95))
+            for d in ("sas", "centralized")]
+    text = calibration(rows)
+    assert "| a | 2 | 0.05" in text and "too hard" in text and "in range" in text and "too easy" in text

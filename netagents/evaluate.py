@@ -43,7 +43,7 @@ from .client import LocalEnv
 from .designs import DESIGNS
 from .frameworks import FRAMEWORK_DESIGNS
 from .fidelity import bootstrap
-from .testset import CALLS_PER_MEMBER, HYPOTHESES, SUITES
+from .testset import CALIBRATION_BAND, CALLS_PER_MEMBER, HYPOTHESES, SUITES
 
 CHEAP = {"status", "who", "tasks", "inbox", "board", "keys", "get", "wait", "ls", "read", "log", "made",
          "signatures", "props", "similarity"}
@@ -123,6 +123,23 @@ def summarize(rows: list[dict]) -> str:
     return "\n".join(out) + "\n\nEach cell: share of seeds solved (share of tasks done).\n"
 
 
+def calibration(rows: list[dict]) -> str:
+    """Per case: the mean share of tasks done over the designs that ran, and whether it is in the band where
+    designs can differ (testset.CALIBRATION_BAND)."""
+    lo, hi = CALIBRATION_BAND
+    out = ["| case | designs | mean tasks done | lowest design | highest design | verdict |",
+           "|---|---|---|---|---|---|"]
+    for c in dict.fromkeys(r["case"] for r in rows):
+        mine = [r for r in rows if r["case"] == c]
+        per = {d: st.mean(r["completion"] for r in mine if r["design"] == d)
+               for d in dict.fromkeys(r["design"] for r in mine)}
+        m = st.mean(per.values())
+        verdict = "too hard" if m < lo else "too easy" if m > hi else "in range"
+        out.append(f"| {c} | {len(per)} | {m:.2f} | {min(per.values()):.2f} | {max(per.values()):.2f} | {verdict} |")
+    return (f"\n## Calibration\n\nIn range: {lo:.0%}-{hi:.0%} of tasks done on average.\n\n" + "\n".join(out)
+            + "\n")
+
+
 def diagnostics(rows: list[dict]) -> str:
     """Per design: how runs went wrong (LLM errors, trimmed context, submissions) and the most used tools."""
     out = ["| design | runs | runs with LLM errors | context trims | peak context (k tok.) | submissions | "
@@ -188,7 +205,10 @@ def write_summary(out: str, rows: list[dict], title: str) -> str:
     if checks:
         with open(os.path.join(out, "hypotheses.json"), "w") as f:
             json.dump(checks, f, indent=1)
-    text = summarize(rows) + hypotheses_markdown(checks) + diagnostics(rows)
+    text = summarize(rows) + hypotheses_markdown(checks)
+    if any(r.get("suite") == "calibration" for r in rows):
+        text += calibration(rows)
+    text += diagnostics(rows)
     with open(os.path.join(out, "summary.md"), "w") as f:
         f.write(f"# {title}\n\n" + text)
     return text

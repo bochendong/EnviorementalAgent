@@ -154,7 +154,7 @@ Every preset comes in three variants with the same total compute and the same de
 | variant | what it is |
 |---|---|
 | `team` | the preset as written |
-| `solo` | one agent with every tool and the whole team's budget, but the same time. A round is one action for one agent and n actions for a team of n, so solo can spend only 1/n of its budget before the deadline. |
+| `solo` | one agent with every tool of the task and the whole team's budget, but the same time. Sharing operations (messages, board, store, transfers) are not offered to a team of one: they could not do anything and would only cost actions. A round is one action for one agent and n actions for a team of n, so solo can spend only 1/n of its budget before the deadline. |
 | `nonet` | the team with no messages, board or shared store: everyone works alone, in parallel |
 
 Compatibility presets (`compat/*`) meet the assumptions of the published multi-agent designs: every agent

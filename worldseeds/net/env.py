@@ -186,10 +186,23 @@ class NetworkEnv:
             self.agents[a].neighbours = tuple(sorted(nb[a], key=names.index))
 
     # ------------------------------------------------------------------ the API
+    SHARING = frozenset({"send", "inbox", "post", "board", "put", "get", "keys", "transfer", "claim", "release"})
+
+    def usable(self, agent: str) -> set[str]:
+        """The network operations that can do something for ``agent``: those the config enables, less the
+        ones for sharing when there is no one to share with (a team of one), and messages when it has no
+        neighbours. An agent is never shown, or charged for, an operation that cannot work."""
+        on = set(self.cfg.enabled())
+        if len(self.agents) == 1:
+            on -= self.SHARING
+        elif not self.agents[agent].neighbours:
+            on -= {"send", "inbox"}
+        return on
+
     def ops(self, agent: str) -> list[OpSpec]:
         """The operations ``agent`` may call (network ops first, then the provider's, filtered by role)."""
         role = self.agents[agent].role
-        net = [o for o in self._net_specs() if o.name in self.cfg.enabled()]
+        net = [o for o in self._net_specs() if o.name in self.usable(agent)]
         mine = [o for o in self.pops.values() if role.ops is None or o.name in role.ops]
         return net + mine
 
@@ -238,7 +251,7 @@ class NetworkEnv:
         if a.offline:
             # being offline costs time, not compute
             obs = {"ok": False, "error": f"you are offline for {a.offline} more round(s)", "_cost": 0, "_time": 1}
-        elif op in ALL_NET_OPS and op in self.cfg.enabled():
+        elif op in ALL_NET_OPS and op in self.usable(agent):
             try:
                 obs = getattr(self, f"_op_{op}")(a, **args)
             except TypeError as e:

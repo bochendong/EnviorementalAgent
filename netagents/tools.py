@@ -48,11 +48,15 @@ def briefing(env, agent: str) -> str:
     pub, o = env.public(), env.observe(agent)
     others = ", ".join(f"{n} ({r})" for n, r in pub["agents"].items() if n != agent)
     ops = "\n".join(f"- {op['name']}: {_describe(op)}" for op in env.ops(agent))
-    return (f"You are {agent}, a {o['role']} in a team working on a shared problem. {o['role_doc']}\n"
-            f"The problem: {json.dumps(pub['info'], default=str)}\n"
-            f"Others: {others or 'nobody'}. Your neighbours (who you can message): {', '.join(o['neighbours']) or 'none'}.\n"
+    alone = len(pub["agents"]) == 1
+    team = ("You work alone on the problem (there is no team)." if alone else
+            f"Others: {others}. Your neighbours (who you can message): {', '.join(o['neighbours']) or 'none'}.")
+    return (f"You are {agent}, a {o['role']} "
+            + ("working on a problem" if alone else "in a team working on a shared problem")
+            + f". {o['role_doc']}\n"
+            f"The problem: {json.dumps(pub['info'], default=str)}\n{team}\n"
             f"You have {o['budget']} actions; every operation costs actions as listed. The episode ends when the "
-            "final task is done or everyone's budget is spent"
+            "final task is done or " + ("your" if alone else "everyone's") + " budget is spent"
             + (f", or at round {o['deadline']} (a round passes when the team together has taken one action per "
                "member)" if o.get("deadline") else "") + ". Tasks are listed by the 'tasks' operation; a task "
             "opens when the tasks it depends on are done. Submitting a correct result for a task scores it.\n"

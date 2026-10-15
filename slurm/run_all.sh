@@ -11,6 +11,9 @@
 #
 # Stages (the compatibility track comes first: designs whose published finding reproduces are the ones
 # compared on the network track):
+#   check  before the real runs: fidelity (is our harness as good as plain chat?) and calibration (are the
+#          presets in the range where designs can differ, for this model? CALIBRATION_DESIGNS, default
+#          "sas reflexion centralized debate", on easy and medium presets and the compat cases, dev seeds)
 #   1    baselines (scripted teams, CPU), fidelity (debate on GSM8K), compat-framework, compat-network
 #   2    test, hard, heldout, scaling, topology, robustness (the network track)
 #   all  both
@@ -52,6 +55,7 @@ FRAMEWORK_DESIGNS="autogen-roundrobin autogen-selector magentic-one camel-rolepl
 DRY="${DRY:-0}"
 
 case "$STAGE" in
+  check) EXPERIMENTS="fidelity calibration" ;;
   1) EXPERIMENTS="baselines fidelity compat-framework compat-network" ;;
   2) EXPERIMENTS="test hard heldout scaling topology robustness" ;;
   all) EXPERIMENTS="baselines fidelity compat-framework compat-network test hard heldout scaling topology robustness" ;;
@@ -122,6 +126,7 @@ PY
     *) suite=$exp; route=case ;;
   esac
   designs="$DESIGNS"
+  [ "$exp" = calibration ] && designs="${CALIBRATION_DESIGNS:-sas reflexion centralized debate}"
   if [ "${FRAMEWORKS:-0}" = 1 ] && { [ "$exp" = compat-framework ] || [ "$exp" = test ]; }; then
     designs="$designs $FRAMEWORK_DESIGNS"
   fi
