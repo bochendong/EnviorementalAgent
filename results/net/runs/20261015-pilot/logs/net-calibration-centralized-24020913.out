@@ -1,0 +1,6 @@
+waiting for vLLM on port 20913 (log: /scratch/bdong/worldseeds/results/net/runs/20261015-pilot/logs/vllm-24020913.log)
+server up after 160s
+codeworld/easy                   seed   0 centralized   solved False done 1/6 calls 37 tokens 298046 errors 6 ops {'send': 20, 'inbox': 20, 'run': 16, 'signatures': 9}
+codeworld/easy                   seed   1 centralized   solved False done 0/6 calls 36 tokens 317163 errors 8 ops {'send': 20, 'inbox': 20, 'run': 16, 'signatures': 11}
+math/easy                        seed   0 centralized   solved False done 5/7 calls 42 tokens 332925 errors 4 ops {'send': 20, 'inbox': 20, 'sequence': 17, 'submit': 15}
+[2026-10-15T04:01:28.475] error: *** JOB 24020913 ON g31 CANCELLED AT 2026-10-15T04:01:28 DUE to SIGNAL Terminated ***

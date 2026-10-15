@@ -1,0 +1,156 @@
+diff --git a/netagents/fidelity.py b/netagents/fidelity.py
+index 6f8192e..3fae1c6 100644
+--- a/netagents/fidelity.py
++++ b/netagents/fidelity.py
+@@ -133,6 +133,30 @@ def bootstrap(a: list[bool], b: list[bool], reps: int = 2000) -> tuple[float, fl
+     return diffs[int(.025 * reps)], diffs[int(.975 * reps)]
+ 
+ 
++def run_arms(qs, module, client, cfg, calls: int, cache: str, out: str) -> dict:
++    """Save each completed arm, checking the single-agent harness before spending time on debate."""
++    arms = {}
++    runners = [
++        ("official-single", lambda: official(qs, 1, 1, module, client, cfg)),
++        ("port-single", lambda: port(qs, "react", calls, tempfile.mkdtemp(dir=cache))),
++        ("official-debate", lambda: official(qs, 3, 2, module, client, cfg)),
++        ("port-debate", lambda: port(qs, "debate", calls, tempfile.mkdtemp(dir=cache))),
++    ]
++    for name, run in runners:
++        arms[name] = run()
++        progress = {"model": cfg.model, "n": len(qs), "complete": len(arms) == 4,
++                    "accuracy": {k: sum(v) / len(v) for k, v in arms.items()}, "per_question": arms}
++        if "port-single" in arms:
++            progress["single_gap"] = progress["accuracy"]["port-single"] - progress["accuracy"]["official-single"]
++            progress["single_gap_95"] = bootstrap(arms["port-single"], arms["official-single"])
++        path = os.path.join(out, "progress.json")
++        with open(path + ".tmp", "w") as f:
++            json.dump(progress, f, indent=1)
++        os.replace(path + ".tmp", path)
++        print(json.dumps({k: v for k, v in progress.items() if k != "per_question"}), flush=True)
++    return arms
++
++
+ def main():
+     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     ap.add_argument("--check", choices=["debate"], default="debate")
+@@ -152,17 +176,14 @@ def main():
+     module = importlib.util.module_from_spec(spec)
+     spec.loader.exec_module(module)
+     qs = gsm8k(a.n, cache)
+-    arms = {
+-        "official-single": official(qs, 1, 1, module, client, cfg),
+-        "official-debate": official(qs, 3, 2, module, client, cfg),
+-        "port-single": port(qs, "react", a.calls, tempfile.mkdtemp(dir=cache)),
+-        "port-debate": port(qs, "debate", a.calls, tempfile.mkdtemp(dir=cache)),
+-    }
++    arms = run_arms(qs, module, client, cfg, a.calls, cache, a.out)
+     acc = {k: sum(v) / len(v) for k, v in arms.items()}
+     gain_off, gain_port = (acc["official-debate"] - acc["official-single"], acc["port-debate"] - acc["port-single"])
+     lo, hi = bootstrap(arms["official-debate"], arms["official-single"])
+     report = {"check": a.check, "model": cfg.model, "n": len(qs),
+               "settings": {**cfg.sampling(), "thinking": cfg.thinking}, "accuracy": acc, "official_gain": gain_off,
++              "single_gap": acc["port-single"] - acc["official-single"],
++              "single_gap_95": bootstrap(arms["port-single"], arms["official-single"]),
+               "official_gain_95": [lo, hi], "port_gain": gain_port, "port_gain_within_official_interval":
+               lo <= gain_port <= hi, "paper": {**PAPER, "gain": PAPER["debate"] - PAPER["single"]},
+               "per_question": arms}
+diff --git a/slurm/run_all.sh b/slurm/run_all.sh
+index b6a23ae..4e893ad 100755
+--- a/slurm/run_all.sh
++++ b/slurm/run_all.sh
+@@ -14,6 +14,7 @@
+ #   check  before the real runs: fidelity (is our harness as good as plain chat?) and calibration (are the
+ #          presets in the range where designs can differ, for this model? CALIBRATION_DESIGNS, default
+ #          "sas reflexion centralized debate", on easy and medium presets and the compat cases, dev seeds)
++#          No separate summary job; summarize calibration after inspecting the pilot's outputs.
+ #   1    baselines (scripted teams, CPU), fidelity (debate on GSM8K), compat-framework, compat-network
+ #   2    test, hard, heldout, scaling, topology, robustness (the network track)
+ #   3    org, faults, report, guidance, memory (mechanisms modelled on El Agente Q; network track)
+@@ -50,7 +51,11 @@ GPU_MEM="${GPU_MEM:-32G}"
+ STAGE="${STAGE:-1}"
+ RUN="${RUN:-$(date +%Y%m%d)-$SERVED_NAME}"
+ RUN_DIR="$WS_STORE/results/net/runs/$RUN"
+-TIME="${TIME:-1-00:00}"
++if [ "$STAGE" = check ]; then
++  TIME="${TIME:-0-08:00}"
++else
++  TIME="${TIME:-1-00:00}"
++fi
+ DESIGNS="${DESIGNS:-react reflexion sas independent centralized decentralized hybrid debate moa blackboard}"
+ FRAMEWORK_DESIGNS="autogen-roundrobin autogen-selector magentic-one camel-roleplay"
+ DRY="${DRY:-0}"
+@@ -73,7 +78,7 @@ else
+   { echo "commit $(git rev-parse HEAD)  ($(git rev-parse --abbrev-ref HEAD))"; echo "submitted $(date -Is)";
+   git status --short | sed 's/^/changed /'; } >> "$RUN_DIR/commit.txt"
+ { echo "# $(date -Is), stage $STAGE"; for v in ACCOUNT CPU_ACCOUNT GPU_ACCOUNT GPU_RESOURCE GPU_CPUS GPU_MEM GPU_DEPENDENCY MODEL_ID SERVED_NAME TP MAX_MODEL_LEN EXTRA_VLLM_ARGS SERVER_MODE \
+-  DESIGNS FRAMEWORKS SEEDS N TIME; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
++  DESIGNS CALIBRATION_DESIGNS FRAMEWORKS SEEDS N TIME WS_THINKING WS_MAX_TOKENS WS_CONTEXT_TOKENS REASONING_PARSER; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
+ fi
+ 
+ N0=$(wc -l < "$PLAN")
+@@ -141,9 +146,11 @@ PY
+       --export=ALL,SUITE="$suite",DESIGNS="$d",ROUTE="$route",OUT="$out/$d",LOG_DIR="$RUN_DIR/logs",SEEDS="${SEEDS:-}" \
+       slurm/net_eval.sh)")
+   done
+-  dep=$(IFS=:; echo "${ids[*]}")
+-  submit "$exp" summary --job-name="net-$exp-summary" --dependency="afterany:$dep" \
+-    --output="$RUN_DIR/logs/%x-%j.out" --export=ALL,DIR="$out" slurm/net_summary.sh >/dev/null
++  if [ "$STAGE" != check ]; then
++    dep=$(IFS=:; echo "${ids[*]}")
++    submit "$exp" summary --job-name="net-$exp-summary" --dependency="afterany:$dep" \
++      --output="$RUN_DIR/logs/%x-%j.out" --export=ALL,DIR="$out" slurm/net_summary.sh >/dev/null
++  fi
+ done
+ 
+ [ "$DRY" = 1 ] || ( source "$AGENT_VENV/bin/activate" 2>/dev/null; python -m netagents.report "$RUN_DIR" >/dev/null 2>&1 ) || true
+@@ -151,4 +158,8 @@ echo "run:   $RUN"
+ echo "dir:   $RUN_DIR"
+ echo "jobs:  $(($(wc -l < "$PLAN") - N0)) submitted$([ "$DRY" = 1 ] && echo " (dry run: nothing was submitted)")"
+ echo "watch: squeue -u \$USER;  index: python -m netagents.report $RUN_DIR"
+-echo "later: ACCOUNT=$ACCOUNT RUN=$RUN STAGE=2 bash slurm/run_all.sh"
++if [ "$STAGE" = check ]; then
++  echo "next:  review fidelity/debate.json and calibration outputs before submitting more jobs"
++else
++  echo "later: ACCOUNT=$ACCOUNT RUN=$RUN STAGE=2 bash slurm/run_all.sh"
++fi
+diff --git a/tests/test_netagents.py b/tests/test_netagents.py
+index ab3e359..95467e6 100644
+--- a/tests/test_netagents.py
++++ b/tests/test_netagents.py
+@@ -212,6 +212,36 @@ def test_fidelity_scoring_is_strict():
+     assert lo <= .5 <= hi
+ 
+ 
++def test_fidelity_checkpoints_single_agent_comparison_first(tmp_path, monkeypatch):
++    from types import SimpleNamespace
++    from netagents import fidelity
++
++    order = []
++    cache = tmp_path / "cache"
++    cache.mkdir()
++
++    def official(qs, agents, rounds, module, client, cfg):
++        order.append("official-single" if agents == 1 else "official-debate")
++        if agents == 3:
++            progress = json.loads((tmp_path / "progress.json").read_text())
++            assert set(progress["accuracy"]) == {"official-single", "port-single"}
++            assert progress["single_gap"] == -.5 and not progress["complete"]
++        return [True, True]
++
++    def port(qs, design, calls, question_cache):
++        order.append("port-single" if design == "react" else "port-debate")
++        return [True, False]
++
++    monkeypatch.setattr(fidelity, "official", official)
++    monkeypatch.setattr(fidelity, "port", port)
++    arms = fidelity.run_arms([{}, {}], None, None, SimpleNamespace(model="mock"), 6, str(cache), str(tmp_path))
++    assert order == ["official-single", "port-single", "official-debate", "port-debate"]
++    progress = json.loads((tmp_path / "progress.json").read_text())
++    assert progress["complete"] and progress["per_question"] == arms
++    assert progress["single_gap_95"][0] <= -.5 <= progress["single_gap_95"][1]
++    assert not (tmp_path / "progress.json.tmp").exists()
++
++
+ def test_channel_routes_messages_through_the_framework_or_the_network():
+     from netagents.designs import Channel
+ 

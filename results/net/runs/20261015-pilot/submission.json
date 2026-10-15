@@ -1,0 +1,122 @@
+{
+  "run": "20261015-pilot",
+  "submitted_at_utc": "2026-10-15T06:02:50.590653+00:00",
+  "commit": "41c0ed137cd4223f30f8d12ca5e9babf19d17ba4",
+  "source": "/scratch/bdong/worldseeds/code/41c0ed1-20261015-pilot",
+  "source_patch_sha256": "5d32d5050d3b9045d0aba3aeca7a90c700d08885833e07c0651446edde919203",
+  "results": "/scratch/bdong/worldseeds/results/net/runs/20261015-pilot",
+  "stage": "check",
+  "job_ids": [
+    "24020911",
+    "24020912",
+    "24020913"
+  ],
+  "jobs": [
+    {
+      "experiment": "fidelity",
+      "design": "debate",
+      "job": "24020911",
+      "command": "--job-name=net-fidelity --time=0-08:00 --output=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/logs/%x-%j.out --export=ALL,OUT=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/fidelity,N=50,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/logs slurm/net_fidelity.sh"
+    },
+    {
+      "experiment": "calibration",
+      "design": "sas",
+      "job": "24020912",
+      "command": "--job-name=net-calibration-sas --time=1-00:00 --output=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/logs/%x-%j.out --export=ALL,SUITE=calibration,DESIGNS=sas,ROUTE=case,OUT=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/calibration/sas,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/logs,SEEDS=2 slurm/net_eval.sh"
+    },
+    {
+      "experiment": "calibration",
+      "design": "centralized",
+      "job": "24020913",
+      "command": "--job-name=net-calibration-centralized --time=1-00:00 --output=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/logs/%x-%j.out --export=ALL,SUITE=calibration,DESIGNS=centralized,ROUTE=case,OUT=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/calibration/centralized,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261015-pilot/logs,SEEDS=2 slurm/net_eval.sh"
+    }
+  ],
+  "expected_calibration_runs": 44,
+  "fidelity_questions": 50,
+  "validation": {
+    "targeted_tests_passed": 18,
+    "bash_syntax": "passed",
+    "dry_run_jobs": 3,
+    "fidelity_checkpoint_tests_passed": 2
+  },
+  "settings": {
+    "ACCOUNT": "def-hup-ab_cpu",
+    "GPU_ACCOUNT": "rrg-hup_gpu",
+    "GPU_RESOURCE": "nvidia_h100_80gb_hbm3_3g.40gb:1",
+    "GPU_CPUS": "4",
+    "GPU_MEM": "32G",
+    "MODEL_ID": "Qwen/Qwen3-8B",
+    "MAX_MODEL_LEN": "65536",
+    "WS_THINKING": "1",
+    "WS_MAX_TOKENS": "4096",
+    "WS_CONTEXT_TOKENS": "39321",
+    "REASONING_PARSER": "qwen3",
+    "N": "50",
+    "SEEDS": "2",
+    "CALIBRATION_DESIGNS": "sas centralized"
+  },
+  "next_step": "Review fidelity and calibration before submitting any further experiments.",
+  "scheduling_changes": [
+    {
+      "at_utc": "2026-10-15T06:05:30.288598+00:00",
+      "reason": "Prioritize time to first diagnostic result. Full H100 for fidelity after equal test-only estimates; 8-hour walltime for calibration instead of 24 hours. Retain the same three job IDs.",
+      "jobs": [
+        {
+          "JobId": "24020911",
+          "JobName": "net-fidelity",
+          "JobState": "PENDING",
+          "Account": "rrg-hup_gpu",
+          "Partition": "gpubase_bygpu_b2",
+          "TimeLimit": "08:00:00",
+          "NumCPUs": "4",
+          "ReqTRES": "cpu=4,mem=32G,node=1,billing=12200,gres/gpu=1,gres/gpu:h100=1",
+          "TresPerNode": "gres/gpu:h100:1",
+          "Reason": "None"
+        },
+        {
+          "JobId": "24020912",
+          "JobName": "net-calibration-sas",
+          "JobState": "PENDING",
+          "Account": "rrg-hup_gpu",
+          "Partition": "gpubase_bygpu_b2",
+          "TimeLimit": "08:00:00",
+          "NumCPUs": "4",
+          "ReqTRES": "cpu=4,mem=32G,node=1,billing=5228,gres/gpu=1,gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb=1",
+          "TresPerNode": "gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb:1",
+          "Reason": "None"
+        },
+        {
+          "JobId": "24020913",
+          "JobName": "net-calibration-centralized",
+          "JobState": "PENDING",
+          "Account": "rrg-hup_gpu",
+          "Partition": "gpubase_bygpu_b2",
+          "TimeLimit": "08:00:00",
+          "NumCPUs": "4",
+          "ReqTRES": "cpu=4,mem=32G,node=1,billing=5228,gres/gpu=1,gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb=1",
+          "TresPerNode": "gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb:1",
+          "Reason": "None"
+        }
+      ]
+    }
+  ],
+  "execution_notes": [
+    "Run official-single and port-single before debate arms; write progress.json after each arm, including paired single-agent accuracy gap and 95% bootstrap interval.",
+    "Calibration jobs have an 8-hour time limit; fidelity uses one full H100 and calibration uses 40 GB MIG slices.",
+    "Still exactly three experiment jobs. No additional experiment submission without reviewing pilot results."
+  ],
+  "latest_queue_check_at_utc": "2026-10-15T06:06:54.761312+00:00",
+  "latest_queue": [
+    "24020912|net-calibration-sas|RUNNING|8:00:00|g30",
+    "24020913|net-calibration-centralized|RUNNING|8:00:00|g31",
+    "24020911|net-fidelity|PENDING|8:00:00|(Priority)"
+  ],
+  "pilot_gate": {
+    "checked_at_utc": "2026-10-15T08:01:28.469504+00:00",
+    "passed": false,
+    "sas": "Failed during vLLM startup: OSError errno 116 Stale file handle in Triton compiled-kernel cache read. No completed runs.",
+    "centralized": "Stopped after repeated finish_reason=length empty responses and an Event loop is closed error. Three completed records; 18 model errors.",
+    "fidelity": "Held before starting until runtime and harness errors are addressed.",
+    "next_step": "Repair runtime and harness, validate with minimal probes before resuming pilot. Do not expand experiments."
+  }
+}

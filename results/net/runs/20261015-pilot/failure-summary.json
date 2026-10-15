@@ -1,0 +1,129 @@
+{
+  "run": "20261015-pilot",
+  "snapshot_at_utc": "2026-10-15T08:11:11.652684+00:00",
+  "pilot_passed": false,
+  "jobs": [
+    {
+      "job_id": "24020911",
+      "purpose": "GSM8K fidelity, 50 questions",
+      "state": "PENDING",
+      "reason": "JobHeldUser",
+      "note": "Held before starting; there is no fidelity result or job log yet."
+    },
+    {
+      "job_id": "24020912",
+      "purpose": "sas calibration, 22 expected runs",
+      "state": "FAILED",
+      "exit_code": "1:0",
+      "elapsed": "00:02:24",
+      "recorded_runs": 0
+    },
+    {
+      "job_id": "24020913",
+      "purpose": "centralized calibration, 22 expected runs",
+      "state": "CANCELLED",
+      "elapsed": "01:55:00",
+      "recorded_runs": 3,
+      "llm_errors": 18,
+      "note": "Stopped after repeated model errors; these records do not validate task difficulty."
+    }
+  ],
+  "startup_failure": {
+    "job_id": "24020912",
+    "error": "OSError: [Errno 116] Stale file handle",
+    "where": "Triton CompiledKernel initialization reading a compiled-kernel cache file",
+    "evidence_file": "logs/vllm-24020912.log",
+    "evidence_line": 156,
+    "followup_error": "RuntimeError: Engine core initialization failed."
+  },
+  "model_error_examples": [
+    {
+      "case": "codeworld/easy",
+      "seed": 0,
+      "agent": "a0",
+      "agent_error_count": 3,
+      "last_error": "ModelBehaviorError: Chat Completions response terminated with finish_reason='length' but produced no assistant text, tool call, or refusal.",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 1
+    },
+    {
+      "case": "codeworld/easy",
+      "seed": 0,
+      "agent": "a1",
+      "agent_error_count": 2,
+      "last_error": "ModelBehaviorError: Chat Completions response terminated with finish_reason='length' but produced no assistant text, tool call, or refusal.",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 1
+    },
+    {
+      "case": "codeworld/easy",
+      "seed": 0,
+      "agent": "a2",
+      "agent_error_count": 1,
+      "last_error": "ModelBehaviorError: Chat Completions response terminated with finish_reason='length' but produced no assistant text, tool call, or refusal.",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 1
+    },
+    {
+      "case": "codeworld/easy",
+      "seed": 1,
+      "agent": "orchestrator",
+      "agent_error_count": 1,
+      "last_error": "RuntimeError: Event loop is closed",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 2
+    },
+    {
+      "case": "codeworld/easy",
+      "seed": 1,
+      "agent": "a0",
+      "agent_error_count": 4,
+      "last_error": "ModelBehaviorError: Chat Completions response terminated with finish_reason='length' but produced no assistant text, tool call, or refusal.",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 2
+    },
+    {
+      "case": "codeworld/easy",
+      "seed": 1,
+      "agent": "a2",
+      "agent_error_count": 3,
+      "last_error": "ModelBehaviorError: Chat Completions response terminated with finish_reason='length' but produced no assistant text, tool call, or refusal.",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 2
+    },
+    {
+      "case": "math/easy",
+      "seed": 0,
+      "agent": "orchestrator",
+      "agent_error_count": 2,
+      "last_error": "ModelBehaviorError: Chat Completions response terminated with finish_reason='length' but produced no assistant text, tool call, or refusal.",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 3
+    },
+    {
+      "case": "math/easy",
+      "seed": 0,
+      "agent": "a0",
+      "agent_error_count": 1,
+      "last_error": "ModelBehaviorError: Chat Completions response terminated with finish_reason='length' but produced no assistant text, tool call, or refusal.",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 3
+    },
+    {
+      "case": "math/easy",
+      "seed": 0,
+      "agent": "a2",
+      "agent_error_count": 1,
+      "last_error": "ModelBehaviorError: Chat Completions response terminated with finish_reason='length' but produced no assistant text, tool call, or refusal.",
+      "evidence_file": "calibration/centralized/runs.jsonl",
+      "evidence_line": 3
+    }
+  ],
+  "evidence_notes": [
+    "logs/ contains original Slurm stdout and vLLM server logs.",
+    "calibration/centralized/runs.jsonl contains per-run metrics and member error messages.",
+    "calibration/centralized/traces/*.jsonl are decompressed environment-event traces for browser reading.",
+    "source.patch records the uncommitted code changes used for this pilot, relative to commit.txt.",
+    "No experiments were resubmitted while preparing this log snapshot."
+  ]
+}

@@ -1,0 +1,52 @@
+waiting for vLLM on port 20912 (log: /scratch/bdong/worldseeds/results/net/runs/20261015-pilot/logs/vllm-24020912.log)
+vLLM died:
+(APIServer pid=908889)     return runner.run(wrapper())
+(APIServer pid=908889)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/runners.py", line 118, in run
+(APIServer pid=908889)     return self._loop.run_until_complete(task)
+(APIServer pid=908889)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/uvloop/__init__.py", line 48, in wrapper
+(APIServer pid=908889)     return await main
+(APIServer pid=908889)            ^^^^^^^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/entrypoints/openai/api_server.py", line 698, in run_server
+(APIServer pid=908889)     await run_server_worker(listen_address, sock, args, **uvicorn_kwargs)
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/entrypoints/openai/api_server.py", line 712, in run_server_worker
+(APIServer pid=908889)     async with build_async_engine_client(
+(APIServer pid=908889)   File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/contextlib.py", line 204, in __aenter__
+(APIServer pid=908889)     return await anext(self.gen)
+(APIServer pid=908889)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/entrypoints/openai/api_server.py", line 100, in build_async_engine_client
+(APIServer pid=908889)     async with build_async_engine_client_from_engine_args(
+(APIServer pid=908889)   File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/contextlib.py", line 204, in __aenter__
+(APIServer pid=908889)     return await anext(self.gen)
+(APIServer pid=908889)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/entrypoints/openai/api_server.py", line 136, in build_async_engine_client_from_engine_args
+(APIServer pid=908889)     async_llm = AsyncLLM.from_vllm_config(
+(APIServer pid=908889)                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/v1/engine/async_llm.py", line 217, in from_vllm_config
+(APIServer pid=908889)     return cls(
+(APIServer pid=908889)            ^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/v1/engine/async_llm.py", line 146, in __init__
+(APIServer pid=908889)     self.engine_core = EngineCoreClient.make_async_mp_client(
+(APIServer pid=908889)                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=908889)     return func(*args, **kwargs)
+(APIServer pid=908889)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/v1/engine/core_client.py", line 132, in make_async_mp_client
+(APIServer pid=908889)     return AsyncMPClient(*client_args)
+(APIServer pid=908889)            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/tracing/otel.py", line 178, in sync_wrapper
+(APIServer pid=908889)     return func(*args, **kwargs)
+(APIServer pid=908889)            ^^^^^^^^^^^^^^^^^^^^^
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/v1/engine/core_client.py", line 963, in __init__
+(APIServer pid=908889)     super().__init__(
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/v1/engine/core_client.py", line 573, in __init__
+(APIServer pid=908889)     with launch_core_engines(
+(APIServer pid=908889)   File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/contextlib.py", line 144, in __exit__
+(APIServer pid=908889)     next(self.gen)
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/v1/engine/utils.py", line 1213, in launch_core_engines
+(APIServer pid=908889)     wait_for_engine_startup(
+(APIServer pid=908889)   File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/v1/engine/utils.py", line 1272, in wait_for_engine_startup
+(APIServer pid=908889)     raise RuntimeError(
+(APIServer pid=908889) RuntimeError: Engine core initialization failed. See root cause above. Failed core proc(s): {}
