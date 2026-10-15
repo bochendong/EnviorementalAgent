@@ -17,6 +17,8 @@
 # Other settings: MODEL_ID (slurm/env.sh), DESIGNS (default: every ported design), FRAMEWORKS=1 (also
 # AutoGen, Magentic-One, CAMEL on compat-framework and test), TIME (per job, default 1-00:00), SEEDS (only
 # the first N seeds of each case, for a quick pass), N (GSM8K questions, default 100).
+# GPU_RESOURCE, GPU_CPUS and GPU_MEM select the GPU allocation; defaults target Qwen3-8B on a 40 GB MIG.
+# Override these for larger models, e.g. GPU_RESOURCE=h100:1 GPU_CPUS=8 GPU_MEM=64G.
 #
 # Layout ($WS_STORE/results/net/runs/$RUN/):
 #   README.md                 index: every experiment, its status and its main table (netagents/report.py)
@@ -36,6 +38,11 @@ cd "$(dirname "$0")/.."
 source slurm/env.sh
 
 : "${ACCOUNT:?set ACCOUNT to your Slurm account, e.g. ACCOUNT=def-yourpi}"
+CPU_ACCOUNT="${CPU_ACCOUNT:-$ACCOUNT}"
+GPU_ACCOUNT="${GPU_ACCOUNT:-$ACCOUNT}"
+GPU_RESOURCE="${GPU_RESOURCE:-nvidia_h100_80gb_hbm3_3g.40gb:1}"
+GPU_CPUS="${GPU_CPUS:-4}"
+GPU_MEM="${GPU_MEM:-32G}"
 STAGE="${STAGE:-1}"
 RUN="${RUN:-$(date +%Y%m%d)-$SERVED_NAME}"
 RUN_DIR="$WS_STORE/results/net/runs/$RUN"
@@ -59,19 +66,26 @@ else
   [ -f "$PLAN" ] || printf "experiment\tdesign\tjob\tcommand\n" > "$PLAN"
   { echo "commit $(git rev-parse HEAD)  ($(git rev-parse --abbrev-ref HEAD))"; echo "submitted $(date -Is)";
   git status --short | sed 's/^/changed /'; } >> "$RUN_DIR/commit.txt"
-{ echo "# $(date -Is), stage $STAGE"; for v in MODEL_ID SERVED_NAME TP MAX_MODEL_LEN EXTRA_VLLM_ARGS SERVER_MODE \
+{ echo "# $(date -Is), stage $STAGE"; for v in ACCOUNT CPU_ACCOUNT GPU_ACCOUNT GPU_RESOURCE GPU_CPUS GPU_MEM GPU_DEPENDENCY MODEL_ID SERVED_NAME TP MAX_MODEL_LEN EXTRA_VLLM_ARGS SERVER_MODE \
   DESIGNS FRAMEWORKS SEEDS N TIME; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
 fi
 
 N0=$(wc -l < "$PLAN")
-COMMON=(--account="$ACCOUNT" --parsable)
 submit() {  # submit <experiment> <design> <sbatch args...>; prints the job id
   local exp=$1 design=$2; shift 2
-  local id
+  local id account="$GPU_ACCOUNT"
+  if [ "$exp" = baselines ] || [ "$design" = summary ]; then account="$CPU_ACCOUNT"; fi
+  local common=(--account="$account" --parsable)
+  if [ "$exp" != baselines ] && [ "$design" != summary ]; then
+    common+=(--gpus-per-node="$GPU_RESOURCE" --cpus-per-task="$GPU_CPUS" --mem="$GPU_MEM")
+  fi
+  if [ "$exp" != baselines ] && [ "$design" != summary ] && [ -n "${GPU_DEPENDENCY:-}" ]; then
+    common+=(--dependency="afterok:$GPU_DEPENDENCY")
+  fi
   if [ "$DRY" = 1 ]; then
-    id="dry$RANDOM"; echo "sbatch ${COMMON[*]} $*" >&2
+    id="dry$RANDOM"; echo "sbatch ${common[*]} $*" >&2
   else
-    id=$(sbatch "${COMMON[@]}" "$@")
+    id=$(sbatch "${common[@]}" "$@")
   fi
   printf "%s\t%s\t%s\t%s\n" "$exp" "$design" "$id" "$*" >> "$PLAN"
   echo "$id"
@@ -89,6 +103,17 @@ for exp in $EXPERIMENTS; do
       continue ;;
     fidelity)
       [ -f "$out/debate.json" ] && { echo "skip $exp: $out/debate.json exists"; continue; }
+      # Compute nodes may have no internet: fetch the benchmark and authors' code on the login node.
+      if [ "$DRY" != 1 ]; then
+        "$AGENT_VENV/bin/python" - "$out" <<'PY'
+import os
+import sys
+from netagents.fidelity import DEBATE, GSM8K, fetch
+cache = os.path.join(sys.argv[1], "cache")
+fetch(DEBATE, os.path.join(cache, "debate"))
+fetch(GSM8K, cache)
+PY
+      fi
       submit "$exp" debate --job-name=net-fidelity --time=0-08:00 --output="$RUN_DIR/logs/%x-%j.out" \
         --export=ALL,OUT="$out",N="${N:-100}",LOG_DIR="$RUN_DIR/logs" slurm/net_fidelity.sh >/dev/null
       continue ;;

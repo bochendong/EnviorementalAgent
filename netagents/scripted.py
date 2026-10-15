@@ -243,9 +243,21 @@ def solve_math(env) -> dict:
             break
         text = tasks[f"{pid}.L1"]["text"]
         v = None
-        m = re.search(r"a\(0\) = (\d+), a\(n\+1\) = (\d+)\*a\(n\) \+ (\d+)", text)
+        m = re.search(r"a\(0\) = (.+?), a\(n\+1\) = (\d+)\*a\(n\) \+ (\d+)", text)
         if m:  # a recurrence
             r0, p, q = m.groups()
+            if not r0.isdigit():  # a linked recurrence starts from an earlier task's answer
+                parent = re.fullmatch(r"\(the answer of (.+)\.T\) mod (\d+)", r0)
+                if parent is None:
+                    raise ValueError(f"unsupported recurrence initial value: {r0}")
+                previous = finals.get(parent[1])
+                if previous is None:
+                    return env.metrics()
+                who, answer = previous
+                got = T.share(who, ex, f"{parent[1]}/answer", answer)
+                if got is None:
+                    return env.metrics()
+                r0 = str(int(got) % int(parent[2]))
             vals = T.do(ex, "sequence", {"rec": f"{p}*a(n) + {q}", "init": r0, "count": 7}).get("values")
             if vals:
                 T.submit(ex, f"{pid}.L1", vals[6])

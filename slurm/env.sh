@@ -10,6 +10,7 @@ export NETAGENTS_PY_AUTOGEN="${NETAGENTS_PY_AUTOGEN:-$AUTOGEN_VENV/bin/python}"
 export CAMEL_VENV="${CAMEL_VENV:-$WS_STORE/venv-camel}"         # CAMEL, for the framework designs
 export NETAGENTS_PY_CAMEL="${NETAGENTS_PY_CAMEL:-$CAMEL_VENV/bin/python}"
 export HF_HOME="${HF_HOME:-$WS_STORE/hf}"
+export TIKTOKEN_CACHE_DIR="${TIKTOKEN_CACHE_DIR:-$WS_STORE/tiktoken}"
 
 # Free open-weight model served by vLLM. Good options on one H100-80GB:
 #   Qwen/Qwen3-8B            (default; fast, solid tool calling)
@@ -34,4 +35,5 @@ export VLLM_SIF="${VLLM_SIF:-$WS_STORE/vllm-openai.sif}"
 load_modules() {
   module load StdEnv/2023 python/3.11 gcc cuda/12.6 2>/dev/null || module load python/3.11
   module load opencv/4.13.0
+  module load "${RDKIT_MODULE:-rdkit/2025.09.4}"
 }

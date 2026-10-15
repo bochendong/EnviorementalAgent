@@ -1,0 +1,122 @@
+[
+ {
+  "design": "independent",
+  "baseline": "sas",
+  "case": "compat/math-decomposable",
+  "metric": "completion",
+  "expect": "+",
+  "seeds": 10,
+  "difference": 0.0,
+  "ci95": [
+   0.0,
+   0.0
+  ],
+  "verdict": "inconclusive",
+  "source": "Kim et al. 2026, Towards a Science of Scaling Agent Systems, Sec. 4: on decomposable tasks (Finance-Agent) every multi-agent architecture beats the single agent (+57% to +81%); on sequential ones (PlanCraft) every one is worse (-39% to -70%)"
+ },
+ {
+  "design": "centralized",
+  "baseline": "sas",
+  "case": "compat/math-decomposable",
+  "metric": "completion",
+  "expect": "+",
+  "seeds": 10,
+  "difference": 0.1386,
+  "ci95": [
+   0.0693,
+   0.2002
+  ],
+  "verdict": "reproduced",
+  "source": "Kim et al. 2026, Towards a Science of Scaling Agent Systems, Sec. 4: on decomposable tasks (Finance-Agent) every multi-agent architecture beats the single agent (+57% to +81%); on sequential ones (PlanCraft) every one is worse (-39% to -70%)"
+ },
+ {
+  "design": "decentralized",
+  "baseline": "sas",
+  "case": "compat/math-decomposable",
+  "metric": "completion",
+  "expect": "+",
+  "seeds": 10,
+  "difference": 0.0308,
+  "ci95": [
+   0.0,
+   0.0847
+  ],
+  "verdict": "inconclusive",
+  "source": "Kim et al. 2026, Towards a Science of Scaling Agent Systems, Sec. 4: on decomposable tasks (Finance-Agent) every multi-agent architecture beats the single agent (+57% to +81%); on sequential ones (PlanCraft) every one is worse (-39% to -70%)"
+ },
+ {
+  "design": "hybrid",
+  "baseline": "sas",
+  "case": "compat/math-decomposable",
+  "metric": "completion",
+  "expect": "+",
+  "seeds": 10,
+  "difference": 0.1232,
+  "ci95": [
+   0.0462,
+   0.2002
+  ],
+  "verdict": "reproduced",
+  "source": "Kim et al. 2026, Towards a Science of Scaling Agent Systems, Sec. 4: on decomposable tasks (Finance-Agent) every multi-agent architecture beats the single agent (+57% to +81%); on sequential ones (PlanCraft) every one is worse (-39% to -70%)"
+ },
+ {
+  "design": "independent",
+  "baseline": "sas",
+  "case": "compat/math-sequential",
+  "metric": "completion",
+  "expect": "-",
+  "seeds": 10,
+  "difference": -0.275,
+  "ci95": [
+   -0.55,
+   -0.075
+  ],
+  "verdict": "reproduced",
+  "source": "Kim et al. 2026, Towards a Science of Scaling Agent Systems, Sec. 4: on decomposable tasks (Finance-Agent) every multi-agent architecture beats the single agent (+57% to +81%); on sequential ones (PlanCraft) every one is worse (-39% to -70%)"
+ },
+ {
+  "design": "centralized",
+  "baseline": "sas",
+  "case": "compat/math-sequential",
+  "metric": "completion",
+  "expect": "-",
+  "seeds": 10,
+  "difference": -0.15,
+  "ci95": [
+   -0.4167,
+   0.0666
+  ],
+  "verdict": "inconclusive",
+  "source": "Kim et al. 2026, Towards a Science of Scaling Agent Systems, Sec. 4: on decomposable tasks (Finance-Agent) every multi-agent architecture beats the single agent (+57% to +81%); on sequential ones (PlanCraft) every one is worse (-39% to -70%)"
+ },
+ {
+  "design": "decentralized",
+  "baseline": "sas",
+  "case": "compat/math-sequential",
+  "metric": "completion",
+  "expect": "-",
+  "seeds": 10,
+  "difference": -0.15,
+  "ci95": [
+   -0.4167,
+   0.075
+  ],
+  "verdict": "inconclusive",
+  "source": "Kim et al. 2026, Towards a Science of Scaling Agent Systems, Sec. 4: on decomposable tasks (Finance-Agent) every multi-agent architecture beats the single agent (+57% to +81%); on sequential ones (PlanCraft) every one is worse (-39% to -70%)"
+ },
+ {
+  "design": "hybrid",
+  "baseline": "sas",
+  "case": "compat/math-sequential",
+  "metric": "completion",
+  "expect": "-",
+  "seeds": 10,
+  "difference": -0.0084,
+  "ci95": [
+   -0.2834,
+   0.2249
+  ],
+  "verdict": "inconclusive",
+  "source": "Kim et al. 2026, Towards a Science of Scaling Agent Systems, Sec. 4: on decomposable tasks (Finance-Agent) every multi-agent architecture beats the single agent (+57% to +81%); on sequential ones (PlanCraft) every one is worse (-39% to -70%)"
+ }
+]

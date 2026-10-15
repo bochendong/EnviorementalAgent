@@ -40,6 +40,18 @@ def test_sharing_laws_saves_work_in_codeworld():
     assert spent[0] < spent[1]
 
 
+@pytest.mark.parametrize("variant", ["team", "solo", "nonet"])
+@pytest.mark.parametrize("seed", [0, 1, 100])
+def test_reference_math_team_handles_linked_recurrences(variant, seed):
+    raw = build("compat/math-sequential", variant)
+    raw.reset(seed)
+    SOLVERS["math"](LocalEnv(raw))
+    assert raw.solved == (variant != "nonet")
+    assert raw.metrics()["done"] > 0
+    if variant == "team":
+        assert any(e.get("op") in ("send", "put", "post") for e in raw.events)
+
+
 @pytest.mark.parametrize("name", ["codeworld/easy", "math/easy", "website/easy", "molecule/easy"])
 def test_reference_teams_need_the_network(name):
     raw = build(name)
@@ -263,6 +275,21 @@ def test_designs_run_on_both_tracks(mock_llm):
         assert net["route"] == "network" and net["channel"]["delivered"] + net["channel"]["lost"] > 0, name
         assert net["messages"] + net["posts"] > 0, name
     assert DESIGNS["debate"].route == "framework"  # the registry's designs are not changed
+
+
+@pytest.mark.parametrize("design", ["centralized", "hybrid"])
+@pytest.mark.parametrize("network", [{"topology": "chain"}, {"outage": 1.0}])
+def test_orchestrators_handle_missing_network_findings(mock_llm, design, network):
+    from netagents.designs import DESIGNS
+    from netagents.evaluate import run_one
+    from netagents.testset import Case
+
+    model, settings = mock_llm
+    case = Case("missing-findings", "math/medium", [0], net=network)
+    calls = 2 * case.team_size()
+    result = run_one(DESIGNS[design], case, 0, model, settings, calls)
+    assert result["channel"]["lost"] > 0
+    assert result["llm_tool_calls"] <= calls
 
 
 def test_runs_resume_and_summaries_merge(tmp_path):

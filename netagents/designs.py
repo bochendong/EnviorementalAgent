@@ -573,7 +573,9 @@ class KimCentralized(Design):
             everything = "\n".join(f"{a} (round {i + 1}): {f}" for a, fs in findings.items() for i, f in enumerate(fs))
             decision = await ask(K.LEAD_STOPPING, query=problem, round_num=r,
                                  total_findings=sum(len(f) for f in findings.values()), total_agents=len(names),
-                                 current_round_summary="\n".join(f"{a}: {findings[a][-1][:300]}" for a in active),
+                                 current_round_summary="\n".join(
+                                     f"{a}: {findings[a][-1][:300] if findings[a] else '(no findings received)'}"
+                                     for a in active),
                                  all_findings=everything[-6000:])
             if decision.strip().upper().startswith("STOP"):
                 break
