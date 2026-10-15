@@ -19,14 +19,22 @@ SUITE=test sbatch slurm/net_eval.sh                                       # on N
 
 ```bash
 bash slurm/setup_nibi.sh                                   # once: venvs and model weights
-ACCOUNT=def-yourpi STAGE=check bash slurm/run_all.sh       # first: fidelity and calibration (see below)
+ACCOUNT=def-yourpi STAGE=smoke bash slurm/run_all.sh       # first: ~10 GPU minutes, every request kind and two tiny runs
+ACCOUNT=def-yourpi STAGE=check bash slurm/run_all.sh       # then: fidelity and calibration (see below)
 ACCOUNT=def-yourpi DRY=1 STAGE=all bash slurm/run_all.sh   # see the jobs; nothing is submitted or written
 ACCOUNT=def-yourpi bash slurm/run_all.sh                   # stage 1: baselines, fidelity, compatibility track
 ACCOUNT=def-yourpi RUN=<run> STAGE=2 bash slurm/run_all.sh # stage 2: the network track, into the same run
 python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # rebuild the index at any time
 ```
 
-`STAGE=check` runs before anything else, and its two answers decide whether the real runs are worth their GPU hours:
+`STAGE=smoke` (`netagents/smoke.py`) comes first and costs a few GPU minutes:
+- does the server start?
+- does it answer every kind of request the designs make (plain chat, tools required and auto, thinking off, JSON, a 40k-token prompt)?
+- do one `sas` and one `centralized` run finish without model errors?
+
+It prints a table and keeps every error in full in `smoke/smoke.json`. Evaluation jobs also stop by themselves after three runs in a row with model errors (`--stop-after`), printing the errors, rather than spending a GPU day on a broken setup.
+
+`STAGE=check` runs next, and its two answers decide whether the real runs are worth their GPU hours:
 - **fidelity**: is our harness as good as plain chat? The port's single agent should be close to the official single agent on GSM8K.
 - **calibration**: four designs (`sas`, `reflexion`, `centralized`, `debate`) on the easy and medium presets and the compatibility cases, dev seeds. The presets were tuned on scripted teams. A case where these designs complete on average under 20% or over 80% of the tasks is marked too hard or too easy in `calibration/summary.md`: designs cannot be told apart there, and the preset should be adjusted for this model before the test runs.
 
@@ -216,14 +224,21 @@ The tasks themselves follow established practice:
 
 ```bash
 bash slurm/setup_nibi.sh                                   # 只需一次：环境和模型权重
-ACCOUNT=def-yourpi STAGE=check bash slurm/run_all.sh       # 最先跑：还原度检查和难度校准（见下）
+ACCOUNT=def-yourpi STAGE=smoke bash slurm/run_all.sh       # 最先跑：约 10 分钟 GPU，检查各类请求和两次小运行
+ACCOUNT=def-yourpi STAGE=check bash slurm/run_all.sh       # 然后：还原度检查和难度校准（见下）
 ACCOUNT=def-yourpi DRY=1 STAGE=all bash slurm/run_all.sh   # 只打印作业，不提交也不写文件
 ACCOUNT=def-yourpi bash slurm/run_all.sh                   # 第 1 阶段：基线、还原度检查、兼容赛道
 ACCOUNT=def-yourpi RUN=<run> STAGE=2 bash slurm/run_all.sh # 第 2 阶段：网络赛道，写进同一个运行目录
 python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时重建索引
 ```
 
-- `STAGE=check` 最先跑，它的两个结果决定正式实验值不值得花 GPU 时间：
+- `STAGE=smoke`（`netagents/smoke.py`）最先跑，只花几分钟 GPU：
+  - 服务器能否启动；
+  - 设计会发的各类请求（普通对话、必须调工具、自动调工具、关思考、JSON、4 万 token 长提示）是否都正常；
+  - 一次 `sas` 和一次 `centralized` 小运行有没有模型错误。
+  
+  结果打印成表，完整错误保存在 `smoke/smoke.json`。评测作业连续 3 次运行出现模型错误就会自动停下并打印错误（`--stop-after`），不会在坏掉的配置上白耗一天 GPU。
+- `STAGE=check` 接着跑，它的两个结果决定正式实验值不值得花 GPU 时间：
   - 还原度检查：我们的运行框架是否和直接对话一样好？移植版单智能体在 GSM8K 上应接近作者代码的单智能体；
   - 难度校准：`sas`、`reflexion`、`centralized`、`debate` 四个设计在简单档、中等档和兼容用例上跑开发种子。预设是按脚本团队校准的；平均完成率低于 20% 或高于 80% 的用例，在 `calibration/summary.md` 里标为“太难”或“太简单”，那里分不出设计高下，正式跑之前要先按这个模型调整预设。
 - 第 1 阶段 22 个作业：脚本基线（CPU）、GSM8K 还原度检查、10 个设计跑兼容赛道、8 个多智能体设计让兼容用例改走网络，每个实验再加一个汇总作业。

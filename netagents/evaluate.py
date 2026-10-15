@@ -246,6 +246,8 @@ def main():
     ap.add_argument("--cases", nargs="*", default=None, help="only these case ids")
     ap.add_argument("--seeds", type=int, default=None, help="only the first N seeds of each case")
     ap.add_argument("--calls-per-member", type=int, default=CALLS_PER_MEMBER)
+    ap.add_argument("--stop-after", type=int, default=3,
+                    help="stop the job after this many runs in a row with model errors (0: never)")
     ap.add_argument("--traces", type=int, default=1, help="save every event of the first N seeds of each case")
     ap.add_argument("--route", choices=["case", "framework", "network"], default="case",
                     help="how the designs' messages travel (default: as the case's track says)")
@@ -272,6 +274,7 @@ def main():
     path = os.path.join(a.out, "runs.jsonl")
     rows = load_runs(path) if os.path.exists(path) else []
     done = {(r["design"], r["case"], r["seed"], r.get("route")) for r in rows}
+    bad = 0  # runs in a row with model errors: a broken server or harness, not a result
     for case in SUITES[a.suite]:
         if a.cases and case.id not in a.cases:
             continue
@@ -293,7 +296,11 @@ def main():
                         if k < a.traces else "", memory)}
                 except Exception as e:  # noqa: BLE001 (one broken run must not stop the job; a rerun retries it)
                     print(f"{case.id} seed {seed} {d.name} FAILED: {type(e).__name__}: {e}", flush=True)
+                    bad += 1
+                    if a.stop_after and bad >= a.stop_after:
+                        break
                     continue
+                bad = bad + 1 if r["llm_errors"] else 0
                 rows.append(r)
                 with open(path, "a") as f:
                     f.write(json.dumps(r) + "\n")
@@ -301,6 +308,20 @@ def main():
                       f"done {r['done']}/{r['tasks']} calls {r['llm_tool_calls']} "
                       f"tokens {r['input_tokens'] + r['output_tokens']} errors {r['llm_errors']} "
                       f"ops {dict(Counter(r['ops']).most_common(4))}", flush=True)
+                if r["llm_errors"]:
+                    print("    model errors: " + " | ".join(m["error"] for m in r["members"] if m.get("error"))[:600],
+                          flush=True)
+                if a.stop_after and bad >= a.stop_after:
+                    break
+            if a.stop_after and bad >= a.stop_after:
+                break
+        if a.stop_after and bad >= a.stop_after:
+            break
+    if a.stop_after and bad >= a.stop_after:
+        if rows:
+            write_summary(a.out, rows, f"{a.suite} ({cfg.model})")
+        raise SystemExit(f"stopped: {bad} runs in a row with model errors (see 'model errors' above); "
+                         "fix the server or the harness before running more (python -m netagents.smoke)")
     if rows:
         print(write_summary(a.out, rows, f"{a.suite} ({cfg.model})"))
 

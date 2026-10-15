@@ -6,6 +6,13 @@ export VLLM_NO_USAGE_STATS=1 DO_NOT_TRACK=1
 PORT=$((20000 + ${SLURM_JOB_ID:-0} % 20000))
 JOB=${SLURM_JOB_ID:-local}
 SERVER_LOG="${SERVER_LOG:-${LOG_DIR:-logs}/vllm-$JOB.log}"
+# Compile caches (torch.compile, Inductor, Triton) per job on node-local disk: jobs that start together
+# and share one cache in $HOME read each other's half-written files ("compile cache" errors at start-up).
+CACHE_BASE="${SLURM_TMPDIR:-/tmp/vllm-$USER-$JOB}"
+export VLLM_CACHE_ROOT="${VLLM_CACHE_ROOT:-$CACHE_BASE/vllm-cache}"
+export TORCHINDUCTOR_CACHE_DIR="${TORCHINDUCTOR_CACHE_DIR:-$CACHE_BASE/inductor-cache}"
+export TRITON_CACHE_DIR="${TRITON_CACHE_DIR:-$CACHE_BASE/triton-cache}"
+mkdir -p "$VLLM_CACHE_ROOT" "$TORCHINDUCTOR_CACHE_DIR" "$TRITON_CACHE_DIR"
 
 VLLM_ARGS=(--host 127.0.0.1 --port "$PORT" --served-model-name "$SERVED_NAME"
            --tensor-parallel-size "$TP" --max-model-len "$MAX_MODEL_LEN"
@@ -21,7 +28,7 @@ EXTRA=($EXTRA_VLLM_ARGS)
 
 if [ "$SERVER_MODE" = "apptainer" ]; then
   module load apptainer 2>/dev/null || true
-  apptainer exec --nv -B "$WS_STORE" "$VLLM_SIF" \
+  apptainer exec --nv -B "$WS_STORE" -B "$CACHE_BASE" "$VLLM_SIF" \
     vllm serve "$MODEL_DIR" "${VLLM_ARGS[@]}" "${EXTRA[@]}" > "$SERVER_LOG" 2>&1 &
 else
   source "$VLLM_VENV/bin/activate"

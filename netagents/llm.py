@@ -38,7 +38,7 @@ class LLMConfig:
     max_tokens: int = int(os.environ.get("WS_MAX_TOKENS", "4096"))
     thinking: bool = os.environ.get("WS_THINKING", "1") == "1"
     tool_choice: str = os.environ.get("WS_TOOL_CHOICE", "required")
-    timeout: float = 300.0
+    timeout: float = float(os.environ.get("WS_TIMEOUT", "900"))  # seconds a request may take (thinking is slow)
 
     def extra_body(self) -> dict | None:
         """What an OpenAI-compatible request adds for vLLM: thinking on or off (Qwen3), and top_k."""

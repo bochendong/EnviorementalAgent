@@ -11,6 +11,8 @@
 #
 # Stages (the compatibility track comes first: designs whose published finding reproduces are the ones
 # compared on the network track):
+#   smoke  first of all, ~10 GPU minutes: the server starts and answers every kind of request; one sas
+#          and one centralized run go through without model errors (netagents/smoke.py)
 #   check  before the real runs: fidelity (is our harness as good as plain chat?) and calibration (are the
 #          presets in the range where designs can differ, for this model? CALIBRATION_DESIGNS, default
 #          "sas reflexion centralized debate", on easy and medium presets and the compat cases, dev seeds)
@@ -56,6 +58,7 @@ FRAMEWORK_DESIGNS="autogen-roundrobin autogen-selector magentic-one camel-rolepl
 DRY="${DRY:-0}"
 
 case "$STAGE" in
+  smoke) EXPERIMENTS="smoke" ;;
   check) EXPERIMENTS="fidelity calibration" ;;
   1) EXPERIMENTS="baselines fidelity compat-framework compat-network" ;;
   2) EXPERIMENTS="test hard heldout scaling topology robustness" ;;
@@ -106,6 +109,10 @@ for exp in $EXPERIMENTS; do
       submit "$exp" scripted --job-name=net-baselines --cpus-per-task=4 --mem=16G --time=0-06:00 \
         --output="$RUN_DIR/logs/%x-%j.out" --export=ALL \
         --wrap="source slurm/env.sh && load_modules && source \$AGENT_VENV/bin/activate && python -m netagents.baselines --seeds 10 --out $out" >/dev/null
+      continue ;;
+    smoke)
+      submit "$exp" smoke --job-name=net-smoke --time=0-00:45 --output="$RUN_DIR/logs/%x-%j.out" \
+        --export=ALL,OUT="$out",LOG_DIR="$RUN_DIR/logs" slurm/net_smoke.sh >/dev/null
       continue ;;
     fidelity)
       [ -f "$out/debate.json" ] && { echo "skip $exp: $out/debate.json exists"; continue; }
