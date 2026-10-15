@@ -107,7 +107,7 @@ def port(qs, design_name: str, calls_per_question: int, cache: str) -> list[bool
     from .llm import LLMConfig, make_model, make_settings
 
     cfg = LLMConfig()  # the same sampling and thinking as the official arms
-    model, settings = make_model(cfg), make_settings(cfg)
+    settings = make_settings(cfg)
     d = DESIGNS[design_name]
     out = []
     for k, q in enumerate(qs):
@@ -119,7 +119,8 @@ def port(qs, design_name: str, calls_per_question: int, cache: str) -> list[bool
         raw = NetworkEnv(providers.make("math", problem_file=path, free_roles=True, explorers=team, algebraists=0),
                          NetConfig(budget=calls_per_question * 2))
         raw.reset(0)
-        asyncio.run(d.play(LocalEnv(raw), model, settings, calls_per_question * team))
+        # a fresh client per question: an async client must not outlive the event loop it was made in
+        asyncio.run(d.play(LocalEnv(raw), make_model(cfg), settings, calls_per_question * team))
         out.append(raw.solved)
     return out
 

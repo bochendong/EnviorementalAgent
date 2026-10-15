@@ -372,3 +372,43 @@ def test_designs_run_under_the_new_mechanisms(mock_llm, tmp_path):
                 assert r["agents"] > c.team_size()  # the workers and their managers
             if "report" in cid:
                 assert "report_score" in r
+
+
+def test_a_step_whose_thinking_runs_out_is_redone_without_thinking():
+    pytest.importorskip("agents")
+    import asyncio
+    from http.server import ThreadingHTTPServer
+
+    from netagents.designs import Member
+    from netagents.llm import LLMConfig, make_model, make_settings
+    from netagents.mock_llm_server import Handler
+
+    class Overthinker(Handler):  # thinking always uses up the output: no text, no tool call
+        def do_POST(self):
+            n = int(self.headers["Content-Length"])
+            raw = self.rfile.read(n)
+            body = json.loads(raw)
+            if (body.get("chat_template_kwargs") or {}).get("enable_thinking"):
+                data = json.dumps({"id": "x", "object": "chat.completion", "created": 0, "model": "m", "choices": [
+                    {"index": 0, "finish_reason": "length", "message": {"role": "assistant", "content": None}}],
+                    "usage": {"prompt_tokens": 10, "completion_tokens": 8192, "total_tokens": 8202}}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
+            self.rfile = __import__("io").BytesIO(raw)
+            super().do_POST()
+
+    srv = ThreadingHTTPServer(("127.0.0.1", 0), Overthinker)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        cfg = LLMConfig(base_url=f"http://127.0.0.1:{srv.server_address[1]}/v1", model="qwen3-mock", timeout=30,
+                        thinking=True)
+        raw, env = local("math", budget=30)
+        m = Member(env, "a0", make_model(cfg), make_settings(cfg), "")
+        asyncio.run(m.turn("Begin.", 2))
+        assert m.overflows >= 1 and not m.errors and m.calls >= 1
+    finally:
+        srv.shutdown()

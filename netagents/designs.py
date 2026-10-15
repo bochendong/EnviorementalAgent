@@ -67,6 +67,7 @@ class Member:
     calls: int = 0
     llm_requests: int = 0
     errors: list = field(default_factory=list)
+    overflows: int = 0  # steps whose thinking ran out of output tokens (redone without thinking)
     trims: int = 0
     peak_context: int = 0  # the largest history sent at the start of a turn (estimated tokens)
 
@@ -113,9 +114,21 @@ class Member:
         self.trims += cut
         start = self.history + [{"role": "user", "content": message}]
         self.peak_context = max(self.peak_context, _tokens(start))
+        from .llm import overflowed, without_thinking
+
         try:
-            res = await Runner.run(self.agent, start, max_turns=max_calls + 3,
-                                   run_config=RunConfig(tracing_disabled=True))
+            try:
+                res = await Runner.run(self.agent, start, max_turns=max_calls + 3,
+                                       run_config=RunConfig(tracing_disabled=True))
+            except Exception as e:  # noqa: BLE001
+                if not overflowed(e):
+                    raise
+                # the thinking used every output token before any answer or tool call: redo the turn from
+                # the same start without thinking (the tools it called before stay done in the world)
+                self.overflows += 1
+                plain = self.agent.clone(model_settings=without_thinking(self.settings))
+                res = await Runner.run(plain, start, max_turns=max(1, self._left) + 3,
+                                       run_config=RunConfig(tracing_disabled=True))
         except MaxTurnsExceeded:
             return ""
         except Exception as e:  # noqa: BLE001 (one broken call must not stop the team)
@@ -134,11 +147,20 @@ class Member:
 
         talker = Agent(name=f"{self.name}-text", instructions=self.agent.instructions, model=self.model,
                        model_settings=replace(self.settings, tool_choice=None))
+        from .llm import overflowed, without_thinking
+
         self.history, cut = trim(self.history, CONTEXT_TOKENS)
         self.trims += cut
+        ask = self.history + [{"role": "user", "content": message}]
         try:
-            res = await Runner.run(talker, self.history + [{"role": "user", "content": message}], max_turns=1,
-                                   run_config=RunConfig(tracing_disabled=True))
+            try:
+                res = await Runner.run(talker, ask, max_turns=1, run_config=RunConfig(tracing_disabled=True))
+            except Exception as e:  # noqa: BLE001
+                if not overflowed(e):
+                    raise
+                self.overflows += 1
+                res = await Runner.run(talker.clone(model_settings=without_thinking(talker.model_settings)), ask,
+                                       max_turns=1, run_config=RunConfig(tracing_disabled=True))
         except Exception as e:  # noqa: BLE001
             self.errors.append(f"{type(e).__name__}: {e}"[:300])
             return ""
@@ -159,7 +181,7 @@ class Member:
         return {"agent": self.name, "tool_calls": self.calls, "llm_requests": self.llm_requests,
                 "input_tokens": self.tokens[0], "output_tokens": self.tokens[1], "errors": len(self.errors),
                 "error": self.errors[-1] if self.errors else "", "trims": self.trims,
-                "peak_context": self.peak_context}
+                "peak_context": self.peak_context, "overflows": self.overflows}
 
 
 
@@ -470,14 +492,24 @@ class Talker:
     llm_requests: int = 0
     name: str = "talker"
     errors: list = field(default_factory=list)
+    overflows: int = 0
 
     async def ask(self, system: str, user: str) -> str:
         from agents import Agent, RunConfig, Runner
 
+        from .llm import overflowed, without_thinking
+
         bot = Agent(name=self.name, instructions=system or None, model=self.model,
                     model_settings=replace(self.settings, tool_choice=None))
         try:
-            res = await Runner.run(bot, user, max_turns=1, run_config=RunConfig(tracing_disabled=True))
+            try:
+                res = await Runner.run(bot, user, max_turns=1, run_config=RunConfig(tracing_disabled=True))
+            except Exception as e:  # noqa: BLE001
+                if not overflowed(e):
+                    raise
+                self.overflows += 1
+                res = await Runner.run(bot.clone(model_settings=without_thinking(bot.model_settings)), user,
+                                       max_turns=1, run_config=RunConfig(tracing_disabled=True))
         except Exception as e:  # noqa: BLE001
             self.errors.append(f"{type(e).__name__}: {e}"[:300])
             return ""
@@ -490,7 +522,8 @@ class Talker:
     def report(self) -> dict:
         return {"agent": self.name, "tool_calls": 0, "llm_requests": self.llm_requests,
                 "input_tokens": self.tokens[0], "output_tokens": self.tokens[1], "errors": len(self.errors),
-                "error": self.errors[-1] if self.errors else "", "trims": 0, "peak_context": 0}
+                "error": self.errors[-1] if self.errors else "", "trims": 0, "peak_context": 0,
+                "overflows": self.overflows}
 
 
 def _json(text: str):

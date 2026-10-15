@@ -32,7 +32,13 @@ python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # rebuil
 - does it answer every kind of request the designs make (plain chat, tools required and auto, thinking off, JSON, a 40k-token prompt)?
 - do one `sas` and one `centralized` run finish without model errors?
 
-It prints a table and keeps every error in full in `smoke/smoke.json`. Evaluation jobs also stop by themselves after three runs in a row with model errors (`--stop-after`), printing the errors, rather than spending a GPU day on a broken setup.
+It prints a table and keeps every error in full in `smoke/smoke.json`.
+
+Runs of a job go four at a time (`--parallel`, `NETAGENTS_PARALLEL`), each in its own process with its own model client; the server batches their requests. A step whose thinking uses up all 8192 output tokens is redone once without thinking, and counted (`overflows`). These fixes come from the pilot (`results/net/runs/20261015-pilot`):
+- Triton's cache on the shared file system failed with a stale file handle;
+- thinking ran out of the old 4096-token limit;
+- one model client was reused across runs ("Event loop is closed");
+- runs went one at a time. Evaluation jobs also stop by themselves after three runs in a row with model errors (`--stop-after`), printing the errors, rather than spending a GPU day on a broken setup.
 
 `STAGE=check` runs next, and its two answers decide whether the real runs are worth their GPU hours:
 - **fidelity**: is our harness as good as plain chat? The port's single agent should be close to the official single agent on GSM8K.
@@ -237,7 +243,13 @@ python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时
   - 设计会发的各类请求（普通对话、必须调工具、自动调工具、关思考、JSON、4 万 token 长提示）是否都正常；
   - 一次 `sas` 和一次 `centralized` 小运行有没有模型错误。
   
-  结果打印成表，完整错误保存在 `smoke/smoke.json`。评测作业连续 3 次运行出现模型错误就会自动停下并打印错误（`--stop-after`），不会在坏掉的配置上白耗一天 GPU。
+  结果打印成表，完整错误保存在 `smoke/smoke.json`。
+  
+  一个作业里的运行默认 4 个并行（`--parallel`），每个在独立进程里、用独立的模型客户端。思考把 8192 个输出 token 用完的一步，会关掉思考重做一次，并计入 `overflows`。这些修复都来自 pilot 暴露的问题：
+  - 共享文件系统上的 Triton 缓存报 stale file handle；
+  - 原来 4096 的输出上限被思考用光；
+  - 模型客户端跨运行复用（`Event loop is closed`）；
+  - 运行逐个串行。评测作业连续 3 次运行出现模型错误就会自动停下并打印错误（`--stop-after`），不会在坏掉的配置上白耗一天 GPU。
 - `STAGE=check` 接着跑，它的两个结果决定正式实验值不值得花 GPU 时间：
   - 还原度检查：我们的运行框架是否和直接对话一样好？移植版单智能体在 GSM8K 上应接近作者代码的单智能体；
   - 难度校准：`sas`、`reflexion`、`centralized`、`debate` 四个设计在简单档、中等档和兼容用例上跑开发种子。预设是按脚本团队校准的；平均完成率低于 20% 或高于 80% 的用例，在 `calibration/summary.md` 里标为“太难”或“太简单”，那里分不出设计高下，正式跑之前要先按这个模型调整预设。

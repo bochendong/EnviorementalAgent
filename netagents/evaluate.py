@@ -40,7 +40,9 @@ import asyncio
 import json
 import os
 import statistics as st
+import fcntl
 from collections import Counter
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
 
 from .client import LocalEnv
@@ -238,6 +240,47 @@ def write_summary(out: str, rows: list[dict], title: str) -> str:
     return text
 
 
+def _chain(case, design: str, todo, memory: str, o: dict, bad, lock) -> list[dict]:
+    """Run one design on one case for the given seeds, in a process of its own (so the math provider's time
+    limits, which need the main thread, hold). Appends each run to runs.jsonl as it finishes."""
+    from .llm import LLMConfig, make_model, make_settings
+
+    cfg = LLMConfig()
+    settings = make_settings(cfg)
+    d = {**DESIGNS, **FRAMEWORK_DESIGNS}[design]
+    calls = o["calls_per_member"] * case.team_size()
+    out = []
+    for k, seed in todo:
+        if o["stop_after"] and bad.value >= o["stop_after"]:
+            break
+        trace = os.path.join(o["out"], "traces", f"{d.name}__{case.id.replace('/', '_')}__{seed}.jsonl.gz") \
+            if k < o["traces"] else ""
+        try:  # a fresh client per run: an async client must not outlive the event loop it was made in
+            r = {"model": cfg.model, "suite": o["suite"],
+                 **run_one(d, case, seed, make_model(cfg), settings, calls, o["route"], trace, memory)}
+        except Exception as e:  # noqa: BLE001 (one broken run must not stop the others; a rerun retries it)
+            with lock:
+                bad.value += 1
+            print(f"{case.id} seed {seed} {d.name} FAILED: {type(e).__name__}: {e}", flush=True)
+            continue
+        with lock:
+            bad.value = bad.value + 1 if r["llm_errors"] else 0
+        with open(o["path"], "a") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            f.write(json.dumps(r) + "\n")
+            fcntl.flock(f, fcntl.LOCK_UN)
+        out.append(r)
+        print(f"{case.id:32s} seed {seed:3d} {d.name:13s} solved {r['solved']!s:5s} "
+              f"done {r['done']}/{r['tasks']} calls {r['llm_tool_calls']} "
+              f"tokens {r['input_tokens'] + r['output_tokens']} errors {r['llm_errors']} "
+              f"overflows {sum(m.get('overflows', 0) for m in r['members'])} "
+              f"ops {dict(Counter(r['ops']).most_common(4))}", flush=True)
+        if r["llm_errors"]:
+            print("    model errors: " + " | ".join(m["error"] for m in r["members"] if m.get("error"))[:600],
+                  flush=True)
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--summarize", metavar="DIR", help="only tabulate the runs under DIR")
@@ -246,6 +289,8 @@ def main():
     ap.add_argument("--cases", nargs="*", default=None, help="only these case ids")
     ap.add_argument("--seeds", type=int, default=None, help="only the first N seeds of each case")
     ap.add_argument("--calls-per-member", type=int, default=CALLS_PER_MEMBER)
+    ap.add_argument("--parallel", type=int, default=int(os.environ.get("NETAGENTS_PARALLEL", "4")),
+                    help="runs at a time (each a separate team; the model server batches their requests)")
     ap.add_argument("--stop-after", type=int, default=3,
                     help="stop the job after this many runs in a row with model errors (0: never)")
     ap.add_argument("--traces", type=int, default=1, help="save every event of the first N seeds of each case")
@@ -259,10 +304,9 @@ def main():
             raise SystemExit(f"no runs under {a.summarize}")
         print(write_summary(a.summarize, rows, f"{rows[0].get('suite', '')} ({rows[0].get('model', '')})"))
         return
-    from .llm import LLMConfig, make_model, make_settings
+    from .llm import LLMConfig
 
     cfg = LLMConfig()
-    model, settings = make_model(cfg), make_settings(cfg)
     every = {**DESIGNS, **FRAMEWORK_DESIGNS}
     if a.designs == ["all"]:
         designs = list(DESIGNS.values())
@@ -274,53 +318,47 @@ def main():
     path = os.path.join(a.out, "runs.jsonl")
     rows = load_runs(path) if os.path.exists(path) else []
     done = {(r["design"], r["case"], r["seed"], r.get("route")) for r in rows}
-    bad = 0  # runs in a row with model errors: a broken server or harness, not a result
+    route = None if a.route == "case" else a.route
+
+    # the work: one chain per (case, design); a memory case runs its seeds in order in one chain, any other
+    # case gives one chain per seed. Chains run --parallel at a time (the server batches their requests).
+    chains = []
     for case in SUITES[a.suite]:
         if a.cases and case.id not in a.cases:
             continue
-        calls = a.calls_per_member * case.team_size()
-        for k, seed in enumerate(case.seeds[:a.seeds] if a.seeds else case.seeds):
-            for d in designs:
-                route = None if a.route == "case" else a.route
-                memory = os.path.join(a.out, "memory", f"{d.name}__{case.id.replace('/', '_')}.json") \
-                    if case.memory else ""
-                if memory and k == 0 and os.path.exists(memory) and not any(
-                        r["design"] == d.name and r["case"] == case.id for r in rows):
+        seeds = list(enumerate(case.seeds[:a.seeds] if a.seeds else case.seeds))
+        for d in designs:
+            todo = [(k, s) for k, s in seeds if (d.name, case.id, s, (route or case.route) if d.network_route
+                                                 else "framework") not in done]
+            if not todo:
+                continue
+            if case.memory:
+                memory = os.path.join(a.out, "memory", f"{d.name}__{case.id.replace('/', '_')}.json")
+                if len(todo) == len(seeds) and os.path.exists(memory):
                     os.remove(memory)  # a fresh series starts with an empty memory
-                if (d.name, case.id, seed, (route or case.route) if d.network_route else "framework") in done:
-                    continue
-                try:
-                    r = {"model": cfg.model, "suite": a.suite, **run_one(
-                        d, case, seed, model, settings, calls, route,
-                        os.path.join(a.out, "traces", f"{d.name}__{case.id.replace('/', '_')}__{seed}.jsonl.gz")
-                        if k < a.traces else "", memory)}
-                except Exception as e:  # noqa: BLE001 (one broken run must not stop the job; a rerun retries it)
-                    print(f"{case.id} seed {seed} {d.name} FAILED: {type(e).__name__}: {e}", flush=True)
-                    bad += 1
-                    if a.stop_after and bad >= a.stop_after:
-                        break
-                    continue
-                bad = bad + 1 if r["llm_errors"] else 0
-                rows.append(r)
-                with open(path, "a") as f:
-                    f.write(json.dumps(r) + "\n")
-                print(f"{case.id:32s} seed {seed:3d} {d.name:13s} solved {r['solved']!s:5s} "
-                      f"done {r['done']}/{r['tasks']} calls {r['llm_tool_calls']} "
-                      f"tokens {r['input_tokens'] + r['output_tokens']} errors {r['llm_errors']} "
-                      f"ops {dict(Counter(r['ops']).most_common(4))}", flush=True)
-                if r["llm_errors"]:
-                    print("    model errors: " + " | ".join(m["error"] for m in r["members"] if m.get("error"))[:600],
-                          flush=True)
-                if a.stop_after and bad >= a.stop_after:
-                    break
-            if a.stop_after and bad >= a.stop_after:
-                break
-        if a.stop_after and bad >= a.stop_after:
-            break
-    if a.stop_after and bad >= a.stop_after:
+                chains.append((case, d, todo, memory))
+            else:
+                chains += [(case, d, [ks], "") for ks in todo]
+
+    import multiprocessing as mp
+
+    ctx = mp.get_context("spawn")
+    with ctx.Manager() as manager:
+        bad = manager.Value("i", 0)  # runs in a row with model errors: a broken server or harness, not a result
+        lock = manager.Lock()
+        opts = {"suite": a.suite, "out": a.out, "calls_per_member": a.calls_per_member, "traces": a.traces,
+                "stop_after": a.stop_after, "route": route, "path": path}
+        with ProcessPoolExecutor(max_workers=max(1, a.parallel), mp_context=ctx) as pool:
+            futures = [pool.submit(_chain, case, d.name, todo, memory, opts, bad, lock)
+                       for case, d, todo, memory in chains]
+            for f in futures:
+                rows += f.result()
+        stopped = a.stop_after and bad.value >= a.stop_after
+        bad_runs = bad.value
+    if stopped:
         if rows:
             write_summary(a.out, rows, f"{a.suite} ({cfg.model})")
-        raise SystemExit(f"stopped: {bad} runs in a row with model errors (see 'model errors' above); "
+        raise SystemExit(f"stopped: {bad_runs} runs in a row with model errors (see 'model errors' above); "
                          "fix the server or the harness before running more (python -m netagents.smoke)")
     if rows:
         print(write_summary(a.out, rows, f"{a.suite} ({cfg.model})"))

@@ -82,15 +82,16 @@ def runs_check(cfg) -> list[dict]:
     from .llm import make_model, make_settings
     from .testset import Case
 
-    model, settings = make_model(cfg), make_settings(cfg)
+    settings = make_settings(cfg)
     case = Case("math/easy", "math/easy", [0])
     out = []
     for name in ("sas", "centralized"):
         t = time.time()
         try:
-            r = run_one(DESIGNS[name], case, 0, model, settings, 5 * case.team_size())
+            r = run_one(DESIGNS[name], case, 0, make_model(cfg), settings, 5 * case.team_size())
             errs = [m["error"] for m in r["members"] if m.get("error")]
             out.append({"design": name, "ok": r["llm_errors"] == 0, "llm_errors": r["llm_errors"],
+                        "overflows": sum(m.get("overflows", 0) for m in r["members"]),
                         "llm_requests": r["llm_requests"], "tool_calls": r["llm_tool_calls"], "done": r["done"],
                         "ops": r["ops"], "member_errors": errs, "seconds": round(time.time() - t, 1)})
         except Exception as e:  # noqa: BLE001

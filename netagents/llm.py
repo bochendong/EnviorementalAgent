@@ -10,7 +10,8 @@ Environment variables (all optional):
     WS_MODEL        default qwen3-8b
     WS_API_KEY      default EMPTY
     WS_THINKING     "1" (default) keeps Qwen3 thinking mode on; "0" turns it off
-    WS_MAX_TOKENS   default 4096 (thinking needs room: the reasoning counts towards it)
+    WS_MAX_TOKENS   default 8192 (thinking needs room: the reasoning counts towards it; a step whose
+                    thinking still runs out is redone once without thinking, see designs.Member)
     WS_TEMPERATURE, WS_TOP_P, WS_TOP_K   default 0.6, 0.95, 20 (Qwen3's settings for thinking mode)
     WS_TOOL_CHOICE  "required" (default) or "auto"
 
@@ -35,7 +36,7 @@ class LLMConfig:
     temperature: float = float(os.environ.get("WS_TEMPERATURE", "0.6"))
     top_p: float = float(os.environ.get("WS_TOP_P", "0.95"))
     top_k: int = int(os.environ.get("WS_TOP_K", "20"))
-    max_tokens: int = int(os.environ.get("WS_MAX_TOKENS", "4096"))
+    max_tokens: int = int(os.environ.get("WS_MAX_TOKENS", "8192"))
     thinking: bool = os.environ.get("WS_THINKING", "1") == "1"
     tool_choice: str = os.environ.get("WS_TOOL_CHOICE", "required")
     timeout: float = float(os.environ.get("WS_TIMEOUT", "900"))  # seconds a request may take (thinking is slow)
@@ -62,6 +63,20 @@ def make_model(cfg: LLMConfig):
     set_tracing_disabled(True)  # tracing would upload to OpenAI's servers
     client = AsyncOpenAI(base_url=cfg.base_url, api_key=cfg.api_key, timeout=cfg.timeout, max_retries=3)
     return OpenAIChatCompletionsModel(model=cfg.model, openai_client=client)
+
+
+def without_thinking(settings):
+    """The same model settings with Qwen3's thinking off (for a step whose thinking ran out of tokens)."""
+    from dataclasses import replace
+
+    body = dict(settings.extra_body or {})
+    body["chat_template_kwargs"] = {**body.get("chat_template_kwargs", {}), "enable_thinking": False}
+    return replace(settings, extra_body=body)
+
+
+def overflowed(e: Exception) -> bool:
+    """The model spent its whole output on thinking: no answer, no tool call."""
+    return "finish_reason='length'" in str(e) or "finish_reason=\"length\"" in str(e)
 
 
 def make_settings(cfg: LLMConfig):
