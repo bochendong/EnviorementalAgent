@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "updated_at_utc": "2026-10-16T19:41:33.947915+00:00",
+  "stage": "awaiting_smoke",
+  "smoke": {
+    "job_id": "24115609",
+    "state": "PENDING",
+    "reason": "Priority",
+    "results": "/scratch/bdong/worldseeds/results/net/runs/20261016-smoke-nvml",
+    "source": "/scratch/bdong/worldseeds/code/ccc3077-20261016-nvml",
+    "expected_request_checks": [
+      "chat",
+      "tool-required",
+      "tool-auto",
+      "tool-no-thinking",
+      "json",
+      "long"
+    ],
+    "expected_design_checks": [
+      "sas",
+      "centralized"
+    ],
+    "gate": "Slurm COMPLETED/0:0 and smoke/smoke.json contains all six successful requests and two successful designs with llm_errors=0. Empty or missing reports never pass.",
+    "request_output_checks": {
+      "all_checks": "No raw <think> tag in assistant content.",
+      "chat_json_long": "Require nonempty assistant content; JSON must parse.",
+      "tools": "Require a tool call for tool-required and tool-no-thinking; tool-auto must return assistant content or a tool call."
+    }
+  },
+  "pilot": {
+    "run": "20261016-pilot-nvml",
+    "results": "/scratch/bdong/worldseeds/results/net/runs/20261016-pilot-nvml",
+    "source": "/scratch/bdong/worldseeds/code/40f2cf6-20261016-pilot",
+    "commit": "40f2cf61f9da82a5f4588bbab836cb051ddc5b11",
+    "submitted": false,
+    "job_ids": [],
+    "expected_job_count": 3,
+    "expected_calibration_records": 44,
+    "settings": {
+      "ACCOUNT": "def-hup-ab_cpu",
+      "GPU_ACCOUNT": "rrg-hup_gpu",
+      "STAGE": "check",
+      "N": "50",
+      "SEEDS": "2",
+      "CALIBRATION_DESIGNS": "sas centralized",
+      "MODEL_ID": "Qwen/Qwen3-8B",
+      "WS_THINKING": "1",
+      "WS_MAX_TOKENS": "8192",
+      "MAX_MODEL_LEN": "65536",
+      "WS_CONTEXT_TOKENS": "39321",
+      "NETAGENTS_PARALLEL": "4",
+      "GPU_RESOURCE": "nvidia_h100_80gb_hbm3_3g.40gb:1",
+      "GPU_CPUS": "4",
+      "GPU_MEM": "32G",
+      "TIME": "0-08:00"
+    },
+    "jobs": [
+      {
+        "experiment": "fidelity",
+        "design": "debate",
+        "script": "slurm/net_fidelity.sh",
+        "relative_output": "fidelity",
+        "N": 50
+      },
+      {
+        "experiment": "calibration",
+        "design": "sas",
+        "script": "slurm/net_eval.sh",
+        "relative_output": "calibration/sas",
+        "SUITE": "calibration",
+        "SEEDS": 2
+      },
+      {
+        "experiment": "calibration",
+        "design": "centralized",
+        "script": "slurm/net_eval.sh",
+        "relative_output": "calibration/centralized",
+        "SUITE": "calibration",
+        "SEEDS": 2
+      }
+    ],
+    "submission_notes": [
+      "Submit only after smoke passes. Do not reuse old pilot output or old held job 24020911.",
+      "run_all.sh STAGE=check also creates a CPU summary job; submit the equivalent three experiment jobs only and summarize on the login node later.",
+      "Cache fidelity data on the login node before submission.",
+      "Use a submission lock, inspect manifests and matching existing jobs, and persist every job ID immediately. Never duplicate partial submissions.",
+      "Keep the validated source pinned. No larger experiments, new seeds/designs or automatic failed-job retries."
+    ]
+  },
+  "github": {
+    "repository": "bochendong/EnviorementalAgent",
+    "branch": "claude/vigilant-fermi-g8b13u",
+    "sync": "Raw logs, actual results, configuration and failure/completeness metadata; preserve unrelated local changes and concurrent remote commits."
+  },
+  "stop_conditions": [
+    "Smoke failure: upload actual reports/logs and failure cause, report once, stop follow-up.",
+    "Pilot terminal: verify data completeness, summarize errors/overflows and GPU slice hours, upload results/logs, report outcome and stop follow-up."
+  ],
+  "automation": {
+    "name": "Nibi smoke 与小规模 pilot",
+    "id": "nibi-smoke-pilot",
+    "interval_minutes": 10
+  }
+}

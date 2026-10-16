@@ -29,5 +29,18 @@
   },
   "pilot_submitted": false,
   "checked_at_utc": "2026-10-16T08:18:15.185362+00:00",
-  "smoke_status": "24115609|PENDING|00:00:00|0:0"
+  "smoke_status": "24115609|PENDING|00:00:00|0:0",
+  "latest_queue_check": {
+    "at_utc": "2026-10-16T19:38:52.809602+00:00",
+    "JobId": "24115609",
+    "JobState": "PENDING",
+    "Reason": "Priority",
+    "Dependency": "(null)",
+    "Partition": "gpubase_bygpu_b1,gpubackfill",
+    "TimeLimit": "00:45:00",
+    "Account": "rrg-hup_gpu",
+    "TresPerNode": "gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb:1",
+    "EligibleTime": "2026-10-16T04:16:19",
+    "StartTime": "Unknown"
+  }
 }
