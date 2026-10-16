@@ -1,0 +1,44 @@
+{
+  "run": "20261015-smoke",
+  "submitted_at_utc": "2026-10-15T16:27:09.812334+00:00",
+  "commit": "e2f91e386fd99f80ee1a61eb71f78b2361406cd4",
+  "source": "/scratch/bdong/worldseeds/code/e2f91e3-20261015-smoke",
+  "job_ids": [
+    "24051813"
+  ],
+  "jobs": [
+    {
+      "experiment": "smoke",
+      "design": "smoke",
+      "job": "24051813",
+      "command": "--job-name=net-smoke --time=0-00:45 --output=/scratch/bdong/worldseeds/results/net/runs/20261015-smoke/logs/%x-%j.out --export=ALL,OUT=/scratch/bdong/worldseeds/results/net/runs/20261015-smoke/smoke,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261015-smoke/logs slurm/net_smoke.sh"
+    }
+  ],
+  "settings": {
+    "ACCOUNT": "def-hup-ab_cpu",
+    "GPU_ACCOUNT": "rrg-hup_gpu",
+    "MODEL_ID": "Qwen/Qwen3-8B",
+    "MAX_MODEL_LEN": "65536",
+    "WS_THINKING": "1",
+    "WS_MAX_TOKENS": "8192",
+    "NETAGENTS_PARALLEL": "4",
+    "REASONING_PARSER": "qwen3"
+  },
+  "gate": "Only submit the small pilot after every smoke request and design check passes.",
+  "latest_check": {
+    "run": "20261015-smoke",
+    "job_id": "24051813",
+    "checked_at_utc": "2026-10-16T07:58:57.297498+00:00",
+    "state": "FAILED",
+    "exit_code": "1:0",
+    "elapsed": "00:02:15",
+    "node": "g37",
+    "phase": "vLLM startup before diagnostic requests",
+    "smoke_json_exists": false,
+    "error": "RuntimeError: Failed to infer device type",
+    "evidence_file": "logs/vllm-24051813.log",
+    "scheduler_record": "24051813|net-smoke|FAILED|1:0|00:02:15|g37|billing=5228,cpu=4,gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb=1,gres/gpu=1,mem=32G,node=1|billing=5228,cpu=4,gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb=1,gres/gpu=1,mem=32G,node=1",
+    "pilot_submitted": false,
+    "note": "The diagnostic program did not run, so none of the request or agent checks was validated. There is no smoke.json to upload; the original startup logs contain the error."
+  }
+}

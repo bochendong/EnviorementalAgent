@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-vllm/bin/vllm", line 6, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/entrypoints/cli/main.py", line 88, in main
+    cmd.subparser_init(subparsers).set_defaults(dispatch_function=cmd.cmd)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/entrypoints/cli/serve.py", line 164, in subparser_init
+    serve_parser = make_arg_parser(serve_parser)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/entrypoints/openai/cli_args.py", line 381, in make_arg_parser
+    parser = AsyncEngineArgs.add_cli_args(parser)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/engine/arg_utils.py", line 2697, in add_cli_args
+    parser = EngineArgs.add_cli_args(parser)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/engine/arg_utils.py", line 1504, in add_cli_args
+    vllm_kwargs = get_kwargs(VllmConfig)
+                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/engine/arg_utils.py", line 410, in get_kwargs
+    return copy.deepcopy(_compute_kwargs(cls))
+                         ^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/engine/arg_utils.py", line 311, in _compute_kwargs
+    default = default.default_factory()  # type: ignore[call-arg]
+              ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/pydantic/_internal/_dataclasses.py", line 121, in __init__
+    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+  File "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/config/device.py", line 56, in __post_init__
+    raise RuntimeError(
+RuntimeError: Failed to infer device type, please set the environment variable `VLLM_LOGGING_LEVEL=DEBUG` to turn on verbose logging to help debug the issue.

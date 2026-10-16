@@ -1,0 +1,16 @@
+{
+  "run": "20261015-smoke",
+  "job_id": "24051813",
+  "checked_at_utc": "2026-10-16T07:58:57.297498+00:00",
+  "state": "FAILED",
+  "exit_code": "1:0",
+  "elapsed": "00:02:15",
+  "node": "g37",
+  "phase": "vLLM startup before diagnostic requests",
+  "smoke_json_exists": false,
+  "error": "RuntimeError: Failed to infer device type",
+  "evidence_file": "logs/vllm-24051813.log",
+  "scheduler_record": "24051813|net-smoke|FAILED|1:0|00:02:15|g37|billing=5228,cpu=4,gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb=1,gres/gpu=1,mem=32G,node=1|billing=5228,cpu=4,gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb=1,gres/gpu=1,mem=32G,node=1",
+  "pilot_submitted": false,
+  "note": "The diagnostic program did not run, so none of the request or agent checks was validated. There is no smoke.json to upload; the original startup logs contain the error."
+}
