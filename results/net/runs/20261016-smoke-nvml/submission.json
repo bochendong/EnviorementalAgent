@@ -31,7 +31,7 @@
   "checked_at_utc": "2026-10-16T08:18:15.185362+00:00",
   "smoke_status": "24115609|PENDING|00:00:00|0:0",
   "latest_queue_check": {
-    "at_utc": "2026-10-16T19:38:52.809602+00:00",
+    "at_utc": "2026-10-16T19:48:23.440586+00:00",
     "JobId": "24115609",
     "JobState": "PENDING",
     "Reason": "Priority",
@@ -39,8 +39,48 @@
     "Partition": "gpubase_bygpu_b1,gpubackfill",
     "TimeLimit": "00:45:00",
     "Account": "rrg-hup_gpu",
-    "TresPerNode": "gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb:1",
+    "TresPerNode": "gres/gpu:h100:1",
+    "SubmitTime": "2026-10-16T04:13:08",
     "EligibleTime": "2026-10-16T04:16:19",
-    "StartTime": "Unknown"
-  }
+    "AccrueTime": "2026-10-16T04:16:19",
+    "StartTime": "2026-10-19T02:23:16",
+    "Priority": "1146545",
+    "LastSchedEval": "2026-10-16T15:48:16"
+  },
+  "scheduling_changes": [
+    {
+      "at_utc": "2026-10-16T19:44:21.583670+00:00",
+      "reason": "Forty-GB MIG capacity exhausted; test-only estimates indicated full H100 availability about 3.5 hours earlier. Preserve the same pending job and validated model configuration.",
+      "before": {
+        "JobId": "24115609",
+        "JobState": "PENDING",
+        "Reason": "Priority",
+        "Priority": "1146714",
+        "SubmitTime": "2026-10-16T04:13:08",
+        "EligibleTime": "2026-10-16T04:16:19",
+        "TimeLimit": "00:45:00",
+        "NumCPUs": "4",
+        "ReqTRES": "cpu=4,mem=32G,node=1,billing=5228,gres/gpu=1,gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb=1",
+        "TresPerNode": "gres/gpu:nvidia_h100_80gb_hbm3_3g.40gb:1"
+      },
+      "after": {
+        "JobId": "24115609",
+        "JobState": "PENDING",
+        "Reason": "None",
+        "Priority": "1146545",
+        "SubmitTime": "2026-10-16T04:13:08",
+        "EligibleTime": "2026-10-16T04:16:19",
+        "TimeLimit": "00:45:00",
+        "NumCPUs": "4",
+        "ReqTRES": "cpu=4,mem=32G,node=1,billing=12200,gres/gpu=1,gres/gpu:h100=1",
+        "TresPerNode": "gres/gpu:h100:1"
+      },
+      "test_only_estimates_local_timezone": "America/Toronto",
+      "test_only_full_h100_estimate": "2026-10-16T16:50:29",
+      "test_only_mig40_estimate": "2026-10-16T20:20:29",
+      "estimates_are_not_guarantees": true
+    }
+  ],
+  "queue_diagnosis": "queue-diagnosis.json",
+  "current_gpu_resource": "h100:1"
 }

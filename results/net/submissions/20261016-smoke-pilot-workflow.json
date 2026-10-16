@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at_utc": "2026-10-16T19:41:33.947915+00:00",
+  "updated_at_utc": "2026-10-16T19:48:43.001132+00:00",
   "stage": "awaiting_smoke",
   "smoke": {
     "job_id": "24115609",
@@ -25,7 +25,13 @@
       "all_checks": "No raw <think> tag in assistant content.",
       "chat_json_long": "Require nonempty assistant content; JSON must parse.",
       "tools": "Require a tool call for tool-required and tool-no-thinking; tool-auto must return assistant content or a tool call."
-    }
+    },
+    "gpu_resource": "h100:1",
+    "gpu_cpus": 4,
+    "gpu_mem": "32G",
+    "time_limit": "00:45:00",
+    "resource_change_note": "Changed existing pending job from MIG40 to full H100 on 2026-10-16 to try the larger resource pool. Same job ID; SubmitTime, EligibleTime and AccrueTime retained. Pilot settings remain MIG40. New-job test-only estimates disagree with live scheduling; no guaranteed ETA. Do not resubmit or reset this pending job merely to obtain an earlier estimate.",
+    "queue_diagnosis": "results/net/runs/20261016-smoke-nvml/queue-diagnosis.json"
   },
   "pilot": {
     "run": "20261016-pilot-nvml",
