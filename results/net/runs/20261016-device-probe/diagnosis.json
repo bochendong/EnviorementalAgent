@@ -1,0 +1,24 @@
+{
+  "checked_at_utc": "2026-10-16T08:18:49.532017+00:00",
+  "root_cause": "NVML soname lookup fails in the compute-node Python process, so vLLM selects UnspecifiedPlatform despite a usable CUDA GPU.",
+  "evidence": {
+    "node": "g37.nibi.sharcnet",
+    "torch_cuda_available": true,
+    "cuda_allocation": 1.0,
+    "nvml_error": "NVMLError_LibraryNotFound: NVML Shared Library Not Found",
+    "vllm_platform": "vllm.platforms.interface.UnspecifiedPlatform"
+  },
+  "repair": "Discover a loadable absolute system NVML path when soname loading fails and pass LD_PRELOAD to the vLLM server and spawned processes. Add a CUDA/NVML/platform preflight before loading model weights.",
+  "validation": {
+    "unit_tests_passed": 4,
+    "real_gpu_fix_probe_job": "24115607",
+    "real_gpu_fix_probe_state": "COMPLETED",
+    "dependent_smoke_job": "24115609",
+    "pilot_submitted": false,
+    "real_gpu_fix_probe_elapsed_seconds": 17,
+    "real_gpu_fix_probe_node": "g37",
+    "torch_cuda_allocation_passed": true,
+    "nvml_passed": true,
+    "vllm_cuda_platform_passed": true
+  }
+}

@@ -1,0 +1,147 @@
+diff --git a/slurm/start_vllm.sh b/slurm/start_vllm.sh
+index 294dbeb..9489c2f 100755
+--- a/slurm/start_vllm.sh
++++ b/slurm/start_vllm.sh
+@@ -32,7 +32,42 @@ if [ "$SERVER_MODE" = "apptainer" ]; then
+     vllm serve "$MODEL_DIR" "${VLLM_ARGS[@]}" "${EXTRA[@]}" > "$SERVER_LOG" 2>&1 &
+ else
+   source "$VLLM_VENV/bin/activate"
+-  vllm serve "$MODEL_DIR" "${VLLM_ARGS[@]}" "${EXTRA[@]}" > "$SERVER_LOG" 2>&1 &
++  # nvidia-smi and torch may work while this Python's loader cannot find NVML. Load only the
++  # driver library explicitly; adding all of /usr/lib64 would mix system and module libraries.
++  vllm_nvml_preload=$(python slurm/nvml_preload.py)
++  vllm_driver_env=()
++  if [ -n "$vllm_nvml_preload" ]; then
++    vllm_driver_env+=("LD_PRELOAD=$vllm_nvml_preload${LD_PRELOAD:+:$LD_PRELOAD}")
++  fi
++  if ! env "${vllm_driver_env[@]}" python -u - > "$SERVER_LOG" 2>&1 <<'PY'
++import json
++import os
++import torch
++from vllm.utils.import_utils import import_pynvml
++
++print(json.dumps({"phase": "GPU preflight", "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
++                  "torch": torch.__version__, "cuda_build": torch.version.cuda,
++                  "cuda_available": torch.cuda.is_available(), "device_count": torch.cuda.device_count(),
++                  "nvml_preload": os.environ.get("LD_PRELOAD", "")}), flush=True)
++if not torch.cuda.is_available() or torch.cuda.device_count() < 1:
++    raise RuntimeError("Allocated GPU is unavailable to PyTorch; check the Slurm allocation and driver")
++nvml = import_pynvml()
++nvml.nvmlInit()
++try:
++    print("NVML driver:", nvml.nvmlSystemGetDriverVersion(), flush=True)
++finally:
++    nvml.nvmlShutdown()
++from vllm.platforms import current_platform
++if not current_platform.is_cuda():
++    raise RuntimeError(f"vLLM did not select CUDA: {type(current_platform).__name__}")
++print("GPU preflight passed:", torch.cuda.get_device_name(0), flush=True)
++PY
++  then
++    echo "GPU preflight failed (log: $SERVER_LOG)"
++    cat "$SERVER_LOG"
++    exit 1
++  fi
++  env "${vllm_driver_env[@]}" vllm serve "$MODEL_DIR" "${VLLM_ARGS[@]}" "${EXTRA[@]}" >> "$SERVER_LOG" 2>&1 &
+   deactivate
+ fi
+ SERVER_PID=$!
+diff --git a/slurm/nvml_preload.py b/slurm/nvml_preload.py
+new file mode 100644
+index 0000000..de0ba50
+--- /dev/null
++++ b/slurm/nvml_preload.py
+@@ -0,0 +1,46 @@
++"""Find a driver-library preload when the Python runtime cannot find NVML by soname.
++
++Alliance's Python can use a different library search path from system tools such as nvidia-smi.
++Print only the fallback library path, or nothing when normal loading works. The launcher passes it
++to the server through LD_PRELOAD so spawned vLLM processes inherit the same fix.
++"""
++
++import ctypes
++import os
++import sys
++from pathlib import Path
++
++SONAME = "libnvidia-ml.so.1"
++CANDIDATES = (
++    "/usr/lib64/libnvidia-ml.so.1",
++    "/usr/lib64/nvidia/libnvidia-ml.so.1",
++    "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1",
++    "/usr/lib/nvidia/libnvidia-ml.so.1",
++)
++
++
++def find_preload(load=ctypes.CDLL, candidates=CANDIDATES):
++    try:
++        load(SONAME)
++        return ""
++    except OSError as original:
++        errors = [str(original)]
++    for name in candidates:
++        path = Path(name)
++        if not path.is_absolute() or not path.is_file():
++            continue
++        try:
++            load(str(path))
++            return str(path)
++        except OSError as error:
++            errors.append(f"{path}: {error}")
++    raise RuntimeError("Cannot load NVIDIA NVML. " + "; ".join(errors))
++
++
++if __name__ == "__main__":
++    try:
++        override = os.environ.get("NVML_LIBRARY_PATH")
++        print(find_preload(candidates=(override,) if override else CANDIDATES))
++    except RuntimeError as error:
++        print(str(error), file=sys.stderr)
++        sys.exit(1)
+diff --git a/tests/test_nvml_preload.py b/tests/test_nvml_preload.py
+new file mode 100644
+index 0000000..05f50c3
+--- /dev/null
++++ b/tests/test_nvml_preload.py
+@@ -0,0 +1,41 @@
++import tempfile
++import unittest
++from pathlib import Path
++
++from slurm.nvml_preload import SONAME, find_preload
++
++
++class NvmlPreloadTests(unittest.TestCase):
++    def test_normal_loader_needs_no_preload(self):
++        self.assertEqual(find_preload(load=lambda name: object(), candidates=()), "")
++
++    def test_absolute_library_repairs_soname_lookup_failure(self):
++        with tempfile.TemporaryDirectory() as directory:
++            library = Path(directory) / SONAME
++            library.touch()
++
++            def load(name):
++                if name == SONAME:
++                    raise OSError("NVML not on the runtime search path")
++                self.assertEqual(name, str(library))
++                return object()
++
++            self.assertEqual(find_preload(load=load, candidates=(str(library),)), str(library))
++
++    def test_unloadable_library_reports_underlying_error(self):
++        with tempfile.TemporaryDirectory() as directory:
++            library = Path(directory) / SONAME
++            library.touch()
++
++            def load(name):
++                raise OSError("driver library dependency missing")
++
++            with self.assertRaisesRegex(RuntimeError, "driver library dependency missing"):
++                find_preload(load=load, candidates=(str(library),))
++
++    def test_missing_library_is_not_returned(self):
++        def load(name):
++            raise OSError("no NVML")
++
++        with self.assertRaisesRegex(RuntimeError, "Cannot load NVIDIA NVML"):
++            find_preload(load=load, candidates=("/does-not-exist/libnvidia-ml.so.1",))

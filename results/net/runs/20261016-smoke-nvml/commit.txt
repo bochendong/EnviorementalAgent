@@ -1,0 +1,5 @@
+commit ccc30774c4abdef9c040607b43e0ca8a0f4daab8  (HEAD)
+submitted 2026-10-16T04:13:07-04:00
+changed  M slurm/start_vllm.sh
+changed ?? slurm/nvml_preload.py
+changed ?? tests/test_nvml_preload.py

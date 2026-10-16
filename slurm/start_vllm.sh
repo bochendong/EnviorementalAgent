@@ -32,7 +32,42 @@ if [ "$SERVER_MODE" = "apptainer" ]; then
     vllm serve "$MODEL_DIR" "${VLLM_ARGS[@]}" "${EXTRA[@]}" > "$SERVER_LOG" 2>&1 &
 else
   source "$VLLM_VENV/bin/activate"
-  vllm serve "$MODEL_DIR" "${VLLM_ARGS[@]}" "${EXTRA[@]}" > "$SERVER_LOG" 2>&1 &
+  # nvidia-smi and torch may work while this Python's loader cannot find NVML. Load only the
+  # driver library explicitly; adding all of /usr/lib64 would mix system and module libraries.
+  vllm_nvml_preload=$(python slurm/nvml_preload.py)
+  vllm_driver_env=()
+  if [ -n "$vllm_nvml_preload" ]; then
+    vllm_driver_env+=("LD_PRELOAD=$vllm_nvml_preload${LD_PRELOAD:+:$LD_PRELOAD}")
+  fi
+  if ! env "${vllm_driver_env[@]}" python -u - > "$SERVER_LOG" 2>&1 <<'PY'
+import json
+import os
+import torch
+from vllm.utils.import_utils import import_pynvml
+
+print(json.dumps({"phase": "GPU preflight", "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
+                  "torch": torch.__version__, "cuda_build": torch.version.cuda,
+                  "cuda_available": torch.cuda.is_available(), "device_count": torch.cuda.device_count(),
+                  "nvml_preload": os.environ.get("LD_PRELOAD", "")}), flush=True)
+if not torch.cuda.is_available() or torch.cuda.device_count() < 1:
+    raise RuntimeError("Allocated GPU is unavailable to PyTorch; check the Slurm allocation and driver")
+nvml = import_pynvml()
+nvml.nvmlInit()
+try:
+    print("NVML driver:", nvml.nvmlSystemGetDriverVersion(), flush=True)
+finally:
+    nvml.nvmlShutdown()
+from vllm.platforms import current_platform
+if not current_platform.is_cuda():
+    raise RuntimeError(f"vLLM did not select CUDA: {type(current_platform).__name__}")
+print("GPU preflight passed:", torch.cuda.get_device_name(0), flush=True)
+PY
+  then
+    echo "GPU preflight failed (log: $SERVER_LOG)"
+    cat "$SERVER_LOG"
+    exit 1
+  fi
+  env "${vllm_driver_env[@]}" vllm serve "$MODEL_DIR" "${VLLM_ARGS[@]}" "${EXTRA[@]}" >> "$SERVER_LOG" 2>&1 &
   deactivate
 fi
 SERVER_PID=$!

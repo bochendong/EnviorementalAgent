@@ -1,0 +1,33 @@
+{
+  "run": "20261016-smoke-nvml",
+  "submitted_at_utc": "2026-10-16T08:13:10.171788+00:00",
+  "commit": "ccc30774c4abdef9c040607b43e0ca8a0f4daab8",
+  "source": "/scratch/bdong/worldseeds/code/ccc3077-20261016-nvml",
+  "job_ids": [
+    "24115609"
+  ],
+  "jobs": [
+    {
+      "experiment": "smoke",
+      "design": "smoke",
+      "job": "24115609",
+      "command": "--job-name=net-smoke --time=0-00:45 --output=/scratch/bdong/worldseeds/results/net/runs/20261016-smoke-nvml/logs/%x-%j.out --export=ALL,OUT=/scratch/bdong/worldseeds/results/net/runs/20261016-smoke-nvml/smoke,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261016-smoke-nvml/logs slurm/net_smoke.sh"
+    }
+  ],
+  "gpu_dependency": "24115607",
+  "repair": "Load the system NVIDIA NVML library by absolute path through LD_PRELOAD when soname lookup fails. Verify PyTorch, NVML and vLLM CUDA platform before model loading.",
+  "validation": {
+    "unit_tests_passed": 4,
+    "bash_syntax": "passed",
+    "real_gpu_probe_job": "24115607",
+    "real_gpu_probe_node": "g37",
+    "real_gpu_probe_state": "COMPLETED",
+    "real_gpu_probe_elapsed_seconds": 17,
+    "cuda_allocation_passed": true,
+    "nvml_driver": "580.178.04",
+    "vllm_platform": "vllm.platforms.cuda.NvmlCudaPlatform"
+  },
+  "pilot_submitted": false,
+  "checked_at_utc": "2026-10-16T08:18:15.185362+00:00",
+  "smoke_status": "24115609|PENDING|00:00:00|0:0"
+}

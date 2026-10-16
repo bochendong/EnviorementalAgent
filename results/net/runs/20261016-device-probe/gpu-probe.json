@@ -1,0 +1,56 @@
+{
+  "node": "g37.nibi.sharcnet",
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "MIG-131a86c0-ab9f-546a-8036-d59262b5b4cd",
+    "NVIDIA_VISIBLE_DEVICES": null,
+    "SLURM_JOB_GPUS": "10",
+    "SLURM_STEP_GPUS": null,
+    "PYTHONPATH": "/cvmfs/soft.computecanada.ca/easybuild/python/site-packages:/cvmfs/soft.computecanada.ca/custom/python/site-packages",
+    "LD_LIBRARY_PATH": null,
+    "VLLM_PLATFORM": null,
+    "VLLM_TARGET_DEVICE": null
+  },
+  "packages": {
+    "ok": true,
+    "value": {
+      "torch": "2.11.0+computecanada",
+      "vllm": "0.25.0+computecanada",
+      "nvidia-ml-py": "13.610.43+computecanada"
+    }
+  },
+  "nvidia_smi": {
+    "ok": true,
+    "value": "GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-c4d15e3a-1e7c-b902-4863-d94755a806d5)\n  MIG 1g.10gb     Device  0: (UUID: MIG-131a86c0-ab9f-546a-8036-d59262b5b4cd)\n"
+  },
+  "torch": {
+    "ok": true,
+    "value": {
+      "version": "2.11.0",
+      "path": "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/torch/__init__.py",
+      "cuda_build": "12.9",
+      "available": true,
+      "count": 1,
+      "allocation": 1.0,
+      "name": "NVIDIA H100 80GB HBM3 MIG 1g.10gb"
+    }
+  },
+  "nvml": {
+    "ok": false,
+    "error": "NVMLError_LibraryNotFound: NVML Shared Library Not Found",
+    "trace": "Traceback (most recent call last):\n  File \"/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/third_party/pynvml.py\", line 2420, in _LoadNvmlLibrary\n    nvmlLib = CDLL(\"libnvidia-ml.so.1\")\n              ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/ctypes/__init__.py\", line 376, in __init__\n    self._handle = _dlopen(self._name, mode)\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^\nOSError: libnvidia-ml.so.1: cannot open shared object file: No such file or directory\n\nDuring handling of the above exception, another exception occurred:\n\nTraceback (most recent call last):\n  File \"/scratch/bdong/worldseeds/code/e2f91e3-20261015-smoke/gpu_probe.py\", line 16, in check\n    report[name] = {\"ok\": True, \"value\": fn()}\n                                         ^^^^\n  File \"/scratch/bdong/worldseeds/code/e2f91e3-20261015-smoke/gpu_probe.py\", line 34, in nvml_check\n    p.nvmlInit()\n  File \"/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/third_party/pynvml.py\", line 2392, in nvmlInit\n    nvmlInitWithFlags(0)\n  File \"/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/third_party/pynvml.py\", line 2375, in nvmlInitWithFlags\n    _LoadNvmlLibrary()\n  File \"/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/third_party/pynvml.py\", line 2422, in _LoadNvmlLibrary\n    _nvmlCheckReturn(NVML_ERROR_LIBRARY_NOT_FOUND)\n  File \"/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/third_party/pynvml.py\", line 1047, in _nvmlCheckReturn\n    raise NVMLError(ret)\nvllm.third_party.pynvml.NVMLError_LibraryNotFound: NVML Shared Library Not Found\n"
+  },
+  "vllm": {
+    "ok": true,
+    "value": {
+      "class": "vllm.platforms.interface.UnspecifiedPlatform",
+      "device_type": ""
+    }
+  },
+  "loaded_driver_libraries": {
+    "ok": true,
+    "value": [
+      "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Core/cudacore/12.9.1/targets/x86_64-linux/lib/libcudart.so.12.9.79",
+      "/usr/lib64/libcuda.so.580.178.04"
+    ]
+  }
+}

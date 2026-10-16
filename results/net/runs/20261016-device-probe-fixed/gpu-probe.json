@@ -1,0 +1,61 @@
+{
+  "node": "g37.nibi.sharcnet",
+  "environment": {
+    "CUDA_VISIBLE_DEVICES": "MIG-aba523fc-64e3-5b56-832d-8e3b121bddda",
+    "NVIDIA_VISIBLE_DEVICES": null,
+    "SLURM_JOB_GPUS": "26",
+    "SLURM_STEP_GPUS": null,
+    "PYTHONPATH": "/cvmfs/soft.computecanada.ca/easybuild/python/site-packages:/cvmfs/soft.computecanada.ca/custom/python/site-packages",
+    "LD_LIBRARY_PATH": null,
+    "VLLM_PLATFORM": null,
+    "VLLM_TARGET_DEVICE": null
+  },
+  "packages": {
+    "ok": true,
+    "value": {
+      "torch": "2.11.0+computecanada",
+      "vllm": "0.25.0+computecanada",
+      "nvidia-ml-py": "13.610.43+computecanada"
+    }
+  },
+  "nvidia_smi": {
+    "ok": true,
+    "value": "GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-a5160207-707d-9c9e-59af-56c58d092c49)\n  MIG 1g.10gb     Device  0: (UUID: MIG-aba523fc-64e3-5b56-832d-8e3b121bddda)\n"
+  },
+  "torch": {
+    "ok": true,
+    "value": {
+      "version": "2.11.0",
+      "path": "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/torch/__init__.py",
+      "cuda_build": "12.9",
+      "available": true,
+      "count": 1,
+      "allocation": 1.0,
+      "name": "NVIDIA H100 80GB HBM3 MIG 1g.10gb"
+    }
+  },
+  "nvml": {
+    "ok": true,
+    "value": {
+      "module": "/scratch/bdong/worldseeds/venv-vllm/lib/python3.11/site-packages/vllm/third_party/pynvml.py",
+      "driver": "580.178.04",
+      "count": 1
+    }
+  },
+  "vllm": {
+    "ok": true,
+    "value": {
+      "class": "vllm.platforms.cuda.NvmlCudaPlatform",
+      "device_type": "cuda"
+    }
+  },
+  "loaded_driver_libraries": {
+    "ok": true,
+    "value": [
+      "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Core/cudacore/12.9.1/targets/x86_64-linux/lib/libcudart.so.12.9.79",
+      "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v3/Core/cudacore/13.2.0/targets/x86_64-linux/lib/libcudart.so.13.2.51",
+      "/usr/lib64/libcuda.so.580.178.04",
+      "/usr/lib64/libnvidia-ml.so.580.178.04"
+    ]
+  }
+}
