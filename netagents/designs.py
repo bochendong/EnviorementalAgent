@@ -28,11 +28,15 @@ from .tools import briefing, function_tools
 
 
 CONTEXT_TOKENS = int(os.environ.get("WS_CONTEXT_TOKENS", "40000"))  # history kept before a turn (estimated)
+# Characters per token for that estimate. Tool results are JSON full of numbers, which Qwen's tokenizer cuts
+# into about 1.5 characters a token (the smoke test of 20261016-smoke-nvml: 84k characters of numbers were
+# 57k tokens); prose is about 4. 1.5 is the safe side: the history never overflows the window.
+CHARS_PER_TOKEN = float(os.environ.get("WS_CHARS_PER_TOKEN", "1.5"))
 
 
 def _tokens(items) -> int:
-    """A rough token count of conversation items (3.5 characters a token), for trimming only."""
-    return int(len(json.dumps(items, default=str)) / 3.5)
+    """A conservative token count of conversation items (``CHARS_PER_TOKEN``), for trimming only."""
+    return int(len(json.dumps(items, default=str)) / CHARS_PER_TOKEN)
 
 
 def trim(history: list, limit: int) -> tuple[list, bool]:

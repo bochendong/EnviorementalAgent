@@ -34,7 +34,7 @@ python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # rebuil
 
 It prints a table and keeps every error in full in `smoke/smoke.json`.
 
-Runs of a job go four at a time (`--parallel`, `NETAGENTS_PARALLEL`), each in its own process with its own model client; the server batches their requests. A step whose thinking uses up all 8192 output tokens is redone once without thinking, and counted (`overflows`). These fixes come from the pilot (`results/net/runs/20261015-pilot`):
+Runs of a job go eight at a time (`--parallel`, `NETAGENTS_PARALLEL`), each in its own process with its own model client; the server batches their requests. A step whose thinking uses up all 8192 output tokens is redone once without thinking, and counted (`overflows`). These fixes come from the pilot (`results/net/runs/20261015-pilot`):
 - Triton's cache on the shared file system failed with a stale file handle;
 - thinking ran out of the old 4096-token limit;
 - one model client was reused across runs ("Event loop is closed");
@@ -245,7 +245,7 @@ python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时
   
   结果打印成表，完整错误保存在 `smoke/smoke.json`。
   
-  一个作业里的运行默认 4 个并行（`--parallel`），每个在独立进程里、用独立的模型客户端。思考把 8192 个输出 token 用完的一步，会关掉思考重做一次，并计入 `overflows`。这些修复都来自 pilot 暴露的问题：
+  一个作业里的运行默认 8 个并行（`--parallel`），每个在独立进程里、用独立的模型客户端。思考把 8192 个输出 token 用完的一步，会关掉思考重做一次，并计入 `overflows`。这些修复都来自 pilot 暴露的问题：
   - 共享文件系统上的 Triton 缓存报 stale file handle；
   - 原来 4096 的输出上限被思考用光；
   - 模型客户端跨运行复用（`Event loop is closed`）；

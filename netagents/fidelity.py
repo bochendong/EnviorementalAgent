@@ -35,6 +35,7 @@ import os
 import random
 import re
 import tempfile
+import time
 import urllib.request
 
 GSM8K = "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl"
@@ -84,8 +85,11 @@ def vote(preds: list) -> str | None:
 
 
 # ---------------------------------------------------------------- the authors' protocol
-def official(qs, agents: int, rounds: int, module, client, cfg) -> list[bool]:
-    out = []
+COST: dict[str, dict] = {}  # per arm: seconds and output tokens (what each setting costs)
+
+
+def official(qs, agents: int, rounds: int, module, client, cfg, arm: str = "") -> list[bool]:
+    out, t0, tokens = [], time.time(), 0
     for q in qs:
         ctx = [[{"role": "user", "content": FIRST.format(q["question"])}] for _ in range(agents)]
         for r in range(rounds):
@@ -93,13 +97,15 @@ def official(qs, agents: int, rounds: int, module, client, cfg) -> list[bool]:
                 if r != 0:
                     c.append(module.construct_message(ctx[:i] + ctx[i + 1:], q["question"], 2 * r - 1))
                 res = client.chat.completions.create(model=cfg.model, messages=c, n=1, **cfg.sampling())
+                tokens += res.usage.completion_tokens if res.usage else 0
                 c.append({"role": "assistant", "content": res.choices[0].message.content})
         out.append(correct(vote([parse(c[-1]["content"]) for c in ctx]), q["answer"]))
+    COST[arm] = {"seconds": round(time.time() - t0), "output_tokens": tokens}
     return out
 
 
 # ---------------------------------------------------------------- our ports, on the environment
-def port(qs, design_name: str, calls_per_question: int, cache: str) -> list[bool]:
+def port(qs, design_name: str, calls_per_question: int, cache: str, arm: str = "") -> list[bool]:
     from worldseeds.net import NetConfig, NetworkEnv, providers
 
     from .client import LocalEnv
@@ -109,7 +115,7 @@ def port(qs, design_name: str, calls_per_question: int, cache: str) -> list[bool
     cfg = LLMConfig()  # the same sampling and thinking as the official arms
     settings = make_settings(cfg)
     d = DESIGNS[design_name]
-    out = []
+    out, t0, tokens = [], time.time(), 0
     for k, q in enumerate(qs):
         path = os.path.join(cache, f"gsm_{k}.json")
         with open(path, "w") as f:
@@ -120,8 +126,10 @@ def port(qs, design_name: str, calls_per_question: int, cache: str) -> list[bool
                          NetConfig(budget=calls_per_question * 2))
         raw.reset(0)
         # a fresh client per question: an async client must not outlive the event loop it was made in
-        asyncio.run(d.play(LocalEnv(raw), make_model(cfg), settings, calls_per_question * team))
+        reports = asyncio.run(d.play(LocalEnv(raw), make_model(cfg), settings, calls_per_question * team))
+        tokens += sum(r["output_tokens"] for r in reports)
         out.append(raw.solved)
+    COST[arm] = {"seconds": round(time.time() - t0), "output_tokens": tokens}
     return out
 
 
@@ -154,16 +162,17 @@ def main():
     spec.loader.exec_module(module)
     qs = gsm8k(a.n, cache)
     arms = {
-        "official-single": official(qs, 1, 1, module, client, cfg),
-        "official-debate": official(qs, 3, 2, module, client, cfg),
-        "port-single": port(qs, "react", a.calls, tempfile.mkdtemp(dir=cache)),
-        "port-debate": port(qs, "debate", a.calls, tempfile.mkdtemp(dir=cache)),
+        "official-single": official(qs, 1, 1, module, client, cfg, "official-single"),
+        "official-debate": official(qs, 3, 2, module, client, cfg, "official-debate"),
+        "port-single": port(qs, "react", a.calls, tempfile.mkdtemp(dir=cache), "port-single"),
+        "port-debate": port(qs, "debate", a.calls, tempfile.mkdtemp(dir=cache), "port-debate"),
     }
     acc = {k: sum(v) / len(v) for k, v in arms.items()}
     gain_off, gain_port = (acc["official-debate"] - acc["official-single"], acc["port-debate"] - acc["port-single"])
     lo, hi = bootstrap(arms["official-debate"], arms["official-single"])
     report = {"check": a.check, "model": cfg.model, "n": len(qs),
-              "settings": {**cfg.sampling(), "thinking": cfg.thinking}, "accuracy": acc, "official_gain": gain_off,
+              "settings": {**cfg.sampling(), "thinking": cfg.thinking, "tool_choice": cfg.tool_choice},
+              "cost": COST, "accuracy": acc, "official_gain": gain_off,
               "official_gain_95": [lo, hi], "port_gain": gain_port, "port_gain_within_official_interval":
               lo <= gain_port <= hi, "paper": {**PAPER, "gain": PAPER["debate"] - PAPER["single"]},
               "per_question": arms}

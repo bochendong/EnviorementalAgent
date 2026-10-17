@@ -10,7 +10,8 @@ Requests (each with the settings of netagents/llm.py unless stated):
     tool-auto         the same with tool_choice="auto"
     tool-no-thinking  tool_choice="required" with thinking off
     json              response_format json_object (Magentic-One's ledgers)
-    long              a prompt of about 40k tokens (the context window, YaRN)
+    long              the largest history the harness sends (WS_CONTEXT_TOKENS at WS_CHARS_PER_TOKEN), as
+                      number-heavy JSON: it must fit the window with the output limit
 
 Then one run each of sas (a single agent) and centralized (an orchestrator and members) on math/easy, seed
 0, a few tool calls per member. Prints a table and writes smoke.json: every error in full.
@@ -44,11 +45,15 @@ def request(client, cfg, name: str, **kw) -> dict:
         return {"request": name, "ok": False, "error": f"{type(e).__name__}: {e}", "seconds": round(time.time() - t, 1)}
     m = r.choices[0].message
     calls = m.tool_calls or []
-    reasoning = getattr(m, "reasoning_content", None) or (m.model_extra or {}).get("reasoning_content")
+    extra = m.model_extra or {}
+    reasoning = getattr(m, "reasoning_content", None) or extra.get("reasoning_content") or extra.get("reasoning")
     out = {"request": name, "ok": True, "finish": r.choices[0].finish_reason, "tool_calls": len(calls),
            "reasoning_chars": len(reasoning or ""), "content": (m.content or "")[:200],
            "think_tag_in_content": "<think>" in (m.content or ""),
-           "usage": r.usage.model_dump() if r.usage else None, "seconds": round(time.time() - t, 1)}
+           "usage": r.usage.model_dump() if r.usage else None, "seconds": round(time.time() - t, 1),
+           "prompt_chars": sum(len(str(x.get("content", ""))) for x in args["messages"])}
+    if r.usage and r.usage.prompt_tokens:
+        out["chars_per_token"] = round(out["prompt_chars"] / r.usage.prompt_tokens, 2)
     if name.startswith("tool") and kw.get("tool_choice") == "required" and not calls:
         out.update(ok=False, error="tool_choice=required but no tool call came back")
     if name == "json":
@@ -63,8 +68,13 @@ def requests_check(cfg) -> list[dict]:
     from openai import OpenAI
 
     client = OpenAI(base_url=cfg.base_url, api_key=cfg.api_key, timeout=600)
-    long_text = "Here is a list of numbers: " + " ".join(str(i % 97) for i in range(28000)) + \
-        ". How many numbers are in the list, roughly? Answer in one sentence."
+    # the largest history an agent can send (designs.trim keeps CONTEXT_TOKENS estimated tokens), made of the
+    # worst text for the estimate: JSON full of numbers, like tool results
+    from .designs import CHARS_PER_TOKEN, CONTEXT_TOKENS
+
+    chars = int(CONTEXT_TOKENS * CHARS_PER_TOKEN)
+    body = json.dumps([{"n": i, "values": [i * 7 % 1000, i * 13 % 997]} for i in range(chars // 30)])[:chars]
+    long_text = "Tool results: " + body + "\nHow many results are there, roughly? Answer in one sentence."
     return [
         request(client, cfg, "chat"),
         request(client, cfg, "tool-required", tools=[TOOL], tool_choice="required"),

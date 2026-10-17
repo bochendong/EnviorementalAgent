@@ -289,7 +289,7 @@ def main():
     ap.add_argument("--cases", nargs="*", default=None, help="only these case ids")
     ap.add_argument("--seeds", type=int, default=None, help="only the first N seeds of each case")
     ap.add_argument("--calls-per-member", type=int, default=CALLS_PER_MEMBER)
-    ap.add_argument("--parallel", type=int, default=int(os.environ.get("NETAGENTS_PARALLEL", "4")),
+    ap.add_argument("--parallel", type=int, default=int(os.environ.get("NETAGENTS_PARALLEL", "8")),
                     help="runs at a time (each a separate team; the model server batches their requests)")
     ap.add_argument("--stop-after", type=int, default=3,
                     help="stop the job after this many runs in a row with model errors (0: never)")
