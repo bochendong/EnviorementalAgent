@@ -1,11 +1,11 @@
 {
   "schema_version": 1,
-  "updated_at_utc": "2026-10-16T19:48:43.001132+00:00",
-  "stage": "awaiting_smoke",
+  "updated_at_utc": "2026-10-17T14:59:41.603432+00:00",
+  "stage": "smoke_failed",
   "smoke": {
     "job_id": "24115609",
-    "state": "PENDING",
-    "reason": "Priority",
+    "state": "FAILED",
+    "reason": "Smoke long-input check exceeds server context length",
     "results": "/scratch/bdong/worldseeds/results/net/runs/20261016-smoke-nvml",
     "source": "/scratch/bdong/worldseeds/code/ccc3077-20261016-nvml",
     "expected_request_checks": [
@@ -31,7 +31,14 @@
     "gpu_mem": "32G",
     "time_limit": "00:45:00",
     "resource_change_note": "Changed existing pending job from MIG40 to full H100 on 2026-10-16 to try the larger resource pool. Same job ID; SubmitTime, EligibleTime and AccrueTime retained. Pilot settings remain MIG40. New-job test-only estimates disagree with live scheduling; no guaranteed ETA. Do not resubmit or reset this pending job merely to obtain an earlier estimate.",
-    "queue_diagnosis": "results/net/runs/20261016-smoke-nvml/queue-diagnosis.json"
+    "queue_diagnosis": "results/net/runs/20261016-smoke-nvml/queue-diagnosis.json",
+    "node": "g25",
+    "started_at_cluster_local": "2026-10-16T16:14:29",
+    "latest_observation": "Smoke long-input request plus 8192 reserved output tokens exceeds the 65536-token server context. Server reported at least 57345 input tokens, totaling at least 65537. Other five request checks and both design smoke runs passed.",
+    "exit_code": "1:0",
+    "ended_at_cluster_local": "2026-10-16T16:56:07",
+    "gate_passed": false,
+    "final_status": "results/net/runs/20261016-smoke-nvml/final-status.json"
   },
   "pilot": {
     "run": "20261016-pilot-nvml",
@@ -105,6 +112,8 @@
   "automation": {
     "name": "Nibi smoke 与小规模 pilot",
     "id": "nibi-smoke-pilot",
-    "interval_minutes": 10
+    "interval_minutes": 10,
+    "status": "PAUSED",
+    "user_cancelled": true
   }
 }

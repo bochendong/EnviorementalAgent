@@ -1,0 +1,4 @@
+JobID|JobName|State|ExitCode|Elapsed|Start|End|NodeList|AllocTRES
+24115609|net-smoke|FAILED|1:0|00:41:38|2026-10-16T16:14:29|2026-10-16T16:56:07|g25|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1
+24115609.batch|batch|FAILED|1:0|00:41:38|2026-10-16T16:14:29|2026-10-16T16:56:07|g25|cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1
+24115609.extern|extern|COMPLETED|0:0|00:41:38|2026-10-16T16:14:29|2026-10-16T16:56:07|g25|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1

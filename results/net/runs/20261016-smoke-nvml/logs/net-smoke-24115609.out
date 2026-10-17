@@ -1,0 +1,13 @@
+waiting for vLLM on port 35609 (log: /scratch/bdong/worldseeds/results/net/runs/20261016-smoke-nvml/logs/vllm-24115609.log)
+server up after 860s
+vLLM: (APIServer pid=14948) INFO 10-16 16:21:04 [api_utils.py:339]  ▄▄ ▄█ █     █     █ ▀▄▀ █  version 0.25.0
+check              ok    detail
+chat               True  finish=stop tool_calls=0 reasoning=0 think_in_content=False 11.7s
+tool-required      True  finish=tool_calls tool_calls=1 reasoning=0 think_in_content=False 3.0s
+tool-auto          True  finish=tool_calls tool_calls=1 reasoning=0 think_in_content=False 1.1s
+tool-no-thinking   True  finish=tool_calls tool_calls=1 reasoning=0 think_in_content=False 0.2s
+json               True  finish=stop tool_calls=0 reasoning=0 think_in_content=False 1.3s
+long               False BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 65536 tokens. However, you requested 8192 output tokens and your prompt contains at least 57345 input tokens, for a total of at least 65537 tokens. Please reduce the length of the input prompt or the num
+run sas            True  errors=0/15 calls=15 done=3 514.1s 
+run centralized    True  errors=0/52 calls=15 done=0 948.3s 
+full report: /scratch/bdong/worldseeds/results/net/runs/20261016-smoke-nvml/smoke/smoke.json

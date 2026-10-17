@@ -1,0 +1,76 @@
+{
+  "checked_at_utc": "2026-10-17T14:59:41.603432+00:00",
+  "job_id": "24115609",
+  "state": "FAILED",
+  "exit_code": "1:0",
+  "started_at_toronto": "2026-10-16T16:14:29-04:00",
+  "ended_at_toronto": "2026-10-16T16:56:07-04:00",
+  "elapsed_seconds": 2498,
+  "gpu_resource": "h100:1",
+  "gpu_hours": 0.6939,
+  "checks_passed": 7,
+  "checks_total": 8,
+  "failed_checks": [
+    {
+      "request": "long",
+      "ok": false,
+      "error": "BadRequestError: Error code: 400 - {'error': {'message': \"This model's maximum context length is 65536 tokens. However, you requested 8192 output tokens and your prompt contains at least 57345 input tokens, for a total of at least 65537 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=57345)\", 'type': 'BadRequestError', 'param': 'input_tokens', 'code': 400}}",
+      "seconds": 0.1
+    }
+  ],
+  "design_checks": [
+    {
+      "design": "sas",
+      "ok": true,
+      "llm_errors": 0,
+      "overflows": 0,
+      "llm_requests": 15,
+      "tool_calls": 15,
+      "done": 3,
+      "ops": {
+        "tasks": 2,
+        "sequence": 5,
+        "rsolve": 2,
+        "simplify": 2,
+        "submit": 3,
+        "evaluate": 1
+      },
+      "member_errors": [],
+      "seconds": 514.1
+    },
+    {
+      "design": "centralized",
+      "ok": true,
+      "llm_errors": 0,
+      "overflows": 0,
+      "llm_requests": 52,
+      "tool_calls": 15,
+      "done": 0,
+      "ops": {
+        "tasks": 4,
+        "send": 20,
+        "inbox": 20,
+        "sequence": 2,
+        "rsolve": 1,
+        "submit": 3,
+        "evaluate": 6
+      },
+      "member_errors": [],
+      "seconds": 948.3
+    }
+  ],
+  "gate_passed": false,
+  "pilot_submitted": false,
+  "cause": "Smoke long-input request plus 8192 reserved output tokens exceeds the 65536-token server context. Server reported at least 57345 input tokens, totaling at least 65537. Other five request checks and both design smoke runs passed.",
+  "limitations": [
+    "Centralized completed no tasks in this tiny diagnostic; zero model errors confirms only infrastructure/request execution, not task quality.",
+    "Full smoke gate remains failed. No retry or pilot submitted."
+  ],
+  "automation_status": "PAUSED",
+  "reports": [
+    "smoke/smoke.json",
+    "logs/net-smoke-24115609.out",
+    "logs/vllm-24115609.log",
+    "accounting.txt"
+  ]
+}
