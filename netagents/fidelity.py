@@ -29,8 +29,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import concurrent.futures
 import importlib.util
 import json
+import multiprocessing
 import os
 import random
 import re
@@ -142,37 +144,92 @@ def bootstrap(a: list[bool], b: list[bool], reps: int = 2000) -> tuple[float, fl
     return diffs[int(.025 * reps)], diffs[int(.975 * reps)]
 
 
+ARMS = ("official-single", "official-debate", "port-single", "port-debate")
+
+
+def _question(task: tuple) -> dict:
+    """One question in a process's main thread, preserving the protocol within that question."""
+    arm, q, calls, cache = task
+    if arm.startswith("official-"):
+        from openai import OpenAI
+        from .llm import LLMConfig
+
+        cfg = LLMConfig()
+        spec = importlib.util.spec_from_file_location("gen_gsm", fetch(DEBATE, os.path.join(cache, "debate")))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with OpenAI(base_url=cfg.base_url, api_key=cfg.api_key, timeout=cfg.timeout) as client:
+            agents, rounds = (1, 1) if arm == "official-single" else (3, 2)
+            result = official([q], agents, rounds, module, client, cfg, arm)
+    else:
+        design = "react" if arm == "port-single" else "debate"
+        result = port([q], design, calls, tempfile.mkdtemp(dir=cache), arm)
+    return {"correct": result[0], **COST[arm]}
+
+
+def run_arms(qs: list[dict], calls: int, cache: str, parallel: int, checkpoint: str, settings: dict):
+    # A new server port is allowed on resume; questions, sampling and protocols must match exactly.
+    identity = {"version": 1, "questions": qs, "calls": calls, "settings": settings}
+    if os.path.exists(checkpoint):
+        with open(checkpoint) as f:
+            progress = json.load(f)
+        if progress["identity"] != identity:
+            raise ValueError("Fidelity checkpoint settings/questions differ; use a separate output directory")
+    else:
+        progress = {"identity": identity, "records": {arm: {} for arm in ARMS},
+                    "seconds": {arm: 0 for arm in ARMS}}
+    arms, costs = {}, {}
+    # Processes keep symbolic-operation timeouts in their main thread. The same pool serves all arms;
+    # arms remain separate so each arm's elapsed wall time can be compared between model settings.
+    with concurrent.futures.ProcessPoolExecutor(max_workers=parallel,
+            mp_context=multiprocessing.get_context("spawn")) as pool:
+        for arm in ARMS:
+            records = progress["records"][arm]
+            prior_seconds, started = progress["seconds"][arm], time.monotonic()
+            pending = {pool.submit(_question, (arm, q, calls, cache)): str(i)
+                       for i, q in enumerate(qs) if str(i) not in records}
+            for future in concurrent.futures.as_completed(pending):
+                records[pending[future]] = future.result()
+                progress["seconds"][arm] = prior_seconds + time.monotonic() - started
+                with open(checkpoint + ".tmp", "w") as f:
+                    json.dump(progress, f, indent=1)
+                os.replace(checkpoint + ".tmp", checkpoint)
+                print(f"{arm}: {len(records)}/{len(qs)} questions saved", flush=True)
+            arms[arm] = [records[str(i)]["correct"] for i in range(len(qs))]
+            costs[arm] = {"seconds": round(progress["seconds"][arm], 1),
+                          "output_tokens": sum(r["output_tokens"] for r in records.values()),
+                          "question_seconds": sum(r["seconds"] for r in records.values())}
+    return arms, costs
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--check", choices=["debate"], default="debate")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--calls", type=int, default=6, help="tool calls per agent per question for the ports")
+    ap.add_argument("--parallel", type=int, default=int(os.environ.get("NETAGENTS_PARALLEL", "8")),
+                    help="independent questions at a time; each runs in its own process")
     ap.add_argument("--out", default="results/net/fidelity")
     a = ap.parse_args()
-    from openai import OpenAI
-
     from .llm import LLMConfig
 
+    if a.parallel < 1 or a.n < 1:
+        ap.error("--parallel and --n must be positive")
     os.makedirs(a.out, exist_ok=True)
     cache = os.path.join(a.out, "cache")
     cfg = LLMConfig()
-    client = OpenAI(base_url=cfg.base_url, api_key=cfg.api_key)
-    spec = importlib.util.spec_from_file_location("gen_gsm", fetch(DEBATE, os.path.join(cache, "debate")))
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    fetch(DEBATE, os.path.join(cache, "debate"))
     qs = gsm8k(a.n, cache)
-    arms = {
-        "official-single": official(qs, 1, 1, module, client, cfg, "official-single"),
-        "official-debate": official(qs, 3, 2, module, client, cfg, "official-debate"),
-        "port-single": port(qs, "react", a.calls, tempfile.mkdtemp(dir=cache), "port-single"),
-        "port-debate": port(qs, "debate", a.calls, tempfile.mkdtemp(dir=cache), "port-debate"),
-    }
+    settings = {**cfg.sampling(), "thinking": cfg.thinking, "tool_choice": cfg.tool_choice,
+                "model": cfg.model, "context_tokens": os.environ.get("WS_CONTEXT_TOKENS", "40000"),
+                "chars_per_token": os.environ.get("WS_CHARS_PER_TOKEN", "1.5")}
+    arms, costs = run_arms(qs, a.calls, cache, a.parallel, os.path.join(a.out, "progress.json"), settings)
     acc = {k: sum(v) / len(v) for k, v in arms.items()}
     gain_off, gain_port = (acc["official-debate"] - acc["official-single"], acc["port-debate"] - acc["port-single"])
     lo, hi = bootstrap(arms["official-debate"], arms["official-single"])
     report = {"check": a.check, "model": cfg.model, "n": len(qs),
               "settings": {**cfg.sampling(), "thinking": cfg.thinking, "tool_choice": cfg.tool_choice},
-              "cost": COST, "accuracy": acc, "official_gain": gain_off,
+              "parallel": a.parallel, "cost": costs, "accuracy": acc, "official_gain": gain_off,
               "official_gain_95": [lo, hi], "port_gain": gain_port, "port_gain_within_official_interval":
               lo <= gain_port <= hi, "paper": {**PAPER, "gain": PAPER["debate"] - PAPER["single"]},
               "per_question": arms}
