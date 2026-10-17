@@ -1,0 +1,143 @@
+{
+  "comparison": "20261017-fidelity",
+  "source_commit": "b8813d2562d557874cf6d6a624a0656b99d263d8",
+  "source": "/scratch/bdong/worldseeds/code/5fd9f30-20261017-fidelity",
+  "created_at_utc": "2026-10-17T15:14:45.018491+00:00",
+  "stage": "submitted",
+  "jobs": [
+    {
+      "label": "A",
+      "run": "20261017-fid-think",
+      "job_id": "24309180",
+      "results": "/scratch/bdong/worldseeds/results/net/runs/20261017-fid-think",
+      "settings": {
+        "ACCOUNT": "def-hup-ab_cpu",
+        "GPU_ACCOUNT": "rrg-hup_gpu",
+        "STAGE": "fidelity",
+        "N": "50",
+        "GPU_RESOURCE": "h100:1",
+        "GPU_CPUS": "4",
+        "GPU_MEM": "32G",
+        "MODEL_ID": "Qwen/Qwen3-8B",
+        "MAX_MODEL_LEN": "65536",
+        "WS_CONTEXT_TOKENS": "39321",
+        "WS_CHARS_PER_TOKEN": "1.5",
+        "NETAGENTS_PARALLEL": "8",
+        "WS_STORE": "/scratch/bdong/worldseeds",
+        "WS_ROOT": "/scratch/bdong/worldseeds/code/5fd9f30-20261017-fidelity",
+        "PYTHONUNBUFFERED": "1",
+        "WS_TEMPERATURE": "0.6",
+        "WS_TOP_P": "0.95",
+        "WS_TOP_K": "20",
+        "TIME": "0-08:00",
+        "WS_THINKING": "1",
+        "WS_TOOL_CHOICE": "required",
+        "WS_MAX_TOKENS": "8192",
+        "RUN": "20261017-fid-think"
+      },
+      "recorded_at_utc": "2026-10-17T15:14:47.585047+00:00",
+      "latest_observation": {
+        "state": "PENDING",
+        "reason": "Priority",
+        "estimated_start": "Unknown"
+      }
+    },
+    {
+      "label": "B",
+      "run": "20261017-fid-nothink",
+      "job_id": "24309183",
+      "results": "/scratch/bdong/worldseeds/results/net/runs/20261017-fid-nothink",
+      "settings": {
+        "ACCOUNT": "def-hup-ab_cpu",
+        "GPU_ACCOUNT": "rrg-hup_gpu",
+        "STAGE": "fidelity",
+        "N": "50",
+        "GPU_RESOURCE": "h100:1",
+        "GPU_CPUS": "4",
+        "GPU_MEM": "32G",
+        "MODEL_ID": "Qwen/Qwen3-8B",
+        "MAX_MODEL_LEN": "65536",
+        "WS_CONTEXT_TOKENS": "39321",
+        "WS_CHARS_PER_TOKEN": "1.5",
+        "NETAGENTS_PARALLEL": "8",
+        "WS_STORE": "/scratch/bdong/worldseeds",
+        "WS_ROOT": "/scratch/bdong/worldseeds/code/5fd9f30-20261017-fidelity",
+        "PYTHONUNBUFFERED": "1",
+        "WS_TEMPERATURE": "0.6",
+        "WS_TOP_P": "0.95",
+        "WS_TOP_K": "20",
+        "TIME": "0-08:00",
+        "WS_THINKING": "0",
+        "WS_TOOL_CHOICE": "auto",
+        "WS_MAX_TOKENS": "2048",
+        "RUN": "20261017-fid-nothink"
+      },
+      "recorded_at_utc": "2026-10-17T15:14:49.007527+00:00",
+      "latest_observation": {
+        "state": "PENDING",
+        "reason": "Priority",
+        "estimated_start": "Unknown"
+      }
+    }
+  ],
+  "expected_gpu_jobs": 2,
+  "expected_questions_per_arm": 50,
+  "arms": [
+    "official-single",
+    "official-debate",
+    "port-single",
+    "port-debate"
+  ],
+  "smoke_rerun": false,
+  "calibration_submitted": false,
+  "scope": "Two fidelity jobs only. No calibration, smoke rerun, or automatic retries.",
+  "updated_at_utc": "2026-10-17T15:17:59.641592+00:00",
+  "verification": {
+    "local_parallel_tests_passed": 3,
+    "local_fidelity_scoring_test_passed": 1,
+    "nibi_parallel_tests_passed": 3,
+    "nibi_agent_sympy_rdkit_imports": "passed",
+    "full_local_suite": "Not validated in this local venv: SymPy/RDKit/website dependencies unavailable. Focused tests passed; runtime dependencies checked on Nibi."
+  },
+  "scheduling": {
+    "selected_gpu": "h100:1",
+    "same_hardware_both_settings": true,
+    "reason": "Eight concurrent questions, with up to three agents each in the debate ports, can use the full H100. New-job test-only estimate was about 35 minutes earlier than MIG40; estimates are not guarantees.",
+    "test_only_checked_at_toronto": "2026-10-17T11:09:00-04:00",
+    "test_only_full_h100_start": "2026-10-17T14:59:50-04:00",
+    "test_only_mig40_start": "2026-10-17T15:35:03-04:00",
+    "actual_job_estimated_start": "Unknown",
+    "job_time_limit_hours": 8,
+    "per_job_max_h100_hours": 8,
+    "both_jobs_max_h100_hours": 16
+  },
+  "estimated_runtime_hours": {
+    "A": [
+      2,
+      6
+    ],
+    "B": [
+      0.5,
+      2
+    ],
+    "basis": "Preliminary estimate from prior smoke generation latency, 8 independent questions per arm, and maximum tool-call budgets; not measured fidelity throughput. Re-estimate using saved question progress after jobs start.",
+    "conditional_finish_if_start_15_toronto": {
+      "A": "2026-10-17 17:00–21:00 America/Toronto",
+      "B": "2026-10-17 15:30–17:00 America/Toronto"
+    },
+    "queue_delay_not_guaranteed": true
+  },
+  "automation": {
+    "id": "nibi-smoke-pilot",
+    "name": "Nibi A/B 还原度检查与阶段邮件",
+    "interval_minutes": 20,
+    "scope": "Only these two fidelity jobs; no calibration or retries",
+    "email_stages": [
+      "submitted",
+      "both_single_agent_comparisons_ready",
+      "final_or_actionable_failure"
+    ],
+    "maximum_emails": 3,
+    "minimum_email_interval_minutes": 60
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "source_commit": "b8813d2562d557874cf6d6a624a0656b99d263d8",
+  "label": "A",
+  "run": "20261017-fid-think",
+  "job_id": "24309180",
+  "results": "/scratch/bdong/worldseeds/results/net/runs/20261017-fid-think",
+  "settings": {
+    "ACCOUNT": "def-hup-ab_cpu",
+    "GPU_ACCOUNT": "rrg-hup_gpu",
+    "STAGE": "fidelity",
+    "N": "50",
+    "GPU_RESOURCE": "h100:1",
+    "GPU_CPUS": "4",
+    "GPU_MEM": "32G",
+    "MODEL_ID": "Qwen/Qwen3-8B",
+    "MAX_MODEL_LEN": "65536",
+    "WS_CONTEXT_TOKENS": "39321",
+    "WS_CHARS_PER_TOKEN": "1.5",
+    "NETAGENTS_PARALLEL": "8",
+    "WS_STORE": "/scratch/bdong/worldseeds",
+    "WS_ROOT": "/scratch/bdong/worldseeds/code/5fd9f30-20261017-fidelity",
+    "PYTHONUNBUFFERED": "1",
+    "WS_TEMPERATURE": "0.6",
+    "WS_TOP_P": "0.95",
+    "WS_TOP_K": "20",
+    "TIME": "0-08:00",
+    "WS_THINKING": "1",
+    "WS_TOOL_CHOICE": "required",
+    "WS_MAX_TOKENS": "8192",
+    "RUN": "20261017-fid-think"
+  },
+  "recorded_at_utc": "2026-10-17T15:14:47.585047+00:00"
+}
