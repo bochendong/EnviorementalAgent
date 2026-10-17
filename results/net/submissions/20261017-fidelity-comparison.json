@@ -39,7 +39,8 @@
       "latest_observation": {
         "state": "PENDING",
         "reason": "Priority",
-        "estimated_start": "Unknown"
+        "estimated_start": "2026-10-19T02:23:16-04:00",
+        "checked_at_utc": "2026-10-17T15:20:09.900076+00:00"
       }
     },
     {
@@ -76,7 +77,8 @@
       "latest_observation": {
         "state": "PENDING",
         "reason": "Priority",
-        "estimated_start": "Unknown"
+        "estimated_start": "2026-10-19T02:23:16-04:00",
+        "checked_at_utc": "2026-10-17T15:20:09.900076+00:00"
       }
     }
   ],
@@ -91,7 +93,7 @@
   "smoke_rerun": false,
   "calibration_submitted": false,
   "scope": "Two fidelity jobs only. No calibration, smoke rerun, or automatic retries.",
-  "updated_at_utc": "2026-10-17T15:17:59.641592+00:00",
+  "updated_at_utc": "2026-10-17T15:20:09.900076+00:00",
   "verification": {
     "local_parallel_tests_passed": 3,
     "local_fidelity_scoring_test_passed": 1,
@@ -106,10 +108,12 @@
     "test_only_checked_at_toronto": "2026-10-17T11:09:00-04:00",
     "test_only_full_h100_start": "2026-10-17T14:59:50-04:00",
     "test_only_mig40_start": "2026-10-17T15:35:03-04:00",
-    "actual_job_estimated_start": "Unknown",
+    "actual_job_estimated_start": "2026-10-19T02:23:16-04:00",
     "job_time_limit_hours": 8,
     "per_job_max_h100_hours": 8,
-    "both_jobs_max_h100_hours": 16
+    "both_jobs_max_h100_hours": 16,
+    "actual_estimate_checked_at_utc": "2026-10-17T15:20:09.900076+00:00",
+    "estimate_warning": "Actual queued-job estimate is much later than new-job test-only estimate. Previous smoke showed the same Oct 19 estimate and then started Oct 16. All start and finish estimates remain provisional; do not cancel/resubmit to chase test-only estimates."
   },
   "estimated_runtime_hours": {
     "A": [
@@ -121,11 +125,15 @@
       2
     ],
     "basis": "Preliminary estimate from prior smoke generation latency, 8 independent questions per arm, and maximum tool-call budgets; not measured fidelity throughput. Re-estimate using saved question progress after jobs start.",
-    "conditional_finish_if_start_15_toronto": {
+    "queue_delay_not_guaranteed": true,
+    "earlier_conditional_scenario_if_start_15_toronto": {
       "A": "2026-10-17 17:00–21:00 America/Toronto",
       "B": "2026-10-17 15:30–17:00 America/Toronto"
     },
-    "queue_delay_not_guaranteed": true
+    "conditional_finish_based_on_actual_queue_estimate": {
+      "A": "2026-10-19 04:23–08:23 America/Toronto",
+      "B": "2026-10-19 02:53–04:23 America/Toronto"
+    }
   },
   "automation": {
     "id": "nibi-smoke-pilot",
