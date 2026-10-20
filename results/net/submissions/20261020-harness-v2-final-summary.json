@@ -1,0 +1,1749 @@
+{
+  "comparison": "20261020-harness-v2",
+  "source_commit": "a220bb0c4ce5f76f20388c3cd339209bfc39d889",
+  "protocol_version": 2,
+  "checked_at_toronto": "2026-10-20T12:38:36.548666-04:00",
+  "bootstrap": {
+    "paired": true,
+    "replicates": 20000,
+    "seed": 1,
+    "method": "percentile"
+  },
+  "jobs": [
+    {
+      "label": "H1",
+      "job_id": "24645791",
+      "run": "20261020-h1-think-required",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed": "00:43:15",
+      "elapsed_seconds": 2595,
+      "gpu_hours": 0.7208333333333333,
+      "start_toronto": "2026-10-20T02:58:36-04:00",
+      "end_toronto": "2026-10-20T03:41:51-04:00",
+      "node": "g24",
+      "allocated_tres": "billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1",
+      "arms": {
+        "official-single": {
+          "completed": 50,
+          "correct": 44,
+          "seconds": 778.6,
+          "output_tokens": 115454,
+          "question_seconds": 5770
+        },
+        "port-single": {
+          "completed": 50,
+          "correct": 44,
+          "seconds": 1496.9,
+          "output_tokens": 156213,
+          "question_seconds": 10638,
+          "outcomes": {
+            "solved": 44,
+            "submitted a wrong value": 6
+          }
+        }
+      },
+      "accuracy": {
+        "official-single": 0.88,
+        "port-single": 0.88
+      },
+      "harness_gap": 0.0,
+      "harness_gap_95_recomputed": [
+        -0.1,
+        0.1
+      ],
+      "original_outcomes": {
+        "solved": 44,
+        "submitted a wrong value": 6
+      },
+      "failure_stages": {
+        "solved": 44,
+        "scored_wrong_value": 3,
+        "blocked_by_missing_store_key": 3
+      },
+      "trace_evidence": {
+        "accepted_normalised_submissions": 0,
+        "failed_with_zero_environment_ops": 0,
+        "failed_with_textual_observation": 0,
+        "failed_with_invalid_store_key": 6,
+        "failed_with_correct_numeric_artifact": 3
+      },
+      "verified_readable_traces": 50,
+      "per_question_failure_stage": [
+        {
+          "question": 0,
+          "reference": "16",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q0.jsonl.gz"
+        },
+        {
+          "question": 1,
+          "reference": "240",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q1.jsonl.gz"
+        },
+        {
+          "question": 2,
+          "reference": "80",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q2.jsonl.gz"
+        },
+        {
+          "question": 3,
+          "reference": "15",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q3.jsonl.gz"
+        },
+        {
+          "question": 4,
+          "reference": "91",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q4.jsonl.gz"
+        },
+        {
+          "question": 5,
+          "reference": "22",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 5,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q5.jsonl.gz"
+        },
+        {
+          "question": 6,
+          "reference": "8",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q6.jsonl.gz"
+        },
+        {
+          "question": 7,
+          "reference": "11",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q7.jsonl.gz"
+        },
+        {
+          "question": 8,
+          "reference": "25",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q8.jsonl.gz"
+        },
+        {
+          "question": 9,
+          "reference": "482",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q9.jsonl.gz"
+        },
+        {
+          "question": 10,
+          "reference": "4",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q10.jsonl.gz"
+        },
+        {
+          "question": 11,
+          "reference": "14",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q11.jsonl.gz"
+        },
+        {
+          "question": 12,
+          "reference": "18",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q12.jsonl.gz"
+        },
+        {
+          "question": 13,
+          "reference": "12",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q13.jsonl.gz"
+        },
+        {
+          "question": 14,
+          "reference": "319",
+          "stage": "scored_wrong_value",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q14.jsonl.gz"
+        },
+        {
+          "question": 15,
+          "reference": "2",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q15.jsonl.gz"
+        },
+        {
+          "question": 16,
+          "reference": "72",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q16.jsonl.gz"
+        },
+        {
+          "question": 17,
+          "reference": "9500",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 5,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q17.jsonl.gz"
+        },
+        {
+          "question": 18,
+          "reference": "15",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q18.jsonl.gz"
+        },
+        {
+          "question": 19,
+          "reference": "54",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q19.jsonl.gz"
+        },
+        {
+          "question": 20,
+          "reference": "170",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 5,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q20.jsonl.gz"
+        },
+        {
+          "question": 21,
+          "reference": "160",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q21.jsonl.gz"
+        },
+        {
+          "question": 22,
+          "reference": "42",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q22.jsonl.gz"
+        },
+        {
+          "question": 23,
+          "reference": "60",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q23.jsonl.gz"
+        },
+        {
+          "question": 24,
+          "reference": "98",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q24.jsonl.gz"
+        },
+        {
+          "question": 25,
+          "reference": "4",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q25.jsonl.gz"
+        },
+        {
+          "question": 26,
+          "reference": "6277",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q26.jsonl.gz"
+        },
+        {
+          "question": 27,
+          "reference": "50",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q27.jsonl.gz"
+        },
+        {
+          "question": 28,
+          "reference": "8",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q28.jsonl.gz"
+        },
+        {
+          "question": 29,
+          "reference": "68",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q29.jsonl.gz"
+        },
+        {
+          "question": 30,
+          "reference": "2",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q30.jsonl.gz"
+        },
+        {
+          "question": 31,
+          "reference": "110",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 5,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q31.jsonl.gz"
+        },
+        {
+          "question": 32,
+          "reference": "360",
+          "stage": "scored_wrong_value",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q32.jsonl.gz"
+        },
+        {
+          "question": 33,
+          "reference": "7",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q33.jsonl.gz"
+        },
+        {
+          "question": 34,
+          "reference": "14",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q34.jsonl.gz"
+        },
+        {
+          "question": 35,
+          "reference": "5",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q35.jsonl.gz"
+        },
+        {
+          "question": 36,
+          "reference": "1509",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q36.jsonl.gz"
+        },
+        {
+          "question": 37,
+          "reference": "6",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q37.jsonl.gz"
+        },
+        {
+          "question": 38,
+          "reference": "410",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q38.jsonl.gz"
+        },
+        {
+          "question": 39,
+          "reference": "90",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q39.jsonl.gz"
+        },
+        {
+          "question": 40,
+          "reference": "12",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q40.jsonl.gz"
+        },
+        {
+          "question": 41,
+          "reference": "7400",
+          "stage": "scored_wrong_value",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q41.jsonl.gz"
+        },
+        {
+          "question": 42,
+          "reference": "20",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q42.jsonl.gz"
+        },
+        {
+          "question": 43,
+          "reference": "8",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q43.jsonl.gz"
+        },
+        {
+          "question": 44,
+          "reference": "84",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q44.jsonl.gz"
+        },
+        {
+          "question": 45,
+          "reference": "80",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q45.jsonl.gz"
+        },
+        {
+          "question": 46,
+          "reference": "168",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q46.jsonl.gz"
+        },
+        {
+          "question": 47,
+          "reference": "45",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 5,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q47.jsonl.gz"
+        },
+        {
+          "question": 48,
+          "reference": "12",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q48.jsonl.gz"
+        },
+        {
+          "question": 49,
+          "reference": "30",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q49.jsonl.gz"
+        }
+      ],
+      "llm_errors_recorded": 0,
+      "async_cleanup_error_occurrences": 0,
+      "vllm_tool_parser_error_events": 3
+    },
+    {
+      "label": "H2",
+      "job_id": "24645795",
+      "run": "20261020-h2-nothink-required",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed": "00:04:48",
+      "elapsed_seconds": 288,
+      "gpu_hours": 0.08,
+      "start_toronto": "2026-10-20T03:51:57-04:00",
+      "end_toronto": "2026-10-20T03:56:45-04:00",
+      "node": "g17",
+      "allocated_tres": "billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1",
+      "arms": {
+        "official-single": {
+          "completed": 50,
+          "correct": 46,
+          "seconds": 37.1,
+          "output_tokens": 13354,
+          "question_seconds": 252
+        },
+        "port-single": {
+          "completed": 50,
+          "correct": 9,
+          "seconds": 90.6,
+          "output_tokens": 8853,
+          "question_seconds": 678,
+          "outcomes": {
+            "submitted a wrong value": 30,
+            "solved": 9,
+            "never submitted": 11
+          }
+        }
+      },
+      "accuracy": {
+        "official-single": 0.92,
+        "port-single": 0.18
+      },
+      "harness_gap": -0.74,
+      "harness_gap_95_recomputed": [
+        -0.86,
+        -0.62
+      ],
+      "original_outcomes": {
+        "submitted a wrong value": 30,
+        "solved": 9,
+        "never submitted": 11
+      },
+      "failure_stages": {
+        "blocked_by_missing_store_key": 26,
+        "solved": 9,
+        "never_submitted": 11,
+        "scored_wrong_value": 4
+      },
+      "trace_evidence": {
+        "failed_with_zero_environment_ops": 0,
+        "failed_with_textual_observation": 0,
+        "failed_with_invalid_store_key": 30,
+        "failed_with_correct_numeric_artifact": 12,
+        "accepted_normalised_submissions": 0
+      },
+      "verified_readable_traces": 50,
+      "per_question_failure_stage": [
+        {
+          "question": 0,
+          "reference": "16",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q0.jsonl.gz"
+        },
+        {
+          "question": 1,
+          "reference": "240",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q1.jsonl.gz"
+        },
+        {
+          "question": 2,
+          "reference": "80",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q2.jsonl.gz"
+        },
+        {
+          "question": 3,
+          "reference": "15",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q3.jsonl.gz"
+        },
+        {
+          "question": 4,
+          "reference": "91",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q4.jsonl.gz"
+        },
+        {
+          "question": 5,
+          "reference": "22",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q5.jsonl.gz"
+        },
+        {
+          "question": 6,
+          "reference": "8",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q6.jsonl.gz"
+        },
+        {
+          "question": 7,
+          "reference": "11",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q7.jsonl.gz"
+        },
+        {
+          "question": 8,
+          "reference": "25",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q8.jsonl.gz"
+        },
+        {
+          "question": 9,
+          "reference": "482",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q9.jsonl.gz"
+        },
+        {
+          "question": 10,
+          "reference": "4",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q10.jsonl.gz"
+        },
+        {
+          "question": 11,
+          "reference": "14",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q11.jsonl.gz"
+        },
+        {
+          "question": 12,
+          "reference": "18",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q12.jsonl.gz"
+        },
+        {
+          "question": 13,
+          "reference": "12",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q13.jsonl.gz"
+        },
+        {
+          "question": 14,
+          "reference": "319",
+          "stage": "scored_wrong_value",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q14.jsonl.gz"
+        },
+        {
+          "question": 15,
+          "reference": "2",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q15.jsonl.gz"
+        },
+        {
+          "question": 16,
+          "reference": "72",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q16.jsonl.gz"
+        },
+        {
+          "question": 17,
+          "reference": "9500",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q17.jsonl.gz"
+        },
+        {
+          "question": 18,
+          "reference": "15",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q18.jsonl.gz"
+        },
+        {
+          "question": 19,
+          "reference": "54",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q19.jsonl.gz"
+        },
+        {
+          "question": 20,
+          "reference": "170",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q20.jsonl.gz"
+        },
+        {
+          "question": 21,
+          "reference": "160",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q21.jsonl.gz"
+        },
+        {
+          "question": 22,
+          "reference": "42",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q22.jsonl.gz"
+        },
+        {
+          "question": 23,
+          "reference": "60",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q23.jsonl.gz"
+        },
+        {
+          "question": 24,
+          "reference": "98",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q24.jsonl.gz"
+        },
+        {
+          "question": 25,
+          "reference": "4",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q25.jsonl.gz"
+        },
+        {
+          "question": 26,
+          "reference": "6277",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q26.jsonl.gz"
+        },
+        {
+          "question": 27,
+          "reference": "50",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 5,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q27.jsonl.gz"
+        },
+        {
+          "question": 28,
+          "reference": "8",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q28.jsonl.gz"
+        },
+        {
+          "question": 29,
+          "reference": "68",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q29.jsonl.gz"
+        },
+        {
+          "question": 30,
+          "reference": "2",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q30.jsonl.gz"
+        },
+        {
+          "question": 31,
+          "reference": "110",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q31.jsonl.gz"
+        },
+        {
+          "question": 32,
+          "reference": "360",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q32.jsonl.gz"
+        },
+        {
+          "question": 33,
+          "reference": "7",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q33.jsonl.gz"
+        },
+        {
+          "question": 34,
+          "reference": "14",
+          "stage": "scored_wrong_value",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q34.jsonl.gz"
+        },
+        {
+          "question": 35,
+          "reference": "5",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q35.jsonl.gz"
+        },
+        {
+          "question": 36,
+          "reference": "1509",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q36.jsonl.gz"
+        },
+        {
+          "question": 37,
+          "reference": "6",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q37.jsonl.gz"
+        },
+        {
+          "question": 38,
+          "reference": "410",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q38.jsonl.gz"
+        },
+        {
+          "question": 39,
+          "reference": "90",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q39.jsonl.gz"
+        },
+        {
+          "question": 40,
+          "reference": "12",
+          "stage": "scored_wrong_value",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q40.jsonl.gz"
+        },
+        {
+          "question": 41,
+          "reference": "7400",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q41.jsonl.gz"
+        },
+        {
+          "question": 42,
+          "reference": "20",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q42.jsonl.gz"
+        },
+        {
+          "question": 43,
+          "reference": "8",
+          "stage": "scored_wrong_value",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q43.jsonl.gz"
+        },
+        {
+          "question": 44,
+          "reference": "84",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 4,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q44.jsonl.gz"
+        },
+        {
+          "question": 45,
+          "reference": "80",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q45.jsonl.gz"
+        },
+        {
+          "question": 46,
+          "reference": "168",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q46.jsonl.gz"
+        },
+        {
+          "question": 47,
+          "reference": "45",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q47.jsonl.gz"
+        },
+        {
+          "question": 48,
+          "reference": "12",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q48.jsonl.gz"
+        },
+        {
+          "question": 49,
+          "reference": "30",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q49.jsonl.gz"
+        }
+      ],
+      "llm_errors_recorded": 0,
+      "async_cleanup_error_occurrences": 0,
+      "vllm_tool_parser_error_events": 0
+    },
+    {
+      "label": "H3",
+      "job_id": "24645806",
+      "run": "20261020-h3-nothink-auto",
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed": "00:16:01",
+      "elapsed_seconds": 961,
+      "gpu_hours": 0.26694444444444443,
+      "start_toronto": "2026-10-20T04:00:47-04:00",
+      "end_toronto": "2026-10-20T04:16:48-04:00",
+      "node": "g17",
+      "allocated_tres": "billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1",
+      "arms": {
+        "official-single": {
+          "completed": 50,
+          "correct": 45,
+          "seconds": 34.4,
+          "output_tokens": 12389,
+          "question_seconds": 231
+        },
+        "port-single": {
+          "completed": 50,
+          "correct": 1,
+          "seconds": 756.5,
+          "output_tokens": 48145,
+          "question_seconds": 2567,
+          "outcomes": {
+            "never submitted": 46,
+            "solved": 1,
+            "submitted a wrong value": 3
+          }
+        }
+      },
+      "accuracy": {
+        "official-single": 0.9,
+        "port-single": 0.02
+      },
+      "harness_gap": -0.88,
+      "harness_gap_95_recomputed": [
+        -0.96,
+        -0.78
+      ],
+      "original_outcomes": {
+        "never submitted": 46,
+        "solved": 1,
+        "submitted a wrong value": 3
+      },
+      "failure_stages": {
+        "never_submitted": 46,
+        "solved": 1,
+        "blocked_by_missing_store_key": 3
+      },
+      "trace_evidence": {
+        "failed_with_zero_environment_ops": 45,
+        "failed_with_textual_observation": 46,
+        "failed_with_invalid_store_key": 3,
+        "failed_with_correct_numeric_artifact": 2,
+        "accepted_normalised_submissions": 0
+      },
+      "verified_readable_traces": 50,
+      "per_question_failure_stage": [
+        {
+          "question": 0,
+          "reference": "16",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q0.jsonl.gz"
+        },
+        {
+          "question": 1,
+          "reference": "240",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q1.jsonl.gz"
+        },
+        {
+          "question": 2,
+          "reference": "80",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q2.jsonl.gz"
+        },
+        {
+          "question": 3,
+          "reference": "15",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q3.jsonl.gz"
+        },
+        {
+          "question": 4,
+          "reference": "91",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q4.jsonl.gz"
+        },
+        {
+          "question": 5,
+          "reference": "22",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q5.jsonl.gz"
+        },
+        {
+          "question": 6,
+          "reference": "8",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q6.jsonl.gz"
+        },
+        {
+          "question": 7,
+          "reference": "11",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q7.jsonl.gz"
+        },
+        {
+          "question": 8,
+          "reference": "25",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q8.jsonl.gz"
+        },
+        {
+          "question": 9,
+          "reference": "482",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q9.jsonl.gz"
+        },
+        {
+          "question": 10,
+          "reference": "4",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q10.jsonl.gz"
+        },
+        {
+          "question": 11,
+          "reference": "14",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q11.jsonl.gz"
+        },
+        {
+          "question": 12,
+          "reference": "18",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q12.jsonl.gz"
+        },
+        {
+          "question": 13,
+          "reference": "12",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q13.jsonl.gz"
+        },
+        {
+          "question": 14,
+          "reference": "319",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q14.jsonl.gz"
+        },
+        {
+          "question": 15,
+          "reference": "2",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q15.jsonl.gz"
+        },
+        {
+          "question": 16,
+          "reference": "72",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q16.jsonl.gz"
+        },
+        {
+          "question": 17,
+          "reference": "9500",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q17.jsonl.gz"
+        },
+        {
+          "question": 18,
+          "reference": "15",
+          "stage": "solved",
+          "original_outcome": "solved",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q18.jsonl.gz"
+        },
+        {
+          "question": 19,
+          "reference": "54",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q19.jsonl.gz"
+        },
+        {
+          "question": 20,
+          "reference": "170",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q20.jsonl.gz"
+        },
+        {
+          "question": 21,
+          "reference": "160",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q21.jsonl.gz"
+        },
+        {
+          "question": 22,
+          "reference": "42",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 3,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q22.jsonl.gz"
+        },
+        {
+          "question": 23,
+          "reference": "60",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q23.jsonl.gz"
+        },
+        {
+          "question": 24,
+          "reference": "98",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q24.jsonl.gz"
+        },
+        {
+          "question": 25,
+          "reference": "4",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q25.jsonl.gz"
+        },
+        {
+          "question": 26,
+          "reference": "6277",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q26.jsonl.gz"
+        },
+        {
+          "question": 27,
+          "reference": "50",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q27.jsonl.gz"
+        },
+        {
+          "question": 28,
+          "reference": "8",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q28.jsonl.gz"
+        },
+        {
+          "question": 29,
+          "reference": "68",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q29.jsonl.gz"
+        },
+        {
+          "question": 30,
+          "reference": "2",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q30.jsonl.gz"
+        },
+        {
+          "question": 31,
+          "reference": "110",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q31.jsonl.gz"
+        },
+        {
+          "question": 32,
+          "reference": "360",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q32.jsonl.gz"
+        },
+        {
+          "question": 33,
+          "reference": "7",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q33.jsonl.gz"
+        },
+        {
+          "question": 34,
+          "reference": "14",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q34.jsonl.gz"
+        },
+        {
+          "question": 35,
+          "reference": "5",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q35.jsonl.gz"
+        },
+        {
+          "question": 36,
+          "reference": "1509",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q36.jsonl.gz"
+        },
+        {
+          "question": 37,
+          "reference": "6",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q37.jsonl.gz"
+        },
+        {
+          "question": 38,
+          "reference": "410",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q38.jsonl.gz"
+        },
+        {
+          "question": 39,
+          "reference": "90",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q39.jsonl.gz"
+        },
+        {
+          "question": 40,
+          "reference": "12",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q40.jsonl.gz"
+        },
+        {
+          "question": 41,
+          "reference": "7400",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q41.jsonl.gz"
+        },
+        {
+          "question": 42,
+          "reference": "20",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q42.jsonl.gz"
+        },
+        {
+          "question": 43,
+          "reference": "8",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q43.jsonl.gz"
+        },
+        {
+          "question": 44,
+          "reference": "84",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q44.jsonl.gz"
+        },
+        {
+          "question": 45,
+          "reference": "80",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q45.jsonl.gz"
+        },
+        {
+          "question": 46,
+          "reference": "168",
+          "stage": "blocked_by_missing_store_key",
+          "original_outcome": "submitted a wrong value",
+          "correct_numeric_artifact_submitted": true,
+          "actual_environment_operations": 6,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q46.jsonl.gz"
+        },
+        {
+          "question": 47,
+          "reference": "45",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q47.jsonl.gz"
+        },
+        {
+          "question": 48,
+          "reference": "12",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q48.jsonl.gz"
+        },
+        {
+          "question": 49,
+          "reference": "30",
+          "stage": "never_submitted",
+          "original_outcome": "never submitted",
+          "correct_numeric_artifact_submitted": false,
+          "actual_environment_operations": 0,
+          "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q49.jsonl.gz"
+        }
+      ],
+      "llm_errors_recorded": 0,
+      "async_cleanup_error_occurrences": 0,
+      "vllm_tool_parser_error_events": 0
+    }
+  ],
+  "raw_file_sha256": {
+    "results/net/runs/20261020-h1-think-required/fidelity/debate.json": "ffc281173a05c484a82d0d52b078e983b20ee478aca8afa666046d2f4d11bfd3",
+    "results/net/runs/20261020-h1-think-required/fidelity/diagnosis-port-single.json": "9271fe9be597bca9fcb2c590f535bced4a31bb7c6a10a52e5937655118f888b0",
+    "results/net/runs/20261020-h1-think-required/fidelity/progress.json": "49614edf9683ed5cc7b3e7bcab4c6eba6e63c32329dc7a9b5227f324e89aae56",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q0.jsonl.gz": "b28be62ffd88c6317ac75577d60422b58595d5a7e71f0d1414e43c9dc2a96360",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q1.jsonl.gz": "a3d21f4efbb4b9fe7c5d1278e2d79f320a970b90d3f8f0ea9b30505b7253f1fe",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q10.jsonl.gz": "1d8c2b77e5a8b9ba9e87660b4d89f4ebd3c265986c348e0ca31e41e0bc70b4e6",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q11.jsonl.gz": "4049116f450c0daeedb4a89600ddf3a4935d27a8359ab9d5f96db6cfb6bae735",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q12.jsonl.gz": "a7fe922ae87569628033dfb827b524600bb3cf6bdaaa512cacb363ec6992ff49",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q13.jsonl.gz": "672b4a265d4c529afb77a0c4445345ce086ecec5e75381b8a513fe91dade7b19",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q14.jsonl.gz": "c4da265d9232884d6fd7b4ee92b789652bc0255a9f28bf564cb39f1be4955ec8",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q15.jsonl.gz": "a4e08957655abf94add60e5d0961aa9f8482b51ae712bc559426f3a6067ef1f2",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q16.jsonl.gz": "7dff66b38c704fc0239c4556ab632c5eab442ccef3c5b9def457811a92b40b30",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q17.jsonl.gz": "275015d3d316cc736dc6f263e09c4b86e3e502cc941337b645003dbda16378cf",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q18.jsonl.gz": "9a9cfa22991064f7fd23cb8c359772fab37e2623c00dfba49ce93d6f44f54a91",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q19.jsonl.gz": "cb1e3e073a17ebc9b00df0496d292106ed59f0c1374190c6905e2c4f8e398e0f",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q2.jsonl.gz": "246eb20ef197eccaedc491faba1ce78b23711a88cf7c50a91d52af3f5b2fae0a",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q20.jsonl.gz": "d1e9a466f5f5d820dc7e6229c4fcf04f171c19fc3d6acacada1c43cb7a1081a3",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q21.jsonl.gz": "9f0449fb73b7c67bdc19a68968123a5a52048c3216e11c7ca1b4b5be4513a6b8",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q22.jsonl.gz": "b14ddeb6c30cd9374e9d027f8e64e8691d29624227b0e75b9fe9b7535c0c64ff",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q23.jsonl.gz": "3397629b2984d54f089bb7b5852608141dbdf2ca8cd190036cfb6dd80c14f971",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q24.jsonl.gz": "f296fe35e33a5b58d35f357a4fb77627dd3e8f51e60b9ac4985a5e2cd5a0c406",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q25.jsonl.gz": "475574532f6e2b3f5f5c587a668d400662b4373785931ca3372d4759e239bdf5",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q26.jsonl.gz": "5a22c8f9d71c3926aea6c009148589e3a57c23354ab9cdd9b519380c3d8562ea",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q27.jsonl.gz": "1fb998ac4a071eef9deb0accf2764d43f8c0759f0d5f8b8f6cc7314cbcf31afa",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q28.jsonl.gz": "84369ebe86d35b83a5104fcf98403ea6ed6dbc484d4cb687abfd72215cd6a5f8",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q29.jsonl.gz": "4eaf9b1ee19c1d6b694ce2d3ef84ab8058a4c7f25b243d2e1477397e4022c72a",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q3.jsonl.gz": "ac9e4f080b9ecc042e21edb7176a02f3f4600b071824a48c899c5d90f395ea19",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q30.jsonl.gz": "683921c437b22bcd74cc459c3306359bf6f95c99c6720ca69fd5d2cc7130b4f1",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q31.jsonl.gz": "aff54f5afe0fa65eb4941468f4289a47d460602a31f0b62b78194b6e82904234",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q32.jsonl.gz": "51b9f30d466ea93c43515ec781323b6dcdd610e01fc2ed1bd5ffb150e0dc6e48",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q33.jsonl.gz": "0a07a6897af98fb1702599dcfa750100cbdfc1e729806c29fee6e8a813646bcd",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q34.jsonl.gz": "27a5d856e09aff54a6eee8c487a382f7ef6a92abc4a85ccd17e4166d4167ed94",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q35.jsonl.gz": "4b5d5345956fccf652cb195da043b9a103d709e7eefc70e9dbc3e554734bbf88",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q36.jsonl.gz": "00b0006c6a655de0452089604456d77a7badd79f7272ee7d1356984a601da701",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q37.jsonl.gz": "fffadf41104151745202fec741b7e007af1fd3ead95604c1f8a8b78326bbcfd0",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q38.jsonl.gz": "aaedda4db8f2f68b1e37f5e301db9af546fa63b77f91ab7000e0cc5861d58f8b",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q39.jsonl.gz": "3c73443a922602c4e88ef6e6d4cf957bdce2e4a6a5e69eadcea4f73c3c548da8",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q4.jsonl.gz": "73c3d210214b013fbe4eec77baeb73693bfd50bdc8c69e4345e78d8881204a38",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q40.jsonl.gz": "ac6866145e4ce818e099ced801db23e80670ce8107c3b5097ac6fadde3b236e6",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q41.jsonl.gz": "9c827305fde64064e1b40e709c76b60b2a56972b0c93d560113ea91ff62487de",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q42.jsonl.gz": "24e0e9e5f766c1d979843024af1e0d9544bc03dfa9d0e32d1272e7e628737fd0",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q43.jsonl.gz": "e7062583480c27c59092497a852c49849cb7a6ebeaa8d788eabacb2dfb8e5d2c",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q44.jsonl.gz": "ad7b235422bea2e0b2d16ba043c0587fbcd9e32e314818720fe3d40d9ebd044f",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q45.jsonl.gz": "aca7d141d8c0134b2dbb99e8c5e3ac3abe6f3f63d49636b51cffc3b7b8b622e7",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q46.jsonl.gz": "c565baf5af8cd3d09bff58fddfe7228126caab657e9ea9551cd8127773985c02",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q47.jsonl.gz": "f37afbb012f99037b9823def2341218142bfc4b7dff8832dda41347020d0295e",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q48.jsonl.gz": "0137a1e4c225ae95c6475919b96270ea4ab35705a0f551b95fb2da7b555c7f61",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q49.jsonl.gz": "75f82e8ca7d830e216e7d1bb61d7cfc2c78723a6a16a9c655369edede6b3c2f5",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q5.jsonl.gz": "35b720dbed18823334af95a974bcff4e1001b4286a33e4a7a2bd52a8914d4191",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q6.jsonl.gz": "a92e737712d1b1b3e1075b8ae7bd0fd169eb012b5f3de9406f64209e94fb94e0",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q7.jsonl.gz": "cf722f7c04c81bffb90c17d33a70345a44780c8e6a9014d700a0851e8dd8b3cc",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q8.jsonl.gz": "2852a3f5c3f0a2fa2bd692c366b0e0cab233c5537f6aa42c8552a79ba495e5ab",
+    "results/net/runs/20261020-h1-think-required/fidelity/traces/port-single/q9.jsonl.gz": "08dcd3891cf2e53e2a09d656f9b3b328873e36ccbd8279df4b381c76451b2ed5",
+    "results/net/runs/20261020-h1-think-required/logs/net-fidelity-24645791.out": "49204988198f915e6c63f371e648dce4ba72c9d37c57ae048a7db445aa379625",
+    "results/net/runs/20261020-h1-think-required/logs/vllm-24645791.log": "6e8a45ccbd306719952e83d8e44dc2fe99344bae326587b23c874ed0572ca666",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/debate.json": "6994fb6d3797e9a8cb5b3865907d7b3fa6ba29cac036084becf9800f80cc4791",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/diagnosis-port-single.json": "1a51c66af4448e535b20831c315cfe73282e2ddbf899588ef9772b3bea87f560",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/progress.json": "f97c5f81ba0247f43771cc6c3d282f7f2534a94a657032a6a466c11eb9da83cb",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q0.jsonl.gz": "537fca932a1d5cd936bf94522ccc40bf19063a83033a9046004608a76fd33cda",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q1.jsonl.gz": "b4565adcec9ef8d5ac735d4359b6457c25e4669cc182fa808eaad9dc66d522c7",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q10.jsonl.gz": "57c98975500864061d364045f48c545a33898fe48060d5844f7931198f9d48b7",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q11.jsonl.gz": "84a6870dcb3519b0239baa20ee293b302343495f050bbb62b5ee068bb93cd572",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q12.jsonl.gz": "5eeec7a4405122e70ad1bc3e5ef644fcecae10e293364004d70159207ef79fd0",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q13.jsonl.gz": "f23cf1fa78b2a2f768fe1e07d6a89ed0efef12c52d0f57dceb632f10a5a317d0",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q14.jsonl.gz": "09ca68b5c1fc752fb687d2484cf1b7a28e60a92bdbf20692e1c88649c498c621",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q15.jsonl.gz": "dd96fb768d36430b408db241c2826507b306217f891962c822741838bb25d0c2",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q16.jsonl.gz": "a853bd63604ef8fb115b4db308b70039dafe29e921b1c88e0df37ddf58692f39",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q17.jsonl.gz": "f7a9837c1edaba269c43c900fb8b6c646366c56228806e018e136f67e1fb8965",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q18.jsonl.gz": "2b39053de65dc73d3119092fba8495dcd2558eeef23cc80fefccb0f71ec3ee12",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q19.jsonl.gz": "dc7a44dac4b74b4ca4e8f4147e1045fdb80af03f760f8efbb885f1d537f82cfc",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q2.jsonl.gz": "4d80554c42627a65d370f83cd78ac90941eec772e51e761e28d7ddc86b45e19a",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q20.jsonl.gz": "6bf65246a6f55f26217a524cadb4a2c30f0f7418389f17951772176cb157ab90",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q21.jsonl.gz": "f79aa549011f589e44b7ed7c809fbb3cd45d1f1150f8850ef4f20b21ea338e6c",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q22.jsonl.gz": "4ce8c9d88ac742e76a9d08aeb65c5a843db67e3a0da7a46636e461a088eb1315",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q23.jsonl.gz": "c15f39581af306e18092fe38d705dabb8fc851cf928ed3421f0ce03ab85fcc9d",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q24.jsonl.gz": "de2a13ef0f561f004e940511034bdd4fd08e7b1a2fbb6abd78a9d1046dfcb8a9",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q25.jsonl.gz": "5208a70bb946f7a931d01729dbc1bdf570fedf30b9eb17b454f63ad9ca716cb5",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q26.jsonl.gz": "d9f966505e0ba0eaf4ba7d167d03d021519951590c306b6d0164da1abfcf01db",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q27.jsonl.gz": "725d88659a9dfedd9d8b302dfc8054225cc21be6f41c8f904d0f15ffbb9c7984",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q28.jsonl.gz": "2a0fe806dababce49bba8fc6c8f9b4f82c7a6db59ca0fcd153918806430b63ed",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q29.jsonl.gz": "73163bd035240f00f6141404224da78efa21d1ef3961dc2e90840da2c3dc3329",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q3.jsonl.gz": "41f762665f054b86c04458d3305e7b97675b7015572b80d8e601850e8b9b36ff",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q30.jsonl.gz": "542fb6b076cf6de197c663bb0ed508d7141f5ecab5322eca61405fcfa744e919",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q31.jsonl.gz": "3faa47dcf4592a1b1262c3b6aa6b415dec99b7cea8b6a5e8b2e848e6ccee0e28",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q32.jsonl.gz": "57bce25268692d3aa06f170ed5899cabd8df1a23833c370a5d9e26ba64046e31",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q33.jsonl.gz": "e0dacf9b92a3a546ac40ef234595608b301b1d4759f9c0d14af8dc486165abbb",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q34.jsonl.gz": "e6620b3f01f593788c020f077f0fb0dc1e55ec20b3dd10028eb1ab598c742dd5",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q35.jsonl.gz": "c0477ef6ff96df0dcc6526ed0724b08788a409caa6ebc826adbc68939ada9f84",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q36.jsonl.gz": "bb9395d298cee7aec77f3fa0441a44f8c2e438bc8f15d86ec91f9485c643b6ab",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q37.jsonl.gz": "2cae0c69a076ea72e44d89756f8f58a0e20ba8f92693541f5a76946e192f5586",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q38.jsonl.gz": "ef0766e1f8ac3c19fa373a25c5aa611e961b8de09494363a78c7a9a6278b964f",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q39.jsonl.gz": "b101d0bb59f6a1b135ced27893d1efc4e76fd039a1e02fb8e32437da1a5f7a9b",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q4.jsonl.gz": "c1d7f8f8f460169463c5732057ea6909633517fec45fac4f05b7f1e91d3b1a30",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q40.jsonl.gz": "0138c726c55655cfa438a51039dc60ee2dee86dd7d23cb8ffc856bcd0ab76a02",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q41.jsonl.gz": "9064ca74930b24c16d6be81da964070c6ee0c23f790f555d95600a4d7403334f",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q42.jsonl.gz": "d661c1f8492bd18c3106d2d8911ad8cbda6a361ca6d521756dc6bb5d9301d01d",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q43.jsonl.gz": "1b614504e0dbc37c30a43f1ca3ad5768f9a20d669f25f05526d8ed4077291405",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q44.jsonl.gz": "630f47d9e749ed4098cdc602ab92d0d435be7e7c553c46cd774355c6c0283722",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q45.jsonl.gz": "71ed6171a1f67a00cb3c35a5edee8efda57c9765b066ad8dd879a62848ffbd71",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q46.jsonl.gz": "0b9b8f90abb3823dfbe8a4c0b76f26dfbd2a80268428c29599b3ffc5b92ac279",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q47.jsonl.gz": "566423ddf122bbdcdb55d8f32b27302e18da9faf7d120103f125c4df641e42eb",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q48.jsonl.gz": "0fa5754fdcfa6a3fed9a3b0bfe9a6df36e9fcf48d89654920bc5dc817f185868",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q49.jsonl.gz": "a826d85bd0682264c85dc3917c8a252430ca3c1cebdf761f4af55e6726b40cae",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q5.jsonl.gz": "b244a3cbf9d1ac489b8bac5b47a3357ed7058c89cba2926fd3d0380254b90db1",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q6.jsonl.gz": "acf27163b5b2308a075b68a037a97f000f923e557172406d6a3742e6b9cdfd2b",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q7.jsonl.gz": "80b19fc6836c68675d0e5cfdba8f0123b73d54ffdfc82e8df8eaed490840482d",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q8.jsonl.gz": "44d4906da90020d80dd38e462d8d38224877371b4c32e073cc3b1144b474efbf",
+    "results/net/runs/20261020-h2-nothink-required/fidelity/traces/port-single/q9.jsonl.gz": "638871b9384851559aef17f1d6bdca4573193fe22c561663d3437253989a73f1",
+    "results/net/runs/20261020-h2-nothink-required/logs/net-fidelity-24645795.out": "94d921494e27aa6f1615808bbadd12397531de6fbfc2f069368ffa03a8c21189",
+    "results/net/runs/20261020-h2-nothink-required/logs/vllm-24645795.log": "a01b954680e0043812898bfc94d7790e64c73da3d89d590f6f48d26008e75413",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/debate.json": "d2d31b6524268d01ced01a689598148833d130e0a88846212c2c4785a8937a1f",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/diagnosis-port-single.json": "c3c461048d8e11308892d51275ab372c87480d6adf4da383bc1497ea91383fe6",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/progress.json": "97f837f1d8927f0f7c0db5b9fad6154494dcc4aedb659463f386b9f40a9a0984",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q0.jsonl.gz": "f15739a5c54905159c6be5472e8e9754d00bb0f94084569a5300a82994de15ec",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q1.jsonl.gz": "0969ad68013b0bcc8e427048f05bca9a5e871dbef9182fe8c122f42739e3f12e",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q10.jsonl.gz": "825b7183742f360cbde893c0bea18ea308a33d8408f450f432933298278252b2",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q11.jsonl.gz": "623a430e029bead63b541b7ae7ac023c0265ffc1470eb2891a1aae9c41df433c",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q12.jsonl.gz": "ca156beb5de84161c37ba4d60005354914ddaf471aeb4b1a0f023ad570a7b8e0",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q13.jsonl.gz": "1535ad90adef4935c3f11aa9790c0d08757a2f8a04de5cc82ec4a19a2f3000d2",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q14.jsonl.gz": "5a6421d4ab0cef7d53fa4249bdd9c9126fdef899915e01cbeb3b41dfd9a6a334",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q15.jsonl.gz": "9f1da286f65d8c52d062f7f7e8a1d29721160c1aa3d18bbad2488a144578dc2a",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q16.jsonl.gz": "271eeb196516ae7a47dede6a1d97c3d4e1d2b6b453724e336769ce65c145ac13",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q17.jsonl.gz": "0fd7c2ce0253b35642af10cf4cc3e00c92f5bb42850f099fd48e940fa7567bb4",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q18.jsonl.gz": "42413d473e6b38f13e833c3e2e1536f2cc7f24ecd8612caa8b8f47e809bb6246",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q19.jsonl.gz": "ccde153e94db5e544bdd610d1ecdc3499b98febc1c6f72cdbaa537e1e4c2b75d",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q2.jsonl.gz": "1fbb411d1ba9159c3d1ca4422204918e4946968b51336dfdfdd6031fd305d785",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q20.jsonl.gz": "9632a05afb10e74299afb2d43ae7981f6b684590315871179b9a66a290bbb445",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q21.jsonl.gz": "3ffc10bbd3c2d387745b2263d52a62401fbffaddb005f3f19b7fcbed4b7652f9",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q22.jsonl.gz": "832fd0cc22e01b3bc5cacfa46ec815130e63a697f989200235b6040ea840e0a6",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q23.jsonl.gz": "8cffdc3f1cd00c7446accb441c05d9e497cf177a07c11dff688b24fe4a492875",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q24.jsonl.gz": "44da750f8d3f5d4edd69baab97134389e5650b242f47d6463edb14ac2ea2ce52",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q25.jsonl.gz": "8747c4b160d9970eafcac8061984a1f92ceaa44762b457e9a5210f1c76a7b54d",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q26.jsonl.gz": "a77cf58784b5449496b839d218f3346340bcb5a7db14144e85e08911209770fe",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q27.jsonl.gz": "602ae9b29204ab5dc086a2163e1e71e542e7ca8febad7e1638a084eafe17e78b",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q28.jsonl.gz": "1d29a9cd76cd45ca87c034a64ed37aa6b8353f2ae5240e225b1fa22c6ae09f8e",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q29.jsonl.gz": "c2731b736630d5a82be6c5bee435de79f1d6dd6d9976bc5e063189ed7e3653bd",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q3.jsonl.gz": "9e647fd14ba689997ac1d2d09e56cdccfc776a089b0fc67d4eaed494127e8c06",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q30.jsonl.gz": "8fddd1699dee7a594878b6d432f9e8ec85d29b36fc8d8f89464cd8a4ec5c09c9",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q31.jsonl.gz": "874d508859cccb084856e94318d70f7f0d53f927c417fd5b5ef0ac1310ce3847",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q32.jsonl.gz": "29b7a207ecfcff59df9f2f4ef8cc336fa04c78b27aab7d064df322c4b7f31e1c",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q33.jsonl.gz": "8404239d6d072f3532e0f474891151e3518cff08b7df32ab946f51e9601521ad",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q34.jsonl.gz": "a4a29424aaf3ddf8458c93dff3af161fe6a665cc68f99f08b58c856b6f88787a",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q35.jsonl.gz": "9abeb8b3987d5c0d4aed9bcf181354253669ee90f12be668d1edbe2c8c5c7d10",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q36.jsonl.gz": "ed14bf7ff10aba7b67e75ff6dbae1a4dc127edd4ea83809832d0ca5fb27bff57",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q37.jsonl.gz": "a317bcccbba621210f8798f8894f536acab5c9e6e1be494e3a9729b66843345c",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q38.jsonl.gz": "e95f82f1fe24de6f13ed5a0b4a588d53ec76fe4f5632ec92af751dd0de70a5c2",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q39.jsonl.gz": "6c945dfbd37790f5b978a53fb9615b60e520cb5d0c7529d7ad09b52d8d4090f6",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q4.jsonl.gz": "1a5b70d467c923620a41c4502583e506ecb5dea5b6e46594925dfc0d211033b5",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q40.jsonl.gz": "f9a370263a04390651a60c98842b22a21bf74e19da2b2abc8ea7b957a6796175",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q41.jsonl.gz": "6ca465d9ae2e38b736408bd6ebdf0601a87e0e6a5ce5d184c2f3b66d2d7f6381",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q42.jsonl.gz": "a0e16ecad4978462893b0ecdfcc84be91f1e5b5c6196a52e8426effc86091c39",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q43.jsonl.gz": "bd0a4f5da58acbf927d02ba6db21f7cfce2712627e7d212f9d78160d8025d959",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q44.jsonl.gz": "8214f7e1810fb7dadd935b4c03056db494040d08fd6557448bb145f70b587e9b",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q45.jsonl.gz": "e4cb554066cb14f0680bf2fa8a88e2c39a8c37fd03d1e2a3d97181e54a45b7f2",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q46.jsonl.gz": "008a6823a8e60d08fc99922c4e5713465e1197470069c9c7e217c26c96ec4a4a",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q47.jsonl.gz": "fc45d33b7bb05b272c63ee97436243371aa177a6d7553be9ec530376c77ce481",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q48.jsonl.gz": "db47aaf0f578a6a53894d73cbc769cf41f6e9383df89592ce62bd0cd61d6c928",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q49.jsonl.gz": "8eac00d26a120c5bbae9fe9d6fd4ebf06f8af8377f8411b7e7d3340089663eda",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q5.jsonl.gz": "b11c410a65d4fbf32aa5d05d55bd4039a35b07d45931b6c1c594d86e770b6300",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q6.jsonl.gz": "ec41a91f35ee120536ee073824fcab169de9b443fdb2e3ab68467f65e310225b",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q7.jsonl.gz": "d2ad3772d14e3d5733d447da8fa8995a46d2faf09fe60f2e667be16339f7079a",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q8.jsonl.gz": "406e606521859af905c71fd506a892a86cd6a331f6d9e76092238186660fd874",
+    "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q9.jsonl.gz": "c5f2503c560f2e179c0c90cd6f4d2a6506229f1658d33a535368514b05cb8902",
+    "results/net/runs/20261020-h3-nothink-auto/logs/net-fidelity-24645806.out": "ee0159346c5a66812f3fca631773c491bc775d59fd17765c3c1fd3524faf99cc",
+    "results/net/runs/20261020-h3-nothink-auto/logs/vllm-24645806.log": "afcfaa03f1aaf2e25114f007e39089199eee4ca3b2df054c2f1178c2a3f589c9"
+  },
+  "same_questions_all_three": true,
+  "total_h100_gpu_hours": 1.0677777777777777,
+  "port_pairwise": {
+    "H1_minus_H2": {
+      "difference": 0.7,
+      "ci95": [
+        0.58,
+        0.82
+      ]
+    },
+    "H2_minus_H3": {
+      "difference": 0.16,
+      "ci95": [
+        0.04,
+        0.28
+      ]
+    }
+  }
+}

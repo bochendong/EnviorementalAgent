@@ -1,0 +1,156 @@
+waiting for vLLM on port 25806 (log: /scratch/bdong/worldseeds/results/net/runs/20261020-h3-nothink-auto/logs/vllm-24645806.log)
+server up after 160s
+official-single: 1/50 questions saved
+official-single: 2/50 questions saved
+official-single: 3/50 questions saved
+official-single: 4/50 questions saved
+official-single: 5/50 questions saved
+official-single: 6/50 questions saved
+official-single: 7/50 questions saved
+official-single: 8/50 questions saved
+official-single: 9/50 questions saved
+official-single: 10/50 questions saved
+official-single: 11/50 questions saved
+official-single: 12/50 questions saved
+official-single: 13/50 questions saved
+official-single: 14/50 questions saved
+official-single: 15/50 questions saved
+official-single: 16/50 questions saved
+official-single: 17/50 questions saved
+official-single: 18/50 questions saved
+official-single: 19/50 questions saved
+official-single: 20/50 questions saved
+official-single: 21/50 questions saved
+official-single: 22/50 questions saved
+official-single: 23/50 questions saved
+official-single: 24/50 questions saved
+official-single: 25/50 questions saved
+official-single: 26/50 questions saved
+official-single: 27/50 questions saved
+official-single: 28/50 questions saved
+official-single: 29/50 questions saved
+official-single: 30/50 questions saved
+official-single: 31/50 questions saved
+official-single: 32/50 questions saved
+official-single: 33/50 questions saved
+official-single: 34/50 questions saved
+official-single: 35/50 questions saved
+official-single: 36/50 questions saved
+official-single: 37/50 questions saved
+official-single: 38/50 questions saved
+official-single: 39/50 questions saved
+official-single: 40/50 questions saved
+official-single: 41/50 questions saved
+official-single: 42/50 questions saved
+official-single: 43/50 questions saved
+official-single: 44/50 questions saved
+official-single: 45/50 questions saved
+official-single: 46/50 questions saved
+official-single: 47/50 questions saved
+official-single: 48/50 questions saved
+official-single: 49/50 questions saved
+official-single: 50/50 questions saved
+port-single: 1/50 questions saved
+port-single: 2/50 questions saved
+port-single: 3/50 questions saved
+port-single: 4/50 questions saved
+port-single: 5/50 questions saved
+port-single: 6/50 questions saved
+port-single: 7/50 questions saved
+port-single: 8/50 questions saved
+port-single: 9/50 questions saved
+port-single: 10/50 questions saved
+port-single: 11/50 questions saved
+port-single: 12/50 questions saved
+port-single: 13/50 questions saved
+port-single: 14/50 questions saved
+port-single: 15/50 questions saved
+port-single: 16/50 questions saved
+port-single: 17/50 questions saved
+port-single: 18/50 questions saved
+port-single: 19/50 questions saved
+port-single: 20/50 questions saved
+port-single: 21/50 questions saved
+port-single: 22/50 questions saved
+port-single: 23/50 questions saved
+port-single: 24/50 questions saved
+port-single: 25/50 questions saved
+port-single: 26/50 questions saved
+port-single: 27/50 questions saved
+port-single: 28/50 questions saved
+port-single: 29/50 questions saved
+port-single: 30/50 questions saved
+port-single: 31/50 questions saved
+port-single: 32/50 questions saved
+port-single: 33/50 questions saved
+port-single: 34/50 questions saved
+port-single: 35/50 questions saved
+port-single: 36/50 questions saved
+port-single: 37/50 questions saved
+port-single: 38/50 questions saved
+port-single: 39/50 questions saved
+port-single: 40/50 questions saved
+port-single: 41/50 questions saved
+port-single: 42/50 questions saved
+port-single: 43/50 questions saved
+port-single: 44/50 questions saved
+port-single: 45/50 questions saved
+port-single: 46/50 questions saved
+port-single: 47/50 questions saved
+port-single: 48/50 questions saved
+port-single: 49/50 questions saved
+port-single: 50/50 questions saved
+{
+ "check": "debate",
+ "model": "qwen3-8b",
+ "n": 50,
+ "protocol_version": 2,
+ "settings": {
+  "temperature": 0.6,
+  "top_p": 0.95,
+  "max_tokens": 8192,
+  "extra_body": {
+   "top_k": 20,
+   "chat_template_kwargs": {
+    "enable_thinking": false
+   }
+  },
+  "thinking": false,
+  "tool_choice": "auto"
+ },
+ "parallel": 8,
+ "cost": {
+  "official-single": {
+   "seconds": 34.4,
+   "output_tokens": 12389,
+   "question_seconds": 231
+  },
+  "port-single": {
+   "seconds": 756.5,
+   "output_tokens": 48145,
+   "question_seconds": 2567,
+   "outcomes": {
+    "never submitted": 46,
+    "solved": 1,
+    "submitted a wrong value": 3
+   }
+  }
+ },
+ "accuracy": {
+  "official-single": 0.9,
+  "port-single": 0.02
+ },
+ "paper": {
+  "single": 0.77,
+  "debate": 0.85,
+  "model": "gpt-3.5-turbo-0301",
+  "n": 100,
+  "gain": 0.07999999999999996
+ },
+ "harness_gap": -0.88,
+ "harness_gap_95": [
+  -0.96,
+  -0.78
+ ]
+}
+results in /scratch/bdong/worldseeds/results/net/runs/20261020-h3-nothink-auto/fidelity

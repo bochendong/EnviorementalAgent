@@ -1,0 +1,1573 @@
+[
+ {
+  "question": 0,
+  "reference": "16",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "16",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "16",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "16",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "submit": 3
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 1,
+  "reference": "240",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "240",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "240",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 2,
+  "reference": "80",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "80",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "80",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "solve": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 3,
+  "reference": "15",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "15",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "15",
+    "ok": false,
+    "error": "no key 'default'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "15",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "15",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "solve": 1,
+   "submit": 4
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 4,
+  "reference": "91",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "91",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "91",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "91",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "submit": 3
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 5,
+  "reference": "22",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "22",
+    "ok": false,
+    "error": "no key 'a0'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "22",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "22",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "evaluate": 1,
+   "submit": 3,
+   "tasks": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 6,
+  "reference": "8",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "8",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "8",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 7,
+  "reference": "11",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "11",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "11",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 8,
+  "reference": "25",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "25",
+    "ok": false,
+    "error": "no key 'a0'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "25",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "solve": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 9,
+  "reference": "482",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "482",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "482",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "482",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "submit": 3
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 10,
+  "reference": "4",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "4",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "evaluate": 1,
+   "submit": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 11,
+  "reference": "14",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "14",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "14",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 12,
+  "reference": "18",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "16",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "18",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 13,
+  "reference": "12",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "12",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "12",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "12",
+    "ok": false,
+    "error": "no key 'result'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "12",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "submit": 4
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 14,
+  "reference": "319",
+  "outcome": "submitted a wrong value",
+  "submissions": [
+   {
+    "artifact": "318",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "318",
+    "ok": false,
+    "error": "not equal to the answer",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "318",
+    "ok": false,
+    "error": "not equal to the answer",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 3,
+   "status": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 15,
+  "reference": "2",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "2",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "2",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 16,
+  "reference": "72",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "72",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "72",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 17,
+  "reference": "9500",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "9500",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "9500",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "9500",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "9500",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 4
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 18,
+  "reference": "15",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "15",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "15",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "solve": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 19,
+  "reference": "54",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "54",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "54",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 20,
+  "reference": "170",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "140",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "140",
+    "ok": false,
+    "error": "not equal to the answer",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "170",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 3,
+   "status": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 21,
+  "reference": "160",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "160",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "160",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 22,
+  "reference": "42",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "42",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "42",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 23,
+  "reference": "60",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "60",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "60",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 24,
+  "reference": "98",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "98",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "98",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 25,
+  "reference": "4",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "4",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "4",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 26,
+  "reference": "6277",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "6277",
+    "ok": false,
+    "error": "no key 'kids'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "6277",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 27,
+  "reference": "50",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "50",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "evaluate": 1,
+   "submit": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 28,
+  "reference": "8",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "8",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "8",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 29,
+  "reference": "68",
+  "outcome": "submitted a wrong value",
+  "submissions": [
+   {
+    "artifact": "68",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "solve": 3,
+   "simplify": 1,
+   "submit": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 30,
+  "reference": "2",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "2",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "2",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 31,
+  "reference": "110",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "110",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "110",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "110",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 3,
+   "evaluate": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 32,
+  "reference": "360",
+  "outcome": "submitted a wrong value",
+  "submissions": [
+   {
+    "artifact": "1800",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "1800",
+    "ok": false,
+    "error": "no key 'number'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "1800",
+    "ok": false,
+    "error": "not equal to the answer",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "evaluate": 1,
+   "submit": 3,
+   "solve": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 33,
+  "reference": "7",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "7",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "evaluate": 1,
+   "submit": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 34,
+  "reference": "14",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "14",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "14",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 35,
+  "reference": "5",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "5",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "5",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "solve": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 36,
+  "reference": "1509",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "1509",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "1509",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 37,
+  "reference": "6",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "6",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "6",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "6",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "6",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "submit": 4
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 38,
+  "reference": "410",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "410",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "410",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 39,
+  "reference": "90",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "90",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "90",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 40,
+  "reference": "12",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "12",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "12",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 41,
+  "reference": "7400",
+  "outcome": "submitted a wrong value",
+  "submissions": [
+   {
+    "artifact": "9860.78",
+    "ok": false,
+    "error": "no key 'price'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "9860.78",
+    "ok": false,
+    "error": "not equal to the answer",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "9860.78000000000",
+    "ok": false,
+    "error": "not equal to the answer",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "evaluate": 1,
+   "submit": 3,
+   "solve": 1
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 42,
+  "reference": "20",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "20",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "20",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 43,
+  "reference": "8",
+  "outcome": "submitted a wrong value",
+  "submissions": [
+   {
+    "artifact": "8",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "8",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "8",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "8",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "submit": 4,
+   "tasks": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 44,
+  "reference": "84",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "84",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "84",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 45,
+  "reference": "80",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "80",
+    "ok": false,
+    "error": "no key \"Jeff's share\"",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "80",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "solve": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 46,
+  "reference": "168",
+  "outcome": "submitted a wrong value",
+  "submissions": [
+   {
+    "artifact": "168",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "168",
+    "ok": false,
+    "error": "no key 'number'",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "solve": 3,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 47,
+  "reference": "45",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "45",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "45",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "solve": 1,
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 48,
+  "reference": "12",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "12",
+    "ok": false,
+    "error": "no key 'Q'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "12",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ },
+ {
+  "question": 49,
+  "reference": "30",
+  "outcome": "solved",
+  "submissions": [
+   {
+    "artifact": "30",
+    "ok": false,
+    "error": "no key 'answer'",
+    "read_as": null,
+    "normalised": ""
+   },
+   {
+    "artifact": "30",
+    "ok": true,
+    "error": "",
+    "read_as": null,
+    "normalised": ""
+   }
+  ],
+  "ops": {
+   "tasks": 1,
+   "evaluate": 1,
+   "submit": 2
+  },
+  "last_words": {
+   "a0": "pause"
+  },
+  "llm_errors": 0
+ }
+]

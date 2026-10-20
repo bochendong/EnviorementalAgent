@@ -4,7 +4,7 @@
   "source_commit": "a220bb0c4ce5f76f20388c3cd339209bfc39d889",
   "source": "/scratch/bdong/worldseeds/code/2e4f921-20261020-harness",
   "created_at_utc": "2026-10-20T06:54:20.284964+00:00",
-  "stage": "submitted",
+  "stage": "completed_results_and_traces_verified",
   "jobs": [
     {
       "label": "H1",
@@ -39,12 +39,30 @@
       },
       "recorded_at_utc": "2026-10-20T06:54:26.085530+00:00",
       "latest_observation": {
-        "state": "PENDING",
-        "reason": "(Priority)",
-        "estimated_start": "N/A",
-        "elapsed": "0:00",
-        "node": "",
-        "checked_at_toronto": "2026-10-20T02:55:19.487234-04:00"
+        "state": "COMPLETED",
+        "exit_code": "0:0",
+        "start_toronto": "2026-10-20T02:58:36-04:00",
+        "end_toronto": "2026-10-20T03:41:51-04:00",
+        "elapsed_seconds": 2595,
+        "node": "g24",
+        "checked_at_toronto": "2026-10-20T12:38:36.548666-04:00"
+      },
+      "result_verification": {
+        "accuracy": {
+          "official-single": 0.88,
+          "port-single": 0.88
+        },
+        "harness_gap": 0.0,
+        "harness_gap_95_recomputed": [
+          -0.1,
+          0.1
+        ],
+        "failure_stages": {
+          "solved": 44,
+          "scored_wrong_value": 3,
+          "blocked_by_missing_store_key": 3
+        },
+        "verified_readable_traces": 50
       }
     },
     {
@@ -80,12 +98,31 @@
       },
       "recorded_at_utc": "2026-10-20T06:54:30.806884+00:00",
       "latest_observation": {
-        "state": "PENDING",
-        "reason": "(Priority)",
-        "estimated_start": "N/A",
-        "elapsed": "0:00",
-        "node": "",
-        "checked_at_toronto": "2026-10-20T02:55:19.487234-04:00"
+        "state": "COMPLETED",
+        "exit_code": "0:0",
+        "start_toronto": "2026-10-20T03:51:57-04:00",
+        "end_toronto": "2026-10-20T03:56:45-04:00",
+        "elapsed_seconds": 288,
+        "node": "g17",
+        "checked_at_toronto": "2026-10-20T12:38:36.548666-04:00"
+      },
+      "result_verification": {
+        "accuracy": {
+          "official-single": 0.92,
+          "port-single": 0.18
+        },
+        "harness_gap": -0.74,
+        "harness_gap_95_recomputed": [
+          -0.86,
+          -0.62
+        ],
+        "failure_stages": {
+          "blocked_by_missing_store_key": 26,
+          "solved": 9,
+          "never_submitted": 11,
+          "scored_wrong_value": 4
+        },
+        "verified_readable_traces": 50
       }
     },
     {
@@ -121,12 +158,30 @@
       },
       "recorded_at_utc": "2026-10-20T06:54:35.970657+00:00",
       "latest_observation": {
-        "state": "PENDING",
-        "reason": "(Priority)",
-        "estimated_start": "N/A",
-        "elapsed": "0:00",
-        "node": "",
-        "checked_at_toronto": "2026-10-20T02:55:19.487234-04:00"
+        "state": "COMPLETED",
+        "exit_code": "0:0",
+        "start_toronto": "2026-10-20T04:00:47-04:00",
+        "end_toronto": "2026-10-20T04:16:48-04:00",
+        "elapsed_seconds": 961,
+        "node": "g17",
+        "checked_at_toronto": "2026-10-20T12:38:36.548666-04:00"
+      },
+      "result_verification": {
+        "accuracy": {
+          "official-single": 0.9,
+          "port-single": 0.02
+        },
+        "harness_gap": -0.88,
+        "harness_gap_95_recomputed": [
+          -0.96,
+          -0.78
+        ],
+        "failure_stages": {
+          "never_submitted": 46,
+          "solved": 1,
+          "blocked_by_missing_store_key": 3
+        },
+        "verified_readable_traces": 50
       }
     }
   ],
@@ -145,7 +200,10 @@
     "same_inputs_all_three": true,
     "protocol_version": 2
   },
-  "updated_at_toronto": "2026-10-20T02:55:19.487234-04:00",
+  "updated_at_toronto": "2026-10-20T12:38:36.548666-04:00",
   "runtime_estimates_are_provisional": true,
-  "original_v1_results_not_directly_comparable": true
+  "original_v1_results_not_directly_comparable": true,
+  "final_report": "20261020-harness-v2-final-report.md",
+  "final_summary": "20261020-harness-v2-final-summary.json",
+  "actual_total_h100_gpu_hours": 1.0677777777777777
 }

@@ -1,0 +1,8 @@
+{
+  "checked_at_toronto": "2026-10-20T12:38:36.548666-04:00",
+  "sacct": {
+    "returncode": 0,
+    "stdout": "24645791|COMPLETED|0:0|00:43:15|2595|2026-10-20T02:58:36|2026-10-20T03:41:51|g24|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24645791.batch|COMPLETED|0:0|00:43:15|2595|2026-10-20T02:58:36|2026-10-20T03:41:51|g24|cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24645791.extern|COMPLETED|0:0|00:43:15|2595|2026-10-20T02:58:36|2026-10-20T03:41:51|g24|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24645795|COMPLETED|0:0|00:04:48|288|2026-10-20T03:51:57|2026-10-20T03:56:45|g17|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24645795.batch|COMPLETED|0:0|00:04:48|288|2026-10-20T03:51:57|2026-10-20T03:56:45|g17|cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24645795.extern|COMPLETED|0:0|00:04:48|288|2026-10-20T03:51:57|2026-10-20T03:56:45|g17|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24645806|COMPLETED|0:0|00:16:01|961|2026-10-20T04:00:47|2026-10-20T04:16:48|g17|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24645806.batch|COMPLETED|0:0|00:16:01|961|2026-10-20T04:00:47|2026-10-20T04:16:48|g17|cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24645806.extern|COMPLETED|0:0|00:16:01|961|2026-10-20T04:00:47|2026-10-20T04:16:48|g17|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n",
+    "stderr": ""
+  }
+}

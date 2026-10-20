@@ -1,0 +1,517 @@
+{
+  "label": "H3",
+  "job_id": "24645806",
+  "run": "20261020-h3-nothink-auto",
+  "state": "COMPLETED",
+  "exit_code": "0:0",
+  "elapsed": "00:16:01",
+  "elapsed_seconds": 961,
+  "gpu_hours": 0.26694444444444443,
+  "start_toronto": "2026-10-20T04:00:47-04:00",
+  "end_toronto": "2026-10-20T04:16:48-04:00",
+  "node": "g17",
+  "allocated_tres": "billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1",
+  "arms": {
+    "official-single": {
+      "completed": 50,
+      "correct": 45,
+      "seconds": 34.4,
+      "output_tokens": 12389,
+      "question_seconds": 231
+    },
+    "port-single": {
+      "completed": 50,
+      "correct": 1,
+      "seconds": 756.5,
+      "output_tokens": 48145,
+      "question_seconds": 2567,
+      "outcomes": {
+        "never submitted": 46,
+        "solved": 1,
+        "submitted a wrong value": 3
+      }
+    }
+  },
+  "accuracy": {
+    "official-single": 0.9,
+    "port-single": 0.02
+  },
+  "harness_gap": -0.88,
+  "harness_gap_95_recomputed": [
+    -0.96,
+    -0.78
+  ],
+  "original_outcomes": {
+    "never submitted": 46,
+    "solved": 1,
+    "submitted a wrong value": 3
+  },
+  "failure_stages": {
+    "never_submitted": 46,
+    "solved": 1,
+    "blocked_by_missing_store_key": 3
+  },
+  "trace_evidence": {
+    "failed_with_zero_environment_ops": 45,
+    "failed_with_textual_observation": 46,
+    "failed_with_invalid_store_key": 3,
+    "failed_with_correct_numeric_artifact": 2,
+    "accepted_normalised_submissions": 0
+  },
+  "verified_readable_traces": 50,
+  "per_question_failure_stage": [
+    {
+      "question": 0,
+      "reference": "16",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q0.jsonl.gz"
+    },
+    {
+      "question": 1,
+      "reference": "240",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q1.jsonl.gz"
+    },
+    {
+      "question": 2,
+      "reference": "80",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q2.jsonl.gz"
+    },
+    {
+      "question": 3,
+      "reference": "15",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q3.jsonl.gz"
+    },
+    {
+      "question": 4,
+      "reference": "91",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q4.jsonl.gz"
+    },
+    {
+      "question": 5,
+      "reference": "22",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q5.jsonl.gz"
+    },
+    {
+      "question": 6,
+      "reference": "8",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q6.jsonl.gz"
+    },
+    {
+      "question": 7,
+      "reference": "11",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q7.jsonl.gz"
+    },
+    {
+      "question": 8,
+      "reference": "25",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q8.jsonl.gz"
+    },
+    {
+      "question": 9,
+      "reference": "482",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q9.jsonl.gz"
+    },
+    {
+      "question": 10,
+      "reference": "4",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q10.jsonl.gz"
+    },
+    {
+      "question": 11,
+      "reference": "14",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q11.jsonl.gz"
+    },
+    {
+      "question": 12,
+      "reference": "18",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q12.jsonl.gz"
+    },
+    {
+      "question": 13,
+      "reference": "12",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q13.jsonl.gz"
+    },
+    {
+      "question": 14,
+      "reference": "319",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q14.jsonl.gz"
+    },
+    {
+      "question": 15,
+      "reference": "2",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q15.jsonl.gz"
+    },
+    {
+      "question": 16,
+      "reference": "72",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q16.jsonl.gz"
+    },
+    {
+      "question": 17,
+      "reference": "9500",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q17.jsonl.gz"
+    },
+    {
+      "question": 18,
+      "reference": "15",
+      "stage": "solved",
+      "original_outcome": "solved",
+      "correct_numeric_artifact_submitted": true,
+      "actual_environment_operations": 3,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q18.jsonl.gz"
+    },
+    {
+      "question": 19,
+      "reference": "54",
+      "stage": "blocked_by_missing_store_key",
+      "original_outcome": "submitted a wrong value",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 6,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q19.jsonl.gz"
+    },
+    {
+      "question": 20,
+      "reference": "170",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q20.jsonl.gz"
+    },
+    {
+      "question": 21,
+      "reference": "160",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q21.jsonl.gz"
+    },
+    {
+      "question": 22,
+      "reference": "42",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 3,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q22.jsonl.gz"
+    },
+    {
+      "question": 23,
+      "reference": "60",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q23.jsonl.gz"
+    },
+    {
+      "question": 24,
+      "reference": "98",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q24.jsonl.gz"
+    },
+    {
+      "question": 25,
+      "reference": "4",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q25.jsonl.gz"
+    },
+    {
+      "question": 26,
+      "reference": "6277",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q26.jsonl.gz"
+    },
+    {
+      "question": 27,
+      "reference": "50",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q27.jsonl.gz"
+    },
+    {
+      "question": 28,
+      "reference": "8",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q28.jsonl.gz"
+    },
+    {
+      "question": 29,
+      "reference": "68",
+      "stage": "blocked_by_missing_store_key",
+      "original_outcome": "submitted a wrong value",
+      "correct_numeric_artifact_submitted": true,
+      "actual_environment_operations": 6,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q29.jsonl.gz"
+    },
+    {
+      "question": 30,
+      "reference": "2",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q30.jsonl.gz"
+    },
+    {
+      "question": 31,
+      "reference": "110",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q31.jsonl.gz"
+    },
+    {
+      "question": 32,
+      "reference": "360",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q32.jsonl.gz"
+    },
+    {
+      "question": 33,
+      "reference": "7",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q33.jsonl.gz"
+    },
+    {
+      "question": 34,
+      "reference": "14",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q34.jsonl.gz"
+    },
+    {
+      "question": 35,
+      "reference": "5",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q35.jsonl.gz"
+    },
+    {
+      "question": 36,
+      "reference": "1509",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q36.jsonl.gz"
+    },
+    {
+      "question": 37,
+      "reference": "6",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q37.jsonl.gz"
+    },
+    {
+      "question": 38,
+      "reference": "410",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q38.jsonl.gz"
+    },
+    {
+      "question": 39,
+      "reference": "90",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q39.jsonl.gz"
+    },
+    {
+      "question": 40,
+      "reference": "12",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q40.jsonl.gz"
+    },
+    {
+      "question": 41,
+      "reference": "7400",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q41.jsonl.gz"
+    },
+    {
+      "question": 42,
+      "reference": "20",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q42.jsonl.gz"
+    },
+    {
+      "question": 43,
+      "reference": "8",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q43.jsonl.gz"
+    },
+    {
+      "question": 44,
+      "reference": "84",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q44.jsonl.gz"
+    },
+    {
+      "question": 45,
+      "reference": "80",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q45.jsonl.gz"
+    },
+    {
+      "question": 46,
+      "reference": "168",
+      "stage": "blocked_by_missing_store_key",
+      "original_outcome": "submitted a wrong value",
+      "correct_numeric_artifact_submitted": true,
+      "actual_environment_operations": 6,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q46.jsonl.gz"
+    },
+    {
+      "question": 47,
+      "reference": "45",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q47.jsonl.gz"
+    },
+    {
+      "question": 48,
+      "reference": "12",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q48.jsonl.gz"
+    },
+    {
+      "question": 49,
+      "reference": "30",
+      "stage": "never_submitted",
+      "original_outcome": "never submitted",
+      "correct_numeric_artifact_submitted": false,
+      "actual_environment_operations": 0,
+      "trace": "results/net/runs/20261020-h3-nothink-auto/fidelity/traces/port-single/q49.jsonl.gz"
+    }
+  ],
+  "llm_errors_recorded": 0,
+  "async_cleanup_error_occurrences": 0,
+  "vllm_tool_parser_error_events": 0
+}
