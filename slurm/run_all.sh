@@ -11,6 +11,8 @@
 #
 # Stages (the compatibility track comes first: designs whose published finding reproduces are the ones
 # compared on the network track):
+#   focus  the paper's main 2x2 (netagents/testset.py FOCUS): sas, centralized, decentralized on math with
+#          decomposable vs sequential tasks and shared vs split tools; one packed job (PACK=1)
 #   smoke  first of all, ~10 GPU minutes: the server starts and answers every kind of request; one sas
 #          and one centralized run go through without model errors (netagents/smoke.py)
 #   check  before the real runs: fidelity (is our harness as good as plain chat?) and calibration (are the
@@ -59,6 +61,7 @@ DRY="${DRY:-0}"
 
 case "$STAGE" in
   smoke) EXPERIMENTS="smoke" ;;
+  focus) EXPERIMENTS="focus" ;;
   check) EXPERIMENTS="fidelity calibration" ;;
   1) EXPERIMENTS="baselines fidelity compat-framework compat-network" ;;
   2) EXPERIMENTS="test hard heldout scaling topology robustness" ;;
@@ -136,6 +139,8 @@ PY
   esac
   designs="$DESIGNS"
   [ "$exp" = calibration ] && designs="${CALIBRATION_DESIGNS:-sas reflexion centralized debate}"
+  [ "$exp" = focus ] && designs="${FOCUS_DESIGNS:-sas centralized decentralized}"
+  pack="${PACK:-$([ "$exp" = focus ] && echo 1 || echo 0)}"
   if [ "${FRAMEWORKS:-0}" = 1 ] && { [ "$exp" = compat-framework ] || [ "$exp" = test ]; }; then
     designs="$designs $FRAMEWORK_DESIGNS"
   fi
@@ -143,6 +148,13 @@ PY
     designs=$(for d in $designs; do case $d in react|reflexion|autogen-*|magentic-one|camel-*) ;; *) echo "$d";; esac; done)
   fi
   ids=()
+  if [ "$pack" = 1 ]; then  # one job for every design: one server start-up and one place in the queue
+    d=$(echo $designs | tr ' ' '-')
+    ids+=("$(submit "$exp" "$d" --job-name="net-$exp" --time="$TIME" --output="$RUN_DIR/logs/%x-%j.out" \
+      --export=ALL,SUITE="$suite",DESIGNS="$designs",ROUTE="$route",OUT="$out/all",LOG_DIR="$RUN_DIR/logs",SEEDS="${SEEDS:-}" \
+      slurm/net_eval.sh)")
+    designs=""
+  fi
   for d in $designs; do
     ids+=("$(submit "$exp" "$d" --job-name="net-$exp-$d" --time="$TIME" --output="$RUN_DIR/logs/%x-%j.out" \
       --export=ALL,SUITE="$suite",DESIGNS="$d",ROUTE="$route",OUT="$out/$d",LOG_DIR="$RUN_DIR/logs",SEEDS="${SEEDS:-}" \

@@ -20,6 +20,7 @@ design. Held-out cases use tasks no scripted solver was written for (tasks/heldo
                 AgentsNet)
     robustness  changing worlds and an unreliable network (cf. MAST, NeurIPS 2025 D&B)
     compat      the compatibility track: decomposable vs sequential math, CodeWorld, test seeds
+    focus       the paper's main 2x2: decomposable vs sequential math, tools shared vs split across roles
     org         a hierarchy of managers above the workers, 0-2 levels (cf. El Agente Q, Zou et al. 2025)
     faults      tool results that are silently wrong, or fail loudly; a check operation
     report      a final report with every answer, scored field by field; and a provenance rule
@@ -47,6 +48,8 @@ MEDIUM = ["codeworld/medium", "math/medium", "website/medium", "molecule/medium"
 HARD = ["codeworld/hard", "math/hard", "website/hard", "molecule/hard"]
 EASY = ["codeworld/easy", "math/easy", "website/easy", "molecule/easy"]
 CALIBRATION_BAND = (0.2, 0.8)  # mean share of tasks done in which designs can still be told apart
+FOCUS = [f"focus/math-{s}-{t}" for s in ("decomposable", "sequential") for t in ("shared", "split")]
+FOCUS_DESIGNS = ("sas", "centralized", "decentralized")
 COMPAT = ["compat/math-decomposable", "compat/math-sequential", "compat/codeworld"]
 HELDOUT = ["math/heldout-number-theory", "math/heldout-combinatorics", "website/heldout-todo",
            "molecule/heldout-kinase"]
@@ -94,6 +97,9 @@ SUITES: dict[str, list[Case]] = {
         Case("math/medium/unreliable-network", "math/medium", TEST_SEEDS[:5], net={"outage": 0.1, "latency": 2}),
     ],
     "compat": [Case(p, p, TEST_SEEDS, track="compat") for p in COMPAT],
+    # the paper's main experiment (FOCUS_DESIGNS on it): messages through the framework, as in the papers,
+    # so that what changes between the columns is only who holds which tools
+    "focus": [Case(p, p, TEST_SEEDS, track="compat") for p in FOCUS],
     "org": [Case(f"{p}/org{d}", p, TEST_SEEDS[:5], net={"org": d}) for p in ("math/medium", "codeworld/medium")
             for d in (0, 1, 2)],
     "faults": [Case(f"{p}/{name}", p, TEST_SEEDS[:5], net=net) for p in ("math/medium", "codeworld/medium")

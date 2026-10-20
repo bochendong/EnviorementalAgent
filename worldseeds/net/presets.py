@@ -102,6 +102,20 @@ PRESETS: dict[str, dict] = {
                                     "explorers": 3, "algebraists": 0},
         "net": {"budget": 60},
         "note": "The same 4 recurrences in one chain: each starts from the previous one's answer."},
+    # ---------------------------------------------------------------- focus: the main 2x2 of the paper
+    # Task structure (4 independent recurrences, or the same 4 in one chain) x tools (every agent has all of
+    # them, or they are split: two explorers who compute numbers, one algebraist who solves recurrences).
+    # Same tasks, budgets and team size in all four; no deadline. A single agent always has every tool.
+    **{f"focus/math-{structure}-{tools}": {
+        "provider": "math",
+        "opt": {"problems": ["recurrence"] * 4, **({"linked": True} if structure == "sequential" else {}),
+                **({"free_roles": True, "explorers": 3, "algebraists": 0} if tools == "shared"
+                   else {"explorers": 2, "algebraists": 1})},
+        "net": {"budget": 60},
+        "note": ("4 independent recurrences" if structure == "decomposable" else "4 recurrences in one chain")
+                + (", 3 agents with every tool" if tools == "shared" else
+                   ", tools split: 2 explorers (numbers), 1 algebraist (symbols)")}
+       for structure in ("decomposable", "sequential") for tools in ("shared", "split")},
     "compat/codeworld": {
         "provider": "codeworld", "opt": {"n_modules": 4, "n_projects": 6, "devs": 3},
         "net": {"budget": 150},

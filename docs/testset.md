@@ -83,6 +83,21 @@ $SCRATCH/worldseeds/results/net/runs/<date>-<model>/
   test/ hard/ heldout/ scaling/ topology/ robustness/     the network track, same layout
 ```
 
+## The main experiment (`--suite focus`)
+
+The paper's question: once tools and information are split across roles, does a multi-agent team still beat a single agent with the same compute? Kim et al. (2026) compared architectures with identical agents. The environment can split the tools, which they could not. It is a 2×2 on math:
+
+| | every agent has every tool | tools split: 2 explorers (numbers), 1 algebraist (symbols) |
+|---|---|---|
+| decomposable: 4 independent recurrences | `focus/math-decomposable-shared` (Kim et al.'s setting) | `focus/math-decomposable-split` |
+| sequential: the same 4 in one chain | `focus/math-sequential-shared` (Kim et al.'s setting) | `focus/math-sequential-split` |
+
+- Designs: `sas`, `centralized` and `decentralized`, ported from Kim et al.'s code.
+- Test seeds 100–109. The designs' messages pass through the framework, so only who holds which tools changes between the columns.
+- Same tasks, budgets and team size in all four cells. The single agent always holds every tool.
+- The scripted reference team solves all four cells on all 10 seeds.
+- `STAGE=focus bash slurm/run_all.sh` runs it as one job, so the server starts once; `SEEDS=5` gives a first pass, and the same command later resumes it to 10.
+
 ## Two tracks
 
 The published designs assume settings this environment deliberately goes beyond: identical agents, answer-checked tasks, no deadline, and messages handed over by the framework for free. A design that fails here could fail because the design is weak, or because it was never meant for these settings. So every design runs on two tracks:
