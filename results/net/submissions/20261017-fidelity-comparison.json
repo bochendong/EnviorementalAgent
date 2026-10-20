@@ -3,7 +3,7 @@
   "source_commit": "b8813d2562d557874cf6d6a624a0656b99d263d8",
   "source": "/scratch/bdong/worldseeds/code/5fd9f30-20261017-fidelity",
   "created_at_utc": "2026-10-17T15:14:45.018491+00:00",
-  "stage": "submitted",
+  "stage": "completed_results_verified",
   "jobs": [
     {
       "label": "A",
@@ -37,10 +37,32 @@
       },
       "recorded_at_utc": "2026-10-17T15:14:47.585047+00:00",
       "latest_observation": {
-        "state": "PENDING",
-        "reason": "Priority",
-        "estimated_start": "2026-10-19T02:23:16-04:00",
-        "checked_at_utc": "2026-10-17T15:20:09.900076+00:00"
+        "state": "COMPLETED",
+        "exit_code": "0:0",
+        "start_toronto": "2026-10-19T22:26:41-04:00",
+        "end_toronto": "2026-10-20T00:42:20-04:00",
+        "elapsed_seconds": 8139,
+        "node": "g11",
+        "checked_at_toronto": "2026-10-20T01:54:01.194726-04:00"
+      },
+      "result_verification": {
+        "complete_question_arm_records": 200,
+        "all_four_arms_complete_and_consistent": true,
+        "accuracy": {
+          "official-single": 0.88,
+          "official-debate": 0.9,
+          "port-single": 0.8,
+          "port-debate": 0.88
+        },
+        "port_minus_official_single": {
+          "difference": -0.08,
+          "paired_bootstrap_95": [
+            -0.18,
+            0.0
+          ],
+          "port_only_correct": 1,
+          "official_only_correct": 5
+        }
       }
     },
     {
@@ -75,10 +97,32 @@
       },
       "recorded_at_utc": "2026-10-17T15:14:49.007527+00:00",
       "latest_observation": {
-        "state": "PENDING",
-        "reason": "Priority",
-        "estimated_start": "2026-10-19T02:23:16-04:00",
-        "checked_at_utc": "2026-10-17T15:20:09.900076+00:00"
+        "state": "COMPLETED",
+        "exit_code": "0:0",
+        "start_toronto": "2026-10-20T00:50:02-04:00",
+        "end_toronto": "2026-10-20T01:16:14-04:00",
+        "elapsed_seconds": 1572,
+        "node": "g17",
+        "checked_at_toronto": "2026-10-20T01:54:01.194726-04:00"
+      },
+      "result_verification": {
+        "complete_question_arm_records": 200,
+        "all_four_arms_complete_and_consistent": true,
+        "accuracy": {
+          "official-single": 0.9,
+          "official-debate": 0.9,
+          "port-single": 0.16,
+          "port-debate": 0.18
+        },
+        "port_minus_official_single": {
+          "difference": -0.74,
+          "paired_bootstrap_95": [
+            -0.86,
+            -0.62
+          ],
+          "port_only_correct": 0,
+          "official_only_correct": 37
+        }
       }
     }
   ],
@@ -93,7 +137,7 @@
   "smoke_rerun": false,
   "calibration_submitted": false,
   "scope": "Two fidelity jobs only. No calibration, smoke rerun, or automatic retries.",
-  "updated_at_utc": "2026-10-17T15:20:09.900076+00:00",
+  "updated_at_utc": "2026-10-20T05:54:01.194726+00:00",
   "verification": {
     "local_parallel_tests_passed": 3,
     "local_fidelity_scoring_test_passed": 1,
@@ -113,7 +157,8 @@
     "per_job_max_h100_hours": 8,
     "both_jobs_max_h100_hours": 16,
     "actual_estimate_checked_at_utc": "2026-10-17T15:20:09.900076+00:00",
-    "estimate_warning": "Actual queued-job estimate is much later than new-job test-only estimate. Previous smoke showed the same Oct 19 estimate and then started Oct 16. All start and finish estimates remain provisional; do not cancel/resubmit to chase test-only estimates."
+    "estimate_warning": "Actual queued-job estimate is much later than new-job test-only estimate. Previous smoke showed the same Oct 19 estimate and then started Oct 16. All start and finish estimates remain provisional; do not cancel/resubmit to chase test-only estimates.",
+    "final_note": "All prior queue and conditional finish estimates are historical. Actual start/end and elapsed are recorded in latest_observation and the final report."
   },
   "estimated_runtime_hours": {
     "A": [
@@ -127,17 +172,17 @@
     "basis": "Preliminary estimate from prior smoke generation latency, 8 independent questions per arm, and maximum tool-call budgets; not measured fidelity throughput. Re-estimate using saved question progress after jobs start.",
     "queue_delay_not_guaranteed": true,
     "earlier_conditional_scenario_if_start_15_toronto": {
-      "A": "2026-10-17 17:00–21:00 America/Toronto",
-      "B": "2026-10-17 15:30–17:00 America/Toronto"
+      "A": "2026-10-17 17:00\u201321:00 America/Toronto",
+      "B": "2026-10-17 15:30\u201317:00 America/Toronto"
     },
     "conditional_finish_based_on_actual_queue_estimate": {
-      "A": "2026-10-19 04:23–08:23 America/Toronto",
-      "B": "2026-10-19 02:53–04:23 America/Toronto"
+      "A": "2026-10-19 04:23\u201308:23 America/Toronto",
+      "B": "2026-10-19 02:53\u201304:23 America/Toronto"
     }
   },
   "automation": {
     "id": "nibi-smoke-pilot",
-    "name": "Nibi A/B 还原度检查与阶段邮件",
+    "name": "Nibi A/B \u8fd8\u539f\u5ea6\u68c0\u67e5\u4e0e\u9636\u6bb5\u90ae\u4ef6",
     "interval_minutes": 20,
     "scope": "Only these two fidelity jobs; no calibration or retries",
     "email_stages": [
@@ -147,5 +192,8 @@
     ],
     "maximum_emails": 3,
     "minimum_email_interval_minutes": 60
-  }
+  },
+  "final_report": "20261017-fidelity-final-report.md",
+  "final_summary": "20261017-fidelity-final-summary.json",
+  "actual_total_h100_gpu_hours": 2.6975
 }

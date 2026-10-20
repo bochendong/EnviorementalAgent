@@ -1,0 +1,84 @@
+{
+  "label": "A",
+  "job_id": "24309180",
+  "run": "20261017-fid-think",
+  "settings": {
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "max_tokens": 8192,
+    "extra_body": {
+      "top_k": 20,
+      "chat_template_kwargs": {
+        "enable_thinking": true
+      }
+    },
+    "thinking": true,
+    "tool_choice": "required",
+    "model": "qwen3-8b",
+    "context_tokens": "39321",
+    "chars_per_token": "1.5"
+  },
+  "state": "COMPLETED",
+  "exit_code": "0:0",
+  "elapsed": "02:15:39",
+  "elapsed_seconds": 8139,
+  "start_toronto": "2026-10-19T22:26:41-04:00",
+  "end_toronto": "2026-10-20T00:42:20-04:00",
+  "node": "g11",
+  "allocated_tres": "billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1",
+  "gpu_hours": 2.2608333333333333,
+  "all_four_arms_complete_and_consistent": true,
+  "arms": {
+    "official-single": {
+      "completed": 50,
+      "correct": 44,
+      "accuracy": 0.88,
+      "seconds": 643.7,
+      "output_tokens": 103670,
+      "question_seconds": 4718
+    },
+    "official-debate": {
+      "completed": 50,
+      "correct": 45,
+      "accuracy": 0.9,
+      "seconds": 3374.5,
+      "output_tokens": 488902,
+      "question_seconds": 24756
+    },
+    "port-single": {
+      "completed": 50,
+      "correct": 40,
+      "accuracy": 0.8,
+      "seconds": 1438.4,
+      "output_tokens": 140406,
+      "question_seconds": 11090
+    },
+    "port-debate": {
+      "completed": 50,
+      "correct": 44,
+      "accuracy": 0.88,
+      "seconds": 2187.4,
+      "output_tokens": 309201,
+      "question_seconds": 16914
+    }
+  },
+  "port_minus_official_single": {
+    "difference": -0.08,
+    "paired_bootstrap_95": [
+      -0.18,
+      0.0
+    ],
+    "port_only_correct": 1,
+    "official_only_correct": 5
+  },
+  "official_debate_gain": 0.020000000000000018,
+  "port_debate_gain": 0.07999999999999996,
+  "original_gain_only_gate": false,
+  "recorded_total_output_tokens": 1042179,
+  "arm_wall_seconds_sum": 7644.015226735966,
+  "log_diagnostics": {
+    "async_cleanup_runtimeerror_occurrences": 61,
+    "tool_parser_error_events": 3,
+    "non_200_logged_completion_http_statuses": {}
+  }
+}

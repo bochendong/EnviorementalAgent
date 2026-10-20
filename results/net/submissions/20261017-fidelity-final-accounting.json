@@ -1,0 +1,27 @@
+{
+  "checked_at_toronto": "2026-10-20T01:54:01.194726-04:00",
+  "24309180": {
+    "sacct": {
+      "returncode": 0,
+      "stdout": "24309180|COMPLETED|0:0|02:15:39|8139|2026-10-19T22:26:41|2026-10-20T00:42:20|g11|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1|08:00:00\n24309180.batch|COMPLETED|0:0|02:15:39|8139|2026-10-19T22:26:41|2026-10-20T00:42:20|g11|cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1|\n24309180.extern|COMPLETED|0:0|02:15:39|8139|2026-10-19T22:26:41|2026-10-20T00:42:20|g11|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1|\n",
+      "stderr": ""
+    },
+    "scontrol": {
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "slurm_load_jobs error: Invalid job id specified\n"
+    }
+  },
+  "24309183": {
+    "sacct": {
+      "returncode": 0,
+      "stdout": "24309183|COMPLETED|0:0|00:26:12|1572|2026-10-20T00:50:02|2026-10-20T01:16:14|g17|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1|08:00:00\n24309183.batch|COMPLETED|0:0|00:26:12|1572|2026-10-20T00:50:02|2026-10-20T01:16:14|g17|cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1|\n24309183.extern|COMPLETED|0:0|00:26:12|1572|2026-10-20T00:50:02|2026-10-20T01:16:14|g17|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1|\n",
+      "stderr": ""
+    },
+    "scontrol": {
+      "returncode": 1,
+      "stdout": "",
+      "stderr": "slurm_load_jobs error: Invalid job id specified\n"
+    }
+  }
+}

@@ -1,0 +1,2136 @@
+waiting for vLLM on port 29183 (log: /scratch/bdong/worldseeds/results/net/runs/20261017-fid-nothink/logs/vllm-24309183.log)
+server up after 300s
+official-single: 1/50 questions saved
+official-single: 2/50 questions saved
+official-single: 3/50 questions saved
+official-single: 4/50 questions saved
+official-single: 5/50 questions saved
+official-single: 6/50 questions saved
+official-single: 7/50 questions saved
+official-single: 8/50 questions saved
+official-single: 9/50 questions saved
+official-single: 10/50 questions saved
+official-single: 11/50 questions saved
+official-single: 12/50 questions saved
+official-single: 13/50 questions saved
+official-single: 14/50 questions saved
+official-single: 15/50 questions saved
+official-single: 16/50 questions saved
+official-single: 17/50 questions saved
+official-single: 18/50 questions saved
+official-single: 19/50 questions saved
+official-single: 20/50 questions saved
+official-single: 21/50 questions saved
+official-single: 22/50 questions saved
+official-single: 23/50 questions saved
+official-single: 24/50 questions saved
+official-single: 25/50 questions saved
+official-single: 26/50 questions saved
+official-single: 27/50 questions saved
+official-single: 28/50 questions saved
+official-single: 29/50 questions saved
+official-single: 30/50 questions saved
+official-single: 31/50 questions saved
+official-single: 32/50 questions saved
+official-single: 33/50 questions saved
+official-single: 34/50 questions saved
+official-single: 35/50 questions saved
+official-single: 36/50 questions saved
+official-single: 37/50 questions saved
+official-single: 38/50 questions saved
+official-single: 39/50 questions saved
+official-single: 40/50 questions saved
+official-single: 41/50 questions saved
+official-single: 42/50 questions saved
+official-single: 43/50 questions saved
+official-single: 44/50 questions saved
+official-single: 45/50 questions saved
+official-single: 46/50 questions saved
+official-single: 47/50 questions saved
+official-single: 48/50 questions saved
+official-single: 49/50 questions saved
+official-single: 50/50 questions saved
+official-debate: 1/50 questions saved
+official-debate: 2/50 questions saved
+official-debate: 3/50 questions saved
+official-debate: 4/50 questions saved
+official-debate: 5/50 questions saved
+official-debate: 6/50 questions saved
+official-debate: 7/50 questions saved
+official-debate: 8/50 questions saved
+official-debate: 9/50 questions saved
+official-debate: 10/50 questions saved
+official-debate: 11/50 questions saved
+official-debate: 12/50 questions saved
+official-debate: 13/50 questions saved
+official-debate: 14/50 questions saved
+official-debate: 15/50 questions saved
+official-debate: 16/50 questions saved
+official-debate: 17/50 questions saved
+official-debate: 18/50 questions saved
+official-debate: 19/50 questions saved
+official-debate: 20/50 questions saved
+official-debate: 21/50 questions saved
+official-debate: 22/50 questions saved
+official-debate: 23/50 questions saved
+official-debate: 24/50 questions saved
+official-debate: 25/50 questions saved
+official-debate: 26/50 questions saved
+official-debate: 27/50 questions saved
+official-debate: 28/50 questions saved
+official-debate: 29/50 questions saved
+official-debate: 30/50 questions saved
+official-debate: 31/50 questions saved
+official-debate: 32/50 questions saved
+official-debate: 33/50 questions saved
+official-debate: 34/50 questions saved
+official-debate: 35/50 questions saved
+official-debate: 36/50 questions saved
+official-debate: 37/50 questions saved
+official-debate: 38/50 questions saved
+official-debate: 39/50 questions saved
+official-debate: 40/50 questions saved
+official-debate: 41/50 questions saved
+official-debate: 42/50 questions saved
+official-debate: 43/50 questions saved
+official-debate: 44/50 questions saved
+official-debate: 45/50 questions saved
+official-debate: 46/50 questions saved
+official-debate: 47/50 questions saved
+official-debate: 48/50 questions saved
+official-debate: 49/50 questions saved
+official-debate: 50/50 questions saved
+port-single: 1/50 questions saved
+port-single: 2/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-265' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 3/50 questions saved
+port-single: 4/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-170' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 5/50 questions saved
+port-single: 6/50 questions saved
+port-single: 7/50 questions saved
+port-single: 8/50 questions saved
+port-single: 9/50 questions saved
+port-single: 10/50 questions saved
+port-single: 11/50 questions saved
+port-single: 12/50 questions saved
+port-single: 13/50 questions saved
+port-single: 14/50 questions saved
+port-single: 15/50 questions saved
+port-single: 16/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-706' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-707' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 17/50 questions saved
+port-single: 18/50 questions saved
+port-single: 19/50 questions saved
+port-single: 20/50 questions saved
+port-single: 21/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-744' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-745' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 22/50 questions saved
+port-single: 23/50 questions saved
+port-single: 24/50 questions saved
+port-single: 25/50 questions saved
+port-single: 26/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1067' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1068' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 27/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-946' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-947' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 28/50 questions saved
+port-single: 29/50 questions saved
+port-single: 30/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1269' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1270' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 31/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1412' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1413' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1414' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1415' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1416' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 32/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-992' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-993' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 33/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1040' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1041' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1042' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 34/50 questions saved
+port-single: 35/50 questions saved
+port-single: 36/50 questions saved
+port-single: 37/50 questions saved
+port-single: 38/50 questions saved
+port-single: 39/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1599' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1600' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1601' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1602' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1603' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 40/50 questions saved
+port-single: 41/50 questions saved
+port-single: 42/50 questions saved
+port-single: 43/50 questions saved
+port-single: 44/50 questions saved
+port-single: 45/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1363' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1364' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-single: 46/50 questions saved
+port-single: 47/50 questions saved
+port-single: 48/50 questions saved
+port-single: 49/50 questions saved
+port-single: 50/50 questions saved
+port-debate: 1/50 questions saved
+port-debate: 2/50 questions saved
+port-debate: 3/50 questions saved
+port-debate: 4/50 questions saved
+port-debate: 5/50 questions saved
+port-debate: 6/50 questions saved
+port-debate: 7/50 questions saved
+port-debate: 8/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1905' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1906' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1795' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1796' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1797' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1798' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1799' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2420' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2421' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2422' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2423' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 9/50 questions saved
+port-debate: 10/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1868' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1869' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 11/50 questions saved
+port-debate: 12/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1726' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1727' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1728' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1729' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1730' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 13/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-2245' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2246' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 14/50 questions saved
+port-debate: 15/50 questions saved
+port-debate: 16/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-1799' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-1800' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 17/50 questions saved
+port-debate: 18/50 questions saved
+port-debate: 19/50 questions saved
+port-debate: 20/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-2535' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2536' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2537' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2610' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2611' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2612' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 21/50 questions saved
+port-debate: 22/50 questions saved
+port-debate: 23/50 questions saved
+port-debate: 24/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-2805' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 25/50 questions saved
+port-debate: 26/50 questions saved
+port-debate: 27/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-2633' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2634' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 28/50 questions saved
+port-debate: 29/50 questions saved
+port-debate: 30/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-2579' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 31/50 questions saved
+port-debate: 32/50 questions saved
+port-debate: 33/50 questions saved
+port-debate: 34/50 questions saved
+port-debate: 35/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-2897' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-2898' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 36/50 questions saved
+port-debate: 37/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-3420' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-3421' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-3422' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-3257' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-3258' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 38/50 questions saved
+port-debate: 39/50 questions saved
+port-debate: 40/50 questions saved
+port-debate: 41/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-3700' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-3701' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 42/50 questions saved
+port-debate: 43/50 questions saved
+port-debate: 44/50 questions saved
+port-debate: 45/50 questions saved
+Task exception was never retrieved
+future: <Task finished name='Task-3623' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+Task exception was never retrieved
+future: <Task finished name='Task-3624' coro=<AsyncClient.aclose() done, defined at /scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py:2198> exception=RuntimeError('Event loop is closed')>
+Traceback (most recent call last):
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_client.py", line 2205, in aclose
+    await self._transport.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpx2/_transports/default.py", line 400, in aclose
+    await self._pool.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 382, in aclose
+    await self._close_connections(closing_connections)
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection_pool.py", line 374, in _close_connections
+    await connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/connection.py", line 157, in aclose
+    await self._connection.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_async/http11.py", line 236, in aclose
+    await self._network_stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/httpcore2/_backends/anyio.py", line 55, in aclose
+    await self._stream.aclose()
+  File "/scratch/bdong/worldseeds/venv-agent/lib/python3.11/site-packages/anyio/_backends/_asyncio.py", line 1467, in aclose
+    self._transport.close()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/selector_events.py", line 860, in close
+    self._loop.call_soon(self._call_connection_lost, None)
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 761, in call_soon
+    self._check_closed()
+  File "/cvmfs/soft.computecanada.ca/easybuild/software/2023/x86-64-v4/Compiler/gcccore/python/3.11.5/lib/python3.11/asyncio/base_events.py", line 519, in _check_closed
+    raise RuntimeError('Event loop is closed')
+RuntimeError: Event loop is closed
+port-debate: 46/50 questions saved
+port-debate: 47/50 questions saved
+port-debate: 48/50 questions saved
+port-debate: 49/50 questions saved
+port-debate: 50/50 questions saved
+{
+ "check": "debate",
+ "model": "qwen3-8b",
+ "n": 50,
+ "settings": {
+  "temperature": 0.6,
+  "top_p": 0.95,
+  "max_tokens": 2048,
+  "extra_body": {
+   "top_k": 20,
+   "chat_template_kwargs": {
+    "enable_thinking": false
+   }
+  },
+  "thinking": false,
+  "tool_choice": "auto"
+ },
+ "parallel": 8,
+ "cost": {
+  "official-single": {
+   "seconds": 54.8,
+   "output_tokens": 14444,
+   "question_seconds": 264
+  },
+  "official-debate": {
+   "seconds": 248.0,
+   "output_tokens": 67199,
+   "question_seconds": 1846
+  },
+  "port-single": {
+   "seconds": 191.1,
+   "output_tokens": 23554,
+   "question_seconds": 1347
+  },
+  "port-debate": {
+   "seconds": 736.9,
+   "output_tokens": 102512,
+   "question_seconds": 5519
+  }
+ },
+ "accuracy": {
+  "official-single": 0.9,
+  "official-debate": 0.9,
+  "port-single": 0.16,
+  "port-debate": 0.18
+ },
+ "official_gain": 0.0,
+ "official_gain_95": [
+  -0.06,
+  0.06
+ ],
+ "port_gain": 0.01999999999999999,
+ "port_gain_within_official_interval": true,
+ "paper": {
+  "single": 0.77,
+  "debate": 0.85,
+  "model": "gpt-3.5-turbo-0301",
+  "n": 100,
+  "gain": 0.07999999999999996
+ }
+}
+results in /scratch/bdong/worldseeds/results/net/runs/20261017-fid-nothink/fidelity

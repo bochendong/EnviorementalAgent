@@ -1,0 +1,84 @@
+{
+  "label": "B",
+  "job_id": "24309183",
+  "run": "20261017-fid-nothink",
+  "settings": {
+    "temperature": 0.6,
+    "top_p": 0.95,
+    "max_tokens": 2048,
+    "extra_body": {
+      "top_k": 20,
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    },
+    "thinking": false,
+    "tool_choice": "auto",
+    "model": "qwen3-8b",
+    "context_tokens": "39321",
+    "chars_per_token": "1.5"
+  },
+  "state": "COMPLETED",
+  "exit_code": "0:0",
+  "elapsed": "00:26:12",
+  "elapsed_seconds": 1572,
+  "start_toronto": "2026-10-20T00:50:02-04:00",
+  "end_toronto": "2026-10-20T01:16:14-04:00",
+  "node": "g17",
+  "allocated_tres": "billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1",
+  "gpu_hours": 0.43666666666666665,
+  "all_four_arms_complete_and_consistent": true,
+  "arms": {
+    "official-single": {
+      "completed": 50,
+      "correct": 45,
+      "accuracy": 0.9,
+      "seconds": 54.8,
+      "output_tokens": 14444,
+      "question_seconds": 264
+    },
+    "official-debate": {
+      "completed": 50,
+      "correct": 45,
+      "accuracy": 0.9,
+      "seconds": 248.0,
+      "output_tokens": 67199,
+      "question_seconds": 1846
+    },
+    "port-single": {
+      "completed": 50,
+      "correct": 8,
+      "accuracy": 0.16,
+      "seconds": 191.1,
+      "output_tokens": 23554,
+      "question_seconds": 1347
+    },
+    "port-debate": {
+      "completed": 50,
+      "correct": 9,
+      "accuracy": 0.18,
+      "seconds": 736.9,
+      "output_tokens": 102512,
+      "question_seconds": 5519
+    }
+  },
+  "port_minus_official_single": {
+    "difference": -0.74,
+    "paired_bootstrap_95": [
+      -0.86,
+      -0.62
+    ],
+    "port_only_correct": 0,
+    "official_only_correct": 37
+  },
+  "official_debate_gain": 0.0,
+  "port_debate_gain": 0.01999999999999999,
+  "original_gain_only_gate": true,
+  "recorded_total_output_tokens": 207709,
+  "arm_wall_seconds_sum": 1230.7802366959804,
+  "log_diagnostics": {
+    "async_cleanup_runtimeerror_occurrences": 72,
+    "tool_parser_error_events": 1,
+    "non_200_logged_completion_http_statuses": {}
+  }
+}

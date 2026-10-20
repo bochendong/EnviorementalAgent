@@ -1,0 +1,193 @@
+{
+  "comparison": "20261017-fidelity",
+  "source_commit": "b8813d2562d557874cf6d6a624a0656b99d263d8",
+  "checked_at_toronto": "2026-10-20T01:54:01.194726-04:00",
+  "bootstrap": {
+    "paired": true,
+    "replicates": 20000,
+    "seed": 1,
+    "method": "percentile; sorted samples at indices 500 and 19500"
+  },
+  "jobs": [
+    {
+      "label": "A",
+      "job_id": "24309180",
+      "run": "20261017-fid-think",
+      "settings": {
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "max_tokens": 8192,
+        "extra_body": {
+          "top_k": 20,
+          "chat_template_kwargs": {
+            "enable_thinking": true
+          }
+        },
+        "thinking": true,
+        "tool_choice": "required",
+        "model": "qwen3-8b",
+        "context_tokens": "39321",
+        "chars_per_token": "1.5"
+      },
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed": "02:15:39",
+      "elapsed_seconds": 8139,
+      "start_toronto": "2026-10-19T22:26:41-04:00",
+      "end_toronto": "2026-10-20T00:42:20-04:00",
+      "node": "g11",
+      "allocated_tres": "billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1",
+      "gpu_hours": 2.2608333333333333,
+      "all_four_arms_complete_and_consistent": true,
+      "arms": {
+        "official-single": {
+          "completed": 50,
+          "correct": 44,
+          "accuracy": 0.88,
+          "seconds": 643.7,
+          "output_tokens": 103670,
+          "question_seconds": 4718
+        },
+        "official-debate": {
+          "completed": 50,
+          "correct": 45,
+          "accuracy": 0.9,
+          "seconds": 3374.5,
+          "output_tokens": 488902,
+          "question_seconds": 24756
+        },
+        "port-single": {
+          "completed": 50,
+          "correct": 40,
+          "accuracy": 0.8,
+          "seconds": 1438.4,
+          "output_tokens": 140406,
+          "question_seconds": 11090
+        },
+        "port-debate": {
+          "completed": 50,
+          "correct": 44,
+          "accuracy": 0.88,
+          "seconds": 2187.4,
+          "output_tokens": 309201,
+          "question_seconds": 16914
+        }
+      },
+      "port_minus_official_single": {
+        "difference": -0.08,
+        "paired_bootstrap_95": [
+          -0.18,
+          0.0
+        ],
+        "port_only_correct": 1,
+        "official_only_correct": 5
+      },
+      "official_debate_gain": 0.020000000000000018,
+      "port_debate_gain": 0.07999999999999996,
+      "original_gain_only_gate": false,
+      "recorded_total_output_tokens": 1042179,
+      "arm_wall_seconds_sum": 7644.015226735966,
+      "log_diagnostics": {
+        "async_cleanup_runtimeerror_occurrences": 61,
+        "tool_parser_error_events": 3,
+        "non_200_logged_completion_http_statuses": {}
+      }
+    },
+    {
+      "label": "B",
+      "job_id": "24309183",
+      "run": "20261017-fid-nothink",
+      "settings": {
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "max_tokens": 2048,
+        "extra_body": {
+          "top_k": 20,
+          "chat_template_kwargs": {
+            "enable_thinking": false
+          }
+        },
+        "thinking": false,
+        "tool_choice": "auto",
+        "model": "qwen3-8b",
+        "context_tokens": "39321",
+        "chars_per_token": "1.5"
+      },
+      "state": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed": "00:26:12",
+      "elapsed_seconds": 1572,
+      "start_toronto": "2026-10-20T00:50:02-04:00",
+      "end_toronto": "2026-10-20T01:16:14-04:00",
+      "node": "g17",
+      "allocated_tres": "billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1",
+      "gpu_hours": 0.43666666666666665,
+      "all_four_arms_complete_and_consistent": true,
+      "arms": {
+        "official-single": {
+          "completed": 50,
+          "correct": 45,
+          "accuracy": 0.9,
+          "seconds": 54.8,
+          "output_tokens": 14444,
+          "question_seconds": 264
+        },
+        "official-debate": {
+          "completed": 50,
+          "correct": 45,
+          "accuracy": 0.9,
+          "seconds": 248.0,
+          "output_tokens": 67199,
+          "question_seconds": 1846
+        },
+        "port-single": {
+          "completed": 50,
+          "correct": 8,
+          "accuracy": 0.16,
+          "seconds": 191.1,
+          "output_tokens": 23554,
+          "question_seconds": 1347
+        },
+        "port-debate": {
+          "completed": 50,
+          "correct": 9,
+          "accuracy": 0.18,
+          "seconds": 736.9,
+          "output_tokens": 102512,
+          "question_seconds": 5519
+        }
+      },
+      "port_minus_official_single": {
+        "difference": -0.74,
+        "paired_bootstrap_95": [
+          -0.86,
+          -0.62
+        ],
+        "port_only_correct": 0,
+        "official_only_correct": 37
+      },
+      "official_debate_gain": 0.0,
+      "port_debate_gain": 0.01999999999999999,
+      "original_gain_only_gate": true,
+      "recorded_total_output_tokens": 207709,
+      "arm_wall_seconds_sum": 1230.7802366959804,
+      "log_diagnostics": {
+        "async_cleanup_runtimeerror_occurrences": 72,
+        "tool_parser_error_events": 1,
+        "non_200_logged_completion_http_statuses": {}
+      }
+    }
+  ],
+  "raw_file_sha256": {
+    "results/net/runs/20261017-fid-think/fidelity/progress.json": "cad3d0cf47b2155966599ba5bc925984d986d7de349f0884e63aa97eb9837d63",
+    "results/net/runs/20261017-fid-think/fidelity/debate.json": "334692c6d3827fadf4ee4628c8974c967f7eb27a8bb11965348fcc22e1929fa6",
+    "results/net/runs/20261017-fid-think/logs/net-fidelity-24309180.out": "6de18c3692062c5f99cc094fc258c2e8cde5b5f111c8a9cc1685e195e9bcacea",
+    "results/net/runs/20261017-fid-think/logs/vllm-24309180.log": "178befe44c0581033e7c03ce6e01c835f5deb6d7b729fac797ec811582b7e4f4",
+    "results/net/runs/20261017-fid-nothink/fidelity/progress.json": "70b60b93d99ae0e20aff569c2b4ad334943f413865edc39a5d9eeb77ea6bb46a",
+    "results/net/runs/20261017-fid-nothink/fidelity/debate.json": "6d7854132f11e950f44806e85f5321800b64de2a7215d8277b978a3ca0033462",
+    "results/net/runs/20261017-fid-nothink/logs/net-fidelity-24309183.out": "99a55de515556615bbff040c5490fe91648ddaaac100de86cc61a61ae39116d5",
+    "results/net/runs/20261017-fid-nothink/logs/vllm-24309183.log": "81f55aaead79eea5c504ee907b8d48af73285edc670a24eea91fe4a7247385d4"
+  },
+  "same_50_questions_in_both_settings": true,
+  "total_h100_gpu_hours": 2.6975
+}
