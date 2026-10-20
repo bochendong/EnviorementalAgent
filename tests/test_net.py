@@ -396,3 +396,18 @@ def test_memory_carries_over_episodes(tmp_path):
     e.reset(1)
     assert e.step("a0", "get", {"key": "memory/how"})["value"] == "rsolve first"
     assert not e.step("a0", "get", {"key": "scratch"})["ok"]
+
+
+def test_submit_offers_a_store_key_only_where_there_is_a_store():
+    from worldseeds.net.presets import build
+
+    solo = build("compat/math-decomposable", "solo")
+    solo.reset(0)
+    sub = next(o for o in solo.ops("a0") if o.name == "submit")
+    assert set(sub.params) == {"task", "artifact"}
+    ans = solo.provider.raw["P1.L1"]["answer"]
+    assert solo.step("a0", "submit", {"task": "P1.L1", "artifact": ans, "key": "Q"})["ok"]  # the value wins
+    assert "artifact" in solo.step("a0", "submit", {"task": "P1.L2", "store_key": "answer"})["error"]
+    team = build("math/medium", "team")
+    team.reset(0)
+    assert "store_key" in next(o for o in team.ops("a0") if o.name == "submit").params

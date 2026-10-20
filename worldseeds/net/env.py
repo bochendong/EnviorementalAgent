@@ -281,7 +281,12 @@ class NetworkEnv:
     def ops(self, agent: str) -> list[OpSpec]:
         """The operations ``agent`` may call (network ops first, then the provider's, filtered by role)."""
         role = self.agents[agent].role
-        net = [o for o in self._net_specs() if o.name in self.usable(agent)]
+        on = self.usable(agent)
+        net = [o for o in self._net_specs() if o.name in on]
+        if "get" not in on:  # no store to submit from: do not offer the field at all
+            for o in net:
+                if o.name == "submit":
+                    o.params = {k: v for k, v in o.params.items() if k != "store_key"}
         mine = [o for o in self.pops.values() if role.ops is None or o.name in role.ops]
         return net + mine
 
@@ -655,7 +660,7 @@ class NetworkEnv:
     def _op_wait(self, a: Agent) -> dict:
         return {"ok": True, "_cost": 0, "_time": 1, "round": self.round}
 
-    def _op_submit(self, a: Agent, task: str, artifact: Any = None, key: str = "") -> dict:
+    def _op_submit(self, a: Agent, task: str, artifact: Any = None, store_key: str = "", key: str = "") -> dict:
         t, s = self.tasks.get(task), self.state.get(task)
         if t is None:
             return {"ok": False, "error": f"no task {task!r}"}
@@ -668,10 +673,12 @@ class NetworkEnv:
         if not self.cfg.org and self.cfg.market != "open" and a.name not in s["claims"]:
             return {"ok": False, "error": "claim the task first" if self.cfg.market == "claim" else
                     f"assigned to {s['claims']}"}
-        if key:
-            vs = self.store.get(key)
+        key = store_key or key  # "key" is the field's old name
+        if key and (artifact is None or artifact == ""):  # a value given outright wins over a store key
+            vs = self.store.get(key) if "get" in self.usable(a.name) else None
             if not vs:
-                return {"ok": False, "error": f"no key {key!r}"}
+                return {"ok": False, "error": f"there is no store key {key!r}; pass your result itself as "
+                                              "'artifact' (store_key is only for values saved in the store)"}
             artifact = vs[-1]["value"]
         s["tries"] += 1
         prov = None
@@ -766,7 +773,8 @@ class NetworkEnv:
                    ("to", "amount")),
             OpSpec("submit", "Hand in your result for a task; it is checked at once.",
                    {"task": _p(S, "task id"), "artifact": {**art, "description": "the result"},
-                    "key": _p(S, "or: submit the latest value under this store key")}, ("task",),
+                    "store_key": _p(S, "only to hand in a value saved in the shared store: its key there. Leave "
+                                       "it out otherwise and pass your result as artifact")}, ("task",),
                    cost=self.cfg.verify_cost),
             OpSpec("wait", "Let time pass (one action's worth of time; it costs no budget).", cost=0),
             OpSpec("assign", "Hand a task to one of the people you manage (managers only). They see and may "

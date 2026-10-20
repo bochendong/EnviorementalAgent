@@ -51,6 +51,18 @@ Runs of a job go eight at a time (`--parallel`, `NETAGENTS_PARALLEL`), each in i
     - a math answer is read as the official scorer reads one (a `\boxed{}` value; "$1,200." as 1200; the one number in "18 dollars"), and each submission records how it was read;
     - every port question keeps its whole conversation (`traces/<arm>/q<i>.jsonl.gz`) and an outcome: solved, never submitted, submitted something unreadable, or submitted a wrong value (`diagnosis-<arm>.json`).
   - `ARMS="official-single port-single"` checks the harness alone at a fraction of the cost.
+  - Single-variable runs on protocol 2 (`results/net/runs/20261020-h*`, 50 questions, official vs port single):
+
+    | run | official | port | port failures |
+    |---|---|---|---|
+    | h1: thinking on, tools required | 88% | 88% | 6 wrong values; 58 submissions first blocked by a store key |
+    | h2: thinking off, required | 92% | 18% | 26 questions stopped at a store key that did not exist, 11 never submitted |
+    | h3: thinking off, auto | 90% | 2% | 46 never submitted; in 45, Actions and Observations were written as text and no tool was called |
+
+  - Protocol 3 fixes the two harness faults these runs exposed:
+    - `submit` had an optional `key` field (submit from the store). The model filled it with "Q", "answer" or "a0"; a single agent has no store at all. Now the field is called `store_key`, it is offered only where there is a store, and a value given as `artifact` wins over it.
+    - One sentence was added to ReAct's instruction: Actions are real tool calls, never text.
+  - h1's gap of 0 has a 95% interval of −10 to +10 points at 50 questions: within the threshold, but not shown equivalent. That needs more questions.
 - **calibration**: four designs (`sas`, `reflexion`, `centralized`, `debate`) on the easy and medium presets and the compatibility cases, dev seeds. The presets were tuned on scripted teams. A case where these designs complete on average under 20% or over 80% of the tasks is marked too hard or too easy in `calibration/summary.md`: designs cannot be told apart there, and the preset should be adjusted for this model before the test runs.
 
 Stage 1 is 22 jobs (baselines on CPU, the GSM8K fidelity check, 10 designs on `compat`, 8 on `compat` through the network, a summary job per experiment); stage 2 is 66. `FRAMEWORKS=1` adds AutoGen, Magentic-One and CAMEL to `compat-framework` and `test`; `SEEDS=2` makes a quick pass; `MODEL_ID` picks the model. Running the script again with the same `RUN` resumes: evaluation jobs skip runs already recorded, and finished baselines and fidelity checks are skipped.
@@ -101,7 +113,7 @@ The last column lists every known difference from the source; it is meant to go 
 
 | design | source | fidelity | runs on | differs from the source |
 |---|---|---|---|---|
-| `react` ReAct | Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; code: ysymyth/ReAct, noahshinn/reflexion (MIT) | port | solo | native tool calls instead of Thought/Action text lines; no few-shot examples (theirs are task-specific); the step limit is the call budget (the paper: 7 steps on HotpotQA, 5 on FEVER, 50 on ALFWorld), and the agent is prompted to continue when it stops with tasks left; no back-off to CoT-SC |
+| `react` ReAct | Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; code: ysymyth/ReAct, noahshinn/reflexion (MIT) | port | solo | native tool calls instead of Thought/Action text lines, with one sentence added to the instruction: Actions are real tool calls, never text; no few-shot examples (theirs are task-specific); the step limit is the call budget (the paper: 7 steps on HotpotQA, 5 on FEVER, 50 on ALFWorld), and the agent is prompted to continue when it stops with tasks left; no back-off to CoT-SC |
 | `reflexion` Reflexion | Shinn et al., Reflexion: Language Agents with Verbal Reinforcement Learning, NeurIPS 2023; code: noahshinn/reflexion (MIT) | port | solo | trials share one episode and its budget instead of re-running the same task; a trial fails on a wrong submission or when its step quota runs out; the environment's verdict is the evaluator, not the paper's ALFWorld heuristic (the same action and observation more than 3 times, or more than 30 actions); no few-shot reflection examples |
 | `debate` Multiagent debate | Du et al., Improving Factuality and Reasoning in Language Models through Multiagent Debate, ICML 2024; code: composable-models/llm_multiagent_debate (no licence: prompt paraphrased) | port | team | agents use tools between rounds; a solution is what an agent states at the end of a round; solutions pass through the design's channel (the framework, or the environment's network); agents submit themselves instead of a majority vote over final answers; team size is the preset's, not 3 |
 | `moa` Mixture-of-Agents | Wang et al., Mixture-of-Agents Enhances Large Language Model Capabilities, ICLR 2025 (arXiv 2406.04692); code: togethercomputer/MoA (Apache-2.0) | port | team | one model in every position: the paper's single-proposer setting, not its default of six different open-source models; two layers (MoA-Lite) by default, not three; proposers use tools; their responses pass through the design's channel; the aggregate prompt is a user message, not a system message; the aggregator is one of the team, with its role's tools |

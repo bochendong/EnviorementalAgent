@@ -121,6 +121,8 @@ def diagnose(raw, reports) -> dict:
             else "solved"
     elif not subs:
         outcome = "never submitted"
+    elif all("store key" in s["error"] or s["error"].startswith("no key") for s in subs if not s["ok"]):
+        outcome = "blocked by the submit form (a store key that does not exist)"
     elif any("parse" in s["error"] for s in subs):
         outcome = "submitted something unreadable"
     else:
@@ -178,7 +180,9 @@ def bootstrap(a: list[bool], b: list[bool], reps: int = 2000) -> tuple[float, fl
 
 
 ARMS = ("official-single", "official-debate", "port-single", "port-debate")
-PROTOCOL_VERSION = 2  # 2: tasks in the briefing, answers read as the official scorer reads them, transcripts
+PROTOCOL_VERSION = 3  # 2: tasks in the briefing, answers read as the official scorer reads them, transcripts;
+# 3: submit offers store_key only where there is a store, and a given artifact wins over it; ReAct's instruction
+# says Actions are real tool calls
 
 
 def _question(task: tuple) -> dict:

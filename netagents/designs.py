@@ -320,7 +320,11 @@ class Design:
 # "one of your tools".
 REACT_INSTRUCTION = ("Solve the task with interleaving Thought, Action, Observation steps. Thought can reason about "
                      "the current situation, and Action is one call of one of your tools; its result is the "
-                     "Observation. You may take as many steps as necessary.")
+                     "Observation. You may take as many steps as necessary."
+                     # added: without it, with thinking off and tool choice "auto", Qwen3-8B wrote the Actions and
+                     # Observations as text and called no tool (20261020-h3-nothink-auto: 45 of 50 questions)
+                     " Every Action is a real call of a tool, never text: do not write an Action or an Observation "
+                     "yourself, and nothing is submitted until you call submit.")
 
 
 class ReAct(Design):
@@ -793,7 +797,8 @@ class LbMAS(Design):
 DESIGNS: dict[str, Design] = {d.name: d for d in [
     ReAct("react", "ReAct", "Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; "
           "code: ysymyth/ReAct, noahshinn/reflexion (MIT)", "port", "solo",
-          ("native tool calls instead of Thought/Action text lines", "no few-shot examples (theirs are task-specific)",
+          ("native tool calls instead of Thought/Action text lines, with one sentence added to the instruction: "
+           "Actions are real tool calls, never text", "no few-shot examples (theirs are task-specific)",
            "the step limit is the call budget (the paper: 7 steps on HotpotQA, 5 on FEVER, 50 on ALFWorld), and "
            "the agent is prompted to continue when it stops with tasks left", "no back-off to CoT-SC")),
     Reflexion("reflexion", "Reflexion", "Shinn et al., Reflexion: Language Agents with Verbal Reinforcement "
