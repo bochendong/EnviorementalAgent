@@ -1,0 +1,6 @@
+sbatch: NOTE: Your memory request of 32768.0M was likely submitted as 32.0G. Please note that Slurm interprets memory requests denominated in G as multiples of 1024M, not 1000M.
+run:   20261020-h3-nothink-auto
+dir:   /scratch/bdong/worldseeds/results/net/runs/20261020-h3-nothink-auto
+jobs:  1 submitted
+watch: squeue -u $USER;  index: python -m netagents.report /scratch/bdong/worldseeds/results/net/runs/20261020-h3-nothink-auto
+later: ACCOUNT=def-hup-ab_cpu RUN=20261020-h3-nothink-auto STAGE=2 bash slurm/run_all.sh

@@ -1,0 +1,2 @@
+experiment	design	job	command
+fidelity	debate	24645791	--job-name=net-fidelity --time=0-08:00 --output=/scratch/bdong/worldseeds/results/net/runs/20261020-h1-think-required/logs/%x-%j.out --export=ALL,OUT=/scratch/bdong/worldseeds/results/net/runs/20261020-h1-think-required/fidelity,N=50,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261020-h1-think-required/logs slurm/net_fidelity.sh
