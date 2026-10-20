@@ -430,3 +430,16 @@ def test_load_suite_grows_the_world_not_the_work():
         assert set().union(*owned) == set(raw.provider.u.modules) and sum(map(len, owned)) == m
     assert seen == sorted(seen) and seen[0] < seen[-1]
     assert not cases["load/codeworld-m8-split"].solo_too and cases["load/codeworld-m8-shared"].solo_too
+
+
+def test_scaling_reference_obeys_brent_and_solves():
+    from netagents import scaling
+
+    for n in (1, 2, 4, 8):
+        r = scaling.run(4, 3, n, seed=0)
+        assert r["solved"]
+        # Brent: T_N <= W/N + D; and no team beats the span by more than a round per layer
+        assert r["rounds"] <= r["brent_rounds"]
+        assert r["rounds"] >= r["span"] - r["depth"] - 1
+        if n == 1:
+            assert r["rounds"] == r["work"]

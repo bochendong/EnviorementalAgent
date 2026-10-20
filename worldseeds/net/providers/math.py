@@ -178,6 +178,39 @@ def gen_sum(rng: random.Random, tag: str) -> list[dict]:
     ]
 
 
+def gen_dag(rng: random.Random, width: int, depth: int, fanin: int = 2, steps: int = 30) -> list[dict]:
+    """A problem of known work and span: ``depth`` layers of ``width`` tasks (work W = width * depth, span
+    D = depth). A task of layer 0 is a recurrence of its own; a task of a later layer starts its recurrence
+    from the answers of ``fanin`` tasks of the layer before (sum mod 10), so it opens only when they are
+    done. The final task adds up the last layer mod 1009. Every task needs a tool (a recurrence ``steps``
+    terms long), so a layer of ``width`` tasks can be done in parallel and no faster than one task's time."""
+    n = sp.Symbol("n")
+    out: list[dict] = []
+    for lv in range(depth):
+        for i in range(width):
+            tid = f"L{lv}.{i}"
+            p, q = rng.randint(2, 5), rng.randint(1, 9)
+            parents = sorted(rng.sample(range(width), min(fanin, width))) if lv else []
+            if parents:
+                ids = [f"L{lv - 1}.{j}" for j in parents]
+                r = sum(int(next(t for t in out if t["id"] == x)["answer"]) for x in ids) % 10
+                start = "(the sum of the answers of " + ", ".join(ids) + ") mod 10"
+            else:
+                ids, r = [], rng.randint(0, 9)
+                start = str(r)
+            M = rng.choice([997, 1009, 10007])
+            closed = (r + sp.Rational(q, p - 1)) * p ** n - sp.Rational(q, p - 1)
+            out.append({"id": tid, "text": f"For a(0) = {start}, a(n+1) = {p}*a(n) + {q}: what is a({steps}) mod {M}?",
+                        "answer": str(int(closed.subs(n, steps)) % M), "deps": ids, "layer": lv,
+                        "hint": "Tabulate the recurrence with 'sequence', or solve it with 'rsolve' and evaluate "
+                                "Mod(a(n), M) at the step asked."})
+    last = [t["id"] for t in out if t["layer"] == depth - 1]
+    out.append({"id": "FINAL", "text": "Add up the answers of " + ", ".join(last) + ", mod 1009.",
+                "answer": str(sum(int(t["answer"]) for t in out if t["id"] in last) % 1009), "deps": last,
+                "reward": 4, "final": True})
+    return out
+
+
 GENERATORS = {"recurrence": gen_recurrence, "sum": gen_sum}
 
 
@@ -186,8 +219,9 @@ class MathProvider(TaskProvider):
 
     def __init__(self, problems: tuple[str, ...] | list[str] = ("recurrence", "sum"), problem_file: str = "",
                  explorers: int = 2, algebraists: int = 1, timeout: float = 3.0, free_roles: bool = False,
-                 linked: bool = False):
+                 linked: bool = False, dag: tuple | list | None = None):
         self.kinds, self.problem_file, self.linked = list(problems), problem_file, linked
+        self.dag = tuple(dag) if dag else None  # (width, depth[, fanin]): gen_dag instead of the problems
         if linked and set(self.kinds) != {"recurrence"}:
             raise ValueError("linked problems are recurrences only")
         self.explorers, self.algebraists, self.timeout, self.free = explorers, algebraists, timeout, free_roles
@@ -199,6 +233,10 @@ class MathProvider(TaskProvider):
             title, raw = data.get("title", self.problem_file), data["tasks"]
             if not any(t.get("final") for t in raw):
                 raw[-1]["final"] = True
+        elif self.dag:
+            rng = random.Random(f"math-dag/{seed}")
+            raw = gen_dag(rng, *self.dag)
+            title = f"a problem of {len(raw) - 1} tasks in {self.dag[1]} layers"
         else:
             rng = random.Random(f"math/{seed}")
             raw = []

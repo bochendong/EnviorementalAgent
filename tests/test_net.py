@@ -411,3 +411,23 @@ def test_submit_offers_a_store_key_only_where_there_is_a_store():
     team = build("math/medium", "team")
     team.reset(0)
     assert "store_key" in next(o for o in team.ops("a0") if o.name == "submit").params
+
+
+def test_gen_dag_answers_follow_the_recurrences():
+    import random
+    import re
+
+    from worldseeds.net.providers.math import gen_dag
+
+    tasks = gen_dag(random.Random(3), width=5, depth=3)
+    ans = {t["id"]: int(t["answer"]) for t in tasks}
+    for t in tasks:
+        if t["id"] == "FINAL":
+            assert ans["FINAL"] == sum(ans[d] for d in t["deps"]) % 1009
+            continue
+        p, q, k, m = map(int, re.search(r"= (\d+)\*a\(n\) \+ (\d+): what is a\((\d+)\) mod (\d+)", t["text"]).groups())
+        a = sum(ans[d] for d in t["deps"]) % 10 if t["deps"] else int(re.search(r"a\(0\) = (\d+)", t["text"]).group(1))
+        for _ in range(k):
+            a = p * a + q
+        assert a % m == ans[t["id"]]
+        assert all(d.startswith(f"L{t['layer'] - 1}.") for d in t["deps"])
