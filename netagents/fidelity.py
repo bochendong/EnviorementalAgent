@@ -131,7 +131,8 @@ def diagnose(raw, reports) -> dict:
             "llm_errors": sum(r.get("errors", 0) for r in reports)}
 
 
-def port(qs, design_name: str, calls_per_question: int, cache: str, arm: str = "", traces: str = "") -> list[bool]:
+def port(qs, design_name: str, calls_per_question: int, cache: str, arm: str = "", traces: str = "",
+         question_offset: int = 0) -> list[bool]:
     from worldseeds.net import NetConfig, NetworkEnv, providers
 
     from . import designs as D
@@ -160,7 +161,7 @@ def port(qs, design_name: str, calls_per_question: int, cache: str, arm: str = "
         tokens += sum(r["output_tokens"] for r in reports)
         DIAGNOSIS.append(diagnose(raw, reports))
         if traces:
-            save_trace(raw, os.path.join(traces, f"q{k}.jsonl.gz"),
+            save_trace(raw, os.path.join(traces, f"q{question_offset + k}.jsonl.gz"),
                        {r["agent"]: r.get("transcript") for r in reports})
         out.append(raw.solved)
     COST[arm] = {"seconds": round(time.time() - t0), "output_tokens": tokens}
@@ -182,7 +183,7 @@ PROTOCOL_VERSION = 2  # 2: tasks in the briefing, answers read as the official s
 
 def _question(task: tuple) -> dict:
     """One question in a process's main thread, preserving the protocol within that question."""
-    arm, q, calls, cache, traces = task
+    arm, q, calls, cache, traces, question_index = task
     if arm.startswith("official-"):
         from openai import OpenAI
         from .llm import LLMConfig
@@ -197,7 +198,7 @@ def _question(task: tuple) -> dict:
     else:
         design = "react" if arm == "port-single" else "debate"
         DIAGNOSIS.clear()
-        result = port([q], design, calls, tempfile.mkdtemp(dir=cache), arm, traces)
+        result = port([q], design, calls, tempfile.mkdtemp(dir=cache), arm, traces, question_index)
         return {"correct": result[0], **COST[arm], "diagnosis": DIAGNOSIS[0]}
     return {"correct": result[0], **COST[arm]}
 
@@ -222,7 +223,7 @@ def run_arms(qs: list[dict], calls: int, cache: str, parallel: int, checkpoint: 
             records = progress["records"].setdefault(arm, {})
             prior_seconds, started = progress["seconds"].setdefault(arm, 0), time.monotonic()
             where = os.path.join(traces, arm) if traces and arm.startswith("port-") else ""
-            pending = {pool.submit(_question, (arm, q, calls, cache, where)): str(i)
+            pending = {pool.submit(_question, (arm, q, calls, cache, where, i)): str(i)
                        for i, q in enumerate(qs) if str(i) not in records}
             for future in concurrent.futures.as_completed(pending):
                 records[pending[future]] = future.result()

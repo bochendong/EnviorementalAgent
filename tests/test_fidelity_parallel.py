@@ -1,4 +1,5 @@
 import concurrent.futures
+import gzip
 import json
 import multiprocessing
 import os
@@ -89,11 +90,26 @@ class FidelityParallelTests(unittest.TestCase):
                     with concurrent.futures.ProcessPoolExecutor(max_workers=2,
                             mp_context=multiprocessing.get_context("spawn")) as pool:
                         futures = [pool.submit(fidelity._question,
-                            (arm, {"question": "6*7?", "answer": "42"}, 6, directory, ""))
+                            (arm, {"question": "6*7?", "answer": "42"}, 6, directory, "", 0))
                             for arm in ("official-single", "official-debate")]
                         results = [f.result(timeout=30) for f in futures]
                 self.assertTrue(all(r["correct"] for r in results))
                 self.assertEqual([r["output_tokens"] for r in results], [3, 18])
+                # Exercise the actual port in two spawned workers. Each worker receives a singleton
+                # question list, but its trace must retain the original index rather than overwrite q0.
+                with patch.dict(os.environ, {"WS_BASE_URL": f"http://127.0.0.1:{server.server_port}/v1",
+                                             "WS_THINKING": "0", "WS_TOOL_CHOICE": "auto"}):
+                    fidelity.run_arms(
+                        [{"question": f"Unique problem {i}: 6*7?", "answer": "42"} for i in range(2)],
+                        6, directory, 2, str(Path(directory) / "progress.json"), {},
+                        ("port-single",), str(Path(directory) / "traces"))
+                trace_dir = Path(directory) / "traces/port-single"
+                self.assertEqual({p.name for p in trace_dir.iterdir()}, {"q0.jsonl.gz", "q1.jsonl.gz"})
+                for i in range(2):
+                    with gzip.open(trace_dir / f"q{i}.jsonl.gz", "rt") as stream:
+                        events = [json.loads(line) for line in stream]
+                    transcript = next(e for e in events if e.get("kind") == "transcripts")
+                    self.assertIn(f"Unique problem {i}", json.dumps(transcript))
         finally:
             server.shutdown()
             server.server_close()
