@@ -7,6 +7,11 @@ module's functions: knowledge is spread and must travel through the network. ``d
 function's law with that chance per round. ``theme="town"`` is the same world as the town of
 web/codeworld.html (workshops and machines, ``districts`` of 8 workshops with ``fns_per_module`` machines
 each), so a run can be watched there (worldseeds/net/replay.py).
+
+The load knob (the "load" suite): ``n_modules`` sets how much there is to master, while ``project_len``
+fixes every project's chain length and ``n_projects`` the number of projects, so the work asked for stays
+the same and only the world it must be found in grows. ``owner_groups=k`` splits the modules into k
+owners (round robin): with 12 modules and 4 owners each owns 3; nobody else can study them.
 """
 
 from __future__ import annotations
@@ -23,11 +28,12 @@ class CodeWorldProvider(TaskProvider):
 
     def __init__(self, n_modules: int = 4, fns_per_module: int = 4, levels: int = 5, n_projects: int = 6,
                  devs: int = 3, owners: bool = False, study_cost: int = 8, drift: float = 0.0, universe: int = 0,
-                 theme: str = "software", districts: int = 1):
+                 theme: str = "software", districts: int = 1, project_len: int = 0, owner_groups: int = 0):
         self.opt = dict(n_modules=n_modules, fns_per_module=fns_per_module, levels=levels)
         self.theme, self.districts = theme, districts
         self.n_projects, self.devs, self.owners = n_projects, devs, owners
         self.study_cost, self.drift, self.universe = study_cost, drift, universe
+        self.project_len, self.owner_groups = project_len, owner_groups
 
     def reset(self, seed: int = 0) -> dict:
         if self.theme == "town":
@@ -37,7 +43,8 @@ class CodeWorldProvider(TaskProvider):
         self.rng = random.Random(f"cw-net/{seed}")
         self.projects = {}
         for _ in range(self.n_projects):
-            p = self.u.project(self.rng)
+            p = self.u.project(self.rng, min_len=self.project_len, max_len=self.project_len) if self.project_len \
+                else self.u.project(self.rng)
             self.projects[p.id] = p
         return {"world": "codeworld", "theme": self.theme, "modules": self.u.modules, "functions": len(self.u.functions),
                 "values": "integers mod 101", "projects": len(self.projects)}
@@ -45,6 +52,11 @@ class CodeWorldProvider(TaskProvider):
     def roles(self) -> list[Role]:
         if not self.owners:
             return [Role("dev", "A developer: runs and studies any function, builds programs.", count=self.devs)]
+        if self.owner_groups:
+            k = self.owner_groups
+            groups = [self.u.modules[i::k] for i in range(k)]
+            return [Role(f"owner_{i}", f"Owner of modules {', '.join(g)}: the only one who can study their functions.",
+                         scope={"modules": list(g)}) for i, g in enumerate(groups) if g]
         return [Role(f"owner_{m}", f"Owner of module {m}: the only one who can study its functions.",
                      scope={"modules": [m]}) for m in self.u.modules]
 
@@ -116,4 +128,9 @@ class CodeWorldProvider(TaskProvider):
         return out
 
     def summary(self) -> dict:
-        return {"modules": len(self.u.modules)}
+        """The load: how big the world is, and how many programs fit each project's types (what must be
+        searched) and how many distinct functions the projects need (what must be known)."""
+        cands = [len(self.u.candidates(p.in_type, p.out_type)) for p in self.projects.values()]
+        return {"modules": len(self.u.modules), "functions": len(self.u.functions),
+                "candidates_per_project": round(sum(cands) / max(1, len(cands)), 1),
+                "distinct_functions_needed": len({f for p in self.projects.values() for f in p.target})}

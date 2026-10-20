@@ -116,6 +116,19 @@ PRESETS: dict[str, dict] = {
                 + (", 3 agents with every tool" if tools == "shared" else
                    ", tools split: 2 explorers (numbers), 1 algebraist (symbols)")}
        for structure in ("decomposable", "sequential") for tools in ("shared", "split")},
+    # ---------------------------------------------------------------- load: when is splitting the work worth it?
+    # The same work (6 projects, each a chain of 3 functions) in a world of 4, 8 or 12 modules (16, 32, 48
+    # functions; a project's types fit about 5, 40 and 100 chains). Four developers who can study anything,
+    # or four owners who alone can study their share of the modules. A single agent can study everything.
+    **{f"load/codeworld-m{m}-{tools}": {
+        "provider": "codeworld",
+        "opt": {"n_modules": m, "n_projects": 6, "project_len": 3,
+                **({"devs": 4} if tools == "shared" else {"owners": True, "owner_groups": 4})},
+        "net": {"budget": 250},  # enough for the scripted team to solve every size
+        "note": f"{m} modules ({4 * m} functions), 6 projects of 3 functions, "
+                + ("4 developers who can study anything" if tools == "shared" else
+                   "4 owners, each the only one who can study its modules")}
+       for m in (4, 8, 12) for tools in ("shared", "split")},
     "compat/codeworld": {
         "provider": "codeworld", "opt": {"n_modules": 4, "n_projects": 6, "devs": 3},
         "net": {"budget": 150},

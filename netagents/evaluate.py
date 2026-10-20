@@ -133,7 +133,8 @@ def run_one(design, case, seed, model, settings, calls, route: str | None = None
             "context_trims": sum(r.get("trims", 0) for r in reports),
             "peak_context": max([r.get("peak_context", 0) for r in reports] or [0]),
             "trace": os.path.basename(trace) if trace else "",
-            **{k: m[k] for k in ("report_score", "faulty_results") if k in m}, "members": reports}
+            **{k: m[k] for k in ("report_score", "faulty_results", "functions", "candidates_per_project",
+                                 "distinct_functions_needed") if k in m}, "members": reports}
 
 
 def summarize(rows: list[dict]) -> str:
@@ -350,6 +351,8 @@ def main():
             continue
         seeds = list(enumerate(case.seeds[:a.seeds] if a.seeds else case.seeds))
         for d in designs:
+            if not case.solo_too and d.variant == "solo":
+                continue
             todo = [(k, s) for k, s in seeds if (d.name, case.id, s, (route or case.route) if d.network_route
                                                  else "framework") not in done]
             if not todo:

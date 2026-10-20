@@ -412,3 +412,21 @@ def test_a_step_whose_thinking_runs_out_is_redone_without_thinking():
         assert m.overflows >= 1 and not m.errors and m.calls >= 1
     finally:
         srv.shutdown()
+
+
+def test_load_suite_grows_the_world_not_the_work():
+    from netagents.testset import SUITES
+
+    cases = {c.id: c for c in SUITES["load"]}
+    seen = []
+    for m in (4, 8, 12):
+        raw = cases[f"load/codeworld-m{m}-split"].build("team")
+        raw.reset(100)
+        s = raw.provider.summary()
+        assert len(raw.tasks) == 6 and all(len(p.target) == 3 for p in raw.provider.projects.values())
+        assert len(raw.agents) == 4 and s["functions"] == 4 * m
+        seen.append(s["candidates_per_project"])
+        owned = [set(raw.agents[a].role.scope["modules"]) for a in raw.agents]
+        assert set().union(*owned) == set(raw.provider.u.modules) and sum(map(len, owned)) == m
+    assert seen == sorted(seen) and seen[0] < seen[-1]
+    assert not cases["load/codeworld-m8-split"].solo_too and cases["load/codeworld-m8-shared"].solo_too

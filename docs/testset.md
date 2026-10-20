@@ -98,6 +98,31 @@ The paper's question: once tools and information are split across roles, does a 
 - The scripted reference team solves all four cells on all 10 seeds.
 - `STAGE=focus bash slurm/run_all.sh` runs it as one job, so the server starts once; `SEEDS=5` gives a first pass, and the same command later resumes it to 10.
 
+## When does splitting the work pay? (`--suite load`)
+
+HiddenBench (Li, Naito & Shirado, ICML 2026) shows that teams of LLM agents holding distributed facts do far worse than one agent with every fact. There, the single agent always knows everything, so it is an upper bound by construction. The load suite asks the question that this leaves open: as the world to master grows, does a team that splits it overtake one agent that must master all of it, at the same compute?
+
+- **The work stays fixed**: 6 projects, each a chain of 3 functions.
+- **Only the world grows**:
+
+  | modules | functions | chains per project's types, about |
+  |---|---|---|
+  | 4 | 16 | 5 |
+  | 8 | 32 | 40 |
+  | 12 | 48 | 100 |
+
+- **Teams of four**:
+  - `shared`: everyone can study anything;
+  - `split`: four owners, each the only one who can study its share of the modules.
+- **The single agent** can study everything. It runs once per size, because its runs are the same for both tool settings.
+- Each run records its load (`functions`, `candidates_per_project`, `distinct_functions_needed`).
+- The scripted team and the scripted single agent solve every size.
+- `python -m netagents.load_report <dir>` gives each team's paired difference from the single agent at each size, with its 95% interval. A crossing is where that interval moves from below zero to above it.
+
+```bash
+ACCOUNT=... STAGE=load SEEDS=3 LOAD_DESIGNS="sas centralized" bash slurm/run_all.sh   # the pilot: 3 sizes x 3 seeds
+```
+
 ## Two tracks
 
 The published designs assume settings this environment deliberately goes beyond: identical agents, answer-checked tasks, no deadline, and messages handed over by the framework for free. A design that fails here could fail because the design is weak, or because it was never meant for these settings. So every design runs on two tracks:

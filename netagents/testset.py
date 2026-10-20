@@ -21,6 +21,8 @@ design. Held-out cases use tasks no scripted solver was written for (tasks/heldo
     robustness  changing worlds and an unreliable network (cf. MAST, NeurIPS 2025 D&B)
     compat      the compatibility track: decomposable vs sequential math, CodeWorld, test seeds
     focus       the paper's main 2x2: decomposable vs sequential math, tools shared vs split across roles
+    load        when does splitting the work pay? CodeWorld of 4, 8, 12 modules, the same work, tools shared
+                or split among four owners
     org         a hierarchy of managers above the workers, 0-2 levels (cf. El Agente Q, Zou et al. 2025)
     faults      tool results that are silently wrong, or fail loudly; a check operation
     report      a final report with every answer, scored field by field; and a provenance rule
@@ -48,6 +50,8 @@ MEDIUM = ["codeworld/medium", "math/medium", "website/medium", "molecule/medium"
 HARD = ["codeworld/hard", "math/hard", "website/hard", "molecule/hard"]
 EASY = ["codeworld/easy", "math/easy", "website/easy", "molecule/easy"]
 CALIBRATION_BAND = (0.2, 0.8)  # mean share of tasks done in which designs can still be told apart
+LOAD_SIZES = (4, 8, 12)
+LOAD_DESIGNS = ("sas", "centralized", "decentralized")
 FOCUS = [f"focus/math-{s}-{t}" for s in ("decomposable", "sequential") for t in ("shared", "split")]
 FOCUS_DESIGNS = ("sas", "centralized", "decentralized")
 COMPAT = ["compat/math-decomposable", "compat/math-sequential", "compat/codeworld"]
@@ -64,6 +68,7 @@ class Case:
     net: dict = field(default_factory=dict)
     track: str = "network"
     memory: bool = False  # the seeds run in order, sharing a memory file (NetConfig.memory_file)
+    solo_too: bool = True  # False: single-agent designs skip this case (their solo variant is another case's)
 
     @property
     def route(self) -> str:
@@ -100,6 +105,10 @@ SUITES: dict[str, list[Case]] = {
     # the paper's main experiment (FOCUS_DESIGNS on it): messages through the framework, as in the papers,
     # so that what changes between the columns is only who holds which tools
     "focus": [Case(p, p, TEST_SEEDS, track="compat") for p in FOCUS],
+    # when is splitting the work worth it? the same work in a world of 4, 8 or 12 modules, with tools shared
+    # or split among four; a single agent's runs are the same for both, so they run once (on "shared")
+    "load": [Case(f"load/codeworld-m{m}-{t}", f"load/codeworld-m{m}-{t}", TEST_SEEDS, track="compat",
+                  solo_too=(t == "shared")) for m in LOAD_SIZES for t in ("shared", "split")],
     "org": [Case(f"{p}/org{d}", p, TEST_SEEDS[:5], net={"org": d}) for p in ("math/medium", "codeworld/medium")
             for d in (0, 1, 2)],
     "faults": [Case(f"{p}/{name}", p, TEST_SEEDS[:5], net=net) for p in ("math/medium", "codeworld/medium")
