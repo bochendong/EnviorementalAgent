@@ -18,7 +18,7 @@ class FidelityParallelTests(unittest.TestCase):
         calls = []
 
         def question(task):
-            arm, q, _, _ = task
+            arm, q, *_ = task
             calls.append((arm, q["answer"]))
             time.sleep(0.02 if q["answer"] == "0" else 0.001)
             return {"correct": q["answer"] != "1", "seconds": 1, "output_tokens": 7}
@@ -44,7 +44,8 @@ class FidelityParallelTests(unittest.TestCase):
         qs = [{"question": "q", "answer": "1"}]
         with tempfile.TemporaryDirectory() as directory:
             p = Path(directory) / "progress.json"
-            progress = {"identity": {"version": 1, "questions": qs, "calls": 6, "settings": {}},
+            progress = {"identity": {"version": fidelity.PROTOCOL_VERSION, "questions": qs, "calls": 6,
+                                     "settings": {}},
                         "records": {arm: {} for arm in fidelity.ARMS},
                         "seconds": {arm: 0 for arm in fidelity.ARMS}}
             progress["records"]["official-single"]["0"] = {"correct": True, "seconds": 2, "output_tokens": 5}
@@ -88,7 +89,7 @@ class FidelityParallelTests(unittest.TestCase):
                     with concurrent.futures.ProcessPoolExecutor(max_workers=2,
                             mp_context=multiprocessing.get_context("spawn")) as pool:
                         futures = [pool.submit(fidelity._question,
-                            (arm, {"question": "6*7?", "answer": "42"}, 6, directory))
+                            (arm, {"question": "6*7?", "answer": "42"}, 6, directory, ""))
                             for arm in ("official-single", "official-debate")]
                         results = [f.result(timeout=30) for f in futures]
                 self.assertTrue(all(r["correct"] for r in results))

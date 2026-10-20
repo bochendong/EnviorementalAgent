@@ -110,6 +110,27 @@ def same(answer, truth, vars_=()) -> bool:
     return sp.simplify(a - t) == 0
 
 
+def answer_text(artifact, truth: str, vars_=()) -> tuple[str, str]:
+    """The value inside a submitted answer, as the official GSM8K scorer reads one: a \\boxed{} value, else the
+    text without $, thousands separators and a trailing period, else (when the answer is a number and the text holds
+    exactly one number among words) that number. Returns (text, how it was read: "" when taken as it is)."""
+    s = str(artifact if artifact is not None else "").strip()
+    boxed = re.findall(r"\\boxed\{([^{}]*)\}", s)
+    if boxed:
+        return boxed[-1].strip(), "boxed"
+    plain = re.sub(r"(?<=\d),(?=\d{3}(?!\d))", "", s.replace("$", "")).strip().rstrip(".")  # 1,200 -> 1200
+    if plain != s:
+        s, how = plain, "stripped"
+    else:
+        how = ""
+    if not vars_ and re.fullmatch(r"-?\d+(\.\d+)?", str(truth).strip()) and not re.fullmatch(r"-?[\d.]+", s):
+        nums = re.findall(r"-?\d+(?:\.\d+)?", s)
+        words = re.sub(r"-?\d+(?:\.\d+)?", " ", s)
+        if len(nums) == 1 and re.fullmatch(r"[A-Za-z\s.:]*", words):  # "18 dollars", "answer: 18"; not "x + 1"
+            return nums[0], "the one number in the text"
+    return s, how
+
+
 # ------------------------------------------------------------------ generators
 def gen_recurrence(rng: random.Random, tag: str, after: dict | None = None) -> list[dict]:
     """``after``: a task whose answer sets a(0) (its answer mod 10), so this problem waits for that one."""
@@ -284,12 +305,14 @@ class MathProvider(TaskProvider):
         t = self.raw[task.id]
         if t.get("kind") == "lean":
             return lean_check(str(artifact or ""), t.get("theorem", ""), self.timeout * 20)
+        text, how = answer_text(artifact, t["answer"], t.get("vars", ()))
         try:
             with time_limit(self.timeout):
-                ok = same(str(artifact), t["answer"], t.get("vars", ()))
+                ok = same(text, t["answer"], t.get("vars", ()))
         except MathError as e:
-            return Score(False, 0.0, {"error": str(e)})
-        return Score(ok, 1.0 if ok else 0.0, {} if ok else {"error": "not equal to the answer"})
+            return Score(False, 0.0, {"error": str(e) + " (hand in a bare value, e.g. 42 or 3*n**2 + 1)"})
+        info = {"read_as": text, "normalised": how} if how else {}
+        return Score(ok, 1.0 if ok else 0.0, info if ok else {**info, "error": "not equal to the answer"})
 
     def summary(self) -> dict:
         return {"problem_tasks": len(self.raw)}

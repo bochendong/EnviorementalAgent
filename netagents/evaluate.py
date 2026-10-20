@@ -72,14 +72,35 @@ def failure_signals(raw) -> dict:
             "used_faulty": sum(1 for e in ops if e.get("provenance", {}).get("faulty"))}
 
 
-def save_trace(raw, path: str):
-    """Every event of a run (gzipped JSON lines): what each agent did and what it saw."""
+def save_trace(raw, path: str, transcripts: dict | None = None):
+    """Every event of a run (gzipped JSON lines): what each agent did and what it saw; with
+    NETAGENTS_TRANSCRIPTS=1 a last line holds every member's whole conversation."""
     import gzip
 
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with gzip.open(path, "wt") as f:
         for e in raw.events:
             f.write(json.dumps(e, default=str) + "\n")
+        if transcripts:
+            f.write(json.dumps({"kind": "transcripts", "members": transcripts}, default=str) + "\n")
+
+
+def play(design, env, model, settings, calls) -> list[dict]:
+    """A design's run in a fresh event loop. ``model`` is a model, or a function that makes one: then the
+    model is made for this run and its client closed inside this loop (a client closed after its loop had
+    ended raised "Event loop is closed" at clean-up). Transcripts stay in the reports."""
+    own = callable(model) and not hasattr(model, "get_response")
+
+    async def go():
+        m = model() if own else model
+        try:
+            return await design.play(env, m, settings, calls)
+        finally:
+            client = getattr(m, "_client", None) if own else None
+            if client is not None:
+                await client.close()
+
+    return asyncio.run(go())
 
 
 def run_one(design, case, seed, model, settings, calls, route: str | None = None, trace: str = "",
@@ -89,10 +110,11 @@ def run_one(design, case, seed, model, settings, calls, route: str | None = None
         design = replace(design, route=route)
     raw = case.build(design.variant, **({"memory_file": memory} if memory else {}))
     raw.reset(seed)
-    reports = asyncio.run(design.play(LocalEnv(raw), model, settings, calls))
+    reports = play(design, LocalEnv(raw), model, settings, calls)
     chan = design.chan.report() if hasattr(design, "chan") else {"route": "framework"}
+    transcripts = {r["agent"]: r.pop("transcript") for r in reports if "transcript" in r}
     if trace:
-        save_trace(raw, trace)
+        save_trace(raw, trace, transcripts)
     m = raw.metrics()
     msgs = Counter(e["op"] for e in raw.events if e.get("kind") == "op" and e["obs"].get("ok"))
     ops = Counter(e["op"] for e in raw.events if e.get("kind") == "op")
@@ -257,7 +279,7 @@ def _chain(case, design: str, todo, memory: str, o: dict, bad, lock) -> list[dic
             if k < o["traces"] else ""
         try:  # a fresh client per run: an async client must not outlive the event loop it was made in
             r = {"model": cfg.model, "suite": o["suite"],
-                 **run_one(d, case, seed, make_model(cfg), settings, calls, o["route"], trace, memory)}
+                 **run_one(d, case, seed, lambda: make_model(cfg), settings, calls, o["route"], trace, memory)}
         except Exception as e:  # noqa: BLE001 (one broken run must not stop the others; a rerun retries it)
             with lock:
                 bad.value += 1

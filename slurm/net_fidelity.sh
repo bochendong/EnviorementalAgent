@@ -21,5 +21,5 @@ N="${N:-100}"
 OUT="${OUT:-$WS_STORE/results/net/fidelity/$SERVED_NAME/${SLURM_JOB_ID:-local}}"
 
 source slurm/start_vllm.sh
-python -m netagents.fidelity --check debate --n "$N" --out "$OUT"
+python -m netagents.fidelity --check debate --n "$N" --out "$OUT" ${ARMS:+--arms $ARMS}
 echo "results in $OUT"

@@ -98,7 +98,7 @@ def runs_check(cfg) -> list[dict]:
     for name in ("sas", "centralized"):
         t = time.time()
         try:
-            r = run_one(DESIGNS[name], case, 0, make_model(cfg), settings, 5 * case.team_size())
+            r = run_one(DESIGNS[name], case, 0, lambda: make_model(cfg), settings, 5 * case.team_size())
             errs = [m["error"] for m in r["members"] if m.get("error")]
             out.append({"design": name, "ok": r["llm_errors"] == 0, "llm_errors": r["llm_errors"],
                         "overflows": sum(m.get("overflows", 0) for m in r["members"]),

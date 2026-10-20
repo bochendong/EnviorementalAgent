@@ -293,7 +293,10 @@ class NetworkEnv:
                 **({"deadline": self.cfg.deadline} if self.cfg.deadline else {}),
                 "budget": a.budget, "credits": a.credits, "reputation": round(a.rep, 2),
                 "unread": len(a.mail), "offline": a.offline, "neighbours": list(a.neighbours),
-                "open_tasks": [t for t, s in self.state.items() if s["status"] == "open"]}
+                "open_tasks": [t for t, s in self.state.items() if s["status"] == "open"],
+                "workable": [{"id": t.id, "text": t.text[:400]} for t in self.tasks.values()
+                             if self.state[t.id]["status"] == "open" and self._ready(t)
+                             and self._visible(a, self.state[t.id])][:12]}
 
     def public(self) -> dict:
         """What every participant may know: the problem, who is who, and the rules of the network."""

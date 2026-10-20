@@ -28,7 +28,6 @@ a single agent and 85.0 +- 3.5 for debate: a gain of 8 points.
 from __future__ import annotations
 
 import argparse
-import asyncio
 import concurrent.futures
 import importlib.util
 import json
@@ -39,6 +38,7 @@ import re
 import tempfile
 import time
 import urllib.request
+from collections import Counter
 
 GSM8K = "https://raw.githubusercontent.com/openai/grade-school-math/master/grade_school_math/data/test.jsonl"
 DEBATE = "https://raw.githubusercontent.com/composable-models/llm_multiagent_debate/main/gsm/gen_gsm.py"
@@ -107,12 +107,40 @@ def official(qs, agents: int, rounds: int, module, client, cfg, arm: str = "") -
 
 
 # ---------------------------------------------------------------- our ports, on the environment
-def port(qs, design_name: str, calls_per_question: int, cache: str, arm: str = "") -> list[bool]:
+DIAGNOSIS: list = []  # per question of a port arm: what happened (filled by port)
+
+
+def diagnose(raw, reports) -> dict:
+    """What a port did with one question, from the environment's log: its submissions and how they were
+    read, the operations it used, and the last thing each member said."""
+    subs = [{"artifact": e["args"].get("artifact"), "ok": bool(e["obs"].get("ok")), "error": e["obs"].get("error", ""),
+             "read_as": e["obs"].get("read_as"), "normalised": e["obs"].get("normalised", "")}
+            for e in raw.events if e.get("kind") == "op" and e["op"] == "submit"]
+    if raw.solved:
+        outcome = "solved after reading the answer out of text" if any(s["ok"] and s["normalised"] for s in subs) \
+            else "solved"
+    elif not subs:
+        outcome = "never submitted"
+    elif any("parse" in s["error"] for s in subs):
+        outcome = "submitted something unreadable"
+    else:
+        outcome = "submitted a wrong value"
+    ops = Counter(e["op"] for e in raw.events if e.get("kind") == "op")
+    last = {r["agent"]: (r.get("transcript", {}).get("outputs") or [""])[-1][-300:] for r in reports}
+    return {"outcome": outcome, "submissions": subs, "ops": dict(ops), "last_words": last,
+            "llm_errors": sum(r.get("errors", 0) for r in reports)}
+
+
+def port(qs, design_name: str, calls_per_question: int, cache: str, arm: str = "", traces: str = "") -> list[bool]:
     from worldseeds.net import NetConfig, NetworkEnv, providers
 
+    from . import designs as D
     from .client import LocalEnv
     from .designs import DESIGNS
+    from .evaluate import play, save_trace
     from .llm import LLMConfig, make_model, make_settings
+
+    D.TRANSCRIPTS = True  # keep the whole conversation of every member: the check is a diagnosis too
 
     cfg = LLMConfig()  # the same sampling and thinking as the official arms
     settings = make_settings(cfg)
@@ -127,9 +155,13 @@ def port(qs, design_name: str, calls_per_question: int, cache: str, arm: str = "
         raw = NetworkEnv(providers.make("math", problem_file=path, free_roles=True, explorers=team, algebraists=0),
                          NetConfig(budget=calls_per_question * 2))
         raw.reset(0)
-        # a fresh client per question: an async client must not outlive the event loop it was made in
-        reports = asyncio.run(d.play(LocalEnv(raw), make_model(cfg), settings, calls_per_question * team))
+        # a fresh client per question, closed in the loop it was made in
+        reports = play(d, LocalEnv(raw), lambda: make_model(cfg), settings, calls_per_question * team)
         tokens += sum(r["output_tokens"] for r in reports)
+        DIAGNOSIS.append(diagnose(raw, reports))
+        if traces:
+            save_trace(raw, os.path.join(traces, f"q{k}.jsonl.gz"),
+                       {r["agent"]: r.get("transcript") for r in reports})
         out.append(raw.solved)
     COST[arm] = {"seconds": round(time.time() - t0), "output_tokens": tokens}
     return out
@@ -145,11 +177,12 @@ def bootstrap(a: list[bool], b: list[bool], reps: int = 2000) -> tuple[float, fl
 
 
 ARMS = ("official-single", "official-debate", "port-single", "port-debate")
+PROTOCOL_VERSION = 2  # 2: tasks in the briefing, answers read as the official scorer reads them, transcripts
 
 
 def _question(task: tuple) -> dict:
     """One question in a process's main thread, preserving the protocol within that question."""
-    arm, q, calls, cache = task
+    arm, q, calls, cache, traces = task
     if arm.startswith("official-"):
         from openai import OpenAI
         from .llm import LLMConfig
@@ -163,30 +196,33 @@ def _question(task: tuple) -> dict:
             result = official([q], agents, rounds, module, client, cfg, arm)
     else:
         design = "react" if arm == "port-single" else "debate"
-        result = port([q], design, calls, tempfile.mkdtemp(dir=cache), arm)
+        DIAGNOSIS.clear()
+        result = port([q], design, calls, tempfile.mkdtemp(dir=cache), arm, traces)
+        return {"correct": result[0], **COST[arm], "diagnosis": DIAGNOSIS[0]}
     return {"correct": result[0], **COST[arm]}
 
 
-def run_arms(qs: list[dict], calls: int, cache: str, parallel: int, checkpoint: str, settings: dict):
+def run_arms(qs: list[dict], calls: int, cache: str, parallel: int, checkpoint: str, settings: dict,
+             arm_names=ARMS, traces: str = ""):
     # A new server port is allowed on resume; questions, sampling and protocols must match exactly.
-    identity = {"version": 1, "questions": qs, "calls": calls, "settings": settings}
+    identity = {"version": PROTOCOL_VERSION, "questions": qs, "calls": calls, "settings": settings}
     if os.path.exists(checkpoint):
         with open(checkpoint) as f:
             progress = json.load(f)
         if progress["identity"] != identity:
             raise ValueError("Fidelity checkpoint settings/questions differ; use a separate output directory")
     else:
-        progress = {"identity": identity, "records": {arm: {} for arm in ARMS},
-                    "seconds": {arm: 0 for arm in ARMS}}
+        progress = {"identity": identity, "records": {}, "seconds": {}}
     arms, costs = {}, {}
     # Processes keep symbolic-operation timeouts in their main thread. The same pool serves all arms;
     # arms remain separate so each arm's elapsed wall time can be compared between model settings.
     with concurrent.futures.ProcessPoolExecutor(max_workers=parallel,
             mp_context=multiprocessing.get_context("spawn")) as pool:
-        for arm in ARMS:
-            records = progress["records"][arm]
-            prior_seconds, started = progress["seconds"][arm], time.monotonic()
-            pending = {pool.submit(_question, (arm, q, calls, cache)): str(i)
+        for arm in arm_names:
+            records = progress["records"].setdefault(arm, {})
+            prior_seconds, started = progress["seconds"].setdefault(arm, 0), time.monotonic()
+            where = os.path.join(traces, arm) if traces and arm.startswith("port-") else ""
+            pending = {pool.submit(_question, (arm, q, calls, cache, where)): str(i)
                        for i, q in enumerate(qs) if str(i) not in records}
             for future in concurrent.futures.as_completed(pending):
                 records[pending[future]] = future.result()
@@ -199,6 +235,13 @@ def run_arms(qs: list[dict], calls: int, cache: str, parallel: int, checkpoint: 
             costs[arm] = {"seconds": round(progress["seconds"][arm], 1),
                           "output_tokens": sum(r["output_tokens"] for r in records.values()),
                           "question_seconds": sum(r["seconds"] for r in records.values())}
+            if any("diagnosis" in r for r in records.values()):
+                costs[arm]["outcomes"] = dict(Counter(records[str(i)]["diagnosis"]["outcome"]
+                                                      for i in range(len(qs))))
+                diag = [records[str(i)]["diagnosis"] for i in range(len(qs))]
+                with open(os.path.join(os.path.dirname(checkpoint), f"diagnosis-{arm}.json"), "w") as f:
+                    json.dump([{"question": i, "reference": qs[i]["answer"], **x} for i, x in enumerate(diag)], f,
+                              indent=1, default=str)
     return arms, costs
 
 
@@ -209,6 +252,8 @@ def main():
     ap.add_argument("--calls", type=int, default=6, help="tool calls per agent per question for the ports")
     ap.add_argument("--parallel", type=int, default=int(os.environ.get("NETAGENTS_PARALLEL", "8")),
                     help="independent questions at a time; each runs in its own process")
+    ap.add_argument("--arms", nargs="*", default=list(ARMS), choices=ARMS,
+                    help="only these arms (e.g. official-single port-single to check the harness alone)")
     ap.add_argument("--out", default="results/net/fidelity")
     a = ap.parse_args()
     from .llm import LLMConfig
@@ -223,16 +268,24 @@ def main():
     settings = {**cfg.sampling(), "thinking": cfg.thinking, "tool_choice": cfg.tool_choice,
                 "model": cfg.model, "context_tokens": os.environ.get("WS_CONTEXT_TOKENS", "40000"),
                 "chars_per_token": os.environ.get("WS_CHARS_PER_TOKEN", "1.5")}
-    arms, costs = run_arms(qs, a.calls, cache, a.parallel, os.path.join(a.out, "progress.json"), settings)
+    arms, costs = run_arms(qs, a.calls, cache, a.parallel, os.path.join(a.out, "progress.json"), settings,
+                           a.arms, os.path.join(a.out, "traces"))
     acc = {k: sum(v) / len(v) for k, v in arms.items()}
-    gain_off, gain_port = (acc["official-debate"] - acc["official-single"], acc["port-debate"] - acc["port-single"])
-    lo, hi = bootstrap(arms["official-debate"], arms["official-single"])
-    report = {"check": a.check, "model": cfg.model, "n": len(qs),
+    report = {"check": a.check, "model": cfg.model, "n": len(qs), "protocol_version": PROTOCOL_VERSION,
               "settings": {**cfg.sampling(), "thinking": cfg.thinking, "tool_choice": cfg.tool_choice},
-              "parallel": a.parallel, "cost": costs, "accuracy": acc, "official_gain": gain_off,
-              "official_gain_95": [lo, hi], "port_gain": gain_port, "port_gain_within_official_interval":
-              lo <= gain_port <= hi, "paper": {**PAPER, "gain": PAPER["debate"] - PAPER["single"]},
-              "per_question": arms}
+              "parallel": a.parallel, "cost": costs, "accuracy": acc,
+              "paper": {**PAPER, "gain": PAPER["debate"] - PAPER["single"]}}
+    if {"official-single", "port-single"} <= set(arms):  # the harness alone: the same model, one agent
+        lo, hi = bootstrap(arms["port-single"], arms["official-single"])
+        report["harness_gap"] = acc["port-single"] - acc["official-single"]
+        report["harness_gap_95"] = [lo, hi]
+    if set(ARMS) <= set(arms):
+        gain_off, gain_port = (acc["official-debate"] - acc["official-single"],
+                               acc["port-debate"] - acc["port-single"])
+        lo, hi = bootstrap(arms["official-debate"], arms["official-single"])
+        report.update(official_gain=gain_off, official_gain_95=[lo, hi], port_gain=gain_port,
+                      port_gain_within_official_interval=lo <= gain_port <= hi)
+    report["per_question"] = arms
     with open(os.path.join(a.out, f"{a.check}.json"), "w") as f:
         json.dump(report, f, indent=1)
     print(json.dumps({k: v for k, v in report.items() if k != "per_question"}, indent=1))

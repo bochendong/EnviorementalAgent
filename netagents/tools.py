@@ -60,4 +60,6 @@ def briefing(env, agent: str) -> str:
             + (f", or at round {o['deadline']} (a round passes when the team together has taken one action per "
                "member)" if o.get("deadline") else "") + ". Tasks are listed by the 'tasks' operation; a task "
             "opens when the tasks it depends on are done. Submitting a correct result for a task scores it.\n"
-            f"Operations:\n{ops}")
+            + (("\nTasks you can work on now (the 'tasks' operation lists them all, with their state):\n"
+                + "\n".join(f"- {t['id']}: {t['text']}" for t in o["workable"])) if o.get("workable") else "")
+            + f"\nOperations:\n{ops}")

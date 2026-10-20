@@ -27,6 +27,7 @@ from dataclasses import dataclass, field, replace
 from .tools import briefing, function_tools
 
 
+TRANSCRIPTS = os.environ.get("NETAGENTS_TRANSCRIPTS", "0") == "1"  # keep every conversation in the reports
 CONTEXT_TOKENS = int(os.environ.get("WS_CONTEXT_TOKENS", "40000"))  # history kept before a turn (estimated)
 # Characters per token for that estimate. Tool results are JSON full of numbers, which Qwen's tokenizer cuts
 # into about 1.5 characters a token (the smoke test of 20261016-smoke-nvml: 84k characters of numbers were
@@ -72,6 +73,7 @@ class Member:
     llm_requests: int = 0
     errors: list = field(default_factory=list)
     overflows: int = 0  # steps whose thinking ran out of output tokens (redone without thinking)
+    outputs: list = field(default_factory=list)  # what the agent said at the end of each turn (transcripts)
     trims: int = 0
     peak_context: int = 0  # the largest history sent at the start of a turn (estimated tokens)
 
@@ -143,6 +145,7 @@ class Member:
             return f"error: {self.errors[-1]}"
         self._account(res)
         self.history = res.to_input_list()
+        self.outputs.append(str(res.final_output or ""))
         return str(res.final_output or "")
 
     async def say(self, message: str) -> str:
@@ -169,6 +172,7 @@ class Member:
             self.errors.append(f"{type(e).__name__}: {e}"[:300])
             return ""
         self._account(res)
+        self.outputs.append(str(res.final_output or ""))
         return str(res.final_output or "")
 
     def _account(self, res):
@@ -185,7 +189,9 @@ class Member:
         return {"agent": self.name, "tool_calls": self.calls, "llm_requests": self.llm_requests,
                 "input_tokens": self.tokens[0], "output_tokens": self.tokens[1], "errors": len(self.errors),
                 "error": self.errors[-1] if self.errors else "", "trims": self.trims,
-                "peak_context": self.peak_context, "overflows": self.overflows}
+                "peak_context": self.peak_context, "overflows": self.overflows,
+                **({"transcript": {"instructions": self.agent.instructions, "history": self.history,
+                                   "outputs": self.outputs}} if TRANSCRIPTS else {})}
 
 
 
@@ -497,6 +503,7 @@ class Talker:
     name: str = "talker"
     errors: list = field(default_factory=list)
     overflows: int = 0
+    log: list = field(default_factory=list)
 
     async def ask(self, system: str, user: str) -> str:
         from agents import Agent, RunConfig, Runner
@@ -521,13 +528,15 @@ class Talker:
         self.tokens[0] += u.input_tokens
         self.tokens[1] += u.output_tokens
         self.llm_requests += u.requests
+        if TRANSCRIPTS:
+            self.log.append({"system": system, "user": user, "answer": str(res.final_output or "")})
         return str(res.final_output or "")
 
     def report(self) -> dict:
         return {"agent": self.name, "tool_calls": 0, "llm_requests": self.llm_requests,
                 "input_tokens": self.tokens[0], "output_tokens": self.tokens[1], "errors": len(self.errors),
                 "error": self.errors[-1] if self.errors else "", "trims": 0, "peak_context": 0,
-                "overflows": self.overflows}
+                "overflows": self.overflows, **({"transcript": {"asks": self.log}} if TRANSCRIPTS else {})}
 
 
 def _json(text: str):

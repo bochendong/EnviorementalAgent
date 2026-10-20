@@ -42,6 +42,15 @@ Runs of a job go eight at a time (`--parallel`, `NETAGENTS_PARALLEL`), each in i
 
 `STAGE=check` runs next, and its two answers decide whether the real runs are worth their GPU hours:
 - **fidelity**: is our harness as good as plain chat? The port's single agent should be close to the official single agent on GSM8K.
+  - First A/B (`results/net/runs/20261017-fid-think`, `-fid-nothink`, 50 questions each):
+    - thinking on with tool calls required: official single 88%, port single 80%;
+    - thinking off with tool choice automatic: official 90%, port 16%.
+  - The two runs changed thinking, tool choice and the output limit together, so the gap cannot be put on any one of them.
+  - Protocol 2 (`fidelity.PROTOCOL_VERSION`) changes the harness in three ways:
+    - the briefing lists the tasks one can work on, so a first call is no longer spent finding the question;
+    - a math answer is read as the official scorer reads one (a `\boxed{}` value; "$1,200." as 1200; the one number in "18 dollars"), and each submission records how it was read;
+    - every port question keeps its whole conversation (`traces/<arm>/q<i>.jsonl.gz`) and an outcome: solved, never submitted, submitted something unreadable, or submitted a wrong value (`diagnosis-<arm>.json`).
+  - `ARMS="official-single port-single"` checks the harness alone at a fraction of the cost.
 - **calibration**: four designs (`sas`, `reflexion`, `centralized`, `debate`) on the easy and medium presets and the compatibility cases, dev seeds. The presets were tuned on scripted teams. A case where these designs complete on average under 20% or over 80% of the tasks is marked too hard or too easy in `calibration/summary.md`: designs cannot be told apart there, and the preset should be adjusted for this model before the test runs.
 
 Stage 1 is 22 jobs (baselines on CPU, the GSM8K fidelity check, 10 designs on `compat`, 8 on `compat` through the network, a summary job per experiment); stage 2 is 66. `FRAMEWORKS=1` adds AutoGen, Magentic-One and CAMEL to `compat-framework` and `test`; `SEEDS=2` makes a quick pass; `MODEL_ID` picks the model. Running the script again with the same `RUN` resumes: evaluation jobs skip runs already recorded, and finished baselines and fidelity checks are skipped.
