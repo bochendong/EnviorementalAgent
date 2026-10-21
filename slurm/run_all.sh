@@ -15,6 +15,10 @@
 #          decomposable vs sequential tasks and shared vs split tools; one packed job (PACK=1)
 #   load   when is splitting the work worth it? CodeWorld of 4, 8, 12 modules, tools shared or split among
 #          four (LOAD_DESIGNS, default sas centralized decentralized); one packed job
+#   netscale-pilot  agent-network scaling, the pilot: teams of 1, 2, 4, 8 identical agents ("peers") on one
+#          DAG problem of known work and span, 3 seeds, time in lockstep rounds against the scripted
+#          reference (netagents/scaling.py); one packed job. netscale: 1-32 agents, fixed and scaled problems,
+#          5 seeds. NETSCALE_DESIGNS (default peers). Tables: <exp>/summary.md, "Network scale"
 #   smoke  first of all, ~10 GPU minutes: the server starts and answers every kind of request; one sas
 #          and one centralized run go through without model errors (netagents/smoke.py)
 #   check  before the real runs: fidelity (is our harness as good as plain chat?) and calibration (are the
@@ -82,7 +86,7 @@ else
   { echo "commit $(git rev-parse HEAD)  ($(git rev-parse --abbrev-ref HEAD))"; echo "submitted $(date -Is)";
   git status --short | sed 's/^/changed /'; } >> "$RUN_DIR/commit.txt"
 { echo "# $(date -Is), stage $STAGE"; for v in ACCOUNT CPU_ACCOUNT GPU_ACCOUNT GPU_RESOURCE GPU_CPUS GPU_MEM GPU_DEPENDENCY MODEL_ID SERVED_NAME TP MAX_MODEL_LEN EXTRA_VLLM_ARGS SERVER_MODE \
-  DESIGNS FRAMEWORKS SEEDS N TIME; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
+  DESIGNS FRAMEWORKS SEEDS N TIME NETSCALE_DESIGNS WS_THINKING; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
 fi
 
 N0=$(wc -l < "$PLAN")
@@ -144,7 +148,8 @@ PY
   [ "$exp" = calibration ] && designs="${CALIBRATION_DESIGNS:-sas reflexion centralized debate}"
   [ "$exp" = focus ] && designs="${FOCUS_DESIGNS:-sas centralized decentralized}"
   [ "$exp" = load ] && designs="${LOAD_DESIGNS:-sas centralized decentralized}"
-  pack="${PACK:-$({ [ "$exp" = focus ] || [ "$exp" = load ]; } && echo 1 || echo 0)}"
+  case "$exp" in netscale*) designs="${NETSCALE_DESIGNS:-peers}" ;; esac
+  pack="${PACK:-$(case "$exp" in focus|load|netscale*) echo 1 ;; *) echo 0 ;; esac)}"
   if [ "${FRAMEWORKS:-0}" = 1 ] && { [ "$exp" = compat-framework ] || [ "$exp" = test ]; }; then
     designs="$designs $FRAMEWORK_DESIGNS"
   fi

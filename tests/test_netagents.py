@@ -443,3 +443,60 @@ def test_scaling_reference_obeys_brent_and_solves():
         assert r["rounds"] >= r["span"] - r["depth"] - 1
         if n == 1:
             assert r["rounds"] == r["work"]
+
+
+def test_lockstep_rounds_wait_for_every_working_agent():
+    import asyncio
+    import random
+
+    from netagents.lockstep import Lockstep
+
+    raw = build("dag/fixed", opt={"explorers": 3, "dag": [2, 2, 2]})
+    raw.reset(0)
+    env = Lockstep(raw)
+    rng = random.Random(0)
+
+    async def agent(name, ops):
+        env.join(name)
+        try:
+            for op, args in ops:
+                await asyncio.sleep(rng.random() / 100)  # agents think at different speeds
+                await env.astep(name, op, args)
+        finally:
+            env.leave(name)
+
+    async def go():
+        await asyncio.gather(agent("a0", [("wait", {})] * 5), agent("a1", [("wait", {})] * 2),
+                             agent("a2", [("rsolve", {"recurrence": "a(n+1) = 2*a(n) + 1", "init": {"0": 1}})]))
+
+    asyncio.run(go())
+    rep = env.report()
+    assert rep["steps"] == 5 and rep["acted"] == {"a0": 5, "a1": 2, "a2": 1}
+    assert raw.round == (5 + 2 + 3) // 3  # the environment's own clock counts actions, not time
+
+
+def test_peers_run_in_lockstep_against_the_reference(mock_llm):
+    from netagents.designs import DESIGNS
+    from netagents.evaluate import run_one
+    from netagents.testset import Case, netscale_case
+
+    model, settings = mock_llm
+    case = Case("dag/fixed/tiny", "dag/fixed", [0], opt={"explorers": 3, "dag": [2, 2, 2]}, lockstep=True)
+    r = run_one(DESIGNS["peers"], case, 0, model, settings, 12)
+    assert r["agents"] == 3 and 0 < r["llm_tool_calls"] <= 12
+    assert r["steps"] >= max(r["acted"].values()) and r["reference_steps"] > 0 and r["work"] == 2 * 3 + 2 * 5 + 3
+    assert netscale_case("scaled", 8, [0]).opt["dag"] == [8, 4, 2]
+
+
+def test_netscale_table_and_usl_fit():
+    from netagents.netscale import fit_usl, table, usl
+
+    sigma, kappa, err = fit_usl([(n, usl(n, 0.1, 0.02)) for n in (1, 2, 4, 8, 16)])
+    assert abs(sigma - 0.1) < 0.02 and abs(kappa - 0.02) < 0.005 and err < 0.05
+    rows = [{"design": "peers", "case": f"dag/fixed/n{n}", "seed": s, "agents": n, "solved": True,
+             "solved_step": 130 // n + 30, "steps": 130 // n + 30, "reference_steps": 129 if n == 1 else 300 // n + 35,
+             "width": 16, "depth": 4, "ops": {"sequence": 64, "get": 30 if n > 1 else 0, "wait": n},
+             "acted": {f"a{i}": 10 for i in range(n)}, "duplicate_work": 0, "wrong_submissions": 0}
+            for n in (1, 2, 4, 8) for s in (0, 1)]
+    text = table(rows)
+    assert "peers, fixed family" in text and "Universal Scalability Law" in text

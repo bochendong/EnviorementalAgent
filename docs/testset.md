@@ -123,6 +123,38 @@ HiddenBench (Li, Naito & Shirado, ICML 2026) shows that teams of LLM agents hold
 ACCOUNT=... STAGE=load SEEDS=3 LOAD_DESIGNS="sas centralized" bash slurm/run_all.sh   # the pilot: 3 sizes x 3 seeds
 ```
 
+## Agent-network scaling (`--suite netscale-pilot`, `--suite netscale`)
+
+How does a team of LLM agents scale on a problem that is larger than one agent, compared with a team that wastes nothing? Mieczkowski et al. (2026, arXiv 2603.12229) measured Amdahl's law with 1-5 agents on 20 coding subtasks; this suite takes it to 32 agents, to problems that grow with the team, and to a reference curve for every size.
+
+- **The problems** (math provider, `dag=(width, depth, fanin)`, presets `dag/fixed` and `dag/scaled`): `depth` layers of `width` recurrences; each task starts from the answers of two tasks of the layer before, and a final task adds up the last layer. Work and span are known exactly.
+  - `fixed`: 16 x 4 for every team size (Amdahl).
+  - `scaled`: 4 layers as wide as the team (Gustafson).
+- **The team**: `peers`, N identical agents working at once with every tool, an equal share of the calls, and nothing prescribed about how to share the work. With N = 1 it is a single agent with the same briefing (a lone agent has no store and keeps answers itself).
+- **Time**: lockstep rounds (`netagents/lockstep.py`). Every round, every agent still working takes one action; an agent's action waits for the others' choices, so a team is as slow as it really is in parallel. An operation that costs k actions keeps its agent busy for k rounds.
+- **The reference**: `python -m netagents.scaling` runs a scripted team (list scheduling through the shared store) on the same problems. Work and span are counted in actions, so a team pays for its reads and writes of the store and one agent does not. Seed 0:
+
+  | agents | 1 | 2 | 4 | 8 | 16 | 32 |
+  |---|---|---|---|---|---|---|
+  | fixed: rounds | 129 | 160 | 88 | 52 | 34 | 32 |
+  | fixed: speed-up | 1.00 | 0.81 | 1.47 | 2.48 | 3.79 | 4.03 |
+  | scaled: speed-up | 1.00 | 0.85 | 1.50 | 2.50 | 3.79 | 5.14 |
+
+  Two agents are slower than one (sharing answers costs actions), and the fixed problem's speed-up stops near 4 (the final task reads 16 answers).
+- **Calls**: three times the scripted team's work for the team (at least 40 per agent); budgets are not the limit, time is.
+- **Measured** (`summary.md`, "Network scale"; or `python -m netagents.netscale <dir>`):
+  - T, the team's rounds to solve, and T_ref, the reference's;
+  - a = T_ref / T, closeness to the reference;
+  - eta = a(N) / a(1), coordination efficiency. On the fixed family it is the team's speed-up over its own single agent divided by the reference's speed-up;
+  - a Universal Scalability Law fit (sigma: contention, kappa: coherence; kappa > 0 gives a size beyond which more agents are slower);
+  - where the actions went: compute, store, coordination, waiting, submissions, duplicated computations.
+- **The pilot**: fixed, N = 1, 2, 4, 8, 3 seeds. It answers one question before the full suite: is eta clearly above zero, and does it change with N?
+
+```bash
+ACCOUNT=... STAGE=netscale-pilot bash slurm/run_all.sh     # the pilot: 4 sizes x 3 seeds, one packed job
+ACCOUNT=... STAGE=netscale bash slurm/run_all.sh           # 1-32 agents, fixed and scaled, 5 seeds
+```
+
 ## Two tracks
 
 The published designs assume settings this environment deliberately goes beyond: identical agents, answer-checked tasks, no deadline, and messages handed over by the framework for free. A design that fails here could fail because the design is weak, or because it was never meant for these settings. So every design runs on two tracks:
@@ -328,6 +360,23 @@ python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时
 - `fidelity/debate.json`：辩论的还原度检查，附论文数字；
 - `compat-framework/`、`compat-network/`：兼容赛道（框架转交 / 走网络），每个设计一个子目录 `<设计>/runs.jsonl`，汇总在 `summary.md`，结论判定在 `hypotheses.json`；
 - `test/`、`hard/`、`heldout/`、`scaling/`、`topology/`、`robustness/`：网络赛道，结构相同。
+
+## 智能体网络的扩展（`--suite netscale-pilot`、`--suite netscale`）
+
+问题：在一个超出单个智能体能力的问题上，LLM 团队随人数增加能快多少？和一支从不浪费动作的理想团队相比差多少？Mieczkowski 等（2026）在 1 到 5 个智能体、20 个编程子任务上验证了阿姆达尔定律；这里扩展到 32 个智能体、随团队变大的问题，并且每个规模都有参考曲线。
+
+- **问题**（数学环境的 `dag` 选项，预设 `dag/fixed` 和 `dag/scaled`）：若干层递推题，每题从上一层两道题的答案出发，最后一题把最后一层加起来。工作量和关键路径长度都精确已知。
+  - `fixed`：所有规模都是 16 x 4（比阿姆达尔定律）；
+  - `scaled`：4 层，宽度等于人数（比古斯塔夫森定律）。
+- **团队**：`peers`，N 个一样的智能体同时工作，工具相同，调用次数平分，不规定怎么分工。N = 1 就是同样设置的单个智能体。
+- **时间**：同步轮次（`netagents/lockstep.py`）。每一轮，每个还在工作的智能体各走一步；一个智能体的动作要等其他人都选好才执行，所以团队有多慢就记多慢。耗费 k 个动作的操作占用 k 轮。
+- **参考**：`python -m netagents.scaling` 用脚本团队在同样的问题上跑。2 个人比 1 个人慢（共享答案要花动作），固定问题的加速比停在 4 左右（汇总题要读 16 个答案）。
+- **指标**：团队轮数 T 和参考轮数 T_ref；接近度 a = T_ref / T；协调效率 eta = a(N) / a(1)；通用扩展定律拟合（sigma 是争用，kappa 是一致性开销，kappa > 0 意味着超过某个人数后越加越慢）；动作花在了哪里。
+- **试跑**：固定问题，N = 1、2、4、8，3 个种子。只回答一个问题：eta 是否明显大于 0，并且随 N 变化。
+
+```bash
+ACCOUNT=... STAGE=netscale-pilot bash slurm/run_all.sh
+```
 
 ## 两条赛道
 

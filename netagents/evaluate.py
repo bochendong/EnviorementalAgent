@@ -46,6 +46,7 @@ from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
 
 from .client import LocalEnv
+from .lockstep import Lockstep
 from .designs import DESIGNS
 from .frameworks import FRAMEWORK_DESIGNS
 from .fidelity import bootstrap
@@ -110,7 +111,16 @@ def run_one(design, case, seed, model, settings, calls, route: str | None = None
         design = replace(design, route=route)
     raw = case.build(design.variant, **({"memory_file": memory} if memory else {}))
     raw.reset(seed)
-    reports = play(design, LocalEnv(raw), model, settings, calls)
+    env = Lockstep(raw) if case.lockstep else LocalEnv(raw)
+    reports = play(design, env, model, settings, calls)
+    timing = {}
+    if case.lockstep:  # the team's time and the scripted team's on the same problem (netagents/scaling.py)
+        from .scaling import run as reference
+
+        width, depth, fanin = case.opt["dag"]
+        ref = reference(width, depth, len(raw.agents), seed, fanin)
+        timing = {**env.report(), "reference_steps": ref["rounds"], "work": ref["work"], "span": ref["span"],
+                  "width": width, "depth": depth}
     chan = design.chan.report() if hasattr(design, "chan") else {"route": "framework"}
     transcripts = {r["agent"]: r.pop("transcript") for r in reports if "transcript" in r}
     if trace:
@@ -132,7 +142,7 @@ def run_one(design, case, seed, model, settings, calls, route: str | None = None
             "llm_errors": sum(r.get("errors", 0) for r in reports),
             "context_trims": sum(r.get("trims", 0) for r in reports),
             "peak_context": max([r.get("peak_context", 0) for r in reports] or [0]),
-            "trace": os.path.basename(trace) if trace else "",
+            "trace": os.path.basename(trace) if trace else "", **timing,
             **{k: m[k] for k in ("report_score", "faulty_results", "functions", "candidates_per_project",
                                  "distinct_functions_needed") if k in m}, "members": reports}
 
@@ -257,6 +267,10 @@ def write_summary(out: str, rows: list[dict], title: str) -> str:
     text = summarize(rows) + hypotheses_markdown(checks)
     if any(r.get("suite") == "calibration" for r in rows):
         text += calibration(rows)
+    if any("steps" in r for r in rows):
+        from .netscale import table
+
+        text += "\n" + table(rows)
     text += diagnostics(rows)
     with open(os.path.join(out, "summary.md"), "w") as f:
         f.write(f"# {title}\n\n" + text)
@@ -271,7 +285,7 @@ def _chain(case, design: str, todo, memory: str, o: dict, bad, lock) -> list[dic
     cfg = LLMConfig()
     settings = make_settings(cfg)
     d = {**DESIGNS, **FRAMEWORK_DESIGNS}[design]
-    calls = o["calls_per_member"] * case.team_size()
+    calls = case.calls or o["calls_per_member"] * case.team_size()
     out = []
     for k, seed in todo:
         if o["stop_after"] and bad.value >= o["stop_after"]:
@@ -331,8 +345,8 @@ def main():
 
     cfg = LLMConfig()
     every = {**DESIGNS, **FRAMEWORK_DESIGNS}
-    if a.designs == ["all"]:
-        designs = list(DESIGNS.values())
+    if a.designs == ["all"]:  # the published designs (not this study's own baseline, "peers")
+        designs = [d for d in DESIGNS.values() if d.fidelity != "baseline"]
     elif a.designs == ["everything"]:  # including the framework designs (their Python environments must exist)
         designs = list(every.values())
     else:

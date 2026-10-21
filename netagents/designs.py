@@ -107,9 +107,13 @@ class Member:
         if self.pool is not None:
             self.pool[0] -= max_calls
         self._left = max_calls
+        if hasattr(self.env, "join"):  # lockstep time: the team's rounds wait for this member while it works
+            self.env.join(self.name)
         try:
             return await self._turn(message, max_calls)
         finally:
+            if hasattr(self.env, "leave"):
+                self.env.leave(self.name)
             if self.pool is not None:
                 self.pool[0] += max(0, self._left)
 
@@ -568,6 +572,31 @@ def problem_text(env) -> str:
     return f"{json.dumps(pub['info'], default=str)}\nTasks:\n{listing}"
 
 
+# ====================================================================== peers: the network-scale study's design
+PEERS_PROTOCOL = ("You are one of {n} identical agents working at the same time on one problem: any of you can do "
+                  "any task. Share the work among yourselves as you see fit, with the operations you have.")
+PEERS_ALONE = "You work on the problem alone."
+
+
+class Peers(Design):
+    """N identical agents, all working at once for the whole run, each with an equal share of the calls; no
+    roles, no orchestrator, nothing prescribed about how to share the work. With one agent it is a single
+    agent with the same briefing and tools, so a team's speed-up is measured against the same design."""
+
+    async def run(self, env, model, settings, calls):
+        names = list(env.public()["agents"])
+        protocol = PEERS_PROTOCOL.format(n=len(names)) if len(names) > 1 else PEERS_ALONE
+        ms = [self.member(env, a, model, settings, protocol) for a in names]
+        per = calls // len(ms)
+        for r in range(self.rounds):  # a member that stops talking with calls left is prompted to go on
+            live = [m for m in ms if not m.finished() and m.calls < per]
+            if not live or self._pool[0] <= 0:
+                break
+            await asyncio.gather(*(m.turn("Begin." if r == 0 else "Continue: the problem is not solved yet.",
+                                          per - m.calls) for m in live))
+        return [m.report() for m in ms]
+
+
 # ====================================================================== Kim et al. 2025, ported
 # Kim et al., Towards a Science of Scaling Agent Systems (arXiv 2512.08296 v3): code github.com/ybkim95/
 # agent-scaling (MIT). Prompts: netagents/prompts/kim2025.py (their YAML templates). Control flow: their
@@ -795,6 +824,10 @@ class LbMAS(Design):
 
 
 DESIGNS: dict[str, Design] = {d.name: d for d in [
+    Peers("peers", "Peers (this study)", "the network-scale study's reference design: identical agents working at "
+          "once, nothing prescribed about sharing the work", "baseline", "team",
+          ("not from a paper: the plainest team, so that what is measured is the agents' own coordination",),
+          rounds=3),
     ReAct("react", "ReAct", "Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; "
           "code: ysymyth/ReAct, noahshinn/reflexion (MIT)", "port", "solo",
           ("native tool calls instead of Thought/Action text lines, with one sentence added to the instruction: "

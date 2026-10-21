@@ -37,6 +37,13 @@ def function_tools(env, agent: str, limit: int = 6000, keep=None) -> list:
         if keep is not None and not keep(op["name"]):
             continue
         async def invoke(ctx, arguments, _op=op["name"]):
+            if hasattr(env, "astep"):  # lockstep time (netagents/lockstep.py): wait for the round
+                try:
+                    args = json.loads(arguments) if isinstance(arguments, str) else dict(arguments or {})
+                except json.JSONDecodeError as e:
+                    return json.dumps({"ok": False, "error": f"arguments are not JSON: {e}"})
+                text = json.dumps(await env.astep(agent, _op, args), default=str)
+                return text if len(text) <= limit else text[:limit] + " ...(cut)"
             return call(env, agent, _op, arguments, limit)
 
         tools.append(FunctionTool(name=op["name"], description=_describe(op), params_json_schema=op["parameters"],

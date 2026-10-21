@@ -129,6 +129,19 @@ PRESETS: dict[str, dict] = {
                 + ("4 developers who can study anything" if tools == "shared" else
                    "4 owners, each the only one who can study its modules")}
        for m in (4, 8, 12) for tools in ("shared", "split")},
+    # ---------------------------------------------------------------- dag: work and span known exactly
+    # Layers of recurrences, each task starting from two answers of the layer before (math.py gen_dag), and
+    # a final sum of the last layer: work W and span D are known, so a team's time can be set against the
+    # scripted reference (netagents/scaling.py). Identical agents; the team's size is set per case
+    # (testset.py "netscale"). Budgets are not the limit here; time is (netagents/lockstep.py).
+    "dag/fixed": {
+        "provider": "math", "opt": {"dag": [16, 4, 2], "free_roles": True, "explorers": 4, "algebraists": 0},
+        "net": {"budget": 1000},
+        "note": "64 recurrences in 4 layers and a final sum; the same problem for every team size (Amdahl)."},
+    "dag/scaled": {
+        "provider": "math", "opt": {"dag": [4, 4, 2], "free_roles": True, "explorers": 4, "algebraists": 0},
+        "net": {"budget": 1000},
+        "note": "4 layers as wide as the team (Gustafson): a bigger team takes on a bigger problem."},
     "compat/codeworld": {
         "provider": "codeworld", "opt": {"n_modules": 4, "n_projects": 6, "devs": 3},
         "net": {"budget": 150},

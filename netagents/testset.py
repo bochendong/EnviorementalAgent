@@ -28,6 +28,9 @@ design. Held-out cases use tasks no scripted solver was written for (tasks/heldo
     report      a final report with every answer, scored field by field; and a provenance rule
     guidance    the same tasks with and without procedural hints
     memory      ten episodes in a row sharing a memory in the store ("memory/" keys)
+    netscale    agent-network scaling: DAG problems of known work and span, teams of 1 to 32 identical agents,
+                one problem for every size (fixed) or one as wide as the team (scaled); time in lockstep rounds,
+                against the scripted reference (netagents/scaling.py). netscale-pilot: fixed, 1-8 agents
     calibration easy and medium presets on dev seeds, for a few designs: is the difficulty in the range where
                 designs can differ (CALIBRATION_BAND of tasks done) for the model at hand? The presets were
                 tuned on scripted teams; this checks them against LLM agents before the real runs
@@ -54,6 +57,11 @@ LOAD_SIZES = (4, 8, 12)
 LOAD_DESIGNS = ("sas", "centralized", "decentralized")
 FOCUS = [f"focus/math-{s}-{t}" for s in ("decomposable", "sequential") for t in ("shared", "split")]
 FOCUS_DESIGNS = ("sas", "centralized", "decentralized")
+NETSCALE_SIZES = (1, 2, 4, 8, 16, 32)
+NETSCALE_PILOT = (1, 2, 4, 8)
+NETSCALE_FIXED = (16, 4)  # width, depth of the fixed family
+NETSCALE_DEPTH = 4  # depth of the scaled family (width = team size)
+NETSCALE_CALLS = 3  # tool calls for the team: this many times the scripted team's work (in actions)
 COMPAT = ["compat/math-decomposable", "compat/math-sequential", "compat/codeworld"]
 HELDOUT = ["math/heldout-number-theory", "math/heldout-combinatorics", "website/heldout-todo",
            "molecule/heldout-kinase"]
@@ -69,6 +77,8 @@ class Case:
     track: str = "network"
     memory: bool = False  # the seeds run in order, sharing a memory file (NetConfig.memory_file)
     solo_too: bool = True  # False: single-agent designs skip this case (their solo variant is another case's)
+    lockstep: bool = False  # time in synchronous rounds (netagents/lockstep.py), against the scripted reference
+    calls: int = 0  # the team's tool calls (0: CALLS_PER_MEMBER per member)
 
     @property
     def route(self) -> str:
@@ -85,6 +95,20 @@ class Case:
 
 def _heldout_seeds(name: str) -> list[int]:
     return presets.seeds(name, 5) if "seeds" in presets.PRESETS[name] else [0, 1, 2]  # fixed tasks: repeats
+
+
+def netscale_case(family: str, n: int, seeds: list[int]) -> Case:
+    """A team of ``n`` identical agents on a DAG problem: the fixed one, or one ``n`` wide."""
+    import random
+
+    from worldseeds.net.providers.math import gen_dag
+
+    from .scaling import work_span
+
+    width, depth = NETSCALE_FIXED if family == "fixed" else (n, NETSCALE_DEPTH)
+    work = work_span({t["id"]: t for t in gen_dag(random.Random(0), width, depth)}, shared=True)[0]
+    return Case(f"dag/{family}/n{n}", f"dag/{family}", seeds, opt={"explorers": n, "dag": [width, depth, 2]},
+                lockstep=True, calls=max(NETSCALE_CALLS * work, CALLS_PER_MEMBER * n))
 
 
 SUITES: dict[str, list[Case]] = {
@@ -120,6 +144,8 @@ SUITES: dict[str, list[Case]] = {
     "guidance": [Case(f"{p}/guidance{g}", p, TEST_SEEDS[:5], net={"guidance": g})
                  for p in ("math/easy", "math/medium", "codeworld/medium") for g in (0, 1)],
     "memory": [Case(f"{p}/memory", p, TEST_SEEDS, memory=True) for p in ("math/medium", "codeworld/medium")],
+    "netscale-pilot": [netscale_case("fixed", n, TEST_SEEDS[:3]) for n in NETSCALE_PILOT],
+    "netscale": [netscale_case(f, n, TEST_SEEDS[:5]) for f in ("fixed", "scaled") for n in NETSCALE_SIZES],
     "calibration": [Case(p, p, DEV_SEEDS) for p in EASY + MEDIUM]
     + [Case(p, p, DEV_SEEDS, track="compat") for p in COMPAT],
 }

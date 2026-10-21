@@ -18,7 +18,7 @@ from collections import Counter
 from .evaluate import load_runs
 
 ORDER = ["baselines", "fidelity", "calibration", "compat-framework", "compat-network", "test", "hard", "heldout",
-         "scaling", "topology", "robustness", "org", "faults", "report", "guidance", "memory"]
+         "scaling", "topology", "robustness", "org", "faults", "report", "guidance", "memory", "netscale-pilot", "netscale"]
 WHAT = {
     "baselines": "scripted reference teams on every preset and variant (CPU)",
     "fidelity": "multiagent debate on GSM8K: the authors' code vs our port",
@@ -36,6 +36,8 @@ WHAT = {
     "report": "a final report with every answer, scored field by field; with and without a provenance rule",
     "guidance": "the same tasks with and without procedural hints",
     "memory": "ten episodes in a row with a memory that carries over",
+    "netscale-pilot": "agent-network scaling, pilot: 1-8 identical agents on one DAG problem, against the scripted reference",
+    "netscale": "agent-network scaling: 1-32 agents, fixed and scaled DAG problems, against the scripted reference",
 }
 
 
