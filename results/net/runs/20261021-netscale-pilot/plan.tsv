@@ -1,0 +1,3 @@
+experiment	design	job	command
+netscale-pilot	peers	24729787	--job-name=net-netscale-pilot --time=0-12:00 --output=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/logs/%x-%j.out --export=ALL,SUITE=netscale-pilot,DESIGNS=peers,ROUTE=case,OUT=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/netscale-pilot/all,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/logs,SEEDS=3 slurm/net_eval.sh
+netscale-pilot	summary	24729788	--job-name=net-netscale-pilot-summary --dependency=afterany:24729787 --output=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/logs/%x-%j.out --export=ALL,DIR=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/netscale-pilot slurm/net_summary.sh

@@ -35,3 +35,7 @@ Submitted on **2026-10-20 at 13:03:04–13:03:06 EDT (America/Toronto)**. H1 is 
 ## Submission records
 
 See `20261021-harness-v3-comparison.json`, `20261021-harness-v3-initial-status.json`, and `20261021-harness-v3-submit.py` for durable job IDs, observed Slurm states/resources, parameters and input hashes. The submission helper holds a shared lock, records each job immediately, and checks existing plans/queued jobs before any uncertain submission can be repeated.
+
+## Cancelled by user
+
+On **2026-10-21 at 02:27:30 EDT**, jobs **24679535, 24679536 and 24679537** were cancelled at the user's explicit request. Slurm accounting confirms all three `CANCELLED`, with no actual start and zero allocated elapsed time. There are no v3 model results. Existing submission records and source are preserved; no replacement fidelity jobs were submitted.

@@ -1,0 +1,81 @@
+{
+  "run": "20261021-netscale-pilot",
+  "source_commit": "ad95c039c11239ff029e5d36eaaa8b6102ef5677",
+  "source": "/scratch/bdong/worldseeds/code/ad95c03-20261021-netscale-pilot",
+  "settings": {
+    "ACCOUNT": "rrg-hup_gpu",
+    "CPU_ACCOUNT": "def-hup-ab_cpu",
+    "GPU_ACCOUNT": "rrg-hup_gpu",
+    "STAGE": "netscale-pilot",
+    "RUN": "20261021-netscale-pilot",
+    "TIME": "0-12:00",
+    "PACK": "1",
+    "NETSCALE_DESIGNS": "peers",
+    "GPU_RESOURCE": "h100:1",
+    "GPU_CPUS": "4",
+    "GPU_MEM": "32G",
+    "GPU_DEPENDENCY": "",
+    "WS_THINKING": "1",
+    "WS_TOOL_CHOICE": "required",
+    "WS_MAX_TOKENS": "8192",
+    "WS_TEMPERATURE": "0.6",
+    "WS_TOP_P": "0.95",
+    "WS_TOP_K": "20",
+    "MODEL_ID": "Qwen/Qwen3-8B",
+    "TP": "1",
+    "SERVER_MODE": "venv",
+    "EXTRA_VLLM_ARGS": "",
+    "MAX_MODEL_LEN": "65536",
+    "WS_CONTEXT_TOKENS": "39321",
+    "WS_CHARS_PER_TOKEN": "1.5",
+    "WS_ROOT": "/scratch/bdong/worldseeds/code/ad95c03-20261021-netscale-pilot",
+    "WS_STORE": "/scratch/bdong/worldseeds",
+    "NETAGENTS_PARALLEL": "8",
+    "NETAGENTS_TRANSCRIPTS": "1",
+    "PYTHONUNBUFFERED": "1",
+    "SEEDS": "3",
+    "DRY": "0"
+  },
+  "created_at_utc": "2026-10-21T06:26:18.134149+00:00",
+  "expected_gpu_jobs": 1,
+  "expected_cpu_summary_jobs": 1,
+  "expected_runs": 12,
+  "sizes": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "seeds": [
+    100,
+    101,
+    102
+  ],
+  "problem": [
+    16,
+    4,
+    2
+  ],
+  "stage": "submitted",
+  "jobs": [
+    {
+      "experiment": "netscale-pilot",
+      "design": "peers",
+      "job": "24729787",
+      "command": "--job-name=net-netscale-pilot --time=0-12:00 --output=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/logs/%x-%j.out --export=ALL,SUITE=netscale-pilot,DESIGNS=peers,ROUTE=case,OUT=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/netscale-pilot/all,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/logs,SEEDS=3 slurm/net_eval.sh"
+    },
+    {
+      "experiment": "netscale-pilot",
+      "design": "summary",
+      "job": "24729788",
+      "command": "--job-name=net-netscale-pilot-summary --dependency=afterany:24729787 --output=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/logs/%x-%j.out --export=ALL,DIR=/scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/netscale-pilot slurm/net_summary.sh"
+    }
+  ],
+  "verification": {
+    "nibi_focused_tests_passed": 3,
+    "suite_shape_verified": true
+  },
+  "trace_coverage": "Unmodified launcher saves environment events and retained member conversations for the first seed of each size (4 traces); all 12 runs retain aggregate operations and member usage/error statistics.",
+  "scope": "One netscale-pilot GPU job and its CPU summary only. No full netscale, alternate setting, automatic retry, task-size change, or collaboration-mechanism variant.",
+  "recorded_at_utc": "2026-10-21T06:28:04.140600+00:00"
+}
