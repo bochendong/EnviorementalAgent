@@ -130,17 +130,17 @@ PRESETS: dict[str, dict] = {
                    "4 owners, each the only one who can study its modules")}
        for m in (4, 8, 12) for tools in ("shared", "split")},
     # ---------------------------------------------------------------- dag: work and span known exactly
-    # Layers of recurrences, each task starting from two answers of the layer before (math.py gen_dag), and
-    # a final sum of the last layer: work W and span D are known, so a team's time can be set against the
-    # scripted reference (netagents/scaling.py). Identical agents; the team's size is set per case
-    # (testset.py "netscale"). Budgets are not the limit here; time is (netagents/lockstep.py).
+    # Layers of tasks, each a hidden function applied ``grain`` times from its parents' answers, and a final
+    # task over the last layer (worldseeds/net/providers/dag.py): no reasoning shortcuts a task, so work W and
+    # span D are lower bounds for any agent. Identical agents; the team's size (and, scaled, the width) is set
+    # per case (testset.py "netscale"). Budgets are not the limit here; time is (netagents/lockstep.py).
     "dag/fixed": {
-        "provider": "math", "opt": {"dag": [16, 4, 2], "free_roles": True, "explorers": 4, "algebraists": 0},
-        "net": {"budget": 1000},
-        "note": "64 recurrences in 4 layers and a final sum; the same problem for every team size (Amdahl)."},
+        "provider": "dag", "opt": {"width": 16, "depth": 4, "fanin": 2, "grain": 1, "agents": 4},
+        "net": {"budget": 2000},
+        "note": "64 tasks in 4 layers and a final task; the same problem for every team size (Amdahl)."},
     "dag/scaled": {
-        "provider": "math", "opt": {"dag": [4, 4, 2], "free_roles": True, "explorers": 4, "algebraists": 0},
-        "net": {"budget": 1000},
+        "provider": "dag", "opt": {"width": 4, "depth": 4, "fanin": 2, "grain": 1, "agents": 4},
+        "net": {"budget": 2000},
         "note": "4 layers as wide as the team (Gustafson): a bigger team takes on a bigger problem."},
     "compat/codeworld": {
         "provider": "codeworld", "opt": {"n_modules": 4, "n_projects": 6, "devs": 3},
@@ -204,7 +204,9 @@ def resolve(name: str, variant: str = "team", opt: dict | None = None, net: dict
         else:
             opt["free_roles"] = True
             opt.pop("counts", None)
-            if p["provider"] == "math":
+            if p["provider"] == "dag":
+                opt["agents"] = 1
+            elif p["provider"] == "math":
                 opt.update(explorers=1, algebraists=0)
             elif p["provider"] == "molecule":
                 opt.update(chemists=1, biologists=0)

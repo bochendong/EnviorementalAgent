@@ -431,3 +431,24 @@ def test_gen_dag_answers_follow_the_recurrences():
             a = p * a + q
         assert a % m == ans[t["id"]]
         assert all(d.startswith(f"L{t['layer'] - 1}.") for d in t["deps"])
+
+
+def test_dag_tasks_need_their_hidden_functions():
+    from worldseeds.net.presets import build
+    from worldseeds.net.providers.dag import hidden
+
+    raw = build("dag/fixed", opt={"agents": 2, "width": 3, "depth": 2, "grain": 3})
+    raw.reset(5)
+    t = raw.provider.raw["L1.0"]
+    x = sum(int(raw.provider.raw[d]["answer"]) for d in t["deps"]) % 1000
+    assert t["start"] == x
+    for _ in range(3):
+        x = hidden(5, "L1.0", x)
+    assert str(x) == t["answer"]
+    o = raw.step("a0", "apply", {"task": "L1.0", "x": [int(raw.provider.raw[d]["answer"]) for d in t["deps"]]})
+    assert o["ok"] and o["f(x)"] == hidden(5, "L1.0", t["start"])
+    for d in [d for d in raw.provider.raw if d.startswith("L0.")]:
+        assert raw.step("a0", "submit", {"task": d, "artifact": raw.provider.raw[d]["answer"]})["ok"]
+    bad = raw.step("a1", "submit", {"task": "L1.0", "artifact": f"Mod({t['answer']}, 1000)"})
+    assert not bad["ok"] and "whole number" in json.dumps(bad)
+    assert raw.provider.raw["FINAL"]["deps"] == ["L1.0", "L1.1", "L1.2"]

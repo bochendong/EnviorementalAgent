@@ -7,6 +7,7 @@ PROVIDERS = {
     "math": ("worldseeds.net.providers.math", "MathProvider"),
     "website": ("worldseeds.net.providers.website", "WebsiteProvider"),
     "molecule": ("worldseeds.net.providers.molecule", "MoleculeProvider"),
+    "dag": ("worldseeds.net.providers.dag", "DagProvider"),
 }
 
 

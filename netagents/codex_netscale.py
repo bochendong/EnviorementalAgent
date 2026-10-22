@@ -36,7 +36,7 @@ def execute_job(case, seed, args, gate, stop):
     directory = out / "episodes" / f"n{n}-seed{seed}"
     model = CodexCLIModel(directory, args.model, args.reasoning_effort, gate, args.timeout, stop=stop)
     write_json(directory / "status.json", {"status": "running", "agents": n, "seed": seed, "call_budget": case.calls,
-                                            "dag": case.opt["dag"], "started_epoch": time.time()})
+                                            "problem": case.opt, "started_epoch": time.time()})
     trace = out / "traces" / f"peers__{case.id.replace('/', '_')}__{seed}.jsonl.gz"
     settings = ModelSettings(tool_choice="required", parallel_tool_calls=False)
     try:
@@ -94,7 +94,7 @@ def main():
     done = {(r["agents"], r["seed"]) for r in rows}
     cases = [c for c in SUITES[args.suite] if c.team_size() in args.sizes]
     jobs = [(case, seed) for seed in args.seeds for case in cases if (case.team_size(), seed) not in done]
-    plan = [{"case": case.id, "seed": seed, "agents": case.team_size(), "calls": case.calls, "dag": case.opt["dag"]} for case, seed in jobs]
+    plan = [{"case": case.id, "seed": seed, "agents": case.team_size(), "calls": case.calls, "problem": case.opt} for case, seed in jobs]
     write_json(out / "pending_plan.json", plan)
     write_json(out / "status.json", {"status": "running", "planned_runs": len(args.sizes) * len(args.seeds), "completed_runs": len(rows)})
     try:

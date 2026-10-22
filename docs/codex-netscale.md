@@ -1,5 +1,7 @@
 # 在本地用 Codex 运行 netscale-pilot
 
+> 2026-10-22 之后，netscale 换成了 DAG 环境（`worldseeds/net/providers/dag.py`）：隐藏函数加整数答案，粒度为 1 和 4，共 24 组。下文所说的 16×4 递推 DAG 和 915 次调用，是第一次试跑（`results/net/runs/20261022-codex-netscale-pilot-01`）的设置。那次试跑里，递推题可以直接提交闭式表达式，单人比参考团队还快，所以它的 T_ref 和 η 不作为结论，只保留行为观察。
+
 对应网络规模实验：固定 16×4 DAG，1、2、4、8 名 `peers` 智能体，各运行种子 100、101、102，共 12 组。每组团队共享 915 次工具调用额度，各成员均分。
 
 已完成的正式试跑见 [2026年10月22日结果与用量](../results/net/runs/20261022-codex-netscale-pilot-01/netscale-pilot/README.md)，包含原始汇总、轨迹、完整调用归档及 Word 精简报告。

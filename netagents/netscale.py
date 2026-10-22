@@ -4,13 +4,15 @@ the team's size.
     python -m netagents.netscale results/net/runs/<run>/netscale-pilot      # writes netscale.md there
 
 Runs come from the "netscale" suites (netagents/testset.py): a team of N identical agents ("peers") on a DAG
-problem, time in lockstep rounds (netagents/lockstep.py), and the scripted team's rounds on the same problem
+problem (worldseeds/net/providers/dag.py), time in lockstep rounds (netagents/lockstep.py), and the scripted team's rounds on the same problem
 (netagents/scaling.py). Per family and team size:
 
     solved        share of seeds solved
     T             the team's rounds to solve (solved runs; mean)
-    T_ref         the scripted team's rounds on the same problems
-    a = T_ref/T   how close the team comes to the reference (1: as fast as a team that wastes nothing)
+    T_lb          the lower bound on any team's rounds, max(W / N, D) (Brent), sharing counted as free
+    b = T_lb/T    efficiency against the bound (at most 1)
+    T_ref         the scripted team's rounds on the same problems (the cheaper of broadcast and store)
+    a = T_ref/T   how close the team comes to the reference (1: as fast as a scripted team)
     eta = a(N)/a(1)   coordination efficiency: the team's closeness relative to one agent's. On the fixed
                   family it is the team's speed-up over its own single agent divided by the reference's
                   speed-up; below 1, adding agents loses more to coordination than the reference does
@@ -33,7 +35,7 @@ import statistics as st
 from .evaluate import load_runs
 
 KINDS = {
-    "compute": {"evaluate", "sequence", "simplify", "solve", "rsolve"},
+    "compute": {"apply", "evaluate", "sequence", "simplify", "solve", "rsolve"},
     "store": {"put", "get", "keys"},
     "coordination": {"send", "inbox", "post", "board", "tasks", "status", "who", "claim", "release"},
     "wait": {"wait"},
@@ -84,23 +86,25 @@ def table(rows: list[dict]) -> str:
             ok = [r for r in rs if r["solved"] and r.get("solved_step")]
             t = st.mean(r["solved_step"] for r in ok) if ok else None
             tref = st.mean(r["reference_steps"] for r in ok) if ok else st.mean(r["reference_steps"] for r in rs)
-            stat[n] = {"runs": len(rs), "solved": len(ok) / len(rs), "T": t, "Tref": tref,
-                       "a": tref / t if t else None, "width": rs[0].get("width"), "depth": rs[0].get("depth")}
+            lb = st.mean(r["lower_bound"] for r in rs) if "lower_bound" in rs[0] else None
+            stat[n] = {"runs": len(rs), "solved": len(ok) / len(rs), "T": t, "Tref": tref, "lb": lb,
+                       "a": tref / t if t else None, "b": lb / t if t and lb else None,
+                       "width": rs[0].get("width"), "depth": rs[0].get("depth")}
         a1 = stat.get(1, {}).get("a")
         text += [f"### {design}, {family} family", "",
-                 "| agents | problem | runs | solved | T (rounds) | T_ref | a = T_ref/T | eta = a(N)/a(1) | speed-up |",
-                 "|---|---|---|---|---|---|---|---|---|"]
+                 "| agents | problem | runs | solved | T (rounds) | T_lb | b = T_lb/T | T_ref | a = T_ref/T | "
+                 "eta = a(N)/a(1) | speed-up |", "|---|---|---|---|---|---|---|---|---|---|---|"]
         points = []
         for n in ns:
             s = stat[n]
             eta = s["a"] / a1 if s["a"] and a1 else None
-            sp = (stat[1]["T"] / s["T"]) if family == "fixed" and 1 in stat and stat[1]["T"] and s["T"] else None
+            sp = (stat[1]["T"] / s["T"]) if family.startswith("fixed") and 1 in stat and stat[1]["T"] and s["T"] else None
             if sp:
                 points.append((n, sp))
             f = lambda x, d=2: "-" if x is None else f"{x:.{d}f}"  # noqa: E731
             text.append(f"| {n} | {s['width']} x {s['depth']} | {s['runs']} | {s['solved']:.2f} | {f(s['T'], 1)} | "
-                        f"{s['Tref']:.1f} | {f(s['a'])} | {f(eta)} | {f(sp)} |")
-        fit = fit_usl(points) if family == "fixed" else None
+                        f"{f(s['lb'], 0)} | {f(s['b'])} | {s['Tref']:.1f} | {f(s['a'])} | {f(eta)} | {f(sp)} |")
+        fit = fit_usl(points) if family.startswith("fixed") else None
         if fit:
             sigma, kappa, err = fit
             peak = math.sqrt((1 - sigma) / kappa) if kappa > 0 else float("inf")
@@ -120,7 +124,8 @@ def table(rows: list[dict]) -> str:
                         f"{st.mean(r['duplicate_work'] for r in rs):.1f} | "
                         f"{st.mean(r['wrong_submissions'] for r in rs):.1f} | {busy:.2f} |")
         text.append("")
-    text += ["T: lockstep rounds until the final task was accepted, over solved runs. T_ref: the scripted team of "
+    text += ["T: lockstep rounds until the final task was accepted, over solved runs. T_lb: the lower bound on "
+             "any team's rounds; b: efficiency against it. T_ref: the scripted team of "
              "the same size on the same problems (netagents/scaling.py). a: closeness to the reference; eta: "
              "coordination efficiency, a relative to the single agent's; speed-up: T(1)/T(N), same problem.", ""]
     return "\n".join(text)

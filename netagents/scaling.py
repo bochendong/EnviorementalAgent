@@ -1,20 +1,26 @@
-"""The reference law: how fast a perfectly coordinated team solves a problem of known work and span.
+"""The reference law: how fast a team that wastes nothing solves a problem of known work and span.
 
     python -m netagents.scaling --out results/net/scaling-reference
+    python -m netagents.scaling --grain 4 --sizes 1 2 4 8
 
-Problems come from the math provider's ``dag`` generator (worldseeds/net/providers/math.py gen_dag):
-``depth`` layers of ``width`` tasks, each task needing its parents' answers. A scripted team that never
-wastes an action (list scheduling: every agent takes an open task; answers travel through the shared
-store) is run on two families, as in parallel computing:
+Problems come from the DAG provider (worldseeds/net/providers/dag.py): ``depth`` layers of ``width`` tasks
+and a final task, each task ``grain`` applies of a hidden function and a submission, starting from its
+parents' answers. Two families, as in parallel computing:
 
     fixed     the same problem for every team size (Amdahl: speed-up is capped by the span)
     scaled    width grows with the team (Gustafson: a bigger team takes on a bigger problem)
 
-Time is measured in the environment's rounds (a round is one action per agent). The table gives each
-team's rounds to solve, its speed-up over one agent, and the speed-up Brent's theorem guarantees a greedy
-schedule, from T_N <= W/N + D (work and span in agent actions, counting the reads and writes a team needs and
-one agent does not). LLM networks are measured against this curve: the share of the scripted
-team's speed-up they reach is their coordination efficiency.
+Time is in rounds (every agent takes one action a round, netagents/lockstep.py). For each team size:
+
+    lower bound   no strategy is faster: max(ceil(W / N), D), W = tasks * (grain + 1) actions of work and
+                  D = (depth + 1) * (grain + 1) on the longest chain, sharing answers counted as free
+    reference     a scripted team (list scheduling: an idle agent takes the open task of the lowest layer
+                  whose parents' answers are out) that passes answers on in the cheaper of two ways:
+                  broadcast (one message to everyone; one inbox read brings all that arrived) or the
+                  shared store (one write; one read per answer needed). One agent needs no sharing and
+                  meets the lower bound exactly
+
+An LLM team is measured against both (netagents/netscale.py).
 """
 
 from __future__ import annotations
@@ -23,113 +29,112 @@ import argparse
 import json
 import math
 import os
-import re
 
 from worldseeds.net import NetConfig, NetworkEnv, providers
 
+SHARING = ("broadcast", "store")
 
-def scripted_dag_team(env) -> dict:
-    """Every agent in turn takes one action. An idle agent claims the open task with the most work below it
-    (the lowest layer first), reads its parents' answers from the store, computes, submits and stores the
-    answer. Returns rounds to solve and actions."""
-    raw = env.provider.raw
+
+def make_env(width: int, depth: int, n: int, seed: int, fanin: int = 2, grain: int = 1) -> NetworkEnv:
+    env = NetworkEnv(providers.make("dag", width=width, depth=depth, fanin=fanin, grain=grain, agents=n),
+                     NetConfig(budget=10 ** 6))
+    env.reset(seed)
+    return env
+
+
+def lower_bound(width: int, depth: int, n: int, grain: int = 1) -> int:
+    tasks = width * depth + 1
+    return max(math.ceil(tasks * (grain + 1) / n), (depth + 1) * (grain + 1))
+
+
+def scripted_team(env, sharing: str = "broadcast") -> dict:
+    """Every agent in turn takes one action a round. Returns rounds to solve and actions."""
+    raw, grain = env.provider.raw, env.provider.grain
     agents = list(env.agents)
+    alone = len(agents) == 1
+    known = {a: {} for a in agents}  # answers each agent holds
+    out: set[str] = set()  # answers passed on to the team
     taken: set[str] = set()
     plan: dict[str, list] = {a: [] for a in agents}
-    done_at = None
-    for _ in range(100000):
-        if env.solved or env.done:
+
+    def steps(a, tid):
+        t = raw[tid]
+        missing = [d for d in t["deps"] if d not in known[a]]
+        reads = [] if not missing else (
+            [("inbox", lambda: {}, lambda o: _heard(known[a], o))] if sharing == "broadcast" else
+            [("get", lambda d=d: {"key": f"ans/{d}"}, lambda o, d=d: known[a].__setitem__(d, int(o["value"])))
+             for d in missing])
+        x = {"v": None}
+
+        def start():
+            return {"task": tid, "x": [known[a][d] for d in t["deps"]] if t["deps"] else t["start"]}
+
+        applies = [("apply", (lambda i=i: start() if i == 0 else {"task": tid, "x": x["v"]}),
+                    lambda o: x.__setitem__("v", o["f(x)"])) for i in range(grain)]
+
+        def done(o):
+            if not o.get("ok"):
+                raise RuntimeError(f"scripted submission refused: {o}")
+            known[a][tid] = x["v"]
+
+        submit = [("submit", lambda: {"task": tid, "artifact": str(x["v"])}, done)]
+        share = [] if alone or tid == "FINAL" else [
+            ("send", lambda: {"to": "*", "text": f"ANS {tid} {x['v']}"}, lambda o: out.add(tid))
+            if sharing == "broadcast" else
+            ("put", lambda: {"key": f"ans/{tid}", "value": str(x["v"])}, lambda o: out.add(tid))]
+        return reads + applies + submit + share
+
+    solved_at = None
+    for _ in range(10 ** 5):
+        if env.solved:
             break
         for a in agents:
-            if env.solved or env.done:
-                break
             if not plan[a]:
+                have = known[a] if alone else {**known[a], **dict.fromkeys(out)}
                 ready = [t for t, s in env.state.items() if s["status"] == "open" and t not in taken
-                         and all(_known(env, a, d) for d in env.tasks[t].deps)]
+                         and all(d in have for d in raw[t]["deps"])]
                 if not ready:
                     env.step(a, "wait")
                     continue
-                t = min(ready, key=lambda x: raw[x].get("layer", 10 ** 6))
+                # the lowest layer first; among those, one whose parents' answers this agent already holds
+                t = min(ready, key=lambda x: (raw[x]["layer"], sum(d not in known[a] for d in raw[x]["deps"])))
                 taken.add(t)
-                plan[a] = _steps(t, raw[t], shared="put" in env.usable(a))
-            op, args = plan[a].pop(0)
-            obs = env.step(a, op, args(env) if callable(args) else args)
-            if op == "submit" and not obs.get("ok"):
-                raise RuntimeError(f"scripted submission refused: {obs}")
-        if env.solved and done_at is None:
-            done_at = env.round
-    return {"solved": env.solved, "rounds": done_at if done_at is not None else env.round, "actions": env.actions}
+                plan[a] = steps(a, t)
+            op, args, then = plan[a].pop(0)
+            then(env.step(a, op, args()))
+        if env.solved and solved_at is None:
+            solved_at = env.round
+    return {"solved": env.solved, "rounds": solved_at if solved_at is not None else env.round,
+            "actions": env.actions}
 
 
-def _known(env, agent, tid) -> bool:
-    """Is the answer of tid available to agent: in the store for a team, its own submission for one agent."""
-    if "get" in env.usable(agent):
-        return f"ans/{tid}" in env.store
-    return env.state[tid]["status"] == "done"
+def _heard(known: dict, obs: dict):
+    for m in obs.get("messages", []):
+        parts = m["text"].split()
+        if len(parts) == 3 and parts[0] == "ANS":
+            known[parts[1]] = int(parts[2])
 
 
-def _steps(tid: str, t: dict, shared: bool) -> list:
-    """The actions of one task. A team reads the parents' answers from the store and stores its own; one agent
-    remembers them."""
-    reads = [("get", {"key": f"ans/{d}"}) for d in t["deps"]] if shared else []
-    store = [("put", {"key": f"ans/{tid}", "value": t["answer"]})] if shared else []
-    if tid == "FINAL":
-        return reads + [("submit", {"task": tid, "artifact": t["answer"]})]
-    m = re.search(r"a\(n\+1\) = (\d+)\*a\(n\) \+ (\d+): what is a\((\d+)\) mod (\d+)", t["text"])
-    p, q, k, mod = map(int, m.groups())
-
-    def seq(env, t=t, p=p, q=q, k=k):
-        raw = env.provider.raw
-        if t["deps"]:
-            r = sum(int(raw[d]["answer"]) for d in t["deps"]) % 10
-        else:
-            r = int(re.search(r"a\(0\) = (\d+)", t["text"]).group(1))
-        return {"rec": f"{p}*a(n) + {q}", "init": str(r), "count": k + 1}
-
-    return reads + [("sequence", seq), ("submit", {"task": tid, "artifact": t["answer"]})] + store
-
-
-def run(width: int, depth: int, n: int, seed: int, fanin: int = 2) -> dict:
-    prov = providers.make("math", dag=(width, depth, fanin), free_roles=True, explorers=n, algebraists=0)
-    env = NetworkEnv(prov, NetConfig(budget=10 ** 6))
-    env.reset(seed)
-    r = scripted_dag_team(env)
-    work, span = work_span(env.provider.raw, shared=n > 1)
-    return {"width": width, "depth": depth, "agents": n, "seed": seed, **r, "tasks": len(env.provider.raw),
-            "work": work, "span": span, "brent_rounds": math.ceil(work / n) + span}
-
-
-def work_span(raw: dict, shared: bool) -> tuple[int, int]:
-    """Work (all actions) and span (actions on the longest chain) of a DAG problem, in agent actions. A team
-    task reads its parents, computes, submits and stores (FINAL reads and submits); one agent computes and
-    submits."""
-    def cost(tid):
-        reads = len(raw[tid]["deps"]) if shared else 0
-        return reads + (1 if tid == "FINAL" else 2 + shared)
-
-    finish: dict[str, int] = {}
-
-    def path(tid):
-        if tid not in finish:
-            finish[tid] = cost(tid) + max((path(d) for d in raw[tid]["deps"]), default=0)
-        return finish[tid]
-
-    return sum(cost(t) for t in raw), max(path(t) for t in raw)
+def run(width: int, depth: int, n: int, seed: int, fanin: int = 2, grain: int = 1) -> dict:
+    """The reference on one problem: the faster sharing (one agent shares nothing), and the lower bound."""
+    tried = {s: scripted_team(make_env(width, depth, n, seed, fanin, grain), s) for s in (SHARING[:1] if n == 1
+                                                                                          else SHARING)}
+    best = min(tried, key=lambda s: tried[s]["rounds"])
+    tasks = width * depth + 1
+    return {"width": width, "depth": depth, "grain": grain, "agents": n, "seed": seed, "solved": tried[best]["solved"],
+            "rounds": tried[best]["rounds"], "sharing": best if n > 1 else "none",
+            **{f"rounds_{s}": r["rounds"] for s, r in tried.items() if n > 1},
+            "work": tasks * (grain + 1), "span": (depth + 1) * (grain + 1),
+            "lower_bound": lower_bound(width, depth, n, grain)}
 
 
 def table(rows: list[dict]) -> str:
-    out = ["| family | agents | width x depth | work | span | rounds to solve | Brent's T_N bound | speed-up | "
-           "speed-up Brent guarantees |", "|---|---|---|---|---|---|---|---|---|"]
-    for fam in dict.fromkeys(r["family"] for r in rows):
-        mine = [r for r in rows if r["family"] == fam]
-        one = {(r["width"], r["depth"]): r["rounds"] for r in mine if r["agents"] == 1}
-        for r in mine:
-            base = one.get((r["width"], r["depth"]))
-            if base is None:  # scaled family: one agent on the same problem, measured separately
-                base = r["single_rounds"]
-            out.append(f"| {fam} | {r['agents']} | {r['width']} x {r['depth']} | {r['work']} | {r['span']} | "
-                       f"{r['rounds']} | {r['brent_rounds']} | {base / r['rounds']:.2f} | "
-                       f"{base / r['brent_rounds']:.2f} |")
+    out = ["| family | grain | agents | problem | lower bound | reference | sharing | speed-up (reference) | "
+           "speed-up (bound) |", "|---|---|---|---|---|---|---|---|---|"]
+    for r in rows:
+        base = r["single_rounds"]
+        out.append(f"| {r['family']} | {r['grain']} | {r['agents']} | {r['width']} x {r['depth']} | {r['lower_bound']} | "
+                   f"{r['rounds']} | {r['sharing']} | {base / r['rounds']:.2f} | {base / r['lower_bound']:.2f} |")
     return "\n".join(out)
 
 
@@ -138,16 +143,18 @@ def main():
     ap.add_argument("--sizes", type=int, nargs="*", default=[1, 2, 4, 8, 16, 32])
     ap.add_argument("--fixed", type=int, nargs=2, default=[16, 4], metavar=("WIDTH", "DEPTH"))
     ap.add_argument("--depth", type=int, default=4, help="depth of the scaled family (width = team size)")
+    ap.add_argument("--grain", type=int, nargs="*", default=[1, 4])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", default="")
     a = ap.parse_args()
     rows = []
-    for n in a.sizes:
-        rows.append({"family": "fixed", **run(*a.fixed, n, a.seed)})
-    for n in a.sizes:
-        r = run(n, a.depth, n, a.seed)
-        r["single_rounds"] = run(n, a.depth, 1, a.seed)["rounds"]
-        rows.append({"family": "scaled", **r})
+    for g in a.grain:
+        for fam in ("fixed", "scaled"):
+            for n in a.sizes:
+                w, d = a.fixed if fam == "fixed" else (n, a.depth)
+                r = {"family": fam, **run(w, d, n, a.seed, grain=g)}
+                r["single_rounds"] = run(w, d, 1, a.seed, grain=g)["rounds"]
+                rows.append(r)
     text = table(rows)
     print(text)
     if a.out:

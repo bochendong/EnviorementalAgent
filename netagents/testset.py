@@ -28,9 +28,10 @@ design. Held-out cases use tasks no scripted solver was written for (tasks/heldo
     report      a final report with every answer, scored field by field; and a provenance rule
     guidance    the same tasks with and without procedural hints
     memory      ten episodes in a row sharing a memory in the store ("memory/" keys)
-    netscale    agent-network scaling: DAG problems of known work and span, teams of 1 to 32 identical agents,
-                one problem for every size (fixed) or one as wide as the team (scaled); time in lockstep rounds,
-                against the scripted reference (netagents/scaling.py). netscale-pilot: fixed, 1-8 agents
+    netscale    agent-network scaling: DAG problems of known work and span (hidden functions, grain 1 and 4
+                applies per task), teams of 1 to 32 identical agents, one problem for every size (fixed) or one
+                as wide as the team (scaled); time in lockstep rounds, against the lower bound and the scripted
+                reference (netagents/scaling.py). netscale-pilot: fixed, 1-8 agents, both grains
     calibration easy and medium presets on dev seeds, for a few designs: is the difficulty in the range where
                 designs can differ (CALIBRATION_BAND of tasks done) for the model at hand? The presets were
                 tuned on scripted teams; this checks them against LLM agents before the real runs
@@ -61,7 +62,8 @@ NETSCALE_SIZES = (1, 2, 4, 8, 16, 32)
 NETSCALE_PILOT = (1, 2, 4, 8)
 NETSCALE_FIXED = (16, 4)  # width, depth of the fixed family
 NETSCALE_DEPTH = 4  # depth of the scaled family (width = team size)
-NETSCALE_CALLS = 3  # tool calls for the team: this many times the scripted team's work (in actions)
+NETSCALE_GRAINS = (1, 4)  # applies per task: how much computation a task holds against sharing its answer
+NETSCALE_CALLS = 3  # tool calls for the team: this many times the actions a team needs
 COMPAT = ["compat/math-decomposable", "compat/math-sequential", "compat/codeworld"]
 HELDOUT = ["math/heldout-number-theory", "math/heldout-combinatorics", "website/heldout-todo",
            "molecule/heldout-kinase"]
@@ -97,18 +99,14 @@ def _heldout_seeds(name: str) -> list[int]:
     return presets.seeds(name, 5) if "seeds" in presets.PRESETS[name] else [0, 1, 2]  # fixed tasks: repeats
 
 
-def netscale_case(family: str, n: int, seeds: list[int]) -> Case:
+def netscale_case(family: str, n: int, seeds: list[int], grain: int = 1) -> Case:
     """A team of ``n`` identical agents on a DAG problem: the fixed one, or one ``n`` wide."""
-    import random
-
-    from worldseeds.net.providers.math import gen_dag
-
-    from .scaling import work_span
-
     width, depth = NETSCALE_FIXED if family == "fixed" else (n, NETSCALE_DEPTH)
-    work = work_span({t["id"]: t for t in gen_dag(random.Random(0), width, depth)}, shared=True)[0]
-    return Case(f"dag/{family}/n{n}", f"dag/{family}", seeds, opt={"explorers": n, "dag": [width, depth, 2]},
-                lockstep=True, calls=max(NETSCALE_CALLS * work, CALLS_PER_MEMBER * n))
+    tasks = width * depth + 1
+    # a task's actions for a team: at most one read, the applies, the submission, passing the answer on
+    calls = max(NETSCALE_CALLS * tasks * (grain + 3), CALLS_PER_MEMBER * n)
+    return Case(f"dag/{family}-g{grain}/n{n}", f"dag/{family}", seeds,
+                opt={"agents": n, "width": width, "depth": depth, "grain": grain}, lockstep=True, calls=calls)
 
 
 SUITES: dict[str, list[Case]] = {
@@ -144,8 +142,9 @@ SUITES: dict[str, list[Case]] = {
     "guidance": [Case(f"{p}/guidance{g}", p, TEST_SEEDS[:5], net={"guidance": g})
                  for p in ("math/easy", "math/medium", "codeworld/medium") for g in (0, 1)],
     "memory": [Case(f"{p}/memory", p, TEST_SEEDS, memory=True) for p in ("math/medium", "codeworld/medium")],
-    "netscale-pilot": [netscale_case("fixed", n, TEST_SEEDS[:3]) for n in NETSCALE_PILOT],
-    "netscale": [netscale_case(f, n, TEST_SEEDS[:5]) for f in ("fixed", "scaled") for n in NETSCALE_SIZES],
+    "netscale-pilot": [netscale_case("fixed", n, TEST_SEEDS[:3], g) for g in NETSCALE_GRAINS for n in NETSCALE_PILOT],
+    "netscale": [netscale_case(f, n, TEST_SEEDS[:5], g) for g in NETSCALE_GRAINS for f in ("fixed", "scaled")
+                 for n in NETSCALE_SIZES],
     "calibration": [Case(p, p, DEV_SEEDS) for p in EASY + MEDIUM]
     + [Case(p, p, DEV_SEEDS, track="compat") for p in COMPAT],
 }

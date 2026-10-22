@@ -125,34 +125,49 @@ ACCOUNT=... STAGE=load SEEDS=3 LOAD_DESIGNS="sas centralized" bash slurm/run_all
 
 ## Agent-network scaling (`--suite netscale-pilot`, `--suite netscale`)
 
-How does a team of LLM agents scale on a problem that is larger than one agent, compared with a team that wastes nothing? Mieczkowski et al. (2026, arXiv 2603.12229) measured Amdahl's law with 1-5 agents on 20 coding subtasks; this suite takes it to 32 agents, to problems that grow with the team, and to a reference curve for every size.
+How does a team of LLM agents scale on a problem that is larger than one agent, compared with what is possible? Mieczkowski et al. (2026, arXiv 2603.12229) measured Amdahl's law with 1-5 agents on 20 coding subtasks; this suite takes it to 32 agents, to problems that grow with the team, and to a lower bound and a reference curve for every size.
 
-- **The problems** (math provider, `dag=(width, depth, fanin)`, presets `dag/fixed` and `dag/scaled`): `depth` layers of `width` recurrences; each task starts from the answers of two tasks of the layer before, and a final task adds up the last layer. Work and span are known exactly.
+- **The problems** (the DAG provider, `worldseeds/net/providers/dag.py`; presets `dag/fixed` and `dag/scaled`):
+  - `depth` layers of `width` tasks and a final task;
+  - every task has a hidden function of its own (a keyed hash), learned only through the `apply` operation;
+  - a task starts from its parents' answers (the sum mod 1000) and applies its function `grain` times in a row;
+  - the answer is a bare whole number, checked exactly.
+
+  No reasoning shortcuts a task. One agent needs at least W = tasks x (grain + 1) actions; a team of N needs at least max(W / N, D) rounds, with D = (depth + 1) x (grain + 1).
   - `fixed`: 16 x 4 for every team size (Amdahl).
   - `scaled`: 4 layers as wide as the team (Gustafson).
-- **The team**: `peers`, N identical agents working at once with every tool, an equal share of the calls, and nothing prescribed about how to share the work. With N = 1 it is a single agent with the same briefing (a lone agent has no store and keeps answers itself).
-- **Time**: lockstep rounds (`netagents/lockstep.py`). Every round, every agent still working takes one action; an agent's action waits for the others' choices, so a team is as slow as it really is in parallel. An operation that costs k actions keeps its agent busy for k rounds.
-- **The reference**: `python -m netagents.scaling` runs a scripted team (list scheduling through the shared store) on the same problems. Work and span are counted in actions, so a team pays for its reads and writes of the store and one agent does not. Seed 0:
+  - `grain` 1 or 4: how much computation a task holds against what sharing its answer costs.
+- **Why not recurrences.** The first version used the math provider's recurrences (`dag` option). In the 2026-10-22 pilot (`results/net/runs/20261022-codex-netscale-pilot-01`), a strong model handed in closed forms such as `Mod((5**31 - 1)/4, 1009)` without any tool. It also nested parents' expressions into their children's, so the single agent beat the "reference" (T = 82 against 129) and neither work nor span held.
+- **The team**: `peers`, N identical agents working at once, an equal share of the calls, and nothing prescribed about how to share the work. With N = 1 it is a single agent with the same briefing.
+- **Time**: lockstep rounds (`netagents/lockstep.py`). Every round, every agent still working takes one action, so a team is as slow as it really is in parallel.
+- **The lower bound and the reference** (`python -m netagents.scaling`):
+  - the lower bound counts sharing as free;
+  - the reference is a scripted team that passes answers on in the cheaper of two ways: a broadcast plus one inbox read, or the store with one write and one read per answer.
+
+  Seed 0, fixed family:
 
   | agents | 1 | 2 | 4 | 8 | 16 | 32 |
   |---|---|---|---|---|---|---|
-  | fixed: rounds | 129 | 160 | 88 | 52 | 34 | 32 |
-  | fixed: speed-up | 1.00 | 0.81 | 1.47 | 2.48 | 3.79 | 4.03 |
-  | scaled: speed-up | 1.00 | 0.85 | 1.50 | 2.50 | 3.79 | 5.14 |
+  | grain 1: lower bound | 130 | 65 | 33 | 17 | 10 | 10 |
+  | grain 1: reference | 130 | 102 | 54 | 30 | 18 | 16 |
+  | grain 4: lower bound | 325 | 163 | 82 | 41 | 25 | 25 |
+  | grain 4: reference | 325 | 201 | 105 | 57 | 33 | 31 |
 
-  Two agents are slower than one (sharing answers costs actions), and the fixed problem's speed-up stops near 4 (the final task reads 16 answers).
-- **Calls**: three times the scripted team's work for the team (at least 40 per agent); budgets are not the limit, time is.
+  With 8 agents, the reference reaches 57% of the bound's speed-up at grain 1 and 72% at grain 4: coarser tasks pay for their sharing.
+- **Calls**: three times the actions a team needs (at least 40 per agent); budgets are not the limit, time is.
 - **Measured** (`summary.md`, "Network scale"; or `python -m netagents.netscale <dir>`):
-  - T, the team's rounds to solve, and T_ref, the reference's;
+  - T, the team's rounds;
+  - b = T_lb / T, efficiency against the bound;
   - a = T_ref / T, closeness to the reference;
-  - eta = a(N) / a(1), coordination efficiency. On the fixed family it is the team's speed-up over its own single agent divided by the reference's speed-up;
-  - a Universal Scalability Law fit (sigma: contention, kappa: coherence; kappa > 0 gives a size beyond which more agents are slower);
-  - where the actions went: compute, store, coordination, waiting, submissions, duplicated computations.
-- **The pilot**: fixed, N = 1, 2, 4, 8, 3 seeds. It answers one question before the full suite: is eta clearly above zero, and does it change with N?
+  - eta = a(N) / a(1), coordination efficiency;
+  - the speed-up and a Universal Scalability Law fit;
+  - where the actions went.
+- **The pilot**: fixed, grain 1 and 4, N = 1, 2, 4, 8, 3 seeds (24 runs).
 
 ```bash
-ACCOUNT=... STAGE=netscale-pilot bash slurm/run_all.sh     # the pilot: 4 sizes x 3 seeds, one packed job
-ACCOUNT=... STAGE=netscale bash slurm/run_all.sh           # 1-32 agents, fixed and scaled, 5 seeds
+ACCOUNT=... STAGE=netscale-pilot bash slurm/run_all.sh     # the pilot, one packed job
+ACCOUNT=... STAGE=netscale bash slurm/run_all.sh           # 1-32 agents, fixed and scaled, both grains, 5 seeds
+python -m netagents.codex_netscale --out ...               # the same suite with Codex as the model (docs/codex-netscale.md)
 ```
 
 ## Two tracks
@@ -363,20 +378,17 @@ python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时
 
 ## 智能体网络的扩展（`--suite netscale-pilot`、`--suite netscale`）
 
-问题：在一个超出单个智能体能力的问题上，LLM 团队随人数增加能快多少？和一支从不浪费动作的理想团队相比差多少？Mieczkowski 等（2026）在 1 到 5 个智能体、20 个编程子任务上验证了阿姆达尔定律；这里扩展到 32 个智能体、随团队变大的问题，并且每个规模都有参考曲线。
+- **问题**（DAG 环境 `worldseeds/net/providers/dag.py`）：
+  - 若干层任务加一道汇总题；
+  - 每道题有自己的隐藏函数（带密钥的哈希），只能通过 `apply` 一次一次地算；
+  - 起点是父任务答案之和（模 1000），连续算 `grain` 次；
+  - 只收整数答案，精确比对。
 
-- **问题**（数学环境的 `dag` 选项，预设 `dag/fixed` 和 `dag/scaled`）：若干层递推题，每题从上一层两道题的答案出发，最后一题把最后一层加起来。工作量和关键路径长度都精确已知。
-  - `fixed`：所有规模都是 16 x 4（比阿姆达尔定律）；
-  - `scaled`：4 层，宽度等于人数（比古斯塔夫森定律）。
-- **团队**：`peers`，N 个一样的智能体同时工作，工具相同，调用次数平分，不规定怎么分工。N = 1 就是同样设置的单个智能体。
-- **时间**：同步轮次（`netagents/lockstep.py`）。每一轮，每个还在工作的智能体各走一步；一个智能体的动作要等其他人都选好才执行，所以团队有多慢就记多慢。耗费 k 个动作的操作占用 k 轮。
-- **参考**：`python -m netagents.scaling` 用脚本团队在同样的问题上跑。2 个人比 1 个人慢（共享答案要花动作），固定问题的加速比停在 4 左右（汇总题要读 16 个答案）。
-- **指标**：团队轮数 T 和参考轮数 T_ref；接近度 a = T_ref / T；协调效率 eta = a(N) / a(1)；通用扩展定律拟合（sigma 是争用，kappa 是一致性开销，kappa > 0 意味着超过某个人数后越加越慢）；动作花在了哪里。
-- **试跑**：固定问题，N = 1、2、4、8，3 个种子。只回答一个问题：eta 是否明显大于 0，并且随 N 变化。
-
-```bash
-ACCOUNT=... STAGE=netscale-pilot bash slurm/run_all.sh
-```
+  推理绕不过去，所以工作量和关键路径是任何智能体的下界：单人至少 W = 任务数 x (grain + 1) 步，N 人至少 max(W / N, D) 轮。
+- **为什么不用递推题**：10 月 22 日的试跑里，强模型直接提交闭式表达式，还把父任务的表达式嵌进子任务，单人比"参考"还快，工作量和关键路径都不成立。
+- **参考**：理论下界（共享答案按零成本算），以及在"广播"和"共享存储"两种方式中取更快者的脚本团队。8 人时，参考团队在 grain 1 下达到下界加速比的 57%，grain 4 下达到 72%：任务越粗，越能抵消共享的开销。
+- **指标**：轮数 T、相对下界的效率 b、相对参考的接近度 a、协调效率 eta、加速比、扩展定律拟合、动作分布。
+- **试跑**：固定问题，grain 1 和 4，1、2、4、8 人，3 个种子，共 24 次运行。
 
 ## 两条赛道
 

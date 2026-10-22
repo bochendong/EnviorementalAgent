@@ -436,13 +436,15 @@ def test_scaling_reference_obeys_brent_and_solves():
     from netagents import scaling
 
     for n in (1, 2, 4, 8):
-        r = scaling.run(4, 3, n, seed=0)
-        assert r["solved"]
-        # Brent: T_N <= W/N + D; and no team beats the span by more than a round per layer
-        assert r["rounds"] <= r["brent_rounds"]
-        assert r["rounds"] >= r["span"] - r["depth"] - 1
-        if n == 1:
-            assert r["rounds"] == r["work"]
+        for grain in (1, 3):
+            r = scaling.run(4, 3, n, seed=0, grain=grain)
+            assert r["solved"]
+            # no team beats the lower bound by more than a round per layer (an agent sees what another did
+            # earlier in the same round); sharing costs at most a read and a write per task
+            assert r["lower_bound"] - r["depth"] - 1 <= r["rounds"] <= r["lower_bound"] + 2 * (r["depth"] + 1) + \
+                (4 * 3 + 1) * 2 // n + 1
+            if n == 1:
+                assert r["rounds"] == r["work"] == r["lower_bound"]
 
 
 def test_lockstep_rounds_wait_for_every_working_agent():
@@ -451,7 +453,7 @@ def test_lockstep_rounds_wait_for_every_working_agent():
 
     from netagents.lockstep import Lockstep
 
-    raw = build("dag/fixed", opt={"explorers": 3, "dag": [2, 2, 2]})
+    raw = build("dag/fixed", opt={"agents": 3, "width": 2, "depth": 2})
     raw.reset(0)
     env = Lockstep(raw)
     rng = random.Random(0)
@@ -467,12 +469,12 @@ def test_lockstep_rounds_wait_for_every_working_agent():
 
     async def go():
         await asyncio.gather(agent("a0", [("wait", {})] * 5), agent("a1", [("wait", {})] * 2),
-                             agent("a2", [("rsolve", {"recurrence": "a(n+1) = 2*a(n) + 1", "init": {"0": 1}})]))
+                             agent("a2", [("submit", {"task": "L0.0", "artifact": "1"})]))
 
     asyncio.run(go())
     rep = env.report()
     assert rep["steps"] == 5 and rep["acted"] == {"a0": 5, "a1": 2, "a2": 1}
-    assert raw.round == (5 + 2 + 3) // 3  # the environment's own clock counts actions, not time
+    assert raw.round == (5 + 2 + raw.cfg.verify_cost) // 3  # the environment's own clock counts actions, not time
 
 
 def test_peers_run_in_lockstep_against_the_reference(mock_llm):
@@ -481,11 +483,13 @@ def test_peers_run_in_lockstep_against_the_reference(mock_llm):
     from netagents.testset import Case, netscale_case
 
     model, settings = mock_llm
-    case = Case("dag/fixed/tiny", "dag/fixed", [0], opt={"explorers": 3, "dag": [2, 2, 2]}, lockstep=True)
+    case = Case("dag/fixed/tiny", "dag/fixed", [0], opt={"agents": 3, "width": 2, "depth": 2}, lockstep=True)
     r = run_one(DESIGNS["peers"], case, 0, model, settings, 12)
     assert r["agents"] == 3 and 0 < r["llm_tool_calls"] <= 12
-    assert r["steps"] >= max(r["acted"].values()) and r["reference_steps"] > 0 and r["work"] == 2 * 3 + 2 * 5 + 3
-    assert netscale_case("scaled", 8, [0]).opt["dag"] == [8, 4, 2]
+    assert r["steps"] >= max(r["acted"].values()) and r["reference_steps"] >= r["lower_bound"] > 0
+    assert r["work"] == (2 * 2 + 1) * 2
+    c = netscale_case("scaled", 8, [0], grain=4)
+    assert (c.opt["width"], c.opt["grain"], c.team_size()) == (8, 4, 8)
 
 
 def test_netscale_table_and_usl_fit():

@@ -117,10 +117,11 @@ def run_one(design, case, seed, model, settings, calls, route: str | None = None
     if case.lockstep:  # the team's time and the scripted team's on the same problem (netagents/scaling.py)
         from .scaling import run as reference
 
-        width, depth, fanin = case.opt["dag"]
-        ref = reference(width, depth, len(raw.agents), seed, fanin)
-        timing = {**env.report(), "reference_steps": ref["rounds"], "work": ref["work"], "span": ref["span"],
-                  "width": width, "depth": depth}
+        p = raw.provider
+        ref = reference(p.width, p.depth, len(raw.agents), seed, p.fanin, p.grain)
+        timing = {**env.report(), "reference_steps": ref["rounds"], "reference_sharing": ref["sharing"],
+                  "lower_bound": ref["lower_bound"], "work": ref["work"], "span": ref["span"],
+                  "width": p.width, "depth": p.depth, "grain": p.grain}
     chan = design.chan.report() if hasattr(design, "chan") else {"route": "framework"}
     transcripts = {r["agent"]: r.pop("transcript") for r in reports if "transcript" in r}
     if trace:

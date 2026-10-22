@@ -24,7 +24,7 @@ def test_native_peers_and_lockstep_use_one_operation_per_response(tmp_path, monk
         return {"name": "wait", "arguments_json": "{}"}, {"input_tokens": 10, "output_tokens": 2}
 
     monkeypatch.setattr(model, "_invoke", inference)
-    case = Case("dag/fixed/dev", "dag/fixed", [0], opt={"explorers": 3, "dag": [2, 2, 2]}, lockstep=True)
+    case = Case("dag/fixed/dev", "dag/fixed", [0], opt={"agents": 3, "width": 2, "depth": 2}, lockstep=True)
     row = run_one(DESIGNS["peers"], case, 0, model, ModelSettings(tool_choice="required", parallel_tool_calls=False), 6)
     assert row["llm_errors"] == 0
     assert row["llm_tool_calls"] == row["llm_requests"] == len(inputs) == 6
@@ -33,11 +33,11 @@ def test_native_peers_and_lockstep_use_one_operation_per_response(tmp_path, monk
     assert row["input_tokens"] == 60 and row["output_tokens"] == 12
 
 
-def test_original_pilot_configuration_is_preserved():
+def test_pilot_configuration():
     cases = SUITES["netscale-pilot"]
-    assert [c.team_size() for c in cases] == [1, 2, 4, 8]
-    assert all(c.seeds == [100, 101, 102] and c.opt["dag"] == [16, 4, 2] for c in cases)
-    assert all(c.calls == 915 and c.lockstep for c in cases)
+    assert [c.team_size() for c in cases] == [1, 2, 4, 8] * 2
+    assert all(c.seeds == [100, 101, 102] and (c.opt["width"], c.opt["depth"]) == (16, 4) for c in cases)
+    assert [c.opt["grain"] for c in cases] == [1] * 4 + [4] * 4 and all(c.lockstep for c in cases)
 
 
 def test_transport_audit_rejects_outside_capabilities():
