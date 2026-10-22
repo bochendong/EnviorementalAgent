@@ -1,6 +1,7 @@
-"""Run the existing netscale-pilot suite with Codex as its SDK model.
+"""Run the netscale suites with Codex as its SDK model.
 
     python -m netagents.codex_netscale --model gpt-6.1-sol --out results/net/runs/codex/netscale-pilot
+    python -m netagents.codex_netscale --suite netscale --sizes 16 32 --grains 4 --seeds 100 101 102 --out ...
 
 Keeps Peers, Lockstep, cases, seeds, tool budgets, traces and summary unchanged.
 Only inference goes through the logged-in Codex CLI. Completed requests are
@@ -33,7 +34,10 @@ def execute_job(case, seed, args, gate, stop):
         raise RuntimeError("Experiment stopped after an infrastructure failure")
     out = args.out.resolve()
     n = case.team_size()
-    directory = out / "episodes" / f"n{n}-seed{seed}"
+    # the pilot's runs keep their directory names (cached calls resume from them); the full suite has two
+    # families and two grains per size
+    name = f"n{n}-seed{seed}" if args.suite == "netscale-pilot" else f"{case.id.split('/')[1]}-n{n}-seed{seed}"
+    directory = out / "episodes" / name
     model = CodexCLIModel(directory, args.model, args.reasoning_effort, gate, args.timeout, stop=stop)
     write_json(directory / "status.json", {"status": "running", "agents": n, "seed": seed, "call_budget": case.calls,
                                             "problem": case.opt, "started_epoch": time.time()})
@@ -58,7 +62,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--reasoning-effort", default="high", choices=["low", "medium", "high", "xhigh"])
-    parser.add_argument("--suite", default="netscale-pilot", choices=["netscale-pilot"])
+    parser.add_argument("--suite", default="netscale-pilot", choices=["netscale-pilot", "netscale"])
+    parser.add_argument("--families", nargs="+", default=["fixed"], choices=["fixed", "scaled"],
+                        help="netscale only: the fixed problem, or one as wide as the team")
     parser.add_argument("--sizes", nargs="+", type=int, default=[1, 2, 4, 8])
     parser.add_argument("--seeds", nargs="+", type=int, default=[100, 101, 102])
     parser.add_argument("--grains", nargs="+", type=int, default=[1], help="applies per task (the suite has 1 and 4)")
@@ -68,8 +74,11 @@ def main():
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    if not set(args.sizes) <= {1, 2, 4, 8} or not set(args.seeds) <= {100, 101, 102} or not set(args.grains) <= {1, 4}:
-        parser.error("Use the pilot's original sizes and test seeds; development checks belong in a separate run")
+    suite = SUITES[args.suite]
+    if not (set(args.sizes) <= {c.team_size() for c in suite} and set(args.seeds) <= set(suite[0].seeds)
+            and set(args.grains) <= {c.opt["grain"] for c in suite}):
+        parser.error(f"Use the {args.suite} suite's sizes, test seeds and grains; development checks belong in a "
+                     "separate run")
     if min(args.parallel_runs, args.inference_concurrency, args.timeout) < 1:
         parser.error("Concurrency and timeout must be positive")
     out = args.out.resolve()
@@ -81,7 +90,8 @@ def main():
               "model_transport": "One Codex JSON tool selection per SDK model response; no outside capabilities"}
     if args.resume:
         previous = json.loads((out / "config.json").read_text())
-        for key in ("model", "reasoning_effort", "suite", "sizes", "seeds", "grains", "agents_sdk", "sympy", "git_commit"):
+        for key in ("model", "reasoning_effort", "suite", "families", "sizes", "seeds", "grains", "agents_sdk", "sympy",
+                    "git_commit"):
             if previous[key] != config[key]:
                 raise ValueError(f"Resume configuration changed: {key}")
     else:
@@ -93,7 +103,8 @@ def main():
     path = out / "runs.jsonl"
     rows = [json.loads(line) for line in path.read_text().splitlines() if line] if path.exists() else []
     done = {(r["case"], r["seed"]) for r in rows}
-    cases = [c for c in SUITES[args.suite] if c.team_size() in args.sizes and c.opt["grain"] in args.grains]
+    cases = [c for c in suite if c.team_size() in args.sizes and c.opt["grain"] in args.grains
+             and c.id.split("/")[1].split("-")[0] in args.families]
     jobs = [(case, seed) for seed in args.seeds for case in cases if (case.id, seed) not in done]
     planned = len(cases) * len(args.seeds)
     plan = [{"case": case.id, "seed": seed, "agents": case.team_size(), "calls": case.calls, "problem": case.opt} for case, seed in jobs]

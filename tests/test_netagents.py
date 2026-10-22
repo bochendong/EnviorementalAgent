@@ -518,3 +518,13 @@ def test_batch_reference_and_sharing_labels():
     assert sharing({**base, "ops": {"send": 26}}) == "batch"
     assert sharing({**base, "ops": {"send": 70}}) == "broadcast"
     assert sharing({**base, "agents": 1, "ops": {}}) == "none"
+
+
+def test_superstep_overhead_and_prediction():
+    from netagents.netscale import predict, superstep_overhead
+
+    rows = [{"agents": n, "solved_step": 41 + 5 * 4 + k, "lower_bound": 41, "depth": 4, "width": 16, "grain": 4,
+             "seed": 100} for n, k in ((2, 0), (4, 0), (8, 0))]
+    b = superstep_overhead(rows)
+    assert b["L"] == 4 and b["L_ref"] > 0
+    assert predict(rows[0], 32, b) == 25 + 5 * 4  # the span bounds 32 agents

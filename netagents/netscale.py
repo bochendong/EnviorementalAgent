@@ -20,7 +20,8 @@ problem (worldseeds/net/providers/dag.py), time in lockstep rounds (netagents/lo
                   speed-up; below 1, adding agents loses more to coordination than the reference does
     speed-up      T(1)/T(N) on the fixed family
 
-and the round budget each team's actions went to (compute, the shared store, coordination, waiting,
+the bulk synchronous reading T = T_lb + S x L (L: rounds lost per superstep, S = depth + 1; with predictions
+for team sizes not yet run), and the round budget each team's actions went to (compute, the shared store, coordination, waiting,
 submissions), with duplicated computations. The Universal Scalability Law (Gunther), S(N) = N / (1 +
 sigma (N - 1) + kappa N (N - 1)), is fitted to the fixed family's speed-ups: sigma is contention (work that
 does not split), kappa coherence (the cost of keeping each other up to date); kappa > 0 means a team size
@@ -92,6 +93,26 @@ def sharing(r: dict) -> str:
     return "batch" if ops.get("send", 0) < 0.75 * tasks else "broadcast"
 
 
+def superstep_overhead(rows: list[dict]) -> dict | None:
+    """The bulk synchronous reading of a family: T = T_lb + S x L, with S = depth + 1 supersteps. L, the rounds a
+    team loses per superstep (sharing and synchronising), from solved runs of 2 or more agents; L_ref, the
+    scripted reference's."""
+    rs = [r for r in rows if r["agents"] > 1 and r.get("solved_step") and "lower_bound" in r]
+    if len(rs) < 2:
+        return None
+    ls = [(r["solved_step"] - r["lower_bound"]) / (r["depth"] + 1) for r in rs]
+    q1, _, q3 = st.quantiles(ls, n=4)
+    return {"L": st.median(ls), "q1": q1, "q3": q3, "runs": len(rs),
+            "L_ref": st.median((reference(r) - r["lower_bound"]) / (r["depth"] + 1) for r in rs)}
+
+
+def predict(r: dict, n: int, bsp: dict) -> float:
+    """T for a team of ``n`` on the problem of run ``r``, from the bulk synchronous reading."""
+    from .scaling import lower_bound
+
+    return lower_bound(r["width"], r["depth"], n, r["grain"]) + (r["depth"] + 1) * bsp["L"]
+
+
 def rows_by_size(rows: list[dict]) -> dict:
     """{family: {N: [runs]}} for the runs that recorded lockstep time."""
     out: dict = {}
@@ -144,6 +165,17 @@ def table(rows: list[dict]) -> str:
             text += ["", f"Universal Scalability Law fit to the speed-ups: sigma = {sigma:.3f}, kappa = {kappa:.4f} "
                          f"(RMSE {err:.2f}); " + (f"the speed-up peaks near N* = {peak:.1f}." if kappa > 0 else
                                                   "no peak (kappa = 0).")]
+        bsp = superstep_overhead([r for n in ns for r in sizes[n]])
+        if bsp:
+            text += ["", f"Bulk synchronous reading: T = T_lb + S x L, S = depth + 1 supersteps (layers and the final "
+                         f"task). The team's overhead per superstep L (median over runs of 2 or more agents, "
+                         f"{bsp['runs']} runs): {bsp['L']:.1f} rounds (quartiles {bsp['q1']:.1f}-{bsp['q3']:.1f}); "
+                         f"the scripted reference's: {bsp['L_ref']:.1f}."]
+            if family.startswith("fixed") and "grain" in sizes[ns[0]][0]:
+                r0 = sizes[ns[0]][0]
+                pred = [f"N = {n}: {predict(r0, n, bsp):.0f} rounds" for n in (16, 32) if n not in sizes]
+                if pred:
+                    text += ["", "Predicted from that L (to be checked by runs not yet made): " + "; ".join(pred) + "."]
         text += ["", "Where the team's actions went (mean per run):", "",
                  "| agents | " + " | ".join(KINDS) + " | other | duplicated computations | wrong submissions | "
                  "rounds acted / rounds (mean over agents) |", "|---|" + "---|" * (len(KINDS) + 4)]

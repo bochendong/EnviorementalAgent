@@ -104,7 +104,10 @@ def netscale_case(family: str, n: int, seeds: list[int], grain: int = 1) -> Case
     width, depth = NETSCALE_FIXED if family == "fixed" else (n, NETSCALE_DEPTH)
     tasks = width * depth + 1
     # a task's actions for a team: at most one read, the applies, the submission, passing the answer on
-    calls = max(NETSCALE_CALLS * tasks * (grain + 3), CALLS_PER_MEMBER * n)
+    # and enough for every agent to keep acting through a slow run: its share of the work plus every layer's
+    # applies and sharing (never binding in the pilots, which used at most 42% of their calls)
+    per_agent = -(-tasks * (grain + 1) // n) + (depth + 1) * (grain + 3)
+    calls = max(NETSCALE_CALLS * tasks * (grain + 3), CALLS_PER_MEMBER * n, NETSCALE_CALLS * n * per_agent)
     return Case(f"dag/{family}-g{grain}/n{n}", f"dag/{family}", seeds,
                 opt={"agents": n, "width": width, "depth": depth, "grain": grain}, lockstep=True, calls=calls)
 
