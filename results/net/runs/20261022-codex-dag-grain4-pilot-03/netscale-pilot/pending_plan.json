@@ -1,0 +1,26 @@
+[
+  {
+    "case": "dag/fixed-g4/n4",
+    "seed": 102,
+    "agents": 4,
+    "calls": 1365,
+    "problem": {
+      "agents": 4,
+      "width": 16,
+      "depth": 4,
+      "grain": 4
+    }
+  },
+  {
+    "case": "dag/fixed-g4/n8",
+    "seed": 102,
+    "agents": 8,
+    "calls": 1365,
+    "problem": {
+      "agents": 8,
+      "width": 16,
+      "depth": 4,
+      "grain": 4
+    }
+  }
+]

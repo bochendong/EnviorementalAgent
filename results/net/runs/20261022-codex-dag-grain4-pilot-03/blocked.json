@@ -1,0 +1,77 @@
+{
+  "complete": false,
+  "reason": "CLI usage-limit error stopped the run; no automatic restart attempted",
+  "completed_runs": 10,
+  "planned_runs": 12,
+  "completed_runs_audit": "netscale-pilot/audit.json (complete=false; 650 correct tasks with full 4-edge chains)",
+  "unfinished": [
+    {
+      "episode": "n4-seed102",
+      "done": 59,
+      "tasks": 65,
+      "solved": false,
+      "steps": 101,
+      "llm_errors": 12
+    },
+    {
+      "episode": "n8-seed102",
+      "done": 16,
+      "tasks": 65,
+      "solved": false,
+      "steps": 16,
+      "llm_errors": 24
+    }
+  ],
+  "usage_all_formal_attempts_with_receipts": {
+    "input_tokens": 134330153,
+    "cached_input_tokens": 38653440,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 226496,
+    "reasoning_output_tokens": 75768,
+    "total_tokens": 134556649
+  },
+  "successful_cli_receipts": 4411,
+  "attempts_without_usage_receipt": 107,
+  "usage_scope": "All saved formal CLI receipts, including the two interrupted episodes; excludes development and chat. Unreceipted failures have unknown usage. Cached and reasoning counts are subsets. Interrupted episode result.json usage counters are zero after errors; receipts above retain the actual successful request usage.",
+  "failure_errors": {
+    "You’ve hit your usage limit. Visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 29th, 2026 1:09 PM.": 104,
+    "Selected model is at capacity. Please try a different model.": 1,
+    "Reconnecting... 2/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc32cf38ab2e-YYZ)": 1,
+    "Reconnecting... 3/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc3929d27aa8-YYZ)": 1,
+    "Reconnecting... 4/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc414908de04-YYZ)": 1,
+    "Reconnecting... 5/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc4e287cc65d-YYZ)": 1,
+    "Reconnecting... 2/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc38d80eab4b-YYZ)": 1,
+    "Reconnecting... 3/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc3df8a5713b-YYZ)": 1,
+    "Reconnecting... 4/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc45e97b3786-YYZ)": 1,
+    "Reconnecting... 5/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc5319e036eb-YYZ)": 1
+  },
+  "checked_at_toronto": "2026-10-22T18:26:48.105347-04:00",
+  "account_api_after_failure": {
+    "ordinaryUsageAllowed": true,
+    "primary_usedPercent": 0,
+    "resetsAt": 1793312748,
+    "reset_credits_available": 0,
+    "note": "Read-only account status appears restored or differs from failed CLI receipts. No inference probe, reset, purchase or automatic restart performed."
+  },
+  "resume_command": [
+    "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/.venv/bin/python",
+    "-m",
+    "netagents.codex_netscale",
+    "--model",
+    "gpt-6.1-sol",
+    "--reasoning-effort",
+    "high",
+    "--grains",
+    "4",
+    "--parallel-runs",
+    "2",
+    "--inference-concurrency",
+    "2",
+    "--out",
+    "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-dag-grain4-pilot-03/netscale-pilot",
+    "--resume"
+  ],
+  "automatic_resumes_used": 0,
+  "followup": "Deleted after usage-limit blocker as instructed; caches and original PID retained.",
+  "git_push": "No final result commit or push: only 10 of 12 runs complete."
+}

@@ -1,0 +1,5 @@
+{
+  "status": "infrastructure_error",
+  "completed_runs": 10,
+  "error": "Model errors in dag/fixed-g4/n8, seed 102; see /Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-dag-grain4-pilot-03/netscale-pilot/episodes/n8-seed102/result.json"
+}

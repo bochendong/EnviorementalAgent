@@ -1,0 +1,145 @@
+{
+  "source_commit": "1953d3c0f4cd7a213661e518b70bde66066fc676",
+  "scope": "Development seeds only; no model calls or policy tuning",
+  "checks": [
+    {
+      "seed": 0,
+      "tasks": 65,
+      "all_chains_nonrepeating": true
+    },
+    {
+      "seed": 1,
+      "tasks": 65,
+      "all_chains_nonrepeating": true
+    },
+    {
+      "seed": 2,
+      "tasks": 65,
+      "all_chains_nonrepeating": true
+    }
+  ],
+  "references": [
+    {
+      "width": 16,
+      "depth": 4,
+      "grain": 1,
+      "agents": 1,
+      "seed": 0,
+      "solved": true,
+      "rounds": 130,
+      "sharing": "none",
+      "work": 130,
+      "span": 10,
+      "lower_bound": 130
+    },
+    {
+      "width": 16,
+      "depth": 4,
+      "grain": 1,
+      "agents": 2,
+      "seed": 0,
+      "solved": true,
+      "rounds": 74,
+      "sharing": "batch",
+      "rounds_broadcast": 102,
+      "rounds_store": 116,
+      "rounds_batch": 74,
+      "work": 130,
+      "span": 10,
+      "lower_bound": 65
+    },
+    {
+      "width": 16,
+      "depth": 4,
+      "grain": 1,
+      "agents": 4,
+      "seed": 0,
+      "solved": true,
+      "rounds": 42,
+      "sharing": "batch",
+      "rounds_broadcast": 54,
+      "rounds_store": 72,
+      "rounds_batch": 42,
+      "work": 130,
+      "span": 10,
+      "lower_bound": 33
+    },
+    {
+      "width": 16,
+      "depth": 4,
+      "grain": 1,
+      "agents": 8,
+      "seed": 0,
+      "solved": true,
+      "rounds": 26,
+      "sharing": "batch",
+      "rounds_broadcast": 30,
+      "rounds_store": 49,
+      "rounds_batch": 26,
+      "work": 130,
+      "span": 10,
+      "lower_bound": 17
+    },
+    {
+      "width": 16,
+      "depth": 4,
+      "grain": 4,
+      "agents": 1,
+      "seed": 0,
+      "solved": true,
+      "rounds": 325,
+      "sharing": "none",
+      "work": 325,
+      "span": 25,
+      "lower_bound": 325
+    },
+    {
+      "width": 16,
+      "depth": 4,
+      "grain": 4,
+      "agents": 2,
+      "seed": 0,
+      "solved": true,
+      "rounds": 173,
+      "sharing": "batch",
+      "rounds_broadcast": 201,
+      "rounds_store": 217,
+      "rounds_batch": 173,
+      "work": 325,
+      "span": 25,
+      "lower_bound": 163
+    },
+    {
+      "width": 16,
+      "depth": 4,
+      "grain": 4,
+      "agents": 4,
+      "seed": 0,
+      "solved": true,
+      "rounds": 93,
+      "sharing": "batch",
+      "rounds_broadcast": 105,
+      "rounds_store": 123,
+      "rounds_batch": 93,
+      "work": 325,
+      "span": 25,
+      "lower_bound": 82
+    },
+    {
+      "width": 16,
+      "depth": 4,
+      "grain": 4,
+      "agents": 8,
+      "seed": 0,
+      "solved": true,
+      "rounds": 53,
+      "sharing": "batch",
+      "rounds_broadcast": 57,
+      "rounds_store": 76,
+      "rounds_batch": 53,
+      "work": 325,
+      "span": 25,
+      "lower_bound": 41
+    }
+  ]
+}

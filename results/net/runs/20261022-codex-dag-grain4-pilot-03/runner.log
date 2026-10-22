@@ -1,0 +1,41 @@
+{"case": "dag/fixed-g4/n2", "seed": 100, "solved": true, "done": 65, "tasks": 65, "steps": 199, "reference_steps": 173, "llm_tool_calls": 398}
+{"case": "dag/fixed-g4/n1", "seed": 100, "solved": true, "done": 65, "tasks": 65, "steps": 330, "reference_steps": 325, "llm_tool_calls": 330}
+{"case": "dag/fixed-g4/n4", "seed": 100, "solved": true, "done": 65, "tasks": 65, "steps": 100, "reference_steps": 93, "llm_tool_calls": 400}
+{"case": "dag/fixed-g4/n8", "seed": 100, "solved": true, "done": 65, "tasks": 65, "steps": 62, "reference_steps": 53, "llm_tool_calls": 496}
+{"case": "dag/fixed-g4/n2", "seed": 101, "solved": true, "done": 65, "tasks": 65, "steps": 180, "reference_steps": 173, "llm_tool_calls": 360}
+{"case": "dag/fixed-g4/n1", "seed": 101, "solved": true, "done": 65, "tasks": 65, "steps": 330, "reference_steps": 325, "llm_tool_calls": 330}
+{"case": "dag/fixed-g4/n4", "seed": 101, "solved": true, "done": 65, "tasks": 65, "steps": 99, "reference_steps": 93, "llm_tool_calls": 396}
+{"case": "dag/fixed-g4/n8", "seed": 101, "solved": true, "done": 65, "tasks": 65, "steps": 59, "reference_steps": 53, "llm_tool_calls": 472}
+{"case": "dag/fixed-g4/n2", "seed": 102, "solved": true, "done": 65, "tasks": 65, "steps": 185, "reference_steps": 173, "llm_tool_calls": 370}
+{"case": "dag/fixed-g4/n1", "seed": 102, "solved": true, "done": 65, "tasks": 65, "steps": 330, "reference_steps": 325, "llm_tool_calls": 330}
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/Users/dongbochen/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/process.py", line 264, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/dongbochen/.codex/worktrees/codex-dag-pilot/EnviorementalAgent/netagents/codex_netscale.py", line 47, in execute_job
+    raise RuntimeError(f"Model errors in {case.id}, seed {seed}; see {directory / 'result.json'}")
+RuntimeError: Model errors in dag/fixed-g4/n8, seed 102; see /Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-dag-grain4-pilot-03/netscale-pilot/episodes/n8-seed102/result.json
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/dongbochen/.codex/worktrees/codex-dag-pilot/EnviorementalAgent/netagents/codex_netscale.py", line 126, in <module>
+    main()
+  File "/Users/dongbochen/.codex/worktrees/codex-dag-pilot/EnviorementalAgent/netagents/codex_netscale.py", line 110, in main
+    result = future.result()
+             ^^^^^^^^^^^^^^^
+  File "/Users/dongbochen/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/dongbochen/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+RuntimeError: Model errors in dag/fixed-g4/n8, seed 102; see /Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-dag-grain4-pilot-03/netscale-pilot/episodes/n8-seed102/result.json
+
+User-authorized resume 2026-10-22T18:29:41.770690-04:00; prior failure preserved at /Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-dag-grain4-pilot-03/failure-snapshots/20261022T182941-0400
+{"case": "dag/fixed-g4/n4", "seed": 102, "solved": true, "done": 65, "tasks": 65, "steps": 119, "reference_steps": 93, "llm_tool_calls": 476}
+{"case": "dag/fixed-g4/n8", "seed": 102, "solved": true, "done": 65, "tasks": 65, "steps": 72, "reference_steps": 53, "llm_tool_calls": 576}

@@ -1,0 +1,112 @@
+{
+  "model_source_commit": "cb69623964fee882db2568a68a4e0357780f6462",
+  "reference_source_commit": "1953d3c0f4cd7a213661e518b70bde66066fc676",
+  "original_results": "../20261022-codex-dag-pilot-02/netscale-pilot/runs.jsonl",
+  "note": "Reanalysis only: old observations and apply audit preserved. The provider function and reference changed between batches, so this is not an identical-instance paired comparison. Sharing labels are the source heuristic, not causal attribution.",
+  "by_team_size": [
+    {
+      "agents": 1,
+      "seeds": [
+        100,
+        101,
+        102
+      ],
+      "T_per_seed": [
+        135,
+        135,
+        135
+      ],
+      "sharing_per_seed": [
+        "none",
+        "none",
+        "none"
+      ],
+      "mean_T": 135,
+      "reference_T": 130,
+      "a": 0.9629629629629629,
+      "b": 0.9629629629629629,
+      "mean_tool_calls": 135,
+      "mean_total_tokens": 3522720.6666666665,
+      "eta": 1.0,
+      "speedup": 1.0
+    },
+    {
+      "agents": 2,
+      "seeds": [
+        100,
+        101,
+        102
+      ],
+      "T_per_seed": [
+        80,
+        83,
+        88
+      ],
+      "sharing_per_seed": [
+        "batch",
+        "batch",
+        "batch"
+      ],
+      "mean_T": 83.66666666666667,
+      "reference_T": 74,
+      "a": 0.8844621513944223,
+      "b": 0.7768924302788844,
+      "mean_tool_calls": 167.33333333333334,
+      "mean_total_tokens": 4042089.3333333335,
+      "eta": 0.918479926448054,
+      "speedup": 1.6135458167330676
+    },
+    {
+      "agents": 4,
+      "seeds": [
+        100,
+        101,
+        102
+      ],
+      "T_per_seed": [
+        81,
+        55,
+        76
+      ],
+      "sharing_per_seed": [
+        "store",
+        "batch",
+        "store"
+      ],
+      "mean_T": 70.66666666666667,
+      "reference_T": 42,
+      "a": 0.5943396226415094,
+      "b": 0.46698113207547165,
+      "mean_tool_calls": 282.6666666666667,
+      "mean_total_tokens": 7008110.666666667,
+      "eta": 0.6171988388969522,
+      "speedup": 1.910377358490566
+    },
+    {
+      "agents": 8,
+      "seeds": [
+        100,
+        101,
+        102
+      ],
+      "T_per_seed": [
+        34,
+        33,
+        34
+      ],
+      "sharing_per_seed": [
+        "batch",
+        "batch",
+        "batch"
+      ],
+      "mean_T": 33.666666666666664,
+      "reference_T": 26,
+      "a": 0.7722772277227723,
+      "b": 0.504950495049505,
+      "mean_tool_calls": 269.3333333333333,
+      "mean_total_tokens": 5873595.333333333,
+      "eta": 0.801980198019802,
+      "speedup": 4.00990099009901
+    }
+  ]
+}

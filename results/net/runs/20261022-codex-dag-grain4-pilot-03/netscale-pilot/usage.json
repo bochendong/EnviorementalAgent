@@ -1,0 +1,257 @@
+{
+  "complete": true,
+  "formal_runs": 12,
+  "totals": {
+    "input_tokens": 149608163,
+    "cached_input_tokens": 43303680,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 253146,
+    "reasoning_output_tokens": 86115,
+    "total_tokens": 149861309
+  },
+  "interrupted_usage_totals": {
+    "total_tokens": 0
+  },
+  "all_receipted_usage_totals": {
+    "input_tokens": 149608163,
+    "cached_input_tokens": 43303680,
+    "output_tokens": 253146,
+    "reasoning_output_tokens": 86115,
+    "total_tokens": 149861309
+  },
+  "attempts_without_usage_receipt": 107,
+  "counting": "total_tokens = input_tokens + output_tokens. Cached input and reasoning output are subsets, not extra tokens.",
+  "scope": "totals counts each successful formal cached request once, not each replay. Interrupted or unused failed directories and any usage receipts are separate; all_receipted_usage_totals adds these receipts. Failures without receipts have unknown usage. Development, coding/report/chat usage excluded.",
+  "runs": [
+    {
+      "case": "dag/fixed-g4/n1",
+      "agents": 1,
+      "seed": 100,
+      "successful_requests": 330,
+      "usage": {
+        "input_tokens": 13502867,
+        "cached_input_tokens": 2714880,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15189,
+        "reasoning_output_tokens": 4341,
+        "total_tokens": 13518056
+      },
+      "interrupted_attempts": 2,
+      "interrupted_attempts_without_usage": 2,
+      "interrupted_errors": {
+        "Selected model is at capacity. Please try a different model.": 1
+      },
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n1",
+      "agents": 1,
+      "seed": 101,
+      "successful_requests": 330,
+      "usage": {
+        "input_tokens": 13493576,
+        "cached_input_tokens": 2840320,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15036,
+        "reasoning_output_tokens": 4210,
+        "total_tokens": 13508612
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n1",
+      "agents": 1,
+      "seed": 102,
+      "successful_requests": 330,
+      "usage": {
+        "input_tokens": 13482369,
+        "cached_input_tokens": 2894080,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15035,
+        "reasoning_output_tokens": 4205,
+        "total_tokens": 13497404
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n2",
+      "agents": 2,
+      "seed": 100,
+      "successful_requests": 398,
+      "usage": {
+        "input_tokens": 13899441,
+        "cached_input_tokens": 3467520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 22424,
+        "reasoning_output_tokens": 8913,
+        "total_tokens": 13921865
+      },
+      "interrupted_attempts": 1,
+      "interrupted_attempts_without_usage": 1,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n2",
+      "agents": 2,
+      "seed": 101,
+      "successful_requests": 360,
+      "usage": {
+        "input_tokens": 11294490,
+        "cached_input_tokens": 3198720,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 18640,
+        "reasoning_output_tokens": 6203,
+        "total_tokens": 11313130
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n2",
+      "agents": 2,
+      "seed": 102,
+      "successful_requests": 370,
+      "usage": {
+        "input_tokens": 11915953,
+        "cached_input_tokens": 3297280,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 19709,
+        "reasoning_output_tokens": 7043,
+        "total_tokens": 11935662
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n4",
+      "agents": 4,
+      "seed": 100,
+      "successful_requests": 400,
+      "usage": {
+        "input_tokens": 10544977,
+        "cached_input_tokens": 3467520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 20382,
+        "reasoning_output_tokens": 6561,
+        "total_tokens": 10565359
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n4",
+      "agents": 4,
+      "seed": 101,
+      "successful_requests": 396,
+      "usage": {
+        "input_tokens": 10300977,
+        "cached_input_tokens": 3530240,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 20615,
+        "reasoning_output_tokens": 6901,
+        "total_tokens": 10321592
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n4",
+      "agents": 4,
+      "seed": 102,
+      "successful_requests": 476,
+      "usage": {
+        "input_tokens": 13696586,
+        "cached_input_tokens": 4211200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 26625,
+        "reasoning_output_tokens": 9591,
+        "total_tokens": 13723211
+      },
+      "interrupted_attempts": 32,
+      "interrupted_attempts_without_usage": 32,
+      "interrupted_errors": {
+        "You’ve hit your usage limit. Visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 29th, 2026 1:09 PM.": 32
+      },
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n8",
+      "agents": 8,
+      "seed": 100,
+      "successful_requests": 496,
+      "usage": {
+        "input_tokens": 12056895,
+        "cached_input_tokens": 4354560,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 25821,
+        "reasoning_output_tokens": 9062,
+        "total_tokens": 12082716
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n8",
+      "agents": 8,
+      "seed": 101,
+      "successful_requests": 472,
+      "usage": {
+        "input_tokens": 11245469,
+        "cached_input_tokens": 4202240,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 24200,
+        "reasoning_output_tokens": 8274,
+        "total_tokens": 11269669
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n8",
+      "agents": 8,
+      "seed": 102,
+      "successful_requests": 576,
+      "usage": {
+        "input_tokens": 14174563,
+        "cached_input_tokens": 5125120,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 29470,
+        "reasoning_output_tokens": 10811,
+        "total_tokens": 14204033
+      },
+      "interrupted_attempts": 72,
+      "interrupted_attempts_without_usage": 72,
+      "interrupted_errors": {
+        "You’ve hit your usage limit. Visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 29th, 2026 1:09 PM.": 72,
+        "Reconnecting... 2/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc32cf38ab2e-YYZ)": 1,
+        "Reconnecting... 3/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc3929d27aa8-YYZ)": 1,
+        "Reconnecting... 4/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc414908de04-YYZ)": 1,
+        "Reconnecting... 5/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc4e287cc65d-YYZ)": 1,
+        "Reconnecting... 2/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc38d80eab4b-YYZ)": 1,
+        "Reconnecting... 3/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc3df8a5713b-YYZ)": 1,
+        "Reconnecting... 4/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc45e97b3786-YYZ)": 1,
+        "Reconnecting... 5/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ebcc5319e036eb-YYZ)": 1
+      },
+      "interrupted_usage_receipts": {}
+    }
+  ]
+}

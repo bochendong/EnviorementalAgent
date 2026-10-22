@@ -1,0 +1,6 @@
+{
+  "relevant_tests": "9 passed; see tests.xml",
+  "broader_environment_check": "64 passed, 2 skipped, 12 failed; failures in website sandbox and missing RDKit-dependent providers, outside the DAG experiment",
+  "development_smoke": "seed 0, width 2, depth 1, grain 4; excluded from formal statistics",
+  "formal_protocol": "Unmodified 1953d3c Peers + Lockstep; no prompt or policy tuning on test seeds"
+}

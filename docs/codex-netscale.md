@@ -1,6 +1,8 @@
 # 在本地用 Codex 运行 netscale-pilot
 
-最新完成的 [DAG grain 1正式试跑及逐节点核验](../results/net/runs/20261022-codex-dag-pilot-02/netscale-pilot/README.md)基于 `cb69623`，12组均正确完成全部任务，包含b、η、平均token用量及完整调用归档。
+最新完成的 [DAG grain 4 正式试跑及逐节点核验](../results/net/runs/20261022-codex-dag-grain4-pilot-03/README.md)基于 `1953d3c`：12组均正确完成65道任务，780条完整四步 `apply` 链通过审计，包含 b、η、每组平均 tokens、原始轨迹和完整调用归档。额度中断后仅续跑最后两组，缓存用量未重复计算。
+
+此前的 [DAG grain 1 正式试跑](../results/net/runs/20261022-codex-dag-pilot-02/netscale-pilot/README.md)基于 `cb69623`，原始记录保持不变。两轮对比统一采用 `1953d3c` 的参考团队；函数值版本不同、每人数仅3个种子，属于观察性比较。
 
 > 2026-10-22 之后，netscale 换成了 DAG 环境（`worldseeds/net/providers/dag.py`）：隐藏函数加整数答案，粒度为 1 和 4，共 24 组。下文所说的 16×4 递推 DAG 和 915 次调用，是第一次试跑（`results/net/runs/20261022-codex-netscale-pilot-01`）的设置。那次试跑里，递推题可以直接提交闭式表达式，单人比参考团队还快，所以它的 T_ref 和 η 不作为结论，只保留行为观察。
 

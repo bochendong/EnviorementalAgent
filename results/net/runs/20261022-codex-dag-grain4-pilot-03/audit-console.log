@@ -1,0 +1,77 @@
+{
+  "complete": true,
+  "source_commit": "1953d3c0f4cd7a213661e518b70bde66066fc676",
+  "formal_runs": 12,
+  "solved_runs": 12,
+  "correctly_accepted_tasks": 780,
+  "all_accepted_tasks_have_preceding_valid_apply": true,
+  "all_observed_b_at_most_one": true,
+  "by_team_size": [
+    {
+      "agents": 1,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 330,
+      "lower_bound": 325,
+      "b": 0.9848484848484849,
+      "mean_reference_rounds": 325,
+      "a": 0.9848484848484849,
+      "eta": 1.0,
+      "speedup": 1.0,
+      "mean_tool_calls": 330,
+      "mean_total_tokens": 13508024,
+      "mean_coordination_operations": 5
+    },
+    {
+      "agents": 2,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 188,
+      "lower_bound": 163,
+      "b": 0.8670212765957447,
+      "mean_reference_rounds": 173,
+      "a": 0.9202127659574468,
+      "eta": 0.9343698854337152,
+      "speedup": 1.7553191489361701,
+      "mean_tool_calls": 376,
+      "mean_total_tokens": 12390219,
+      "mean_coordination_operations": 37
+    },
+    {
+      "agents": 4,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 106,
+      "lower_bound": 82,
+      "b": 0.7735849056603774,
+      "mean_reference_rounds": 93,
+      "a": 0.8773584905660378,
+      "eta": 0.8908563134978229,
+      "speedup": 3.1132075471698113,
+      "mean_tool_calls": 424,
+      "mean_total_tokens": 11536720.666666666,
+      "mean_coordination_operations": 71.66666666666667
+    },
+    {
+      "agents": 8,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 64.33333333333333,
+      "lower_bound": 41,
+      "b": 0.6373056994818653,
+      "mean_reference_rounds": 53,
+      "a": 0.8238341968911918,
+      "eta": 0.8365085691510562,
+      "speedup": 5.129533678756477,
+      "mean_tool_calls": 514.6666666666666,
+      "mean_total_tokens": 12518806,
+      "mean_coordination_operations": 105
+    }
+  ],
+  "usl_fit": {
+    "sigma": 0.08,
+    "kappa": 0.0001125,
+    "rmse": 0.07353072624825834
+  }
+}
+USAGE {'input_tokens': 149608163, 'cached_input_tokens': 43303680, 'cache_write_input_tokens': 0, 'output_tokens': 253146, 'reasoning_output_tokens': 86115, 'total_tokens': 149861309}
