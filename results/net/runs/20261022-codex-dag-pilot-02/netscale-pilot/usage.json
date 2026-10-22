@@ -1,0 +1,232 @@
+{
+  "complete": true,
+  "formal_runs": 12,
+  "totals": {
+    "input_tokens": 61201600,
+    "cached_input_tokens": 20689280,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 137948,
+    "reasoning_output_tokens": 47535,
+    "total_tokens": 61339548
+  },
+  "counting": "total_tokens = input_tokens + output_tokens. Cached input and reasoning output are subsets, not extra tokens.",
+  "scope": "Successful formal CLI request usage only; development checks, coding/report/chat usage excluded. Interrupted attempts and any receipts are recorded separately.",
+  "runs": [
+    {
+      "case": "dag/fixed-g1/n1",
+      "agents": 1,
+      "seed": 100,
+      "successful_requests": 135,
+      "usage": {
+        "input_tokens": 3562528,
+        "cached_input_tokens": 645120,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5575,
+        "reasoning_output_tokens": 1089,
+        "total_tokens": 3568103
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n1",
+      "agents": 1,
+      "seed": 101,
+      "successful_requests": 135,
+      "usage": {
+        "input_tokens": 3569798,
+        "cached_input_tokens": 1066240,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5659,
+        "reasoning_output_tokens": 1171,
+        "total_tokens": 3575457
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n1",
+      "agents": 1,
+      "seed": 102,
+      "successful_requests": 135,
+      "usage": {
+        "input_tokens": 3418855,
+        "cached_input_tokens": 1120000,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5747,
+        "reasoning_output_tokens": 1248,
+        "total_tokens": 3424602
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n2",
+      "agents": 2,
+      "seed": 100,
+      "successful_requests": 160,
+      "usage": {
+        "input_tokens": 3805372,
+        "cached_input_tokens": 761600,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 8191,
+        "reasoning_output_tokens": 2383,
+        "total_tokens": 3813563
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n2",
+      "agents": 2,
+      "seed": 101,
+      "successful_requests": 166,
+      "usage": {
+        "input_tokens": 3947249,
+        "cached_input_tokens": 1406720,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 8453,
+        "reasoning_output_tokens": 2562,
+        "total_tokens": 3955702
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n2",
+      "agents": 2,
+      "seed": 102,
+      "successful_requests": 176,
+      "usage": {
+        "input_tokens": 4347504,
+        "cached_input_tokens": 1532160,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 9499,
+        "reasoning_output_tokens": 3130,
+        "total_tokens": 4357003
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n4",
+      "agents": 4,
+      "seed": 100,
+      "successful_requests": 324,
+      "usage": {
+        "input_tokens": 8389385,
+        "cached_input_tokens": 2679040,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 18670,
+        "reasoning_output_tokens": 7390,
+        "total_tokens": 8408055
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n4",
+      "agents": 4,
+      "seed": 101,
+      "successful_requests": 220,
+      "usage": {
+        "input_tokens": 5093424,
+        "cached_input_tokens": 1926400,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 13003,
+        "reasoning_output_tokens": 4600,
+        "total_tokens": 5106427
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n4",
+      "agents": 4,
+      "seed": 102,
+      "successful_requests": 304,
+      "usage": {
+        "input_tokens": 7492012,
+        "cached_input_tokens": 2625280,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 17838,
+        "reasoning_output_tokens": 7141,
+        "total_tokens": 7509850
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n8",
+      "agents": 8,
+      "seed": 100,
+      "successful_requests": 272,
+      "usage": {
+        "input_tokens": 5934622,
+        "cached_input_tokens": 2195200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15306,
+        "reasoning_output_tokens": 5700,
+        "total_tokens": 5949928
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n8",
+      "agents": 8,
+      "seed": 101,
+      "successful_requests": 264,
+      "usage": {
+        "input_tokens": 5715297,
+        "cached_input_tokens": 2339200,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 14755,
+        "reasoning_output_tokens": 5386,
+        "total_tokens": 5730052
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g1/n8",
+      "agents": 8,
+      "seed": 102,
+      "successful_requests": 272,
+      "usage": {
+        "input_tokens": 5925554,
+        "cached_input_tokens": 2392320,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15252,
+        "reasoning_output_tokens": 5735,
+        "total_tokens": 5940806
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    }
+  ]
+}

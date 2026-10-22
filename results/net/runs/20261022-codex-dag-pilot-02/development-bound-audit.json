@@ -1,0 +1,17 @@
+{
+  "purpose": "Development seed 1 only, excluded from formal results. No model inference.",
+  "grain": 4,
+  "claimed_lower_bound": 325,
+  "memoized_public_oracle_solver_steps": 324,
+  "solved": true,
+  "correctly_accepted_tasks": 65,
+  "saved_apply_calls": [
+    {
+      "task": "L3.1",
+      "step": 4,
+      "input": 71,
+      "reused_output": 196
+    }
+  ],
+  "limitation": "The current verifier accepts matching integers without enforcing grain oracle calls. Repeated inputs can reuse known f(x), so the stated W is a procedural work model, not a strict bound for every strategy."
+}
