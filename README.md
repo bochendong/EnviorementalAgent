@@ -52,6 +52,8 @@ python -m netagents.run --remote http://127.0.0.1:8090 --policy llm      # again
 python -m netagents.baselines --seeds 10                                # reference teams on every preset
 ```
 
+To use **Codex CLI as the `peers` agents in `netscale-pilot`**, see [the local Codex network-scale experiment](docs/codex-netscale.md). It preserves the original DAG suite, lockstep clock, tool budgets and statistics; model inference uses the Codex service.
+
 Published agent designs run on the same environment with matched compute ([docs/testset.md](docs/testset.md)): ReAct,
 Reflexion, the single / independent / centralized / decentralized / hybrid architectures of Kim et al. (2026),
 multiagent debate, the LbMAS blackboard system, Mixture-of-Agents, and AutoGen, Magentic-One and CAMEL teams run in

@@ -1,0 +1,27 @@
+{
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "suite": "netscale-pilot",
+  "sizes": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "seeds": [
+    100,
+    101,
+    102
+  ],
+  "parallel_runs": 2,
+  "inference_concurrency": 2,
+  "timeout": 180,
+  "resume": false,
+  "out": "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-netscale-pilot-01/netscale-pilot",
+  "codex_version": "codex-cli 0.163.0-alpha.11",
+  "git_commit": "c149b5ca7d27cabb0bff481b5abfa516147896b1",
+  "agents_sdk": "0.23.1",
+  "sympy": "1.14.0",
+  "protocol": "Original Peers + Lockstep + SUITES['netscale-pilot'] + run_one + write_summary",
+  "model_transport": "One Codex JSON tool selection per SDK model response; no outside capabilities"
+}

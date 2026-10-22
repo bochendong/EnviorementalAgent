@@ -1,0 +1,81 @@
+{
+  "scope": "12 formal netscale-pilot runs; successful turn.completed CLI usage records only",
+  "counting": "total_tokens = input_tokens + output_tokens; cached input is a subset of input; reasoning output is a subset of output",
+  "excluded": "development smoke checks, outer coding/report conversations, and capacity failures without usage records",
+  "totals": {
+    "input_tokens": 54249651,
+    "cached_input_tokens": 17888384,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 284544,
+    "reasoning_output_tokens": 157238,
+    "total_tokens": 54534195
+  },
+  "per_team_size": [
+    {
+      "agents": 1,
+      "runs": 3,
+      "totals": {
+        "input_tokens": 6153247,
+        "cached_input_tokens": 1343232,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 59844,
+        "reasoning_output_tokens": 26190,
+        "total_tokens": 6213091
+      },
+      "mean_total_tokens_per_team_run": 2071030.3333333333,
+      "mean_rounds": 81.66666666666667,
+      "mean_tool_calls": 81.66666666666667
+    },
+    {
+      "agents": 2,
+      "runs": 3,
+      "totals": {
+        "input_tokens": 11511158,
+        "cached_input_tokens": 3360512,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 52369,
+        "reasoning_output_tokens": 29998,
+        "total_tokens": 11563527
+      },
+      "mean_total_tokens_per_team_run": 3854509.0,
+      "mean_rounds": 76.33333333333333,
+      "mean_tool_calls": 152.66666666666666
+    },
+    {
+      "agents": 4,
+      "runs": 3,
+      "totals": {
+        "input_tokens": 14361635,
+        "cached_input_tokens": 5254016,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 62393,
+        "reasoning_output_tokens": 34769,
+        "total_tokens": 14424028
+      },
+      "mean_total_tokens_per_team_run": 4808009.333333333,
+      "mean_rounds": 51,
+      "mean_tool_calls": 204
+    },
+    {
+      "agents": 8,
+      "runs": 3,
+      "totals": {
+        "input_tokens": 22223611,
+        "cached_input_tokens": 7930624,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 109938,
+        "reasoning_output_tokens": 66281,
+        "total_tokens": 22333549
+      },
+      "mean_total_tokens_per_team_run": 7444516.333333333,
+      "mean_rounds": 38,
+      "mean_tool_calls": 304
+    }
+  ],
+  "successful_requests": 2227,
+  "capacity_failures_without_usage": 7,
+  "completed_runs": 12,
+  "correctly_accepted_task_instances": 780,
+  "submission_attempts": 819,
+  "rejected_submission_attempts": 39
+}

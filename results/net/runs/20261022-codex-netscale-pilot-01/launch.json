@@ -1,0 +1,21 @@
+{
+  "pid": 71318,
+  "command": [
+    "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/.venv/bin/python",
+    "-m",
+    "netagents.codex_netscale",
+    "--model",
+    "gpt-6.1-sol",
+    "--reasoning-effort",
+    "high",
+    "--parallel-runs",
+    "2",
+    "--inference-concurrency",
+    "2",
+    "--out",
+    "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-netscale-pilot-01/netscale-pilot"
+  ],
+  "output": "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-netscale-pilot-01/netscale-pilot",
+  "log": "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261022-codex-netscale-pilot-01/runner.log",
+  "idle_sleep_inhibitor_pid": 71785
+}

@@ -1,0 +1,12 @@
+{"case": "dag/fixed/n2", "seed": 100, "solved": true, "done": 65, "tasks": 65, "steps": 77, "reference_steps": 160, "llm_tool_calls": 154}
+{"case": "dag/fixed/n1", "seed": 100, "solved": true, "done": 65, "tasks": 65, "steps": 87, "reference_steps": 129, "llm_tool_calls": 87}
+{"case": "dag/fixed/n8", "seed": 100, "solved": true, "done": 65, "tasks": 65, "steps": 38, "reference_steps": 52, "llm_tool_calls": 304}
+{"case": "dag/fixed/n4", "seed": 100, "solved": true, "done": 65, "tasks": 65, "steps": 54, "reference_steps": 88, "llm_tool_calls": 216}
+{"case": "dag/fixed/n1", "seed": 101, "solved": true, "done": 65, "tasks": 65, "steps": 79, "reference_steps": 129, "llm_tool_calls": 79}
+{"case": "dag/fixed/n2", "seed": 101, "solved": true, "done": 65, "tasks": 65, "steps": 79, "reference_steps": 160, "llm_tool_calls": 158}
+{"case": "dag/fixed/n8", "seed": 101, "solved": true, "done": 65, "tasks": 65, "steps": 42, "reference_steps": 52, "llm_tool_calls": 336}
+{"case": "dag/fixed/n4", "seed": 101, "solved": true, "done": 65, "tasks": 65, "steps": 52, "reference_steps": 88, "llm_tool_calls": 208}
+{"case": "dag/fixed/n1", "seed": 102, "solved": true, "done": 65, "tasks": 65, "steps": 79, "reference_steps": 129, "llm_tool_calls": 79}
+{"case": "dag/fixed/n2", "seed": 102, "solved": true, "done": 65, "tasks": 65, "steps": 73, "reference_steps": 160, "llm_tool_calls": 146}
+{"case": "dag/fixed/n4", "seed": 102, "solved": true, "done": 65, "tasks": 65, "steps": 47, "reference_steps": 88, "llm_tool_calls": 188}
+{"case": "dag/fixed/n8", "seed": 102, "solved": true, "done": 65, "tasks": 65, "steps": 34, "reference_steps": 52, "llm_tool_calls": 272}

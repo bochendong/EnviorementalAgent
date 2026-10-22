@@ -50,6 +50,8 @@ python -m netagents.baselines --seeds 10                                # 参考
 
 已发表的智能体设计在同一个环境、同等算力下运行，详见 [docs/testset.md](docs/testset.md)。
 
+也可以在本地让 **Codex CLI 充当 `peers` 智能体运行 `netscale-pilot`**，参见 [Codex 网络规模实验](docs/codex-netscale.md)。它复用原来的 DAG、同步轮次、工具预算和结果统计，模型推理通过 Codex 服务完成。
+
 设计包括：ReAct、Reflexion、Kim 等（2026）的单智能体/独立/中心化/去中心化/混合结构、多智能体辩论、LbMAS 黑板系统、Mixture-of-Agents，以及在各自框架里运行的 AutoGen、Magentic-One 和 CAMEL 团队。
 
 分两条赛道：

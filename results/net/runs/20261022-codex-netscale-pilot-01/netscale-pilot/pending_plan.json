@@ -1,0 +1,134 @@
+[
+  {
+    "case": "dag/fixed/n1",
+    "seed": 100,
+    "agents": 1,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n2",
+    "seed": 100,
+    "agents": 2,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n4",
+    "seed": 100,
+    "agents": 4,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n8",
+    "seed": 100,
+    "agents": 8,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n1",
+    "seed": 101,
+    "agents": 1,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n2",
+    "seed": 101,
+    "agents": 2,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n4",
+    "seed": 101,
+    "agents": 4,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n8",
+    "seed": 101,
+    "agents": 8,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n1",
+    "seed": 102,
+    "agents": 1,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n2",
+    "seed": 102,
+    "agents": 2,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n4",
+    "seed": 102,
+    "agents": 4,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  },
+  {
+    "case": "dag/fixed/n8",
+    "seed": 102,
+    "agents": 8,
+    "calls": 915,
+    "dag": [
+      16,
+      4,
+      2
+    ]
+  }
+]
