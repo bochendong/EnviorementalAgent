@@ -61,13 +61,14 @@ def main():
     parser.add_argument("--suite", default="netscale-pilot", choices=["netscale-pilot"])
     parser.add_argument("--sizes", nargs="+", type=int, default=[1, 2, 4, 8])
     parser.add_argument("--seeds", nargs="+", type=int, default=[100, 101, 102])
+    parser.add_argument("--grains", nargs="+", type=int, default=[1], help="applies per task (the suite has 1 and 4)")
     parser.add_argument("--parallel-runs", type=int, default=2)
     parser.add_argument("--inference-concurrency", type=int, default=2)
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    if not set(args.sizes) <= {1, 2, 4, 8} or not set(args.seeds) <= {100, 101, 102}:
+    if not set(args.sizes) <= {1, 2, 4, 8} or not set(args.seeds) <= {100, 101, 102} or not set(args.grains) <= {1, 4}:
         parser.error("Use the pilot's original sizes and test seeds; development checks belong in a separate run")
     if min(args.parallel_runs, args.inference_concurrency, args.timeout) < 1:
         parser.error("Concurrency and timeout must be positive")
@@ -80,7 +81,7 @@ def main():
               "model_transport": "One Codex JSON tool selection per SDK model response; no outside capabilities"}
     if args.resume:
         previous = json.loads((out / "config.json").read_text())
-        for key in ("model", "reasoning_effort", "suite", "sizes", "seeds", "agents_sdk", "sympy", "git_commit"):
+        for key in ("model", "reasoning_effort", "suite", "sizes", "seeds", "grains", "agents_sdk", "sympy", "git_commit"):
             if previous[key] != config[key]:
                 raise ValueError(f"Resume configuration changed: {key}")
     else:
@@ -91,12 +92,13 @@ def main():
             shutil.copyfile(Path(__file__).with_name(name), source / name)
     path = out / "runs.jsonl"
     rows = [json.loads(line) for line in path.read_text().splitlines() if line] if path.exists() else []
-    done = {(r["agents"], r["seed"]) for r in rows}
-    cases = [c for c in SUITES[args.suite] if c.team_size() in args.sizes]
-    jobs = [(case, seed) for seed in args.seeds for case in cases if (case.team_size(), seed) not in done]
+    done = {(r["case"], r["seed"]) for r in rows}
+    cases = [c for c in SUITES[args.suite] if c.team_size() in args.sizes and c.opt["grain"] in args.grains]
+    jobs = [(case, seed) for seed in args.seeds for case in cases if (case.id, seed) not in done]
+    planned = len(cases) * len(args.seeds)
     plan = [{"case": case.id, "seed": seed, "agents": case.team_size(), "calls": case.calls, "problem": case.opt} for case, seed in jobs]
     write_json(out / "pending_plan.json", plan)
-    write_json(out / "status.json", {"status": "running", "planned_runs": len(args.sizes) * len(args.seeds), "completed_runs": len(rows)})
+    write_json(out / "status.json", {"status": "running", "planned_runs": planned, "completed_runs": len(rows)})
     try:
         context = mp.get_context("spawn")
         with context.Manager() as manager:
@@ -110,14 +112,14 @@ def main():
                     with path.open("a") as file:
                         file.write(json.dumps(result) + "\n")
                     write_summary(str(out), rows, f"netscale-pilot (Codex {args.model}, {args.reasoning_effort})")
-                    write_json(out / "status.json", {"status": "running", "planned_runs": len(args.sizes) * len(args.seeds),
+                    write_json(out / "status.json", {"status": "running", "planned_runs": planned,
                                                     "completed_runs": len(rows)})
                     print(json.dumps({k: result[k] for k in ("case", "seed", "solved", "done", "tasks", "steps", "reference_steps", "llm_tool_calls")}), flush=True)
     except Exception as error:
         write_json(out / "failure.json", {"error": str(error)})
         write_json(out / "status.json", {"status": "infrastructure_error", "completed_runs": len(rows), "error": str(error)})
         raise
-    write_json(out / "status.json", {"status": "complete", "completed_runs": len(rows), "planned_runs": len(args.sizes) * len(args.seeds)})
+    write_json(out / "status.json", {"status": "complete", "completed_runs": len(rows), "planned_runs": planned})
 
 
 if __name__ == "__main__":
