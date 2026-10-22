@@ -442,11 +442,12 @@ def test_dag_tasks_need_their_hidden_functions():
     t = raw.provider.raw["L1.0"]
     x = sum(int(raw.provider.raw[d]["answer"]) for d in t["deps"]) % 1000
     assert t["start"] == x
+    xs = [x]
     for _ in range(3):
-        x = hidden(5, "L1.0", x)
-    assert str(x) == t["answer"]
+        xs.append(hidden(5, "L1.0", xs[-1], t["salt"]))
+    assert str(xs[-1]) == t["answer"] and len(set(xs)) == 4  # no value repeats: every apply is needed
     o = raw.step("a0", "apply", {"task": "L1.0", "x": [int(raw.provider.raw[d]["answer"]) for d in t["deps"]]})
-    assert o["ok"] and o["f(x)"] == hidden(5, "L1.0", t["start"])
+    assert o["ok"] and o["f(x)"] == hidden(5, "L1.0", t["start"], t["salt"])
     for d in [d for d in raw.provider.raw if d.startswith("L0.")]:
         assert raw.step("a0", "submit", {"task": d, "artifact": raw.provider.raw[d]["answer"]})["ok"]
     bad = raw.step("a1", "submit", {"task": "L1.0", "artifact": f"Mod({t['answer']}, 1000)"})

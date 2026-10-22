@@ -14,11 +14,14 @@ Time is in rounds (every agent takes one action a round, netagents/lockstep.py).
 
     lower bound   no strategy is faster: max(ceil(W / N), D), W = tasks * (grain + 1) actions of work and
                   D = (depth + 1) * (grain + 1) on the longest chain, sharing answers counted as free
-    reference     a scripted team (list scheduling: an idle agent takes the open task of the lowest layer
-                  whose parents' answers are out) that passes answers on in the cheaper of two ways:
-                  broadcast (one message to everyone; one inbox read brings all that arrived) or the
-                  shared store (one write; one read per answer needed). One agent needs no sharing and
-                  meets the lower bound exactly
+    reference     the fastest of three scripted teams. Two schedule greedily (an idle agent takes the open
+                  task of the lowest layer whose parents' answers are out) and pass every answer on as it
+                  comes: by broadcast (one message to everyone; one inbox read brings all that arrived) or
+                  through the shared store (one write; one read per answer needed). The third is bulk
+                  synchronous ("batch"): each layer's tasks are dealt out in turn, and an agent sends all its
+                  answers of a layer in one message when it is done with the layer (in the first Codex pilot
+                  on this provider, two agents batching their answers beat the per-answer teams). One agent
+                  needs no sharing and meets the lower bound exactly
 
 An LLM team is measured against both (netagents/netscale.py).
 """
@@ -32,7 +35,7 @@ import os
 
 from worldseeds.net import NetConfig, NetworkEnv, providers
 
-SHARING = ("broadcast", "store")
+SHARING = ("broadcast", "store", "batch")
 
 
 def make_env(width: int, depth: int, n: int, seed: int, fanin: int = 2, grain: int = 1) -> NetworkEnv:
@@ -108,17 +111,85 @@ def scripted_team(env, sharing: str = "broadcast") -> dict:
             "actions": env.actions}
 
 
+def scripted_batch(env) -> dict:
+    """Bulk synchronous: task i of each layer goes to agent i mod N (the final task to the first agent); an
+    agent works through its tasks in layer order, reads its inbox when it lacks a parent's answer and mail
+    has come (otherwise it waits), and sends its answers of a layer in one message once its last task of
+    that layer is done."""
+    raw, grain = env.provider.raw, env.provider.grain
+    agents = list(env.agents)
+    mine = {a: [] for a in agents}
+    for t in raw.values():
+        mine[agents[0] if t["id"] == "FINAL" else agents[int(t["id"].split(".")[1]) % len(agents)]].append(t["id"])
+    for a in agents:
+        mine[a].sort(key=lambda x: raw[x]["layer"])
+    known = {a: {} for a in agents}
+    batch = {a: [] for a in agents}
+    plan: dict[str, list] = {a: [] for a in agents}
+    solved_at = None
+    for _ in range(10 ** 5):
+        if env.solved:
+            break
+        for a in agents:
+            if not plan[a]:
+                nxt = mine[a][0] if mine[a] else None
+                if batch[a] and (nxt is None or raw[nxt]["layer"] > raw[batch[a][0]]["layer"]):
+                    text = "ANS " + " ".join(f"{t}={known[a][t]}" for t in batch[a])
+                    batch[a] = []
+                    env.step(a, "send", {"to": "*", "text": text})
+                    continue
+                if nxt is None:
+                    env.step(a, "wait")
+                    continue
+                if any(d not in known[a] for d in raw[nxt]["deps"]):
+                    if env.agents[a].mail:
+                        _heard(known[a], env.step(a, "inbox", {}))
+                    else:
+                        env.step(a, "wait")
+                    continue
+                mine[a].pop(0)
+                plan[a] = _task_steps(a, nxt, raw[nxt], grain, known, batch)
+            op, args, then = plan[a].pop(0)
+            then(env.step(a, op, args()))
+        if env.solved and solved_at is None:
+            solved_at = env.round
+    return {"solved": env.solved, "rounds": solved_at if solved_at is not None else env.round,
+            "actions": env.actions}
+
+
+def _task_steps(a, tid, t, grain, known, batch) -> list:
+    x = {"v": None}
+    first = lambda: {"task": tid, "x": [known[a][d] for d in t["deps"]] if t["deps"] else t["start"]}  # noqa: E731
+    applies = [("apply", first if i == 0 else (lambda: {"task": tid, "x": x["v"]}),
+                lambda o: x.__setitem__("v", o["f(x)"])) for i in range(grain)]
+
+    def done(o):
+        if not o.get("ok"):
+            raise RuntimeError(f"scripted submission refused: {o}")
+        known[a][tid] = x["v"]
+        if tid != "FINAL":
+            batch[a].append(tid)
+
+    return applies + [("submit", lambda: {"task": tid, "artifact": str(x["v"])}, done)]
+
+
 def _heard(known: dict, obs: dict):
+    """Answers in messages: "ANS <task> <answer>" or "ANS <task>=<answer> <task>=<answer> ..."."""
     for m in obs.get("messages", []):
         parts = m["text"].split()
-        if len(parts) == 3 and parts[0] == "ANS":
+        if len(parts) == 3 and parts[0] == "ANS" and "=" not in parts[1]:
             known[parts[1]] = int(parts[2])
+        elif parts and parts[0] == "ANS":
+            for p in parts[1:]:
+                tid, _, v = p.partition("=")
+                known[tid] = int(v)
 
 
 def run(width: int, depth: int, n: int, seed: int, fanin: int = 2, grain: int = 1) -> dict:
     """The reference on one problem: the faster sharing (one agent shares nothing), and the lower bound."""
-    tried = {s: scripted_team(make_env(width, depth, n, seed, fanin, grain), s) for s in (SHARING[:1] if n == 1
-                                                                                          else SHARING)}
+    tried = {s: (scripted_batch(make_env(width, depth, n, seed, fanin, grain)) if s == "batch" else
+                 scripted_team(make_env(width, depth, n, seed, fanin, grain), s))
+             for s in (SHARING[:1] if n == 1 else SHARING)}
     best = min(tried, key=lambda s: tried[s]["rounds"])
     tasks = width * depth + 1
     return {"width": width, "depth": depth, "grain": grain, "agents": n, "seed": seed, "solved": tried[best]["solved"],

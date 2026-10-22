@@ -7,8 +7,11 @@ answers of ``fanin`` tasks of the layer before, mod 1000; the final task: the su
 and applies its function ``grain`` times in a row, x <- f_T(x); the answer is the last x, handed in as a
 bare integer and checked exactly.
 
-So no agent, however strong, can do a task in fewer than ``grain`` applies and one submission, nor start it
-before its parents' answers are known: one agent needs at least W = tasks * (grain + 1) actions, and a team
+Each task's function is keyed so that its own chain repeats no value: no f(x) seen earlier in the chain can
+stand in for an apply (a development audit found a grain-4 chain with a repeat, solved in 324 actions
+against 325; results/net/runs/20261022-codex-dag-pilot-02/development-bound-audit.json). So no agent,
+however strong, can do a task in fewer than ``grain`` applies and one submission, nor start it before its
+parents' answers are known: one agent needs at least W = tasks * (grain + 1) actions, and a team
 of N at least max(W / N, D) rounds, D = (depth + 1) * (grain + 1) (Brent). ``grain`` sets how much
 computation a task holds against what sharing its answer costs (one message or store write, and reads).
 
@@ -28,10 +31,22 @@ from ..core import OpSpec, Role, Score, Task, TaskProvider
 MOD = 1000
 
 
-def hidden(seed: int, tid: str, x: int) -> int:
+def hidden(seed: int, tid: str, x: int, salt: int = 0) -> int:
     """f_T(x): a keyed hash, 0..999."""
-    h = hashlib.blake2b(f"worldseeds-dag/{seed}/{tid}/{x % MOD}".encode(), digest_size=8).digest()
+    h = hashlib.blake2b(f"worldseeds-dag/{seed}/{tid}/{salt}/{x % MOD}".encode(), digest_size=8).digest()
     return int.from_bytes(h, "big") % MOD
+
+
+def chain(seed: int, tid: str, start: int, grain: int) -> tuple[int, list[int]]:
+    """The task's function, keyed so that its chain x0, x1, ..., x_grain repeats no value (otherwise an agent
+    could reuse an f(x) it has seen and skip an apply): (salt, chain)."""
+    for salt in range(10 ** 4):
+        xs = [start]
+        for _ in range(grain):
+            xs.append(hidden(seed, tid, xs[-1], salt))
+        if len(set(xs)) == len(xs):
+            return salt, xs
+    raise RuntimeError(f"no salt gives {tid} a chain without repeats")
 
 
 def gen(seed: int, width: int, depth: int, fanin: int = 2, grain: int = 1) -> list[dict]:
@@ -40,12 +55,10 @@ def gen(seed: int, width: int, depth: int, fanin: int = 2, grain: int = 1) -> li
     answers: dict[str, int] = {}
 
     def task(tid, layer, deps, start, start_text):
-        x = start
-        for _ in range(grain):
-            x = hidden(seed, tid, x)
-        answers[tid] = x
+        salt, xs = chain(seed, tid, start, grain)
+        x = answers[tid] = xs[-1]
         times = "once" if grain == 1 else f"{grain} times in a row"
-        out.append({"id": tid, "layer": layer, "deps": deps, "start": start, "answer": str(x),
+        out.append({"id": tid, "layer": layer, "deps": deps, "start": start, "answer": str(x), "salt": salt,
                     "text": f"Start from x = {start_text}. Apply {tid}'s function {times} (x <- f(x), with the "
                             f"'apply' operation); the answer is the last x, a whole number from 0 to {MOD - 1}."})
 
@@ -99,7 +112,7 @@ class DagProvider(TaskProvider):
         except (TypeError, ValueError):
             return {"error": "x must be a whole number or a list of whole numbers"}
         v = sum(xs) % MOD
-        return {"task": tid, "x": v, "f(x)": hidden(self.seed, tid, v)}
+        return {"task": tid, "x": v, "f(x)": hidden(self.seed, tid, v, self.raw[tid]["salt"])}
 
     def tasks(self) -> list[Task]:
         return [Task(t["id"], t["text"], "answer", tuple(t["deps"]), 4.0 if t.get("final") else 1.0, {},

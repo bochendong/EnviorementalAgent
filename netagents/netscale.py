@@ -11,7 +11,9 @@ problem (worldseeds/net/providers/dag.py), time in lockstep rounds (netagents/lo
     T             the team's rounds to solve (solved runs; mean)
     T_lb          the lower bound on any team's rounds, max(W / N, D) (Brent), sharing counted as free
     b = T_lb/T    efficiency against the bound (at most 1)
-    T_ref         the scripted team's rounds on the same problems (the cheaper of broadcast and store)
+    T_ref         the scripted team's rounds on the same problems (the fastest of broadcast, store and
+                  batch; recomputed with the current netagents/scaling.py)
+    sharing       how each run's team passed answers on: store, broadcast (a message per answer) or batch
     a = T_ref/T   how close the team comes to the reference (1: as fast as a scripted team)
     eta = a(N)/a(1)   coordination efficiency: the team's closeness relative to one agent's. On the fixed
                   family it is the team's speed-up over its own single agent divided by the reference's
@@ -31,6 +33,8 @@ import argparse
 import math
 import os
 import statistics as st
+from collections import Counter
+from functools import lru_cache
 
 from .evaluate import load_runs
 
@@ -62,6 +66,32 @@ def fit_usl(points: list[tuple[int, float]]) -> tuple[float, float, float] | Non
     return best
 
 
+@lru_cache(maxsize=None)
+def _reference(width: int, depth: int, n: int, seed: int, grain: int) -> int:
+    from .scaling import run
+
+    return run(width, depth, n, seed, grain=grain)["rounds"]
+
+
+def reference(r: dict) -> float:
+    """The scripted reference's rounds for a run, from the current netagents/scaling.py (it got stronger
+    after runs were recorded: the batch team), or as recorded for runs on the old math DAG."""
+    if "grain" not in r:
+        return r["reference_steps"]
+    return _reference(r["width"], r["depth"], r["agents"], r["seed"], r["grain"])
+
+
+def sharing(r: dict) -> str:
+    """How a run's team passed answers on: through the store, by a message per answer (broadcast) or by
+    messages that carry several answers (batch); "none" for one agent."""
+    ops, tasks = r.get("ops", {}), r.get("tasks", 0) or 1
+    if r["agents"] == 1:
+        return "none"
+    if ops.get("put", 0) > ops.get("send", 0):
+        return "store"
+    return "batch" if ops.get("send", 0) < 0.75 * tasks else "broadcast"
+
+
 def rows_by_size(rows: list[dict]) -> dict:
     """{family: {N: [runs]}} for the runs that recorded lockstep time."""
     out: dict = {}
@@ -85,15 +115,18 @@ def table(rows: list[dict]) -> str:
             rs = sizes[n]
             ok = [r for r in rs if r["solved"] and r.get("solved_step")]
             t = st.mean(r["solved_step"] for r in ok) if ok else None
-            tref = st.mean(r["reference_steps"] for r in ok) if ok else st.mean(r["reference_steps"] for r in rs)
+            tref = st.mean(reference(r) for r in (ok or rs))
             lb = st.mean(r["lower_bound"] for r in rs) if "lower_bound" in rs[0] else None
             stat[n] = {"runs": len(rs), "solved": len(ok) / len(rs), "T": t, "Tref": tref, "lb": lb,
                        "a": tref / t if t else None, "b": lb / t if t and lb else None,
-                       "width": rs[0].get("width"), "depth": rs[0].get("depth")}
+                       "width": rs[0].get("width"), "depth": rs[0].get("depth"),
+                       "per_seed": " ".join(str(r["solved_step"]) if r.get("solved_step") else "x"
+                                            for r in sorted(rs, key=lambda r: r["seed"])),
+                       "sharing": ", ".join(f"{k} {v}" for k, v in Counter(sharing(r) for r in rs).most_common())}
         a1 = stat.get(1, {}).get("a")
         text += [f"### {design}, {family} family", "",
-                 "| agents | problem | runs | solved | T (rounds) | T_lb | b = T_lb/T | T_ref | a = T_ref/T | "
-                 "eta = a(N)/a(1) | speed-up |", "|---|---|---|---|---|---|---|---|---|---|---|"]
+                 "| agents | problem | runs | solved | T (rounds) | T per seed | sharing | T_lb | b = T_lb/T | T_ref | "
+                 "a = T_ref/T | eta = a(N)/a(1) | speed-up |", "|---|---|---|---|---|---|---|---|---|---|---|---|---|"]
         points = []
         for n in ns:
             s = stat[n]
@@ -103,7 +136,7 @@ def table(rows: list[dict]) -> str:
                 points.append((n, sp))
             f = lambda x, d=2: "-" if x is None else f"{x:.{d}f}"  # noqa: E731
             text.append(f"| {n} | {s['width']} x {s['depth']} | {s['runs']} | {s['solved']:.2f} | {f(s['T'], 1)} | "
-                        f"{f(s['lb'], 0)} | {f(s['b'])} | {s['Tref']:.1f} | {f(s['a'])} | {f(eta)} | {f(sp)} |")
+                        f"{s['per_seed']} | {s['sharing']} | {f(s['lb'], 0)} | {f(s['b'])} | {s['Tref']:.1f} | {f(s['a'])} | {f(eta)} | {f(sp)} |")
         fit = fit_usl(points) if family.startswith("fixed") else None
         if fit:
             sigma, kappa, err = fit

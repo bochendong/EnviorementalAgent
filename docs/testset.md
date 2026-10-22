@@ -142,18 +142,23 @@ How does a team of LLM agents scale on a problem that is larger than one agent, 
 - **Time**: lockstep rounds (`netagents/lockstep.py`). Every round, every agent still working takes one action, so a team is as slow as it really is in parallel.
 - **The lower bound and the reference** (`python -m netagents.scaling`):
   - the lower bound counts sharing as free;
-  - the reference is a scripted team that passes answers on in the cheaper of two ways: a broadcast plus one inbox read, or the store with one write and one read per answer.
+  - the reference is the fastest of three scripted teams:
+    - a message per answer plus one inbox read;
+    - the store, with one write and one read per answer;
+    - batch (bulk synchronous): each layer's tasks are dealt out in turn, and each agent sends all its answers of a layer in one message.
+
+    Batch was added after the grain-1 Codex pilot (`results/net/runs/20261022-codex-dag-pilot-02`), where two agents batching their answers beat the per-answer team. Each task's function is keyed so that its chain repeats no value, so no apply can be skipped by reusing a value already seen.
 
   Seed 0, fixed family:
 
   | agents | 1 | 2 | 4 | 8 | 16 | 32 |
   |---|---|---|---|---|---|---|
   | grain 1: lower bound | 130 | 65 | 33 | 17 | 10 | 10 |
-  | grain 1: reference | 130 | 102 | 54 | 30 | 18 | 16 |
+  | grain 1: reference | 130 | 74 | 42 | 26 | 18 | 16 |
   | grain 4: lower bound | 325 | 163 | 82 | 41 | 25 | 25 |
-  | grain 4: reference | 325 | 201 | 105 | 57 | 33 | 31 |
+  | grain 4: reference | 325 | 173 | 93 | 53 | 33 | 31 |
 
-  With 8 agents, the reference reaches 57% of the bound's speed-up at grain 1 and 72% at grain 4: coarser tasks pay for their sharing.
+  With 8 agents, the reference reaches 65% of the bound's speed-up at grain 1 and 77% at grain 4: coarser tasks pay for their sharing.
 - **Calls**: three times the actions a team needs (at least 40 per agent); budgets are not the limit, time is.
 - **Measured** (`summary.md`, "Network scale"; or `python -m netagents.netscale <dir>`):
   - T, the team's rounds;
@@ -161,7 +166,8 @@ How does a team of LLM agents scale on a problem that is larger than one agent, 
   - a = T_ref / T, closeness to the reference;
   - eta = a(N) / a(1), coordination efficiency;
   - the speed-up and a Universal Scalability Law fit;
-  - where the actions went.
+  - where the actions went;
+  - each seed's T, and how each run's team passed answers on (store, broadcast or batch).
 - **The pilot**: fixed, grain 1 and 4, N = 1, 2, 4, 8, 3 seeds (24 runs).
 
 ```bash
@@ -386,7 +392,7 @@ python -m netagents.report $SCRATCH/worldseeds/results/net/runs/<run>   # 随时
 
   推理绕不过去，所以工作量和关键路径是任何智能体的下界：单人至少 W = 任务数 x (grain + 1) 步，N 人至少 max(W / N, D) 轮。
 - **为什么不用递推题**：10 月 22 日的试跑里，强模型直接提交闭式表达式，还把父任务的表达式嵌进子任务，单人比"参考"还快，工作量和关键路径都不成立。
-- **参考**：理论下界（共享答案按零成本算），以及在"广播"和"共享存储"两种方式中取更快者的脚本团队。8 人时，参考团队在 grain 1 下达到下界加速比的 57%，grain 4 下达到 72%：任务越粗，越能抵消共享的开销。
+- **参考**：理论下界（共享答案按零成本算），以及三种脚本团队中最快的一个：每题单独广播、共享存储、按层批量发送。8 人时，参考团队在 grain 1 下达到下界加速比的 65%，grain 4 下达到 77%：任务越粗，越能抵消共享的开销。每道题的函数链上没有重复值，所以不可能靠复用已经见过的结果省掉一次 `apply`。
 - **指标**：轮数 T、相对下界的效率 b、相对参考的接近度 a、协调效率 eta、加速比、扩展定律拟合、动作分布。
 - **试跑**：固定问题，grain 1 和 4，1、2、4、8 人，3 个种子，共 24 次运行。
 

@@ -504,3 +504,17 @@ def test_netscale_table_and_usl_fit():
             for n in (1, 2, 4, 8) for s in (0, 1)]
     text = table(rows)
     assert "peers, fixed family" in text and "Universal Scalability Law" in text
+
+
+def test_batch_reference_and_sharing_labels():
+    from netagents import scaling
+    from netagents.netscale import sharing
+
+    r = scaling.run(16, 4, 4, seed=100)
+    assert r["rounds_batch"] < r["rounds_broadcast"] < r["rounds_store"] and r["sharing"] == "batch"
+    assert r["lower_bound"] <= r["rounds"]
+    base = {"agents": 4, "tasks": 65}
+    assert sharing({**base, "ops": {"put": 60, "send": 20}}) == "store"
+    assert sharing({**base, "ops": {"send": 26}}) == "batch"
+    assert sharing({**base, "ops": {"send": 70}}) == "broadcast"
+    assert sharing({**base, "agents": 1, "ops": {}}) == "none"
