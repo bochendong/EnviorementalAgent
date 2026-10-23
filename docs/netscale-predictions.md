@@ -106,6 +106,68 @@ Outcomes:
 
 A run whose team settles on the store alone is reported as such (`sharing`): in the pilots, those teams lost 5-7 rounds per superstep.
 
+## Result at 16 agents (2026-10-23)
+
+`results/net/runs/20261022-codex-dag-n16-grain4-05`, grain 4, seeds 100-102: T = 44, 58, 50 (mean 50.7). Every node's whole four-step apply chain was audited.
+
+- Layered BSP predicted 40 (39-50): **failed**. The mean lies above the whole range.
+- USL predicted 46: off by 4.7.
+- The third outcome ("well above 50") did not clearly happen either.
+
+So neither reading predicted 16 well. One thing holds on every seed: **32 agents were faster than 16** (39 against 44, 38 against 58, 37 against 50), although both have the same lower bound (25) and 16 already have one agent per task.
+
+## Where the time went (from the traces; `python -m netagents.netscale` "Where the time went")
+
+The time splits into two parts:
+
+- **the layers' handoffs**: rounds a layer took beyond the fastest it could go;
+- **the join**: the final task, which needs all 16 answers of the last layer.
+
+| agents (grain 4) | rounds lost per layer, layers 1-3 | join: rounds lost | join: store reads by its solver |
+|---|---|---|---|
+| 2 | 7.0, 3.0, 3.0 | 1, 4, 1 | 0 |
+| 4 | 3.3, 3.0, 6.0 | 3, 3, 1 | 0 |
+| 8 | 4.3, 3.3, 7.3 | 2, 2, 3 | 0 |
+| 16 | 5.3, 4.7, 5.3 | 2, 16, 7 | 0, 15, 6 |
+| 32 | 2.7, 3.0, 2.3 | 2, 2, 3 | 0 |
+
+Two mechanisms show:
+
+1. **A second crew hides the handoff.** Up to 16 agents, a layer loses 3-7 rounds (median 4.5): the agent that hands an answer on is the one that must then read the next layer's inputs and start. The 32-agent teams split into two crews at once ("a0-a15 handle L0 and L2; a16-a31 handle L1 and L3"), so one crew reads and waits while the other computes. Their layers lost 2.3-3.0 rounds, against the scripted reference's 1.2-1.6.
+2. **The join costs what its solver's reading costs.** Two of the three 16-agent teams left the final task to an agent that pulled the 16 answers from the store one by one: 15 and 6 store reads, 16 and 7 rounds lost. Everywhere else the join lost 1-4 rounds.
+
+Together these account for the 16-32 gap. Per layer the gap is about 2.4 rounds over three layers, about 7; at the join, 8.3 against 2.3, about 6. That makes about 13, against an observed 12.7.
+
+**A critical-path reading** (fitted post hoc on these 15 runs; it is a hypothesis, not a result):
+
+T = T_bsp + e0 + lambda x (depth - 1) + j
+
+- T_bsp is the fastest layer-by-layer schedule;
+- e0, about 2, is layer 0's start;
+- lambda is the handoff loss per later layer: about 4.5 with one agent per task, about 2.7 with two;
+- j is the join's loss: about 2, plus one round per answer its solver pulls from the store.
+
+It gives 182, 102, 62, 42 and 37 rounds for 2, 4, 8, 16 and 32 agents, against observed 188, 106, 64, 51 and 38. The 16-agent runs that pulled the join from the store are the ones it does not cover.
+
+## Third prediction: an 8-wide problem (2026-10-23, before any run of it)
+
+Suite `netscale-slack`: width 8, depth 4, grain 4, 4, 8, 12 and 16 agents, seeds 100-102. The shape is new, so this is out of sample for the reading above. Its lower bound and the scripted reference are:
+
+| agents | 4 | 8 | 12 | 16 |
+|---|---|---|---|---|
+| T_bsp (fastest layer-by-layer) | 45 | 25 | 25 | 25 |
+| scripted reference | 53 | 33 | 31 | 31 |
+| predicted T (critical-path reading) | 62 | 42 | (exploratory: between) | 37 |
+
+The primary claim concerns the handoff loss, measured per layer from the traces, which is less sensitive to how a team does its join: **16 agents (two per task) lose less per layer than 8 (one per task), about 2.7 against 4.5 rounds, and T(16) < T(8) on every seed.**
+
+- If the 16-agent teams do not form a second crew, or form one and still lose as much per layer as 8 agents do, the crew mechanism is wrong.
+- Secondary: a join solved by pulling answers from the store loses about one round per pulled answer.
+
+```bash
+python -m netagents.codex_netscale --suite netscale-slack --out results/net/runs/<run>/netscale-slack
+```
+
 ## 中文摘要
 
 16 人和 32 人还没跑之前，先用两轮试跑的结果写下预测。
@@ -134,3 +196,22 @@ A run whose team settles on the store alone is reported as such (`sharing`): in 
 - 通用扩展定律重新拟合：46 轮；
 - 两者相差 6 轮，16 人可以区分它们。
 - 如果远超 50 轮，说明没有空闲成员时协调开销更大，即"空闲成员吸收了协调开销"。
+
+**16 人的结果（10 月 23 日）**：T = 44、58、50，平均 50.7。
+
+- 修正后的 BSP 预测是 40 轮，**失败**；通用扩展定律预测 46 轮，差 4.7 轮。两者都没有预测好。
+- 每个种子上 32 人都比 16 人快，尽管两者的下界都是 25，而且 16 人已经是每题一人。
+
+**轨迹拆解出两个机制**：
+
+- **第二班人能把交接藏起来。** 16 人及以下，每层交接多花 3 到 7 轮。32 人一开始就自发分成两班（一班做第 0、2 层，另一班做第 1、3 层），一班计算时另一班在读数据、等待，所以每层只多花 2.3 到 3 轮。
+- **汇总题的成本取决于收集答案的方式。** 16 人的三个种子里有两个，汇总题由一个人从共享存储里逐个读取答案，分别读了 15 次和 6 次，多花了 16 轮和 7 轮。
+
+两项合起来，正好解释了 16 人和 32 人相差的约 13 轮。
+
+**第三个预测（宽 8 的新题，跑之前写下）**：
+
+- 8 人（每题一人）每层多花约 4.5 轮；16 人（每题两人）约 2.7 轮。
+- T(16) < T(8)，并且每个种子都如此。
+- 预测的 T：4 人 62 轮，8 人 42 轮，16 人 37 轮。
+

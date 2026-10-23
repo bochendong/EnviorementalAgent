@@ -99,16 +99,22 @@ def _heldout_seeds(name: str) -> list[int]:
     return presets.seeds(name, 5) if "seeds" in presets.PRESETS[name] else [0, 1, 2]  # fixed tasks: repeats
 
 
-def netscale_case(family: str, n: int, seeds: list[int], grain: int = 1) -> Case:
-    """A team of ``n`` identical agents on a DAG problem: the fixed one, or one ``n`` wide."""
-    width, depth = NETSCALE_FIXED if family == "fixed" else (n, NETSCALE_DEPTH)
+def netscale_case(family: str, n: int, seeds: list[int], grain: int = 1, width: int = 0) -> Case:
+    """A team of ``n`` identical agents on a DAG problem: the fixed one, one ``n`` wide, or (family "w<width>")
+    one of the given width."""
+    if family == "fixed":
+        width, depth = NETSCALE_FIXED
+    elif family == "scaled":
+        width, depth = n, NETSCALE_DEPTH
+    else:
+        depth = NETSCALE_DEPTH
     tasks = width * depth + 1
     # a task's actions for a team: at most one read, the applies, the submission, passing the answer on
     # and enough for every agent to keep acting through a slow run: its share of the work plus every layer's
     # applies and sharing (never binding in the pilots, which used at most 42% of their calls)
     per_agent = -(-tasks * (grain + 1) // n) + (depth + 1) * (grain + 3)
     calls = max(NETSCALE_CALLS * tasks * (grain + 3), CALLS_PER_MEMBER * n, NETSCALE_CALLS * n * per_agent)
-    return Case(f"dag/{family}-g{grain}/n{n}", f"dag/{family}", seeds,
+    return Case(f"dag/{family}-g{grain}/n{n}", f"dag/{'fixed' if family == 'fixed' else 'scaled'}", seeds,
                 opt={"agents": n, "width": width, "depth": depth, "grain": grain}, lockstep=True, calls=calls)
 
 
@@ -146,6 +152,9 @@ SUITES: dict[str, list[Case]] = {
                  for p in ("math/easy", "math/medium", "codeworld/medium") for g in (0, 1)],
     "memory": [Case(f"{p}/memory", p, TEST_SEEDS, memory=True) for p in ("math/medium", "codeworld/medium")],
     "netscale-pilot": [netscale_case("fixed", n, TEST_SEEDS[:3], g) for g in NETSCALE_GRAINS for n in NETSCALE_PILOT],
+    # do agents beyond one per task help? an 8-wide problem with one agent per task (8) and two (16), and 4 and
+    # 12 around them (docs/netscale-predictions.md, third prediction)
+    "netscale-slack": [netscale_case("w8", n, TEST_SEEDS[:3], 4, width=8) for n in (4, 8, 12, 16)],
     "netscale": [netscale_case(f, n, TEST_SEEDS[:5], g) for g in NETSCALE_GRAINS for f in ("fixed", "scaled")
                  for n in NETSCALE_SIZES],
     "calibration": [Case(p, p, DEV_SEEDS) for p in EASY + MEDIUM]

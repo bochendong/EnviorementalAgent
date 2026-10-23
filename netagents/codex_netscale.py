@@ -62,9 +62,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--reasoning-effort", default="high", choices=["low", "medium", "high", "xhigh"])
-    parser.add_argument("--suite", default="netscale-pilot", choices=["netscale-pilot", "netscale"])
-    parser.add_argument("--families", nargs="+", default=["fixed"], choices=["fixed", "scaled"],
-                        help="netscale only: the fixed problem, or one as wide as the team")
+    parser.add_argument("--suite", default="netscale-pilot", choices=["netscale-pilot", "netscale", "netscale-slack"])
+    parser.add_argument("--families", nargs="+", default=None,
+                        help="the problems to run (fixed, scaled, w8); default: fixed in netscale, all elsewhere")
     parser.add_argument("--sizes", nargs="+", type=int, default=[1, 2, 4, 8])
     parser.add_argument("--seeds", nargs="+", type=int, default=[100, 101, 102])
     parser.add_argument("--grains", nargs="+", type=int, default=[1], help="applies per task (the suite has 1 and 4)")
@@ -75,6 +75,9 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     suite = SUITES[args.suite]
+    family = lambda c: c.id.split("/")[1].split("-")[0]  # noqa: E731
+    if args.families is None:
+        args.families = ["fixed"] if args.suite == "netscale" else sorted({family(c) for c in suite})
     if not (set(args.sizes) <= {c.team_size() for c in suite} and set(args.seeds) <= set(suite[0].seeds)
             and set(args.grains) <= {c.opt["grain"] for c in suite}):
         parser.error(f"Use the {args.suite} suite's sizes, test seeds and grains; development checks belong in a "
@@ -104,7 +107,7 @@ def main():
     rows = [json.loads(line) for line in path.read_text().splitlines() if line] if path.exists() else []
     done = {(r["case"], r["seed"]) for r in rows}
     cases = [c for c in suite if c.team_size() in args.sizes and c.opt["grain"] in args.grains
-             and c.id.split("/")[1].split("-")[0] in args.families]
+             and family(c) in args.families]
     jobs = [(case, seed) for seed in args.seeds for case in cases if (case.id, seed) not in done]
     planned = len(cases) * len(args.seeds)
     plan = [{"case": case.id, "seed": seed, "agents": case.team_size(), "calls": case.calls, "problem": case.opt} for case, seed in jobs]

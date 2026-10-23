@@ -531,3 +531,22 @@ def test_superstep_overhead_and_prediction():
     b = superstep_overhead(rows)
     assert b["L"] == 3 and b["L_ref"] > 0
     assert predict(rows[0], 32, b) == 25 + 5 * 3  # one task per agent and layer: the span
+
+
+def test_phases_of_a_scripted_run(tmp_path):
+    import gzip
+
+    from netagents import scaling
+    from netagents.netscale import phases
+
+    env = scaling.make_env(8, 3, 4, seed=0, grain=2)
+    r = scaling.scripted_batch(env)
+    path = tmp_path / "t.jsonl.gz"
+    with gzip.open(path, "wt") as f:
+        for e in env.events:
+            f.write(json.dumps(e) + "\n")
+    p = phases(str(path), 2, 8)
+    assert p["agents"] == 4 and len(p["layer_excess"]) == 3 and min(p["layer_excess"]) >= 0
+    assert p["join"] >= 3 and p["join_store_reads"] == 0
+    # the layers and the join add up to the run's time
+    assert sum(p["layer_excess"]) + 3 * 2 * 3 + p["join"] == r["rounds"]

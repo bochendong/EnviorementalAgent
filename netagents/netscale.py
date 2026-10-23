@@ -206,13 +206,62 @@ def table(rows: list[dict]) -> str:
     return "\n".join(text)
 
 
+def phases(trace: str, grain: int, width: int) -> dict:
+    """Where a run's time went, from its trace: the rounds each layer took (from the last acceptance of the layer
+    before to the last of its own) over the fastest it could (ceil(width / N) tasks of grain + 1 actions), and
+    the join: from the last layer's end to the final task's acceptance, with what its solver did meanwhile."""
+    import gzip
+    import json
+
+    with gzip.open(trace, "rt") as f:
+        ops = [e for e in map(json.loads, f) if e.get("kind") == "op"]
+    agents = {e["agent"] for e in ops}
+    done = {}
+    for e in ops:
+        if e["op"] == "submit" and e["obs"].get("ok"):
+            done.setdefault(e["args"]["task"], (e["round"] + 1, e["agent"]))
+    depth = 1 + max(int(t[1:].split(".")[0]) for t in done if t != "FINAL")
+    ends = [max(r for t, (r, _) in done.items() if t.startswith(f"L{lv}.")) for lv in range(depth)]
+    fastest = math.ceil(width / len(agents)) * (grain + 1)
+    layers = [b - a - fastest for a, b in zip([0] + ends, ends)]
+    fin, solver = done["FINAL"]
+    by = Counter(e["op"] for e in ops if e["agent"] == solver and ends[-1] - 1 <= e["round"] < fin)
+    return {"agents": len(agents), "layer_excess": layers, "join": fin - ends[-1], "join_excess": fin - ends[-1] - (grain + 1),
+            "join_reads": by["get"] + by["inbox"], "join_store_reads": by["get"]}
+
+
+def phase_table(root: str, rows: list[dict]) -> str:
+    """Per team size: mean rounds lost per layer and at the join, over the runs whose traces are under root."""
+    by: dict = {}
+    for r in rows:
+        if not r.get("trace") or "grain" not in r:
+            continue
+        paths = [os.path.join(d, r["trace"]) for d, _, fs in os.walk(root) if r["trace"] in fs]
+        if paths:
+            by.setdefault((r["grain"], r["agents"]), []).append(phases(paths[0], r["grain"], r["width"]))
+    if not by:
+        return ""
+    out = ["## Where the time went", "",
+           "| grain | agents | runs | rounds lost per layer (mean) | per layer, each run | join: rounds lost | join: store reads |",
+           "|---|---|---|---|---|---|---|"]
+    for (g, n), ps in sorted(by.items()):
+        per = [st.mean(p["layer_excess"][1:]) if len(p["layer_excess"]) > 1 else 0 for p in ps]
+        out.append(f"| {g} | {n} | {len(ps)} | {st.mean(per):.1f} | {' '.join(f'{x:.1f}' for x in per)} | "
+                   f"{' '.join(str(p['join_excess']) for p in ps)} | {' '.join(str(p['join_store_reads']) for p in ps)} |")
+    return "\n".join(out + ["", "Rounds lost: over the fastest a layer can go (whole tasks per agent, no sharing); layer 0, "
+                                "which needs no answers, is left out of the mean. The join is the final task, which "
+                                "needs every answer of the last layer.", ""])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("dir")
     a = ap.parse_args()
-    text = table(load_runs(a.dir))
+    rows = load_runs(a.dir)
+    text = table(rows)
     if not text:
         raise SystemExit(f"no network-scale runs under {a.dir}")
+    text += "\n" + phase_table(a.dir, rows)
     with open(os.path.join(a.dir, "netscale.md"), "w") as f:
         f.write(text)
     print(text)
