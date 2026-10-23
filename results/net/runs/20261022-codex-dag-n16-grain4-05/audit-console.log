@@ -1,0 +1,74 @@
+{
+  "complete": true,
+  "source_commit": "a064fb75d4adb5d874888594b4a1364194b76eed",
+  "formal_runs": 3,
+  "solved_runs": 3,
+  "correctly_accepted_tasks": 195,
+  "all_accepted_tasks_have_preceding_valid_apply": true,
+  "all_observed_b_at_most_one": true,
+  "by_team_size": [
+    {
+      "agents": 16,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 50.666666666666664,
+      "lower_bound": 25,
+      "b": 0.493421052631579,
+      "mean_reference_rounds": 33,
+      "a": 0.6513157894736843,
+      "eta": 0.661336032388664,
+      "speedup": 6.5131578947368425,
+      "mean_tool_calls": 810.6666666666666,
+      "mean_total_tokens": 19821070,
+      "mean_coordination_operations": 203.66666666666666
+    }
+  ],
+  "prediction_check": {
+    "frozen_BSP_T": 40,
+    "frozen_BSP_range": [
+      39,
+      50
+    ],
+    "frozen_USL_T": 46,
+    "all_three_runs_solved": true,
+    "mean_solved_T": 50.666666666666664,
+    "observed_mean_L": 5.133333333333333,
+    "absolute_error_BSP": 10.666666666666664,
+    "absolute_error_USL": 4.666666666666664,
+    "T16_vs_T32": {
+      "historical_T32": 38,
+      "mean_difference": 12.666666666666664,
+      "by_seed": [
+        {
+          "seed": 100,
+          "T16": 44,
+          "T32": 39,
+          "difference": 5
+        },
+        {
+          "seed": 101,
+          "T16": 58,
+          "T32": 38,
+          "difference": 20
+        },
+        {
+          "seed": 102,
+          "T16": 50,
+          "T32": 37,
+          "difference": 13
+        }
+      ],
+      "note": "Observational comparison, not an intervention isolating idle agents"
+    },
+    "interpretation": "Report observed distances and all failures; near/far lack a prespecified formal decision threshold. Do not refit the pre-run predictions using these observations."
+  },
+  "baseline": {
+    "data_commit": "70735615d14072f491630dbc610a55c5d551bfb2",
+    "model_source_commit": "1953d3c0f4cd7a213661e518b70bde66066fc676",
+    "T1": 330,
+    "Tref1": 325,
+    "usage_excluded": true
+  },
+  "usl_fit": null
+}
+USAGE {'input_tokens': 59331324, 'cached_input_tokens': 21308416, 'cache_write_input_tokens': 0, 'output_tokens': 131886, 'reasoning_output_tokens': 57258, 'total_tokens': 59463210}

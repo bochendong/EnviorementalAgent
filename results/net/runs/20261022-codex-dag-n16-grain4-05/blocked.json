@@ -1,0 +1,8 @@
+{
+  "historical": true,
+  "reason": "usage_limit with some 403 errors",
+  "snapshot": "failure-snapshots/20261023T144846-0400",
+  "original_pid": 46044,
+  "resolved_by": "User asked to continue; read-only usage check reports ordinaryUsageAllowed=true, weekly usedPercent=0",
+  "checked_at_toronto": "2026-10-23T14:48:46.763237-04:00"
+}

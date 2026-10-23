@@ -1,0 +1,24 @@
+{
+  "source_commit": "a064fb75d4adb5d874888594b4a1364194b76eed",
+  "prediction_file": "docs/netscale-predictions.md",
+  "prediction_file_sha256": "92663671b34217590f55f59833b626da228b3b441a6f10cb4c0273969d551e01",
+  "frozen_before_launch": true,
+  "planned_case": "dag/fixed-g4/n16",
+  "seeds": [
+    100,
+    101,
+    102
+  ],
+  "grain": 4,
+  "agents": 16,
+  "BSP_T": 40,
+  "BSP_quartile_range": [
+    39,
+    50
+  ],
+  "USL_T": 46,
+  "layered_baseline": 25,
+  "Brent_lower_bound": 25,
+  "scope": "Second prediction cycle, fixed before any 16-agent result. The correction after 32 agents is post hoc for that completed result.",
+  "limits": "Three seeds; informal outcome bands without a formal statistical test. Idle-agent coordination is a hypothesis, not a causal conclusion from T alone."
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "case": "dag/fixed-g4/n16",
+    "seed": 100,
+    "agents": 16,
+    "calls": 2688,
+    "problem": {
+      "agents": 16,
+      "width": 16,
+      "depth": 4,
+      "grain": 4
+    }
+  },
+  {
+    "case": "dag/fixed-g4/n16",
+    "seed": 101,
+    "agents": 16,
+    "calls": 2688,
+    "problem": {
+      "agents": 16,
+      "width": 16,
+      "depth": 4,
+      "grain": 4
+    }
+  },
+  {
+    "case": "dag/fixed-g4/n16",
+    "seed": 102,
+    "agents": 16,
+    "calls": 2688,
+    "problem": {
+      "agents": 16,
+      "width": 16,
+      "depth": 4,
+      "grain": 4
+    }
+  }
+]

@@ -1,0 +1,91 @@
+{
+  "complete": true,
+  "formal_runs": 3,
+  "totals": {
+    "input_tokens": 59331324,
+    "cached_input_tokens": 21308416,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 131886,
+    "reasoning_output_tokens": 57258,
+    "total_tokens": 59463210
+  },
+  "interrupted_usage_totals": {
+    "total_tokens": 0
+  },
+  "all_receipted_usage_totals": {
+    "input_tokens": 59331324,
+    "cached_input_tokens": 21308416,
+    "output_tokens": 131886,
+    "reasoning_output_tokens": 57258,
+    "total_tokens": 59463210
+  },
+  "attempts_without_usage_receipt": 144,
+  "counting": "total_tokens = input_tokens + output_tokens. Cached input and reasoning output are subsets, not extra tokens.",
+  "scope": "totals counts each successful formal cached request once, not each replay. Interrupted or unused failed directories and any usage receipts are separate; all_receipted_usage_totals adds these receipts. Failures without receipts have unknown usage. Development, coding/report/chat usage excluded.",
+  "runs": [
+    {
+      "case": "dag/fixed-g4/n16",
+      "agents": 16,
+      "seed": 100,
+      "successful_requests": 704,
+      "usage": {
+        "input_tokens": 17108356,
+        "cached_input_tokens": 6209280,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 38548,
+        "reasoning_output_tokens": 15794,
+        "total_tokens": 17146904
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n16",
+      "agents": 16,
+      "seed": 101,
+      "successful_requests": 928,
+      "usage": {
+        "input_tokens": 22804005,
+        "cached_input_tokens": 8208896,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 48709,
+        "reasoning_output_tokens": 21691,
+        "total_tokens": 22852714
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n16",
+      "agents": 16,
+      "seed": 102,
+      "successful_requests": 800,
+      "usage": {
+        "input_tokens": 19418963,
+        "cached_input_tokens": 6890240,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 44629,
+        "reasoning_output_tokens": 19773,
+        "total_tokens": 19463592
+      },
+      "interrupted_attempts": 144,
+      "interrupted_attempts_without_usage": 144,
+      "interrupted_errors": {
+        "You’ve hit your usage limit. Visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 29th, 2026 6:25 PM.": 144,
+        "Reconnecting... 2/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ee76ae0872813d-YYZ)": 1,
+        "Reconnecting... 3/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ee76b28f0b1117-YYZ)": 1,
+        "Reconnecting... 4/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ee76ba7b2d7091-YYZ)": 1,
+        "Reconnecting... 5/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ee76c65b8157af-YYZ)": 1,
+        "Reconnecting... 2/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ee76ac0ceec8b1-YYZ)": 1,
+        "Reconnecting... 3/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ee76b0eea9b687-YYZ)": 1,
+        "Reconnecting... 4/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ee76b81f19b0a3-YYZ)": 1,
+        "Reconnecting... 5/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ee76c3fb7836b0-YYZ)": 1
+      },
+      "interrupted_usage_receipts": {}
+    }
+  ]
+}
