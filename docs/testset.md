@@ -169,8 +169,10 @@ How does a team of LLM agents scale on a problem that is larger than one agent, 
   - where the actions went;
   - each seed's T, and how each run's team passed answers on (store, broadcast or batch).
 - **The pilot**: fixed, grain 1 and 4, N = 1, 2, 4, 8, 3 seeds (24 runs).
+- **On Nibi** (an open model served by vLLM), every netscale stage runs 2 teams at once, with replies of at most 3072 tokens. Each member's history is trimmed before every model call, not only at the start of a turn. The first Nibi pilot (2026-10-21) ran on the old recurrence DAG with 8 runs at once and 8192-token replies; its requests timed out and its histories outgrew the window (`results/net/submissions/20261021-netscale-pilot-final-report.md`).
 
 ```bash
+ACCOUNT=... STAGE=netscale-smoke bash slurm/run_all.sh     # first: 1 and 8 agents, one seed, under 2 GPU hours
 ACCOUNT=... STAGE=netscale-pilot bash slurm/run_all.sh     # the pilot, one packed job
 ACCOUNT=... STAGE=netscale bash slurm/run_all.sh           # 1-32 agents, fixed and scaled, both grains, 5 seeds
 python -m netagents.codex_netscale --out ...               # the same suite with Codex as the model (docs/codex-netscale.md)

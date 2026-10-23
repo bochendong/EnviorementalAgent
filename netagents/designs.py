@@ -126,10 +126,13 @@ class Member:
         self.peak_context = max(self.peak_context, _tokens(start))
         from .llm import overflowed, without_thinking
 
+        # trimmed before every model call, not only at the start of a turn: a turn may hold hundreds of tool calls
+        # (a peers member's whole share), and a history that grew inside one turn overflowed the window on Nibi
+        # (results/net/submissions/20261021-netscale-pilot-final-report.md: 57k tokens of input + 8k of output)
+        config = RunConfig(tracing_disabled=True, call_model_input_filter=self._fit)
         try:
             try:
-                res = await Runner.run(self.agent, start, max_turns=max_calls + 3,
-                                       run_config=RunConfig(tracing_disabled=True))
+                res = await Runner.run(self.agent, start, max_turns=max_calls + 3, run_config=config)
             except Exception as e:  # noqa: BLE001
                 if not overflowed(e):
                     raise
@@ -137,8 +140,7 @@ class Member:
                 # the same start without thinking (the tools it called before stay done in the world)
                 self.overflows += 1
                 plain = self.agent.clone(model_settings=without_thinking(self.settings))
-                res = await Runner.run(plain, start, max_turns=max(1, self._left) + 3,
-                                       run_config=RunConfig(tracing_disabled=True))
+                res = await Runner.run(plain, start, max_turns=max(1, self._left) + 3, run_config=config)
         except MaxTurnsExceeded:
             return ""
         except Exception as e:  # noqa: BLE001 (one broken call must not stop the team)
@@ -178,6 +180,15 @@ class Member:
         self._account(res)
         self.outputs.append(str(res.final_output or ""))
         return str(res.final_output or "")
+
+    def _fit(self, data):
+        """The history a model call sees, cut to CONTEXT_TOKENS (designs.trim)."""
+        from agents.run_config import ModelInputData
+
+        items, cut = trim(list(data.model_data.input), CONTEXT_TOKENS)
+        self.trims += cut
+        self.peak_context = max(self.peak_context, _tokens(items))
+        return ModelInputData(input=items, instructions=data.model_data.instructions)
 
     def _account(self, res):
         u = res.context_wrapper.usage

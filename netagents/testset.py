@@ -151,6 +151,8 @@ SUITES: dict[str, list[Case]] = {
     "guidance": [Case(f"{p}/guidance{g}", p, TEST_SEEDS[:5], net={"guidance": g})
                  for p in ("math/easy", "math/medium", "codeworld/medium") for g in (0, 1)],
     "memory": [Case(f"{p}/memory", p, TEST_SEEDS, memory=True) for p in ("math/medium", "codeworld/medium")],
+    # before a GPU pilot: one single agent and one team of 8, one seed (slurm/run_all.sh STAGE=netscale-smoke)
+    "netscale-smoke": [netscale_case("fixed", n, TEST_SEEDS[:1], 1) for n in (1, 8)],
     "netscale-pilot": [netscale_case("fixed", n, TEST_SEEDS[:3], g) for g in NETSCALE_GRAINS for n in NETSCALE_PILOT],
     # do agents beyond one per task help? an 8-wide problem with one agent per task (8) and two (16), and 4 and
     # 12 around them (docs/netscale-predictions.md, third prediction)

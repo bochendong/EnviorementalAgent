@@ -15,6 +15,9 @@
 #          decomposable vs sequential tasks and shared vs split tools; one packed job (PACK=1)
 #   load   when is splitting the work worth it? CodeWorld of 4, 8, 12 modules, tools shared or split among
 #          four (LOAD_DESIGNS, default sas centralized decentralized); one packed job
+#   netscale-smoke  before the pilot, under 2 GPU hours: one single agent and one team of 8 on the fixed DAG,
+#          grain 1, one seed; every netscale stage runs 2 teams at once (NETAGENTS_PARALLEL) with replies of
+#          at most 3072 tokens (WS_MAX_TOKENS)
 #   netscale-pilot  agent-network scaling, the pilot: teams of 1, 2, 4, 8 identical agents ("peers") on one
 #          DAG problem of known work and span, 3 seeds, time in lockstep rounds against the scripted
 #          reference (netagents/scaling.py); one packed job. netscale: 1-32 agents, fixed and scaled problems,
@@ -86,7 +89,7 @@ else
   { echo "commit $(git rev-parse HEAD)  ($(git rev-parse --abbrev-ref HEAD))"; echo "submitted $(date -Is)";
   git status --short | sed 's/^/changed /'; } >> "$RUN_DIR/commit.txt"
 { echo "# $(date -Is), stage $STAGE"; for v in ACCOUNT CPU_ACCOUNT GPU_ACCOUNT GPU_RESOURCE GPU_CPUS GPU_MEM GPU_DEPENDENCY MODEL_ID SERVED_NAME TP MAX_MODEL_LEN EXTRA_VLLM_ARGS SERVER_MODE \
-  DESIGNS FRAMEWORKS SEEDS N TIME NETSCALE_DESIGNS WS_THINKING; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
+  DESIGNS FRAMEWORKS SEEDS N TIME NETSCALE_DESIGNS WS_THINKING WS_MAX_TOKENS WS_CONTEXT_TOKENS NETAGENTS_PARALLEL; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
 fi
 
 N0=$(wc -l < "$PLAN")
@@ -145,10 +148,18 @@ PY
     *) suite=$exp; route=case ;;
   esac
   designs="$DESIGNS"
+  TIME_EXP=""
   [ "$exp" = calibration ] && designs="${CALIBRATION_DESIGNS:-sas reflexion centralized debate}"
   [ "$exp" = focus ] && designs="${FOCUS_DESIGNS:-sas centralized decentralized}"
   [ "$exp" = load ] && designs="${LOAD_DESIGNS:-sas centralized decentralized}"
-  case "$exp" in netscale*) designs="${NETSCALE_DESIGNS:-peers}" ;; esac
+  case "$exp" in netscale*)
+    designs="${NETSCALE_DESIGNS:-peers}"
+    # lockstep teams wait for their slowest member, and each member makes one request per round: fewer runs at
+    # once and shorter replies keep every request well inside WS_TIMEOUT (the 2026-10-21 Nibi pilot timed out
+    # with 8 runs at once and 8192-token replies: results/net/submissions/20261021-netscale-pilot-final-report.md)
+    export NETAGENTS_PARALLEL="${NETAGENTS_PARALLEL:-2}" WS_MAX_TOKENS="${WS_MAX_TOKENS:-3072}"
+    [ "$exp" = netscale-smoke ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-02:00 ;;
+  esac
   pack="${PACK:-$(case "$exp" in focus|load|netscale*) echo 1 ;; *) echo 0 ;; esac)}"
   if [ "${FRAMEWORKS:-0}" = 1 ] && { [ "$exp" = compat-framework ] || [ "$exp" = test ]; }; then
     designs="$designs $FRAMEWORK_DESIGNS"
@@ -159,7 +170,7 @@ PY
   ids=()
   if [ "$pack" = 1 ]; then  # one job for every design: one server start-up and one place in the queue
     d=$(echo $designs | tr ' ' '-')
-    ids+=("$(submit "$exp" "$d" --job-name="net-$exp" --time="$TIME" --output="$RUN_DIR/logs/%x-%j.out" \
+    ids+=("$(submit "$exp" "$d" --job-name="net-$exp" --time="${TIME_EXP:-$TIME}" --output="$RUN_DIR/logs/%x-%j.out" \
       --export=ALL,SUITE="$suite",DESIGNS="$designs",ROUTE="$route",OUT="$out/all",LOG_DIR="$RUN_DIR/logs",SEEDS="${SEEDS:-}" \
       slurm/net_eval.sh)")
     designs=""

@@ -550,3 +550,16 @@ def test_phases_of_a_scripted_run(tmp_path):
     assert p["join"] >= 3 and p["join_store_reads"] == 0
     # the layers and the join add up to the run's time
     assert sum(p["layer_excess"]) + 3 * 2 * 3 + p["join"] == r["rounds"]
+
+
+def test_history_is_trimmed_before_every_model_call(mock_llm, monkeypatch):
+    from netagents import designs
+    from netagents.evaluate import run_one
+    from netagents.testset import Case
+
+    model, settings = mock_llm
+    monkeypatch.setattr(designs, "CONTEXT_TOKENS", 3000)
+    case = Case("dag/fixed/trim", "dag/fixed", [0], opt={"agents": 1, "width": 4, "depth": 2}, lockstep=True)
+    r = run_one(designs.DESIGNS["peers"], case, 0, model, settings, 40)  # one turn of up to 40 calls
+    m = r["members"][0]
+    assert m["trims"] > 0 and m["peak_context"] <= 3000
