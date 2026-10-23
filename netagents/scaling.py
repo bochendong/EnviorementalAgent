@@ -50,6 +50,13 @@ def lower_bound(width: int, depth: int, n: int, grain: int = 1) -> int:
     return max(math.ceil(tasks * (grain + 1) / n), (depth + 1) * (grain + 1))
 
 
+def layered_bound(width: int, depth: int, n: int, grain: int = 1) -> int:
+    """The fastest a team can be that finishes each layer before it starts the next (bulk synchronous), with
+    sharing free: every layer takes ceil(width / N) tasks' time, and the final task one more. Not a bound on
+    every strategy (a team may run ahead into the next layer), but the base of the bulk synchronous reading."""
+    return depth * math.ceil(width / n) * (grain + 1) + (grain + 1)
+
+
 def scripted_team(env, sharing: str = "broadcast") -> dict:
     """Every agent in turn takes one action a round. Returns rounds to solve and actions."""
     raw, grain = env.provider.raw, env.provider.grain

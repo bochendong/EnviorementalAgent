@@ -66,6 +66,46 @@ python -m netagents.netscale results/net/runs/<run>/netscale
 
 Calls are not the limit. Each agent may take three times its share of the work plus every layer's applies and sharing: 168 calls per agent at 16 agents and 138 at 32. The pilots used at most 42% of their calls.
 
+## Result at 32 agents (2026-10-23)
+
+`results/net/runs/20261022-codex-dag-n32-grain4-04`, grain 4, seeds 100-102: T = 39, 38, 37 (mean 38). Every node's whole four-step apply chain was audited.
+
+- BSP predicted 46 (42-58): **off by 8, below even the lower end of its range. The prediction failed.**
+- USL predicted 37: off by 1.
+- T(32) = 38 is far from the third outcome (well above 58).
+
+Speed-up 8.68, b = 0.658. The 32 teams kept every answer in the store (64 writes each) and also sent messages (134-182 per run), and about half the agents waited at any time (7 waits per agent).
+
+### Why BSP missed
+
+The predictions above took the Brent bound max(W / N, D) as the base of T = base + S x L. Below the span, that bound spreads the final task and the layers' remainders over the whole team. A team that finishes each layer before the next cannot do that: the fastest such schedule (`netagents/scaling.py` `layered_bound`) takes ceil(width / N) tasks' time per layer and the final task alone:
+
+| agents | 2 | 4 | 8 | 16 | 32 |
+|---|---|---|---|---|---|
+| Brent bound, grain 4 | 163 | 82 | 41 | 25 | 25 |
+| layered schedule, grain 4 | 165 | 85 | 45 | 25 | 25 |
+
+At 8 agents the base was 4 rounds too low, and those 4 rounds went into L. With the layered schedule as the base, the 2-8-agent runs give L = 3.4 per superstep (quartiles 2.9-6.1), not 4.2. That would have predicted 42 for 32 agents: closer, but still 4 above what was observed. At 32 agents L was 2.6 (2.4-2.8).
+
+**This correction was made after seeing the 32-agent result; it is not a confirmed prediction.** What stands is that the pre-registered BSP prediction failed. The corrected reading has to earn its place on runs not yet made.
+
+## Second prediction: 16 agents, grain 4 (2026-10-23, before any 16-agent run)
+
+16 agents on a 16-wide problem is the boundary case: one task per agent and layer, and (unlike 32) no idle agents to take on the talking.
+
+| reading | how | T at 16 |
+|---|---|---|
+| BSP, layered base | 25 + 5 x L, L = 3.0 (median of all 12 runs with 2-32 agents; quartiles 2.8-5.1) | **40** (39-50) |
+| USL | refitted with the 32-agent runs (sigma = 0.08, kappa = 0.0002) | **46** |
+
+Outcomes:
+
+1. **T about 39-42**: the layered BSP reading holds. The loss per superstep is a property of the team's protocol (about 3 rounds, against the scripted reference's 1.2-1.6), not of its size.
+2. **T about 45-47**: USL is better. Something grows with the team that BSP does not have.
+3. **T well above 50**: neither. Without idle agents, 16 agents lose more per superstep than 32 do, so slack absorbs coordination.
+
+A run whose team settles on the store alone is reported as such (`sharing`): in the pilots, those teams lost 5-7 rounds per superstep.
+
 ## 中文摘要
 
 16 人和 32 人还没跑之前，先用两轮试跑的结果写下预测。
@@ -81,3 +121,16 @@ Calls are not the limit. Each agent may take three times its share of the work p
   - 远超 58 轮，或者 32 人比 16 人慢：每层开销随人数增长，存在"再加人就变慢"的规模。
 
   第三种最可能写成论文的核心结论。
+
+**32 人的结果（10 月 23 日）**：T = 39、38、37，平均 38 轮。
+
+- BSP 预测是 46 轮，偏了 8 轮，比预测区间的下限还低，**预测失败**；通用扩展定律预测 37 轮，只差 1 轮。
+- 原因：BSP 用了 Brent 下界做基线。人少的时候，这个下界把汇总题和每层的零头摊给了全队，实际上做不到；8 人时少算了 4 轮，这 4 轮被错误地算进了每层开销 L。
+- 改用"逐层完成的最快日程"做基线后，2 到 8 人的 L 是 3.4，32 人是 2.6。这个修正是看到结果之后才做的，不算被证实的预测。
+
+**16 人的新预测（跑之前写下）**：
+
+- 修正后的 BSP 读法：40 轮（区间 39 到 50）；
+- 通用扩展定律重新拟合：46 轮；
+- 两者相差 6 轮，16 人可以区分它们。
+- 如果远超 50 轮，说明没有空闲成员时协调开销更大，即"空闲成员吸收了协调开销"。

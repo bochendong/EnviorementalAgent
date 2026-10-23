@@ -20,7 +20,8 @@ problem (worldseeds/net/providers/dag.py), time in lockstep rounds (netagents/lo
                   speed-up; below 1, adding agents loses more to coordination than the reference does
     speed-up      T(1)/T(N) on the fixed family
 
-the bulk synchronous reading T = T_lb + S x L (L: rounds lost per superstep, S = depth + 1; with predictions
+the bulk synchronous reading T = T_bsp + S x L (T_bsp: the fastest layer-by-layer schedule; L: rounds lost
+per superstep, S = depth + 1; with predictions
 for team sizes not yet run), and the round budget each team's actions went to (compute, the shared store, coordination, waiting,
 submissions), with duplicated computations. The Universal Scalability Law (Gunther), S(N) = N / (1 +
 sigma (N - 1) + kappa N (N - 1)), is fitted to the fixed family's speed-ups: sigma is contention (work that
@@ -94,23 +95,32 @@ def sharing(r: dict) -> str:
 
 
 def superstep_overhead(rows: list[dict]) -> dict | None:
-    """The bulk synchronous reading of a family: T = T_lb + S x L, with S = depth + 1 supersteps. L, the rounds a
-    team loses per superstep (sharing and synchronising), from solved runs of 2 or more agents; L_ref, the
-    scripted reference's."""
-    rs = [r for r in rows if r["agents"] > 1 and r.get("solved_step") and "lower_bound" in r]
+    """The bulk synchronous reading of a family: T = T_bsp + S x L, with S = depth + 1 supersteps and T_bsp the
+    fastest layer-by-layer schedule (netagents/scaling.py layered_bound: whole tasks per layer, the final task
+    alone). L, the rounds a team loses per superstep (sharing and synchronising), from solved runs of 2 or more
+    agents; L_ref, the scripted reference's.
+
+    The first version took the Brent bound max(W / N, D) as the base. Below the span that bound spreads the
+    final task and the layers' remainders over the whole team, so it put 2-4 rounds of unavoidable schedule
+    into L (4.2 instead of 3.4 per superstep at grain 4) and predicted 46 rounds for 32 agents, who took 38
+    (docs/netscale-predictions.md)."""
+    from .scaling import layered_bound
+
+    rs = [r for r in rows if r["agents"] > 1 and r.get("solved_step") and "width" in r]
     if len(rs) < 2:
         return None
-    ls = [(r["solved_step"] - r["lower_bound"]) / (r["depth"] + 1) for r in rs]
+    base = {id(r): layered_bound(r["width"], r["depth"], r["agents"], r.get("grain", 1)) for r in rs}
+    ls = [(r["solved_step"] - base[id(r)]) / (r["depth"] + 1) for r in rs]
     q1, _, q3 = st.quantiles(ls, n=4)
     return {"L": st.median(ls), "q1": q1, "q3": q3, "runs": len(rs),
-            "L_ref": st.median((reference(r) - r["lower_bound"]) / (r["depth"] + 1) for r in rs)}
+            "L_ref": st.median((reference(r) - base[id(r)]) / (r["depth"] + 1) for r in rs)}
 
 
 def predict(r: dict, n: int, bsp: dict) -> float:
     """T for a team of ``n`` on the problem of run ``r``, from the bulk synchronous reading."""
-    from .scaling import lower_bound
+    from .scaling import layered_bound
 
-    return lower_bound(r["width"], r["depth"], n, r["grain"]) + (r["depth"] + 1) * bsp["L"]
+    return layered_bound(r["width"], r["depth"], n, r.get("grain", 1)) + (r["depth"] + 1) * bsp["L"]
 
 
 def rows_by_size(rows: list[dict]) -> dict:
@@ -167,8 +177,8 @@ def table(rows: list[dict]) -> str:
                                                   "no peak (kappa = 0).")]
         bsp = superstep_overhead([r for n in ns for r in sizes[n]])
         if bsp:
-            text += ["", f"Bulk synchronous reading: T = T_lb + S x L, S = depth + 1 supersteps (layers and the final "
-                         f"task). The team's overhead per superstep L (median over runs of 2 or more agents, "
+            text += ["", f"Bulk synchronous reading: T = T_bsp + S x L, T_bsp the fastest layer-by-layer schedule, "
+                         f"S = depth + 1 supersteps (layers and the final task). The team's overhead per superstep L (median over runs of 2 or more agents, "
                          f"{bsp['runs']} runs): {bsp['L']:.1f} rounds (quartiles {bsp['q1']:.1f}-{bsp['q3']:.1f}); "
                          f"the scripted reference's: {bsp['L_ref']:.1f}."]
             if family.startswith("fixed") and "grain" in sizes[ns[0]][0]:

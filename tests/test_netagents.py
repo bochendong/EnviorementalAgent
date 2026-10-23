@@ -523,8 +523,11 @@ def test_batch_reference_and_sharing_labels():
 def test_superstep_overhead_and_prediction():
     from netagents.netscale import predict, superstep_overhead
 
-    rows = [{"agents": n, "solved_step": 41 + 5 * 4 + k, "lower_bound": 41, "depth": 4, "width": 16, "grain": 4,
-             "seed": 100} for n, k in ((2, 0), (4, 0), (8, 0))]
+    from netagents.scaling import layered_bound
+
+    assert [layered_bound(16, 4, n, 4) for n in (1, 8, 16, 32)] == [325, 45, 25, 25]
+    rows = [{"agents": n, "solved_step": layered_bound(16, 4, n, 4) + 5 * 3, "lower_bound": 0, "depth": 4,
+             "width": 16, "grain": 4, "seed": 100} for n in (2, 4, 8)]
     b = superstep_overhead(rows)
-    assert b["L"] == 4 and b["L_ref"] > 0
-    assert predict(rows[0], 32, b) == 25 + 5 * 4  # the span bounds 32 agents
+    assert b["L"] == 3 and b["L_ref"] > 0
+    assert predict(rows[0], 32, b) == 25 + 5 * 3  # one task per agent and layer: the span
