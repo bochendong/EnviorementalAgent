@@ -1,0 +1,246 @@
+{
+  "source_commit": "ad95c039c11239ff029e5d36eaaa8b6102ef5677",
+  "status": "failed_incomplete",
+  "expected_runs": 12,
+  "recorded_runs": 10,
+  "solved_runs": 0,
+  "missing": [
+    [
+      "peers",
+      "dag/fixed/n8",
+      101,
+      "network"
+    ],
+    [
+      "peers",
+      "dag/fixed/n8",
+      102,
+      "network"
+    ]
+  ],
+  "groups": {
+    "1": {
+      "runs": 3,
+      "solved": 0,
+      "done": [
+        0,
+        0,
+        0
+      ],
+      "mean_task_completion": 0.0,
+      "reference_steps": 129,
+      "T": null,
+      "closeness": null,
+      "eta": null,
+      "speedup": null,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "llm_errors": 9,
+      "wrong_submissions": 0,
+      "duplicate_work": 0,
+      "ops_total": {},
+      "ops_mean": {}
+    },
+    "2": {
+      "runs": 3,
+      "solved": 0,
+      "done": [
+        19,
+        0,
+        16
+      ],
+      "mean_task_completion": 0.1794871794871795,
+      "reference_steps": 160,
+      "T": null,
+      "closeness": null,
+      "eta": null,
+      "speedup": null,
+      "input_tokens": 28553994,
+      "output_tokens": 60712,
+      "llm_errors": 9,
+      "wrong_submissions": 203,
+      "duplicate_work": 25,
+      "ops_total": {
+        "tasks": 40,
+        "status": 35,
+        "send": 32,
+        "rsolve": 66,
+        "sequence": 1497,
+        "evaluate": 90,
+        "submit": 238,
+        "inbox": 1,
+        "simplify": 19,
+        "get": 582,
+        "put": 103,
+        "who": 2
+      },
+      "ops_mean": {
+        "tasks": 13.333333333333334,
+        "status": 11.666666666666666,
+        "send": 10.666666666666666,
+        "rsolve": 22.0,
+        "sequence": 499.0,
+        "evaluate": 30.0,
+        "submit": 79.33333333333333,
+        "inbox": 0.3333333333333333,
+        "simplify": 6.333333333333333,
+        "get": 194.0,
+        "put": 34.333333333333336,
+        "who": 0.6666666666666666
+      }
+    },
+    "4": {
+      "runs": 3,
+      "solved": 0,
+      "done": [
+        11,
+        0,
+        0
+      ],
+      "mean_task_completion": 0.05641025641025641,
+      "reference_steps": 88,
+      "T": null,
+      "closeness": null,
+      "eta": null,
+      "speedup": null,
+      "input_tokens": 48962437,
+      "output_tokens": 169359,
+      "llm_errors": 19,
+      "wrong_submissions": 59,
+      "duplicate_work": 0,
+      "ops_total": {
+        "tasks": 12,
+        "send": 25,
+        "status": 9,
+        "sequence": 2012,
+        "simplify": 1,
+        "rsolve": 71,
+        "solve": 4,
+        "evaluate": 70,
+        "submit": 70,
+        "who": 2,
+        "inbox": 4
+      },
+      "ops_mean": {
+        "tasks": 4.0,
+        "send": 8.333333333333334,
+        "status": 3.0,
+        "sequence": 670.6666666666666,
+        "simplify": 0.3333333333333333,
+        "rsolve": 23.666666666666668,
+        "solve": 1.3333333333333333,
+        "evaluate": 23.333333333333332,
+        "submit": 23.333333333333332,
+        "who": 0.6666666666666666,
+        "inbox": 1.3333333333333333
+      }
+    },
+    "8": {
+      "runs": 1,
+      "solved": 0,
+      "done": [
+        3
+      ],
+      "mean_task_completion": 0.046153846153846156,
+      "reference_steps": 52,
+      "T": null,
+      "closeness": null,
+      "eta": null,
+      "speedup": null,
+      "input_tokens": 13039758,
+      "output_tokens": 74652,
+      "llm_errors": 11,
+      "wrong_submissions": 1,
+      "duplicate_work": 0,
+      "ops_total": {
+        "tasks": 11,
+        "status": 4,
+        "who": 2,
+        "send": 7,
+        "sequence": 880,
+        "inbox": 2,
+        "board": 1,
+        "keys": 1,
+        "submit": 4
+      },
+      "ops_mean": {
+        "tasks": 11.0,
+        "status": 4.0,
+        "who": 2.0,
+        "send": 7.0,
+        "sequence": 880.0,
+        "inbox": 2.0,
+        "board": 1.0,
+        "keys": 1.0,
+        "submit": 4.0
+      }
+    }
+  },
+  "trace_checks": [
+    {
+      "size": 1,
+      "seed": 100,
+      "events": 2,
+      "operations": 0,
+      "retained_member_transcripts": 1,
+      "ops_agree": true
+    },
+    {
+      "size": 2,
+      "seed": 100,
+      "events": 916,
+      "operations": 914,
+      "retained_member_transcripts": 2,
+      "ops_agree": true
+    },
+    {
+      "size": 4,
+      "seed": 100,
+      "events": 686,
+      "operations": 684,
+      "retained_member_transcripts": 4,
+      "ops_agree": true
+    },
+    {
+      "size": 8,
+      "seed": 100,
+      "events": 917,
+      "operations": 912,
+      "retained_member_transcripts": 8,
+      "ops_agree": true
+    }
+  ],
+  "totals": {
+    "input_tokens": 90556189,
+    "output_tokens": 304723,
+    "llm_errors": 48,
+    "wrong_submissions": 263,
+    "duplicate_work": 25,
+    "llm_requests": 4351
+  },
+  "gpu_elapsed_seconds": 30001,
+  "h100_hours": 8.33361111111111,
+  "actual_start_toronto": "2026-10-22T08:32:20",
+  "actual_end_toronto": "2026-10-22T16:52:21",
+  "termination": "Harness stopped after successive recorded runs with model errors; not a Slurm time-limit termination.",
+  "interpretation": "Transport/context failures contaminate the result. No successful single-agent baseline; T, eta, speedup and USL parameters are unavailable, not zero. Cannot infer mathematical difficulty or coordination failure from this run.",
+  "remote_original_sha256": {
+    "README.md": "a9727cb8f4ee549ce42612824a3fdfcd72c27f1739f857cff54c203f84058a11",
+    "commit.txt": "b4a147bd3844e990cee9df6d384dfd86dee0fb77c78b7bc40c812068acf01559",
+    "env.txt": "1cc2a9853c709abf18e11cf94b35df7b9c11d36c4318130a8a2abb961f7d26c9",
+    "experiment-settings.json": "eec48df369245a00c731d8d88ce0a31a6021e9a5c3bd117eda448ace48ca2595",
+    "plan.tsv": "82b9d03d83e1da4c1293cec2348b035368c67744a4db1b8c8d7c6af92246ba10",
+    "submission-output.txt": "25348cf894befd80f7afbd575c67ebbe7198769d1bc50ca3e9c2abe4388c6a88",
+    "submission.json": "f3271314ef316b15b50ce1515d8d5a5dd8a5859d4df7abff8880f3da565fc6aa",
+    "logs/net-netscale-pilot-24729787.out": "06759a41d41697af5dbae03d17e5914d3cab744319a9fc74a02626f96bd155c7",
+    "logs/net-netscale-pilot-summary-24729788.out": "cbbdda3b3823a8ae4531a6dd47ab57a7d5cd82306236dac2e55466a6fd3aeef2",
+    "logs/vllm-24729787.log": "4cee037d501b509d16a74b61fd7ba4f6b0e4f9199c37d0da1f669a8c4cf1ac8c",
+    "netscale-pilot/summary.md": "f71e8edef9d37f4840b99628d3b950c79cd20d57d235499b4d18e8b600653d87",
+    "netscale-pilot/all/runs.jsonl": "49bd5158b036da2eeb7a14a96ef13bc1975616e506fb3f7651341a3d6b47dd3d",
+    "netscale-pilot/all/summary.md": "f71e8edef9d37f4840b99628d3b950c79cd20d57d235499b4d18e8b600653d87",
+    "netscale-pilot/all/traces/peers__dag_fixed_n1__100.jsonl.gz": "cf17f4f0a90354a193a57e3659b72861fb83cabf62babc4d21009bf034ce17b5",
+    "netscale-pilot/all/traces/peers__dag_fixed_n2__100.jsonl.gz": "4722f6932560e85fa4d54770ff133253ce1cf2a5d4971c9da398283d21e7d06d",
+    "netscale-pilot/all/traces/peers__dag_fixed_n4__100.jsonl.gz": "a179ce34a229241339d3f4d8a1ca61865da596d18b0848c37376347d09ad33ba",
+    "netscale-pilot/all/traces/peers__dag_fixed_n8__100.jsonl.gz": "06bcbfd38dbda61683aa727560021ce5bf6ab8c512219db10f879a869cd9fac1"
+  }
+}

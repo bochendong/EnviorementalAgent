@@ -56,7 +56,7 @@
     4,
     2
   ],
-  "stage": "submitted",
+  "stage": "failed_incomplete",
   "jobs": [
     {
       "experiment": "netscale-pilot",
@@ -242,5 +242,30 @@
     "environment_issue": "First helper attempt stopped at squeue before sbatch because loading model modules caused a Slurm auth plugin version mismatch. Actual submission used the clean SSH environment, without modifying source or resubmitting a GPU job.",
     "timing": "2-3 GPU hours is an unmeasured estimate; pending StartTime Unknown. Limit is 12 hours.",
     "source_clean": true
+  },
+  "final_result": {
+    "gpu_state": "FAILED",
+    "gpu_exit": "1:0",
+    "summary_state": "COMPLETED",
+    "expected_runs": 12,
+    "recorded_runs": 10,
+    "solved_runs": 0,
+    "missing": [
+      [
+        "peers",
+        "dag/fixed/n8",
+        101,
+        "network"
+      ],
+      [
+        "peers",
+        "dag/fixed/n8",
+        102,
+        "network"
+      ]
+    ],
+    "h100_hours": 8.33361111111111,
+    "report": "20261021-netscale-pilot-final-report.md",
+    "no_automatic_retry": true
   }
 }

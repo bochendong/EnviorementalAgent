@@ -1,0 +1,23 @@
+waiting for vLLM on port 29787 (log: /scratch/bdong/worldseeds/results/net/runs/20261021-netscale-pilot/logs/vllm-24729787.log)
+server up after 210s
+dag/fixed/n1                     seed 102 peers         solved False done 0/65 calls 0 tokens 0 errors 3 overflows 0 ops {}
+    model errors: APITimeoutError: Request timed out.
+dag/fixed/n1                     seed 100 peers         solved False done 0/65 calls 0 tokens 0 errors 3 overflows 0 ops {}
+    model errors: APITimeoutError: Request timed out.
+dag/fixed/n1                     seed 101 peers         solved False done 0/65 calls 0 tokens 0 errors 3 overflows 0 ops {}
+    model errors: APITimeoutError: Request timed out.
+dag/fixed/n2                     seed 102 peers         solved False done 19/65 calls 914 tokens 16119716 errors 2 overflows 0 ops {'sequence': 445, 'submit': 157, 'evaluate': 74, 'get': 54}
+    model errors: BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 65536 tokens. However, you requested 8192 output tokens and your prompt contains at least 57345 input tokens, for a total of at least 65537 tokens. Please reduce the length of the input prompt or the num | BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 65536 tokens. However, you requested 8192 output tokens and your prompt contains at least 57345 input tokens, for a total of at least 65537 tokens. Please reduce the length of the input prompt or the 
+dag/fixed/n2                     seed 100 peers         solved False done 0/65 calls 914 tokens 636639 errors 3 overflows 0 ops {'sequence': 900, 'tasks': 7, 'send': 5, 'status': 1}
+    model errors: BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 65536 tokens. However, you requested 8192 output tokens and your prompt contains at least 57345 input tokens, for a total of at least 65537 tokens. Please reduce the length of the input prompt or the num | APITimeoutError: Request timed out.
+dag/fixed/n2                     seed 101 peers         solved False done 16/65 calls 877 tokens 11858351 errors 4 overflows 0 ops {'get': 528, 'sequence': 152, 'submit': 81, 'put': 65}
+    model errors: APITimeoutError: Request timed out. | BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 65536 tokens. However, you requested 8192 output tokens and your prompt contains at least 57345 input tokens, for a total of at least 65537 tokens. Please reduce the length of the input prompt or the num
+dag/fixed/n4                     seed 101 peers         solved False done 11/65 calls 684 tokens 13020898 errors 7 overflows 0 ops {'sequence': 449, 'rsolve': 71, 'evaluate': 70, 'submit': 70}
+    model errors: APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out.
+dag/fixed/n4                     seed 100 peers         solved False done 0/65 calls 684 tokens 16023952 errors 7 overflows 0 ops {'sequence': 663, 'send': 7, 'tasks': 4, 'status': 4}
+    model errors: APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out.
+dag/fixed/n4                     seed 102 peers         solved False done 0/65 calls 912 tokens 20086946 errors 5 overflows 0 ops {'sequence': 900, 'tasks': 5, 'send': 4, 'status': 3}
+    model errors: APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out.
+dag/fixed/n8                     seed 100 peers         solved False done 3/65 calls 912 tokens 13114410 errors 11 overflows 2 ops {'sequence': 880, 'tasks': 11, 'send': 7, 'status': 4}
+    model errors: APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out. | APITimeoutError: Request timed out.
+stopped: 10 runs in a row with model errors (see 'model errors' above); fix the server or the harness before running more (python -m netagents.smoke)
