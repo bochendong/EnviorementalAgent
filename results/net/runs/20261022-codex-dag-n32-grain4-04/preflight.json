@@ -1,0 +1,34 @@
+{
+  "case": "dag/fixed-g4/n32",
+  "seeds": [
+    100,
+    101,
+    102
+  ],
+  "team_call_budget": 4416,
+  "per_agent_call_budget": 138,
+  "options": {
+    "agents": 32,
+    "width": 16,
+    "depth": 4,
+    "grain": 4
+  },
+  "development_seed": 0,
+  "development_reference": {
+    "width": 16,
+    "depth": 4,
+    "grain": 4,
+    "agents": 32,
+    "seed": 0,
+    "solved": true,
+    "rounds": 31,
+    "sharing": "broadcast",
+    "rounds_broadcast": 31,
+    "rounds_store": 49,
+    "rounds_batch": 33,
+    "work": 325,
+    "span": 25,
+    "lower_bound": 25
+  },
+  "note": "Reference check and selection only; no formal model runs or policy tuning"
+}

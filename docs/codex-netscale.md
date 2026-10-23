@@ -1,6 +1,8 @@
 # 在本地用 Codex 运行 netscale-pilot
 
-最新完成的 [DAG grain 4 正式试跑及逐节点核验](../results/net/runs/20261022-codex-dag-grain4-pilot-03/README.md)基于 `1953d3c`：12组均正确完成65道任务，780条完整四步 `apply` 链通过审计，包含 b、η、每组平均 tokens、原始轨迹和完整调用归档。额度中断后仅续跑最后两组，缓存用量未重复计算。
+最新完成的 [32 人 grain 4 预测检验](../results/net/runs/20261022-codex-dag-n32-grain4-04/README.md)基于 `adf0045`：3组均正确完成65道任务，T为39/38/37轮，平均38轮；195条完整四步 `apply` 链通过核验。结果距事先写下的USL预测37轮为1轮，距BSP预测46轮为8轮；只有3个种子，16人暂缓，不据此宣称普适定律。预测原文、用量与完整调用归档一并保留。
+
+此前的 [DAG grain 4 正式试跑及逐节点核验](../results/net/runs/20261022-codex-dag-grain4-pilot-03/README.md)基于 `1953d3c`：12组均正确完成65道任务，780条完整四步 `apply` 链通过审计，包含 b、η、每组平均 tokens、原始轨迹和完整调用归档。额度中断后仅续跑最后两组，缓存用量未重复计算。
 
 此前的 [DAG grain 1 正式试跑](../results/net/runs/20261022-codex-dag-pilot-02/netscale-pilot/README.md)基于 `cb69623`，原始记录保持不变。两轮对比统一采用 `1953d3c` 的参考团队；函数值版本不同、每人数仅3个种子，属于观察性比较。
 

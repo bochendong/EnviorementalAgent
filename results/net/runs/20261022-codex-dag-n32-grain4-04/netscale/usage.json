@@ -1,0 +1,83 @@
+{
+  "complete": true,
+  "formal_runs": 3,
+  "totals": {
+    "input_tokens": 90558051,
+    "cached_input_tokens": 32136064,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 257697,
+    "reasoning_output_tokens": 137495,
+    "total_tokens": 90815748
+  },
+  "interrupted_usage_totals": {
+    "total_tokens": 0
+  },
+  "all_receipted_usage_totals": {
+    "input_tokens": 90558051,
+    "cached_input_tokens": 32136064,
+    "output_tokens": 257697,
+    "reasoning_output_tokens": 137495,
+    "total_tokens": 90815748
+  },
+  "attempts_without_usage_receipt": 6,
+  "counting": "total_tokens = input_tokens + output_tokens. Cached input and reasoning output are subsets, not extra tokens.",
+  "scope": "totals counts each successful formal cached request once, not each replay. Interrupted or unused failed directories and any usage receipts are separate; all_receipted_usage_totals adds these receipts. Failures without receipts have unknown usage. Development, coding/report/chat usage excluded.",
+  "runs": [
+    {
+      "case": "dag/fixed-g4/n32",
+      "agents": 32,
+      "seed": 100,
+      "successful_requests": 1248,
+      "usage": {
+        "input_tokens": 30554315,
+        "cached_input_tokens": 10993920,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 86351,
+        "reasoning_output_tokens": 47120,
+        "total_tokens": 30640666
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n32",
+      "agents": 32,
+      "seed": 101,
+      "successful_requests": 1216,
+      "usage": {
+        "input_tokens": 30870906,
+        "cached_input_tokens": 10709248,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 90007,
+        "reasoning_output_tokens": 47559,
+        "total_tokens": 30960913
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n32",
+      "agents": 32,
+      "seed": 102,
+      "successful_requests": 1184,
+      "usage": {
+        "input_tokens": 29132830,
+        "cached_input_tokens": 10432896,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 81339,
+        "reasoning_output_tokens": 42816,
+        "total_tokens": 29214169
+      },
+      "interrupted_attempts": 6,
+      "interrupted_attempts_without_usage": 6,
+      "interrupted_errors": {
+        "Selected model is at capacity. Please try a different model.": 6
+      },
+      "interrupted_usage_receipts": {}
+    }
+  ]
+}

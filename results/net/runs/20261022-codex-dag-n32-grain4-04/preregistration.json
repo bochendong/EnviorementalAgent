@@ -1,0 +1,23 @@
+{
+  "source_commit": "adf004518204915f23733333db3897bdc98d3b02",
+  "prediction_file": "docs/netscale-predictions.md",
+  "prediction_file_sha256": "ebbc8d5fbc058c97e84cd16bdfb860137b8aea2935ac337996407651deb03f1f",
+  "frozen_before_launch": true,
+  "planned_case": "dag/fixed-g4/n32",
+  "seeds": [
+    100,
+    101,
+    102
+  ],
+  "grain": 4,
+  "agents": 32,
+  "BSP_T": 46,
+  "BSP_quartile_range": [
+    42,
+    58
+  ],
+  "USL_T": 37,
+  "comparison_target": "Mean synchronous rounds to correctly solve the final task",
+  "selection": "Run the user-proposed 32-agent-only cost-saving variant first; no 16-agent result is inferred",
+  "limits": "Only three seeds. Near/far are informal predictions without a preregistered statistical decision rule. T(32)>T(16) cannot be checked without the deferred 16-agent runs. Preserve unsolved and budget-limited cases."
+}

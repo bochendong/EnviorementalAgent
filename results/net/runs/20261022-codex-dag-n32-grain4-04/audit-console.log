@@ -1,0 +1,50 @@
+{
+  "complete": true,
+  "source_commit": "adf004518204915f23733333db3897bdc98d3b02",
+  "formal_runs": 3,
+  "solved_runs": 3,
+  "correctly_accepted_tasks": 195,
+  "all_accepted_tasks_have_preceding_valid_apply": true,
+  "all_observed_b_at_most_one": true,
+  "by_team_size": [
+    {
+      "agents": 32,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 38,
+      "lower_bound": 25,
+      "b": 0.6578947368421053,
+      "mean_reference_rounds": 31,
+      "a": 0.8157894736842105,
+      "eta": 0.8283400809716599,
+      "speedup": 8.68421052631579,
+      "mean_tool_calls": 1216,
+      "mean_total_tokens": 30271916,
+      "mean_coordination_operations": 500
+    }
+  ],
+  "prediction_check": {
+    "frozen_BSP_T": 46,
+    "frozen_BSP_range": [
+      42,
+      58
+    ],
+    "frozen_USL_T": 37,
+    "all_three_runs_solved": true,
+    "mean_solved_T": 38,
+    "observed_mean_L": 2.6,
+    "absolute_error_BSP": 8,
+    "absolute_error_USL": 1,
+    "T32_vs_T16": "Unavailable: 16-agent runs were deferred before launch",
+    "interpretation": "Report observed distances and all failures; near/far lack a prespecified formal decision threshold. Do not refit the pre-run predictions using these observations."
+  },
+  "baseline": {
+    "data_commit": "70735615d14072f491630dbc610a55c5d551bfb2",
+    "model_source_commit": "1953d3c0f4cd7a213661e518b70bde66066fc676",
+    "T1": 330,
+    "Tref1": 325,
+    "usage_excluded": true
+  },
+  "usl_fit": null
+}
+USAGE {'input_tokens': 90558051, 'cached_input_tokens': 32136064, 'cache_write_input_tokens': 0, 'output_tokens': 257697, 'reasoning_output_tokens': 137495, 'total_tokens': 90815748}
