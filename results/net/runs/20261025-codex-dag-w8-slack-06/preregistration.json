@@ -1,0 +1,53 @@
+{
+  "prediction_commit": "2bc81bab1eedd73ab36a18898113077de03026ee",
+  "execution_source_commit": "4f768d7760bc82454e79402158c8803e80e491d2",
+  "prediction_file": "predictions-2bc81ba.md",
+  "prediction_file_sha256": "78360f6682585b530cf3bfc30f17c18ce56ea1b4831871663be0f0b86cddd433",
+  "saved_before_launch_toronto": "2026-10-25T02:51:11.280295-04:00",
+  "suite": "netscale-slack",
+  "families": [
+    "w8"
+  ],
+  "width": 8,
+  "depth": 4,
+  "grain": 4,
+  "sizes": [
+    8,
+    16
+  ],
+  "seeds": [
+    100,
+    101,
+    102
+  ],
+  "predicted_T": {
+    "8": 42,
+    "16": 37
+  },
+  "predicted_handoff_rounds_per_layer": {
+    "8": 4.5,
+    "16": 2.7
+  },
+  "primary_claim": "16 agents have lower handoff loss per layer than 8; T16<T8 on every seed. If no second crew forms, or it forms without lower loss, the proposed crew mechanism fails.",
+  "metric_definition": "Use frozen netagents.netscale.phases: layer acceptance endpoints minus fastest per-layer work; exclude layer0 from handoff mean (layers1-3). Report join excess/store reads separately. Inspect traces for crew formation; do not infer causality from T alone.",
+  "reference_steps": {
+    "8": 33,
+    "16": 31
+  },
+  "lower_bound": 25,
+  "budget_per_team": {
+    "8": 1344,
+    "16": 2208
+  },
+  "budget_per_member": {
+    "8": 168,
+    "16": 138
+  },
+  "limits": [
+    "Only three seeds and two team sizes; do not change predictions, prompts or strategy using test results.",
+    "No matched width8 single-agent LLM run; do not import width16 T1=330 to compute eta or solo speedup. Report T8/T16 and reference ratios instead.",
+    "Execution includes the committed before-every-call history trimming fix from 0b8335b; record trims and context lengths.",
+    "About 70 million tokens is an estimate, not a measured cost or guaranteed cap.",
+    "Integer validator does not enforce apply queries for arbitrary strategies; audit actual four-step chains."
+  ]
+}

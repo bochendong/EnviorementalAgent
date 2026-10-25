@@ -1,0 +1,31 @@
+{
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "suite": "netscale-slack",
+  "families": [
+    "w8"
+  ],
+  "sizes": [
+    8,
+    16
+  ],
+  "seeds": [
+    100,
+    101,
+    102
+  ],
+  "grains": [
+    4
+  ],
+  "parallel_runs": 2,
+  "inference_concurrency": 2,
+  "timeout": 180,
+  "resume": false,
+  "out": "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261025-codex-dag-w8-slack-06/netscale-slack",
+  "codex_version": "codex-cli 0.164.0-alpha.11.1",
+  "git_commit": "4f768d7760bc82454e79402158c8803e80e491d2",
+  "agents_sdk": "0.23.1",
+  "sympy": "1.14.0",
+  "protocol": "Original Peers + Lockstep + SUITES['netscale-pilot'] + run_one + write_summary",
+  "model_transport": "One Codex JSON tool selection per SDK model response; no outside capabilities"
+}

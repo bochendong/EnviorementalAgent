@@ -1,0 +1,6 @@
+{"case": "dag/w8-g4/n8", "seed": 100, "solved": true, "done": 33, "tasks": 33, "steps": 38, "reference_steps": 33, "llm_tool_calls": 304}
+{"case": "dag/w8-g4/n16", "seed": 100, "solved": true, "done": 33, "tasks": 33, "steps": 34, "reference_steps": 31, "llm_tool_calls": 544}
+{"case": "dag/w8-g4/n8", "seed": 101, "solved": true, "done": 33, "tasks": 33, "steps": 40, "reference_steps": 33, "llm_tool_calls": 320}
+{"case": "dag/w8-g4/n8", "seed": 102, "solved": true, "done": 33, "tasks": 33, "steps": 38, "reference_steps": 33, "llm_tool_calls": 304}
+{"case": "dag/w8-g4/n16", "seed": 101, "solved": true, "done": 33, "tasks": 33, "steps": 35, "reference_steps": 31, "llm_tool_calls": 560}
+{"case": "dag/w8-g4/n16", "seed": 102, "solved": true, "done": 33, "tasks": 33, "steps": 35, "reference_steps": 31, "llm_tool_calls": 560}

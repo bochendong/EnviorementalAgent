@@ -1,0 +1,6365 @@
+{
+  "complete": true,
+  "source_commit": "4f768d7760bc82454e79402158c8803e80e491d2",
+  "formal_runs": 6,
+  "solved_runs": 6,
+  "correctly_accepted_tasks": 198,
+  "all_accepted_tasks_have_preceding_valid_apply": true,
+  "all_observed_b_at_most_one": true,
+  "by_team_size": [
+    {
+      "agents": 8,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 38.666666666666664,
+      "lower_bound": 25,
+      "layered_bound": 25,
+      "b": 0.646551724137931,
+      "reference_steps": 33,
+      "a": 0.8534482758620691,
+      "eta": null,
+      "solo_speedup": null,
+      "mean_handoff_loss": 3.4444444444444446,
+      "mean_join_excess": 2.3333333333333335,
+      "mean_tool_calls": 309.3333333333333,
+      "mean_total_tokens": 6028553,
+      "mean_all_receipted_tokens": 6034362.333333333,
+      "predicted_T": 42,
+      "signed_T_error": -3.3333333333333357
+    },
+    {
+      "agents": 16,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 34.666666666666664,
+      "lower_bound": 25,
+      "layered_bound": 25,
+      "b": 0.7211538461538463,
+      "reference_steps": 31,
+      "a": 0.8942307692307693,
+      "eta": null,
+      "solo_speedup": null,
+      "mean_handoff_loss": 2.2222222222222223,
+      "mean_join_excess": 2,
+      "mean_tool_calls": 554.6666666666666,
+      "mean_total_tokens": 11531851.333333334,
+      "mean_all_receipted_tokens": 11536267.333333334,
+      "predicted_T": 37,
+      "signed_T_error": -2.3333333333333357
+    }
+  ],
+  "runs": [
+    {
+      "phase": {
+        "agents": 8,
+        "layer_excess": [
+          1,
+          4,
+          3,
+          3
+        ],
+        "join": 7,
+        "join_excess": 2,
+        "join_reads": 2,
+        "join_store_reads": 0
+      },
+      "mean_handoff_loss": 3.3333333333333335,
+      "alternating_disjoint_layer_owners": false,
+      "sharing_heuristic": "broadcast",
+      "ops": {
+        "send": 39,
+        "apply": 132,
+        "submit": 33,
+        "tasks": 25,
+        "inbox": 33,
+        "wait": 42
+      },
+      "llm_errors": 0,
+      "context_trims": 0,
+      "peak_context": 21035,
+      "overflows": 0,
+      "case": "dag/w8-g4/n8",
+      "agents": 8,
+      "seed": 100,
+      "solved": true,
+      "correctly_accepted_tasks": 33,
+      "accepted_tasks_with_preceding_valid_apply": 33,
+      "missing_apply_tasks": [],
+      "accepted_task_chain_evidence": {
+        "L0.6": {
+          "accepted_event": 40,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 7,
+              "agent": "a6",
+              "input": 504,
+              "output": 428
+            },
+            {
+              "event": 15,
+              "agent": "a6",
+              "input": 428,
+              "output": 103
+            },
+            {
+              "event": 23,
+              "agent": "a6",
+              "input": 103,
+              "output": 672
+            },
+            {
+              "event": 31,
+              "agent": "a6",
+              "input": 672,
+              "output": 219
+            }
+          ]
+        },
+        "L0.0": {
+          "accepted_event": 43,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 9,
+              "agent": "a0",
+              "input": 3,
+              "output": 774
+            },
+            {
+              "event": 17,
+              "agent": "a0",
+              "input": 774,
+              "output": 528
+            },
+            {
+              "event": 25,
+              "agent": "a0",
+              "input": 528,
+              "output": 70
+            },
+            {
+              "event": 33,
+              "agent": "a0",
+              "input": 70,
+              "output": 40
+            }
+          ]
+        },
+        "L0.1": {
+          "accepted_event": 45,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 10,
+              "agent": "a1",
+              "input": 901,
+              "output": 368
+            },
+            {
+              "event": 18,
+              "agent": "a1",
+              "input": 368,
+              "output": 604
+            },
+            {
+              "event": 26,
+              "agent": "a1",
+              "input": 604,
+              "output": 149
+            },
+            {
+              "event": 34,
+              "agent": "a1",
+              "input": 149,
+              "output": 539
+            }
+          ]
+        },
+        "L0.2": {
+          "accepted_event": 47,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 11,
+              "agent": "a2",
+              "input": 871,
+              "output": 833
+            },
+            {
+              "event": 19,
+              "agent": "a2",
+              "input": 833,
+              "output": 238
+            },
+            {
+              "event": 27,
+              "agent": "a2",
+              "input": 238,
+              "output": 256
+            },
+            {
+              "event": 35,
+              "agent": "a2",
+              "input": 256,
+              "output": 36
+            }
+          ]
+        },
+        "L0.3": {
+          "accepted_event": 49,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 12,
+              "agent": "a3",
+              "input": 606,
+              "output": 630
+            },
+            {
+              "event": 20,
+              "agent": "a3",
+              "input": 630,
+              "output": 48
+            },
+            {
+              "event": 28,
+              "agent": "a3",
+              "input": 48,
+              "output": 741
+            },
+            {
+              "event": 36,
+              "agent": "a3",
+              "input": 741,
+              "output": 187
+            }
+          ]
+        },
+        "L0.4": {
+          "accepted_event": 51,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 13,
+              "agent": "a4",
+              "input": 168,
+              "output": 938
+            },
+            {
+              "event": 21,
+              "agent": "a4",
+              "input": 938,
+              "output": 882
+            },
+            {
+              "event": 29,
+              "agent": "a4",
+              "input": 882,
+              "output": 780
+            },
+            {
+              "event": 37,
+              "agent": "a4",
+              "input": 780,
+              "output": 562
+            }
+          ]
+        },
+        "L0.5": {
+          "accepted_event": 53,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 14,
+              "agent": "a5",
+              "input": 185,
+              "output": 775
+            },
+            {
+              "event": 22,
+              "agent": "a5",
+              "input": 775,
+              "output": 694
+            },
+            {
+              "event": 30,
+              "agent": "a5",
+              "input": 694,
+              "output": 549
+            },
+            {
+              "event": 38,
+              "agent": "a5",
+              "input": 549,
+              "output": 370
+            }
+          ]
+        },
+        "L0.7": {
+          "accepted_event": 56,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 16,
+              "agent": "a7",
+              "input": 962,
+              "output": 160
+            },
+            {
+              "event": 24,
+              "agent": "a7",
+              "input": 160,
+              "output": 189
+            },
+            {
+              "event": 32,
+              "agent": "a7",
+              "input": 189,
+              "output": 67
+            },
+            {
+              "event": 41,
+              "agent": "a7",
+              "input": 67,
+              "output": 251
+            }
+          ]
+        },
+        "L1.0": {
+          "accepted_event": 114,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 81,
+              "agent": "a0",
+              "input": 406,
+              "output": 859
+            },
+            {
+              "event": 89,
+              "agent": "a0",
+              "input": 859,
+              "output": 362
+            },
+            {
+              "event": 97,
+              "agent": "a0",
+              "input": 362,
+              "output": 170
+            },
+            {
+              "event": 105,
+              "agent": "a0",
+              "input": 170,
+              "output": 58
+            }
+          ]
+        },
+        "L1.2": {
+          "accepted_event": 117,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 83,
+              "agent": "a2",
+              "input": 291,
+              "output": 783
+            },
+            {
+              "event": 91,
+              "agent": "a2",
+              "input": 783,
+              "output": 427
+            },
+            {
+              "event": 99,
+              "agent": "a2",
+              "input": 427,
+              "output": 668
+            },
+            {
+              "event": 107,
+              "agent": "a2",
+              "input": 668,
+              "output": 681
+            }
+          ]
+        },
+        "L1.3": {
+          "accepted_event": 119,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 84,
+              "agent": "a3",
+              "input": 255,
+              "output": 379
+            },
+            {
+              "event": 92,
+              "agent": "a3",
+              "input": 379,
+              "output": 220
+            },
+            {
+              "event": 100,
+              "agent": "a3",
+              "input": 220,
+              "output": 632
+            },
+            {
+              "event": 108,
+              "agent": "a3",
+              "input": 632,
+              "output": 531
+            }
+          ]
+        },
+        "L1.4": {
+          "accepted_event": 121,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 85,
+              "agent": "a4",
+              "input": 790,
+              "output": 136
+            },
+            {
+              "event": 93,
+              "agent": "a4",
+              "input": 136,
+              "output": 825
+            },
+            {
+              "event": 101,
+              "agent": "a4",
+              "input": 825,
+              "output": 531
+            },
+            {
+              "event": 109,
+              "agent": "a4",
+              "input": 531,
+              "output": 295
+            }
+          ]
+        },
+        "L1.5": {
+          "accepted_event": 123,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 86,
+              "agent": "a5",
+              "input": 406,
+              "output": 413
+            },
+            {
+              "event": 94,
+              "agent": "a5",
+              "input": 413,
+              "output": 771
+            },
+            {
+              "event": 102,
+              "agent": "a5",
+              "input": 771,
+              "output": 163
+            },
+            {
+              "event": 110,
+              "agent": "a5",
+              "input": 163,
+              "output": 305
+            }
+          ]
+        },
+        "L1.6": {
+          "accepted_event": 125,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 87,
+              "agent": "a6",
+              "input": 579,
+              "output": 607
+            },
+            {
+              "event": 95,
+              "agent": "a6",
+              "input": 607,
+              "output": 332
+            },
+            {
+              "event": 103,
+              "agent": "a6",
+              "input": 332,
+              "output": 122
+            },
+            {
+              "event": 111,
+              "agent": "a6",
+              "input": 122,
+              "output": 714
+            }
+          ]
+        },
+        "L1.7": {
+          "accepted_event": 127,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 88,
+              "agent": "a7",
+              "input": 287,
+              "output": 515
+            },
+            {
+              "event": 96,
+              "agent": "a7",
+              "input": 515,
+              "output": 60
+            },
+            {
+              "event": 104,
+              "agent": "a7",
+              "input": 60,
+              "output": 621
+            },
+            {
+              "event": 112,
+              "agent": "a7",
+              "input": 621,
+              "output": 434
+            }
+          ]
+        },
+        "L1.1": {
+          "accepted_event": 130,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 90,
+              "agent": "a1",
+              "input": 406,
+              "output": 505
+            },
+            {
+              "event": 98,
+              "agent": "a1",
+              "input": 505,
+              "output": 457
+            },
+            {
+              "event": 106,
+              "agent": "a1",
+              "input": 457,
+              "output": 404
+            },
+            {
+              "event": 115,
+              "agent": "a1",
+              "input": 404,
+              "output": 954
+            }
+          ]
+        },
+        "L2.0": {
+          "accepted_event": 178,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 145,
+              "agent": "a0",
+              "input": 212,
+              "output": 630
+            },
+            {
+              "event": 153,
+              "agent": "a0",
+              "input": 630,
+              "output": 945
+            },
+            {
+              "event": 161,
+              "agent": "a0",
+              "input": 945,
+              "output": 412
+            },
+            {
+              "event": 169,
+              "agent": "a0",
+              "input": 412,
+              "output": 608
+            }
+          ]
+        },
+        "L2.2": {
+          "accepted_event": 189,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 155,
+              "agent": "a2",
+              "input": 115,
+              "output": 197
+            },
+            {
+              "event": 163,
+              "agent": "a2",
+              "input": 197,
+              "output": 75
+            },
+            {
+              "event": 171,
+              "agent": "a2",
+              "input": 75,
+              "output": 336
+            },
+            {
+              "event": 180,
+              "agent": "a2",
+              "input": 336,
+              "output": 675
+            }
+          ]
+        },
+        "L2.3": {
+          "accepted_event": 191,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 156,
+              "agent": "a3",
+              "input": 668,
+              "output": 303
+            },
+            {
+              "event": 164,
+              "agent": "a3",
+              "input": 303,
+              "output": 774
+            },
+            {
+              "event": 172,
+              "agent": "a3",
+              "input": 774,
+              "output": 343
+            },
+            {
+              "event": 181,
+              "agent": "a3",
+              "input": 343,
+              "output": 466
+            }
+          ]
+        },
+        "L2.4": {
+          "accepted_event": 193,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 157,
+              "agent": "a4",
+              "input": 772,
+              "output": 310
+            },
+            {
+              "event": 165,
+              "agent": "a4",
+              "input": 310,
+              "output": 427
+            },
+            {
+              "event": 173,
+              "agent": "a4",
+              "input": 427,
+              "output": 417
+            },
+            {
+              "event": 182,
+              "agent": "a4",
+              "input": 417,
+              "output": 353
+            }
+          ]
+        },
+        "L2.5": {
+          "accepted_event": 195,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 158,
+              "agent": "a5",
+              "input": 492,
+              "output": 829
+            },
+            {
+              "event": 166,
+              "agent": "a5",
+              "input": 829,
+              "output": 154
+            },
+            {
+              "event": 174,
+              "agent": "a5",
+              "input": 154,
+              "output": 908
+            },
+            {
+              "event": 183,
+              "agent": "a5",
+              "input": 908,
+              "output": 583
+            }
+          ]
+        },
+        "L2.6": {
+          "accepted_event": 197,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 159,
+              "agent": "a6",
+              "input": 739,
+              "output": 296
+            },
+            {
+              "event": 167,
+              "agent": "a6",
+              "input": 296,
+              "output": 466
+            },
+            {
+              "event": 175,
+              "agent": "a6",
+              "input": 466,
+              "output": 779
+            },
+            {
+              "event": 184,
+              "agent": "a6",
+              "input": 779,
+              "output": 511
+            }
+          ]
+        },
+        "L2.7": {
+          "accepted_event": 199,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 160,
+              "agent": "a7",
+              "input": 826,
+              "output": 961
+            },
+            {
+              "event": 168,
+              "agent": "a7",
+              "input": 961,
+              "output": 561
+            },
+            {
+              "event": 176,
+              "agent": "a7",
+              "input": 561,
+              "output": 494
+            },
+            {
+              "event": 185,
+              "agent": "a7",
+              "input": 494,
+              "output": 642
+            }
+          ]
+        },
+        "L2.1": {
+          "accepted_event": 202,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 162,
+              "agent": "a1",
+              "input": 772,
+              "output": 849
+            },
+            {
+              "event": 170,
+              "agent": "a1",
+              "input": 849,
+              "output": 965
+            },
+            {
+              "event": 179,
+              "agent": "a1",
+              "input": 965,
+              "output": 731
+            },
+            {
+              "event": 187,
+              "agent": "a1",
+              "input": 731,
+              "output": 431
+            }
+          ]
+        },
+        "L3.0": {
+          "accepted_event": 250,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 217,
+              "agent": "a0",
+              "input": 258,
+              "output": 401
+            },
+            {
+              "event": 225,
+              "agent": "a0",
+              "input": 401,
+              "output": 812
+            },
+            {
+              "event": 233,
+              "agent": "a0",
+              "input": 812,
+              "output": 10
+            },
+            {
+              "event": 241,
+              "agent": "a0",
+              "input": 10,
+              "output": 160
+            }
+          ]
+        },
+        "L3.2": {
+          "accepted_event": 261,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 227,
+              "agent": "a2",
+              "input": 225,
+              "output": 118
+            },
+            {
+              "event": 235,
+              "agent": "a2",
+              "input": 118,
+              "output": 578
+            },
+            {
+              "event": 243,
+              "agent": "a2",
+              "input": 578,
+              "output": 396
+            },
+            {
+              "event": 252,
+              "agent": "a2",
+              "input": 396,
+              "output": 769
+            }
+          ]
+        },
+        "L3.3": {
+          "accepted_event": 263,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 228,
+              "agent": "a3",
+              "input": 961,
+              "output": 977
+            },
+            {
+              "event": 236,
+              "agent": "a3",
+              "input": 977,
+              "output": 293
+            },
+            {
+              "event": 244,
+              "agent": "a3",
+              "input": 293,
+              "output": 946
+            },
+            {
+              "event": 253,
+              "agent": "a3",
+              "input": 946,
+              "output": 199
+            }
+          ]
+        },
+        "L3.4": {
+          "accepted_event": 265,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 229,
+              "agent": "a4",
+              "input": 961,
+              "output": 657
+            },
+            {
+              "event": 237,
+              "agent": "a4",
+              "input": 657,
+              "output": 149
+            },
+            {
+              "event": 245,
+              "agent": "a4",
+              "input": 149,
+              "output": 826
+            },
+            {
+              "event": 254,
+              "agent": "a4",
+              "input": 826,
+              "output": 793
+            }
+          ]
+        },
+        "L3.5": {
+          "accepted_event": 267,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 230,
+              "agent": "a5",
+              "input": 191,
+              "output": 549
+            },
+            {
+              "event": 238,
+              "agent": "a5",
+              "input": 549,
+              "output": 826
+            },
+            {
+              "event": 246,
+              "agent": "a5",
+              "input": 826,
+              "output": 429
+            },
+            {
+              "event": 255,
+              "agent": "a5",
+              "input": 429,
+              "output": 116
+            }
+          ]
+        },
+        "L3.6": {
+          "accepted_event": 269,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 231,
+              "agent": "a6",
+              "input": 961,
+              "output": 2
+            },
+            {
+              "event": 239,
+              "agent": "a6",
+              "input": 2,
+              "output": 464
+            },
+            {
+              "event": 247,
+              "agent": "a6",
+              "input": 464,
+              "output": 777
+            },
+            {
+              "event": 256,
+              "agent": "a6",
+              "input": 777,
+              "output": 65
+            }
+          ]
+        },
+        "L3.7": {
+          "accepted_event": 271,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 232,
+              "agent": "a7",
+              "input": 106,
+              "output": 40
+            },
+            {
+              "event": 240,
+              "agent": "a7",
+              "input": 40,
+              "output": 331
+            },
+            {
+              "event": 248,
+              "agent": "a7",
+              "input": 331,
+              "output": 593
+            },
+            {
+              "event": 257,
+              "agent": "a7",
+              "input": 593,
+              "output": 718
+            }
+          ]
+        },
+        "L3.1": {
+          "accepted_event": 274,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 234,
+              "agent": "a1",
+              "input": 283,
+              "output": 866
+            },
+            {
+              "event": 242,
+              "agent": "a1",
+              "input": 866,
+              "output": 461
+            },
+            {
+              "event": 251,
+              "agent": "a1",
+              "input": 461,
+              "output": 265
+            },
+            {
+              "event": 259,
+              "agent": "a1",
+              "input": 265,
+              "output": 687
+            }
+          ]
+        },
+        "FINAL": {
+          "accepted_event": 330,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 297,
+              "agent": "a0",
+              "input": 507,
+              "output": 446
+            },
+            {
+              "event": 305,
+              "agent": "a0",
+              "input": 446,
+              "output": 506
+            },
+            {
+              "event": 313,
+              "agent": "a0",
+              "input": 506,
+              "output": 382
+            },
+            {
+              "event": 321,
+              "agent": "a0",
+              "input": 382,
+              "output": 178
+            }
+          ]
+        }
+      },
+      "successful_apply_calls": 132,
+      "duplicate_apply_calls": 0,
+      "native_duplicate_work": 0,
+      "wrong_input_apply_calls": [],
+      "valid_apply_before_parent_acceptance": [],
+      "submission_attempts": 33,
+      "rejected_submissions": {},
+      "accepted_submission_provenance": {
+        "own": 33
+      },
+      "steps": 38,
+      "lower_bound": 25,
+      "b": 0.6578947368421053
+    },
+    {
+      "phase": {
+        "agents": 8,
+        "layer_excess": [
+          1,
+          5,
+          3,
+          3
+        ],
+        "join": 8,
+        "join_excess": 3,
+        "join_reads": 2,
+        "join_store_reads": 0
+      },
+      "mean_handoff_loss": 3.6666666666666665,
+      "alternating_disjoint_layer_owners": false,
+      "sharing_heuristic": "broadcast",
+      "ops": {
+        "send": 40,
+        "apply": 132,
+        "submit": 33,
+        "tasks": 27,
+        "inbox": 42,
+        "wait": 46
+      },
+      "llm_errors": 0,
+      "context_trims": 0,
+      "peak_context": 23204,
+      "overflows": 0,
+      "case": "dag/w8-g4/n8",
+      "agents": 8,
+      "seed": 101,
+      "solved": true,
+      "correctly_accepted_tasks": 33,
+      "accepted_tasks_with_preceding_valid_apply": 33,
+      "missing_apply_tasks": [],
+      "accepted_task_chain_evidence": {
+        "L0.4": {
+          "accepted_event": 38,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 5,
+              "agent": "a4",
+              "input": 368,
+              "output": 107
+            },
+            {
+              "event": 13,
+              "agent": "a4",
+              "input": 107,
+              "output": 935
+            },
+            {
+              "event": 21,
+              "agent": "a4",
+              "input": 935,
+              "output": 40
+            },
+            {
+              "event": 29,
+              "agent": "a4",
+              "input": 40,
+              "output": 612
+            }
+          ]
+        },
+        "L0.0": {
+          "accepted_event": 43,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 9,
+              "agent": "a0",
+              "input": 160,
+              "output": 471
+            },
+            {
+              "event": 17,
+              "agent": "a0",
+              "input": 471,
+              "output": 231
+            },
+            {
+              "event": 25,
+              "agent": "a0",
+              "input": 231,
+              "output": 244
+            },
+            {
+              "event": 33,
+              "agent": "a0",
+              "input": 244,
+              "output": 51
+            }
+          ]
+        },
+        "L0.1": {
+          "accepted_event": 45,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 10,
+              "agent": "a1",
+              "input": 588,
+              "output": 870
+            },
+            {
+              "event": 18,
+              "agent": "a1",
+              "input": 870,
+              "output": 144
+            },
+            {
+              "event": 26,
+              "agent": "a1",
+              "input": 144,
+              "output": 404
+            },
+            {
+              "event": 34,
+              "agent": "a1",
+              "input": 404,
+              "output": 504
+            }
+          ]
+        },
+        "L0.2": {
+          "accepted_event": 47,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 11,
+              "agent": "a2",
+              "input": 562,
+              "output": 932
+            },
+            {
+              "event": 19,
+              "agent": "a2",
+              "input": 932,
+              "output": 985
+            },
+            {
+              "event": 27,
+              "agent": "a2",
+              "input": 985,
+              "output": 442
+            },
+            {
+              "event": 35,
+              "agent": "a2",
+              "input": 442,
+              "output": 489
+            }
+          ]
+        },
+        "L0.3": {
+          "accepted_event": 49,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 12,
+              "agent": "a3",
+              "input": 806,
+              "output": 548
+            },
+            {
+              "event": 20,
+              "agent": "a3",
+              "input": 548,
+              "output": 561
+            },
+            {
+              "event": 28,
+              "agent": "a3",
+              "input": 561,
+              "output": 749
+            },
+            {
+              "event": 36,
+              "agent": "a3",
+              "input": 749,
+              "output": 119
+            }
+          ]
+        },
+        "L0.5": {
+          "accepted_event": 52,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 14,
+              "agent": "a5",
+              "input": 220,
+              "output": 741
+            },
+            {
+              "event": 22,
+              "agent": "a5",
+              "input": 741,
+              "output": 794
+            },
+            {
+              "event": 30,
+              "agent": "a5",
+              "input": 794,
+              "output": 303
+            },
+            {
+              "event": 39,
+              "agent": "a5",
+              "input": 303,
+              "output": 844
+            }
+          ]
+        },
+        "L0.6": {
+          "accepted_event": 54,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 15,
+              "agent": "a6",
+              "input": 968,
+              "output": 78
+            },
+            {
+              "event": 23,
+              "agent": "a6",
+              "input": 78,
+              "output": 620
+            },
+            {
+              "event": 31,
+              "agent": "a6",
+              "input": 620,
+              "output": 93
+            },
+            {
+              "event": 40,
+              "agent": "a6",
+              "input": 93,
+              "output": 988
+            }
+          ]
+        },
+        "L0.7": {
+          "accepted_event": 56,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 16,
+              "agent": "a7",
+              "input": 66,
+              "output": 649
+            },
+            {
+              "event": 24,
+              "agent": "a7",
+              "input": 649,
+              "output": 323
+            },
+            {
+              "event": 32,
+              "agent": "a7",
+              "input": 323,
+              "output": 102
+            },
+            {
+              "event": 41,
+              "agent": "a7",
+              "input": 102,
+              "output": 562
+            }
+          ]
+        },
+        "L1.4": {
+          "accepted_event": 118,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 85,
+              "agent": "a4",
+              "input": 39,
+              "output": 907
+            },
+            {
+              "event": 93,
+              "agent": "a4",
+              "input": 907,
+              "output": 170
+            },
+            {
+              "event": 101,
+              "agent": "a4",
+              "input": 170,
+              "output": 87
+            },
+            {
+              "event": 109,
+              "agent": "a4",
+              "input": 87,
+              "output": 667
+            }
+          ]
+        },
+        "L1.0": {
+          "accepted_event": 123,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 89,
+              "agent": "a0",
+              "input": 623,
+              "output": 119
+            },
+            {
+              "event": 97,
+              "agent": "a0",
+              "input": 119,
+              "output": 195
+            },
+            {
+              "event": 105,
+              "agent": "a0",
+              "input": 195,
+              "output": 741
+            },
+            {
+              "event": 113,
+              "agent": "a0",
+              "input": 741,
+              "output": 582
+            }
+          ]
+        },
+        "L1.1": {
+          "accepted_event": 125,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 90,
+              "agent": "a1",
+              "input": 895,
+              "output": 961
+            },
+            {
+              "event": 98,
+              "agent": "a1",
+              "input": 961,
+              "output": 817
+            },
+            {
+              "event": 106,
+              "agent": "a1",
+              "input": 817,
+              "output": 866
+            },
+            {
+              "event": 114,
+              "agent": "a1",
+              "input": 866,
+              "output": 986
+            }
+          ]
+        },
+        "L1.3": {
+          "accepted_event": 128,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 92,
+              "agent": "a3",
+              "input": 174,
+              "output": 631
+            },
+            {
+              "event": 100,
+              "agent": "a3",
+              "input": 631,
+              "output": 701
+            },
+            {
+              "event": 108,
+              "agent": "a3",
+              "input": 701,
+              "output": 205
+            },
+            {
+              "event": 116,
+              "agent": "a3",
+              "input": 205,
+              "output": 343
+            }
+          ]
+        },
+        "L1.5": {
+          "accepted_event": 131,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 94,
+              "agent": "a5",
+              "input": 492,
+              "output": 128
+            },
+            {
+              "event": 102,
+              "agent": "a5",
+              "input": 128,
+              "output": 39
+            },
+            {
+              "event": 110,
+              "agent": "a5",
+              "input": 39,
+              "output": 94
+            },
+            {
+              "event": 119,
+              "agent": "a5",
+              "input": 94,
+              "output": 638
+            }
+          ]
+        },
+        "L1.7": {
+          "accepted_event": 134,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 96,
+              "agent": "a7",
+              "input": 623,
+              "output": 209
+            },
+            {
+              "event": 104,
+              "agent": "a7",
+              "input": 209,
+              "output": 450
+            },
+            {
+              "event": 112,
+              "agent": "a7",
+              "input": 450,
+              "output": 810
+            },
+            {
+              "event": 121,
+              "agent": "a7",
+              "input": 810,
+              "output": 848
+            }
+          ]
+        },
+        "L1.2": {
+          "accepted_event": 138,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 99,
+              "agent": "a2",
+              "input": 51,
+              "output": 998
+            },
+            {
+              "event": 107,
+              "agent": "a2",
+              "input": 998,
+              "output": 770
+            },
+            {
+              "event": 115,
+              "agent": "a2",
+              "input": 770,
+              "output": 624
+            },
+            {
+              "event": 126,
+              "agent": "a2",
+              "input": 624,
+              "output": 385
+            }
+          ]
+        },
+        "L1.6": {
+          "accepted_event": 143,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 103,
+              "agent": "a6",
+              "input": 681,
+              "output": 871
+            },
+            {
+              "event": 111,
+              "agent": "a6",
+              "input": 871,
+              "output": 339
+            },
+            {
+              "event": 120,
+              "agent": "a6",
+              "input": 339,
+              "output": 309
+            },
+            {
+              "event": 132,
+              "agent": "a6",
+              "input": 309,
+              "output": 475
+            }
+          ]
+        },
+        "L2.4": {
+          "accepted_event": 190,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 157,
+              "agent": "a4",
+              "input": 834,
+              "output": 628
+            },
+            {
+              "event": 165,
+              "agent": "a4",
+              "input": 628,
+              "output": 604
+            },
+            {
+              "event": 173,
+              "agent": "a4",
+              "input": 604,
+              "output": 840
+            },
+            {
+              "event": 181,
+              "agent": "a4",
+              "input": 840,
+              "output": 912
+            }
+          ]
+        },
+        "L2.0": {
+          "accepted_event": 195,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 161,
+              "agent": "a0",
+              "input": 23,
+              "output": 927
+            },
+            {
+              "event": 169,
+              "agent": "a0",
+              "input": 927,
+              "output": 98
+            },
+            {
+              "event": 177,
+              "agent": "a0",
+              "input": 98,
+              "output": 32
+            },
+            {
+              "event": 185,
+              "agent": "a0",
+              "input": 32,
+              "output": 432
+            }
+          ]
+        },
+        "L2.1": {
+          "accepted_event": 197,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 162,
+              "agent": "a1",
+              "input": 233,
+              "output": 281
+            },
+            {
+              "event": 170,
+              "agent": "a1",
+              "input": 281,
+              "output": 705
+            },
+            {
+              "event": 178,
+              "agent": "a1",
+              "input": 705,
+              "output": 986
+            },
+            {
+              "event": 186,
+              "agent": "a1",
+              "input": 986,
+              "output": 240
+            }
+          ]
+        },
+        "L2.3": {
+          "accepted_event": 200,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 164,
+              "agent": "a3",
+              "input": 515,
+              "output": 209
+            },
+            {
+              "event": 172,
+              "agent": "a3",
+              "input": 209,
+              "output": 611
+            },
+            {
+              "event": 180,
+              "agent": "a3",
+              "input": 611,
+              "output": 195
+            },
+            {
+              "event": 188,
+              "agent": "a3",
+              "input": 195,
+              "output": 203
+            }
+          ]
+        },
+        "L2.5": {
+          "accepted_event": 203,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 166,
+              "agent": "a5",
+              "input": 430,
+              "output": 685
+            },
+            {
+              "event": 174,
+              "agent": "a5",
+              "input": 685,
+              "output": 888
+            },
+            {
+              "event": 182,
+              "agent": "a5",
+              "input": 888,
+              "output": 437
+            },
+            {
+              "event": 191,
+              "agent": "a5",
+              "input": 437,
+              "output": 272
+            }
+          ]
+        },
+        "L2.7": {
+          "accepted_event": 206,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 168,
+              "agent": "a7",
+              "input": 430,
+              "output": 587
+            },
+            {
+              "event": 176,
+              "agent": "a7",
+              "input": 587,
+              "output": 801
+            },
+            {
+              "event": 184,
+              "agent": "a7",
+              "input": 801,
+              "output": 470
+            },
+            {
+              "event": 193,
+              "agent": "a7",
+              "input": 470,
+              "output": 803
+            }
+          ]
+        },
+        "L2.2": {
+          "accepted_event": 210,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 171,
+              "agent": "a2",
+              "input": 142,
+              "output": 692
+            },
+            {
+              "event": 179,
+              "agent": "a2",
+              "input": 692,
+              "output": 287
+            },
+            {
+              "event": 187,
+              "agent": "a2",
+              "input": 287,
+              "output": 164
+            },
+            {
+              "event": 198,
+              "agent": "a2",
+              "input": 164,
+              "output": 554
+            }
+          ]
+        },
+        "L2.6": {
+          "accepted_event": 215,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 175,
+              "agent": "a6",
+              "input": 624,
+              "output": 740
+            },
+            {
+              "event": 183,
+              "agent": "a6",
+              "input": 740,
+              "output": 810
+            },
+            {
+              "event": 192,
+              "agent": "a6",
+              "input": 810,
+              "output": 105
+            },
+            {
+              "event": 204,
+              "agent": "a6",
+              "input": 105,
+              "output": 322
+            }
+          ]
+        },
+        "L3.0": {
+          "accepted_event": 266,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 233,
+              "agent": "a0",
+              "input": 562,
+              "output": 202
+            },
+            {
+              "event": 241,
+              "agent": "a0",
+              "input": 202,
+              "output": 853
+            },
+            {
+              "event": 249,
+              "agent": "a0",
+              "input": 853,
+              "output": 329
+            },
+            {
+              "event": 257,
+              "agent": "a0",
+              "input": 329,
+              "output": 322
+            }
+          ]
+        },
+        "L3.1": {
+          "accepted_event": 268,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 234,
+              "agent": "a1",
+              "input": 512,
+              "output": 143
+            },
+            {
+              "event": 242,
+              "agent": "a1",
+              "input": 143,
+              "output": 452
+            },
+            {
+              "event": 250,
+              "agent": "a1",
+              "input": 452,
+              "output": 760
+            },
+            {
+              "event": 258,
+              "agent": "a1",
+              "input": 760,
+              "output": 105
+            }
+          ]
+        },
+        "L3.3": {
+          "accepted_event": 271,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 236,
+              "agent": "a3",
+              "input": 635,
+              "output": 894
+            },
+            {
+              "event": 244,
+              "agent": "a3",
+              "input": 894,
+              "output": 795
+            },
+            {
+              "event": 252,
+              "agent": "a3",
+              "input": 795,
+              "output": 750
+            },
+            {
+              "event": 260,
+              "agent": "a3",
+              "input": 750,
+              "output": 141
+            }
+          ]
+        },
+        "L3.5": {
+          "accepted_event": 274,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 238,
+              "agent": "a5",
+              "input": 443,
+              "output": 529
+            },
+            {
+              "event": 246,
+              "agent": "a5",
+              "input": 529,
+              "output": 652
+            },
+            {
+              "event": 254,
+              "agent": "a5",
+              "input": 652,
+              "output": 656
+            },
+            {
+              "event": 262,
+              "agent": "a5",
+              "input": 656,
+              "output": 338
+            }
+          ]
+        },
+        "L3.7": {
+          "accepted_event": 277,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 240,
+              "agent": "a7",
+              "input": 234,
+              "output": 848
+            },
+            {
+              "event": 248,
+              "agent": "a7",
+              "input": 848,
+              "output": 419
+            },
+            {
+              "event": 256,
+              "agent": "a7",
+              "input": 419,
+              "output": 180
+            },
+            {
+              "event": 264,
+              "agent": "a7",
+              "input": 180,
+              "output": 665
+            }
+          ]
+        },
+        "L3.2": {
+          "accepted_event": 281,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 243,
+              "agent": "a2",
+              "input": 184,
+              "output": 643
+            },
+            {
+              "event": 251,
+              "agent": "a2",
+              "input": 643,
+              "output": 110
+            },
+            {
+              "event": 259,
+              "agent": "a2",
+              "input": 110,
+              "output": 361
+            },
+            {
+              "event": 269,
+              "agent": "a2",
+              "input": 361,
+              "output": 539
+            }
+          ]
+        },
+        "L3.4": {
+          "accepted_event": 284,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 245,
+              "agent": "a4",
+              "input": 562,
+              "output": 332
+            },
+            {
+              "event": 253,
+              "agent": "a4",
+              "input": 332,
+              "output": 85
+            },
+            {
+              "event": 261,
+              "agent": "a4",
+              "input": 85,
+              "output": 338
+            },
+            {
+              "event": 272,
+              "agent": "a4",
+              "input": 338,
+              "output": 52
+            }
+          ]
+        },
+        "L3.6": {
+          "accepted_event": 287,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 247,
+              "agent": "a6",
+              "input": 794,
+              "output": 203
+            },
+            {
+              "event": 255,
+              "agent": "a6",
+              "input": 203,
+              "output": 516
+            },
+            {
+              "event": 263,
+              "agent": "a6",
+              "input": 516,
+              "output": 358
+            },
+            {
+              "event": 275,
+              "agent": "a6",
+              "input": 358,
+              "output": 802
+            }
+          ]
+        },
+        "FINAL": {
+          "accepted_event": 346,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 313,
+              "agent": "a0",
+              "input": 964,
+              "output": 68
+            },
+            {
+              "event": 321,
+              "agent": "a0",
+              "input": 68,
+              "output": 877
+            },
+            {
+              "event": 329,
+              "agent": "a0",
+              "input": 877,
+              "output": 994
+            },
+            {
+              "event": 337,
+              "agent": "a0",
+              "input": 994,
+              "output": 360
+            }
+          ]
+        }
+      },
+      "successful_apply_calls": 132,
+      "duplicate_apply_calls": 0,
+      "native_duplicate_work": 0,
+      "wrong_input_apply_calls": [],
+      "valid_apply_before_parent_acceptance": [],
+      "submission_attempts": 33,
+      "rejected_submissions": {},
+      "accepted_submission_provenance": {
+        "own": 33
+      },
+      "steps": 40,
+      "lower_bound": 25,
+      "b": 0.625
+    },
+    {
+      "phase": {
+        "agents": 8,
+        "layer_excess": [
+          1,
+          4,
+          3,
+          3
+        ],
+        "join": 7,
+        "join_excess": 2,
+        "join_reads": 1,
+        "join_store_reads": 0
+      },
+      "mean_handoff_loss": 3.3333333333333335,
+      "alternating_disjoint_layer_owners": false,
+      "sharing_heuristic": "broadcast",
+      "ops": {
+        "send": 38,
+        "apply": 132,
+        "submit": 33,
+        "tasks": 24,
+        "inbox": 41,
+        "wait": 36
+      },
+      "llm_errors": 0,
+      "context_trims": 0,
+      "peak_context": 20962,
+      "overflows": 0,
+      "case": "dag/w8-g4/n8",
+      "agents": 8,
+      "seed": 102,
+      "solved": true,
+      "correctly_accepted_tasks": 33,
+      "accepted_tasks_with_preceding_valid_apply": 33,
+      "missing_apply_tasks": [],
+      "accepted_task_chain_evidence": {
+        "L0.3": {
+          "accepted_event": 37,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 4,
+              "agent": "a3",
+              "input": 970,
+              "output": 52
+            },
+            {
+              "event": 12,
+              "agent": "a3",
+              "input": 52,
+              "output": 787
+            },
+            {
+              "event": 20,
+              "agent": "a3",
+              "input": 787,
+              "output": 722
+            },
+            {
+              "event": 28,
+              "agent": "a3",
+              "input": 722,
+              "output": 223
+            }
+          ]
+        },
+        "L0.4": {
+          "accepted_event": 39,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 5,
+              "agent": "a4",
+              "input": 481,
+              "output": 651
+            },
+            {
+              "event": 13,
+              "agent": "a4",
+              "input": 651,
+              "output": 106
+            },
+            {
+              "event": 21,
+              "agent": "a4",
+              "input": 106,
+              "output": 519
+            },
+            {
+              "event": 29,
+              "agent": "a4",
+              "input": 519,
+              "output": 442
+            }
+          ]
+        },
+        "L0.0": {
+          "accepted_event": 44,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 9,
+              "agent": "a0",
+              "input": 796,
+              "output": 476
+            },
+            {
+              "event": 17,
+              "agent": "a0",
+              "input": 476,
+              "output": 841
+            },
+            {
+              "event": 25,
+              "agent": "a0",
+              "input": 841,
+              "output": 389
+            },
+            {
+              "event": 33,
+              "agent": "a0",
+              "input": 389,
+              "output": 47
+            }
+          ]
+        },
+        "L0.1": {
+          "accepted_event": 46,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 10,
+              "agent": "a1",
+              "input": 57,
+              "output": 11
+            },
+            {
+              "event": 18,
+              "agent": "a1",
+              "input": 11,
+              "output": 978
+            },
+            {
+              "event": 26,
+              "agent": "a1",
+              "input": 978,
+              "output": 989
+            },
+            {
+              "event": 34,
+              "agent": "a1",
+              "input": 989,
+              "output": 867
+            }
+          ]
+        },
+        "L0.2": {
+          "accepted_event": 48,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 11,
+              "agent": "a2",
+              "input": 237,
+              "output": 517
+            },
+            {
+              "event": 19,
+              "agent": "a2",
+              "input": 517,
+              "output": 452
+            },
+            {
+              "event": 27,
+              "agent": "a2",
+              "input": 452,
+              "output": 105
+            },
+            {
+              "event": 35,
+              "agent": "a2",
+              "input": 105,
+              "output": 684
+            }
+          ]
+        },
+        "L0.5": {
+          "accepted_event": 52,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 14,
+              "agent": "a5",
+              "input": 687,
+              "output": 183
+            },
+            {
+              "event": 22,
+              "agent": "a5",
+              "input": 183,
+              "output": 991
+            },
+            {
+              "event": 30,
+              "agent": "a5",
+              "input": 991,
+              "output": 525
+            },
+            {
+              "event": 40,
+              "agent": "a5",
+              "input": 525,
+              "output": 493
+            }
+          ]
+        },
+        "L0.6": {
+          "accepted_event": 54,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 15,
+              "agent": "a6",
+              "input": 651,
+              "output": 51
+            },
+            {
+              "event": 23,
+              "agent": "a6",
+              "input": 51,
+              "output": 503
+            },
+            {
+              "event": 31,
+              "agent": "a6",
+              "input": 503,
+              "output": 563
+            },
+            {
+              "event": 41,
+              "agent": "a6",
+              "input": 563,
+              "output": 911
+            }
+          ]
+        },
+        "L0.7": {
+          "accepted_event": 56,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 16,
+              "agent": "a7",
+              "input": 105,
+              "output": 970
+            },
+            {
+              "event": 24,
+              "agent": "a7",
+              "input": 970,
+              "output": 452
+            },
+            {
+              "event": 32,
+              "agent": "a7",
+              "input": 452,
+              "output": 5
+            },
+            {
+              "event": 42,
+              "agent": "a7",
+              "input": 5,
+              "output": 973
+            }
+          ]
+        },
+        "L1.4": {
+          "accepted_event": 118,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 85,
+              "agent": "a4",
+              "input": 731,
+              "output": 453
+            },
+            {
+              "event": 93,
+              "agent": "a4",
+              "input": 453,
+              "output": 424
+            },
+            {
+              "event": 101,
+              "agent": "a4",
+              "input": 424,
+              "output": 839
+            },
+            {
+              "event": 109,
+              "agent": "a4",
+              "input": 839,
+              "output": 475
+            }
+          ]
+        },
+        "L1.0": {
+          "accepted_event": 123,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 89,
+              "agent": "a0",
+              "input": 884,
+              "output": 115
+            },
+            {
+              "event": 97,
+              "agent": "a0",
+              "input": 115,
+              "output": 239
+            },
+            {
+              "event": 105,
+              "agent": "a0",
+              "input": 239,
+              "output": 325
+            },
+            {
+              "event": 113,
+              "agent": "a0",
+              "input": 325,
+              "output": 558
+            }
+          ]
+        },
+        "L1.1": {
+          "accepted_event": 125,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 90,
+              "agent": "a1",
+              "input": 907,
+              "output": 382
+            },
+            {
+              "event": 98,
+              "agent": "a1",
+              "input": 382,
+              "output": 574
+            },
+            {
+              "event": 106,
+              "agent": "a1",
+              "input": 574,
+              "output": 17
+            },
+            {
+              "event": 114,
+              "agent": "a1",
+              "input": 17,
+              "output": 927
+            }
+          ]
+        },
+        "L1.2": {
+          "accepted_event": 127,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 91,
+              "agent": "a2",
+              "input": 595,
+              "output": 742
+            },
+            {
+              "event": 99,
+              "agent": "a2",
+              "input": 742,
+              "output": 162
+            },
+            {
+              "event": 107,
+              "agent": "a2",
+              "input": 162,
+              "output": 920
+            },
+            {
+              "event": 115,
+              "agent": "a2",
+              "input": 920,
+              "output": 899
+            }
+          ]
+        },
+        "L1.3": {
+          "accepted_event": 129,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 92,
+              "agent": "a3",
+              "input": 20,
+              "output": 484
+            },
+            {
+              "event": 100,
+              "agent": "a3",
+              "input": 484,
+              "output": 297
+            },
+            {
+              "event": 108,
+              "agent": "a3",
+              "input": 297,
+              "output": 175
+            },
+            {
+              "event": 116,
+              "agent": "a3",
+              "input": 175,
+              "output": 780
+            }
+          ]
+        },
+        "L1.5": {
+          "accepted_event": 132,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 94,
+              "agent": "a5",
+              "input": 134,
+              "output": 688
+            },
+            {
+              "event": 102,
+              "agent": "a5",
+              "input": 688,
+              "output": 822
+            },
+            {
+              "event": 110,
+              "agent": "a5",
+              "input": 822,
+              "output": 810
+            },
+            {
+              "event": 119,
+              "agent": "a5",
+              "input": 810,
+              "output": 977
+            }
+          ]
+        },
+        "L1.6": {
+          "accepted_event": 134,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 95,
+              "agent": "a6",
+              "input": 551,
+              "output": 465
+            },
+            {
+              "event": 103,
+              "agent": "a6",
+              "input": 465,
+              "output": 628
+            },
+            {
+              "event": 111,
+              "agent": "a6",
+              "input": 628,
+              "output": 192
+            },
+            {
+              "event": 120,
+              "agent": "a6",
+              "input": 192,
+              "output": 857
+            }
+          ]
+        },
+        "L1.7": {
+          "accepted_event": 136,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 96,
+              "agent": "a7",
+              "input": 177,
+              "output": 773
+            },
+            {
+              "event": 104,
+              "agent": "a7",
+              "input": 773,
+              "output": 553
+            },
+            {
+              "event": 112,
+              "agent": "a7",
+              "input": 553,
+              "output": 96
+            },
+            {
+              "event": 121,
+              "agent": "a7",
+              "input": 96,
+              "output": 105
+            }
+          ]
+        },
+        "L2.0": {
+          "accepted_event": 186,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 153,
+              "agent": "a0",
+              "input": 784,
+              "output": 560
+            },
+            {
+              "event": 161,
+              "agent": "a0",
+              "input": 560,
+              "output": 920
+            },
+            {
+              "event": 169,
+              "agent": "a0",
+              "input": 920,
+              "output": 691
+            },
+            {
+              "event": 177,
+              "agent": "a0",
+              "input": 691,
+              "output": 528
+            }
+          ]
+        },
+        "L2.4": {
+          "accepted_event": 191,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 157,
+              "agent": "a4",
+              "input": 485,
+              "output": 10
+            },
+            {
+              "event": 165,
+              "agent": "a4",
+              "input": 10,
+              "output": 571
+            },
+            {
+              "event": 173,
+              "agent": "a4",
+              "input": 571,
+              "output": 523
+            },
+            {
+              "event": 181,
+              "agent": "a4",
+              "input": 523,
+              "output": 162
+            }
+          ]
+        },
+        "L2.1": {
+          "accepted_event": 197,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 162,
+              "agent": "a1",
+              "input": 485,
+              "output": 554
+            },
+            {
+              "event": 170,
+              "agent": "a1",
+              "input": 554,
+              "output": 951
+            },
+            {
+              "event": 178,
+              "agent": "a1",
+              "input": 951,
+              "output": 896
+            },
+            {
+              "event": 187,
+              "agent": "a1",
+              "input": 896,
+              "output": 202
+            }
+          ]
+        },
+        "L2.2": {
+          "accepted_event": 199,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 163,
+              "agent": "a2",
+              "input": 876,
+              "output": 154
+            },
+            {
+              "event": 171,
+              "agent": "a2",
+              "input": 154,
+              "output": 239
+            },
+            {
+              "event": 179,
+              "agent": "a2",
+              "input": 239,
+              "output": 556
+            },
+            {
+              "event": 188,
+              "agent": "a2",
+              "input": 556,
+              "output": 646
+            }
+          ]
+        },
+        "L2.3": {
+          "accepted_event": 201,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 164,
+              "agent": "a3",
+              "input": 402,
+              "output": 27
+            },
+            {
+              "event": 172,
+              "agent": "a3",
+              "input": 27,
+              "output": 831
+            },
+            {
+              "event": 180,
+              "agent": "a3",
+              "input": 831,
+              "output": 250
+            },
+            {
+              "event": 189,
+              "agent": "a3",
+              "input": 250,
+              "output": 137
+            }
+          ]
+        },
+        "L2.5": {
+          "accepted_event": 204,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 166,
+              "agent": "a5",
+              "input": 535,
+              "output": 546
+            },
+            {
+              "event": 174,
+              "agent": "a5",
+              "input": 546,
+              "output": 145
+            },
+            {
+              "event": 182,
+              "agent": "a5",
+              "input": 145,
+              "output": 153
+            },
+            {
+              "event": 192,
+              "agent": "a5",
+              "input": 153,
+              "output": 97
+            }
+          ]
+        },
+        "L2.6": {
+          "accepted_event": 206,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 167,
+              "agent": "a6",
+              "input": 637,
+              "output": 484
+            },
+            {
+              "event": 175,
+              "agent": "a6",
+              "input": 484,
+              "output": 748
+            },
+            {
+              "event": 183,
+              "agent": "a6",
+              "input": 748,
+              "output": 91
+            },
+            {
+              "event": 193,
+              "agent": "a6",
+              "input": 91,
+              "output": 33
+            }
+          ]
+        },
+        "L2.7": {
+          "accepted_event": 208,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 168,
+              "agent": "a7",
+              "input": 415,
+              "output": 849
+            },
+            {
+              "event": 176,
+              "agent": "a7",
+              "input": 849,
+              "output": 54
+            },
+            {
+              "event": 184,
+              "agent": "a7",
+              "input": 54,
+              "output": 553
+            },
+            {
+              "event": 194,
+              "agent": "a7",
+              "input": 553,
+              "output": 453
+            }
+          ]
+        },
+        "L3.4": {
+          "accepted_event": 262,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 229,
+              "agent": "a4",
+              "input": 665,
+              "output": 271
+            },
+            {
+              "event": 237,
+              "agent": "a4",
+              "input": 271,
+              "output": 189
+            },
+            {
+              "event": 245,
+              "agent": "a4",
+              "input": 189,
+              "output": 825
+            },
+            {
+              "event": 253,
+              "agent": "a4",
+              "input": 825,
+              "output": 433
+            }
+          ]
+        },
+        "L3.0": {
+          "accepted_event": 267,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 233,
+              "agent": "a0",
+              "input": 486,
+              "output": 78
+            },
+            {
+              "event": 241,
+              "agent": "a0",
+              "input": 78,
+              "output": 992
+            },
+            {
+              "event": 249,
+              "agent": "a0",
+              "input": 992,
+              "output": 550
+            },
+            {
+              "event": 257,
+              "agent": "a0",
+              "input": 550,
+              "output": 195
+            }
+          ]
+        },
+        "L3.1": {
+          "accepted_event": 269,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 234,
+              "agent": "a1",
+              "input": 195,
+              "output": 351
+            },
+            {
+              "event": 242,
+              "agent": "a1",
+              "input": 351,
+              "output": 651
+            },
+            {
+              "event": 250,
+              "agent": "a1",
+              "input": 651,
+              "output": 260
+            },
+            {
+              "event": 258,
+              "agent": "a1",
+              "input": 260,
+              "output": 99
+            }
+          ]
+        },
+        "L3.2": {
+          "accepted_event": 271,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 235,
+              "agent": "a2",
+              "input": 174,
+              "output": 32
+            },
+            {
+              "event": 243,
+              "agent": "a2",
+              "input": 32,
+              "output": 955
+            },
+            {
+              "event": 251,
+              "agent": "a2",
+              "input": 955,
+              "output": 665
+            },
+            {
+              "event": 259,
+              "agent": "a2",
+              "input": 665,
+              "output": 450
+            }
+          ]
+        },
+        "L3.3": {
+          "accepted_event": 273,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 236,
+              "agent": "a3",
+              "input": 808,
+              "output": 963
+            },
+            {
+              "event": 244,
+              "agent": "a3",
+              "input": 963,
+              "output": 423
+            },
+            {
+              "event": 252,
+              "agent": "a3",
+              "input": 423,
+              "output": 586
+            },
+            {
+              "event": 260,
+              "agent": "a3",
+              "input": 586,
+              "output": 887
+            }
+          ]
+        },
+        "L3.5": {
+          "accepted_event": 276,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 238,
+              "agent": "a5",
+              "input": 615,
+              "output": 780
+            },
+            {
+              "event": 246,
+              "agent": "a5",
+              "input": 780,
+              "output": 701
+            },
+            {
+              "event": 254,
+              "agent": "a5",
+              "input": 701,
+              "output": 115
+            },
+            {
+              "event": 263,
+              "agent": "a5",
+              "input": 115,
+              "output": 353
+            }
+          ]
+        },
+        "L3.6": {
+          "accepted_event": 278,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 239,
+              "agent": "a6",
+              "input": 486,
+              "output": 388
+            },
+            {
+              "event": 247,
+              "agent": "a6",
+              "input": 388,
+              "output": 379
+            },
+            {
+              "event": 255,
+              "agent": "a6",
+              "input": 379,
+              "output": 400
+            },
+            {
+              "event": 264,
+              "agent": "a6",
+              "input": 400,
+              "output": 822
+            }
+          ]
+        },
+        "L3.7": {
+          "accepted_event": 280,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 240,
+              "agent": "a7",
+              "input": 679,
+              "output": 172
+            },
+            {
+              "event": 248,
+              "agent": "a7",
+              "input": 172,
+              "output": 306
+            },
+            {
+              "event": 256,
+              "agent": "a7",
+              "input": 306,
+              "output": 692
+            },
+            {
+              "event": 265,
+              "agent": "a7",
+              "input": 692,
+              "output": 83
+            }
+          ]
+        },
+        "FINAL": {
+          "accepted_event": 330,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 297,
+              "agent": "a0",
+              "input": 322,
+              "output": 196
+            },
+            {
+              "event": 305,
+              "agent": "a0",
+              "input": 196,
+              "output": 40
+            },
+            {
+              "event": 313,
+              "agent": "a0",
+              "input": 40,
+              "output": 93
+            },
+            {
+              "event": 321,
+              "agent": "a0",
+              "input": 93,
+              "output": 712
+            }
+          ]
+        }
+      },
+      "successful_apply_calls": 132,
+      "duplicate_apply_calls": 0,
+      "native_duplicate_work": 0,
+      "wrong_input_apply_calls": [],
+      "valid_apply_before_parent_acceptance": [],
+      "submission_attempts": 33,
+      "rejected_submissions": {},
+      "accepted_submission_provenance": {
+        "own": 33
+      },
+      "steps": 38,
+      "lower_bound": 25,
+      "b": 0.6578947368421053
+    },
+    {
+      "phase": {
+        "agents": 16,
+        "layer_excess": [
+          1,
+          3,
+          2,
+          1
+        ],
+        "join": 7,
+        "join_excess": 2,
+        "join_reads": 3,
+        "join_store_reads": 0
+      },
+      "mean_handoff_loss": 2,
+      "alternating_disjoint_layer_owners": true,
+      "sharing_heuristic": "broadcast",
+      "ops": {
+        "send": 93,
+        "tasks": 44,
+        "apply": 132,
+        "inbox": 141,
+        "wait": 101,
+        "submit": 33
+      },
+      "llm_errors": 0,
+      "context_trims": 0,
+      "peak_context": 28322,
+      "overflows": 0,
+      "case": "dag/w8-g4/n16",
+      "agents": 16,
+      "seed": 100,
+      "solved": true,
+      "correctly_accepted_tasks": 33,
+      "accepted_tasks_with_preceding_valid_apply": 33,
+      "missing_apply_tasks": [],
+      "accepted_task_chain_evidence": {
+        "L0.0": {
+          "accepted_event": 82,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 17,
+              "agent": "a0",
+              "input": 3,
+              "output": 774
+            },
+            {
+              "event": 33,
+              "agent": "a0",
+              "input": 774,
+              "output": 528
+            },
+            {
+              "event": 49,
+              "agent": "a0",
+              "input": 528,
+              "output": 70
+            },
+            {
+              "event": 65,
+              "agent": "a0",
+              "input": 70,
+              "output": 40
+            }
+          ]
+        },
+        "L0.1": {
+          "accepted_event": 84,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 18,
+              "agent": "a1",
+              "input": 901,
+              "output": 368
+            },
+            {
+              "event": 34,
+              "agent": "a1",
+              "input": 368,
+              "output": 604
+            },
+            {
+              "event": 50,
+              "agent": "a1",
+              "input": 604,
+              "output": 149
+            },
+            {
+              "event": 66,
+              "agent": "a1",
+              "input": 149,
+              "output": 539
+            }
+          ]
+        },
+        "L0.2": {
+          "accepted_event": 86,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 19,
+              "agent": "a2",
+              "input": 871,
+              "output": 833
+            },
+            {
+              "event": 35,
+              "agent": "a2",
+              "input": 833,
+              "output": 238
+            },
+            {
+              "event": 51,
+              "agent": "a2",
+              "input": 238,
+              "output": 256
+            },
+            {
+              "event": 67,
+              "agent": "a2",
+              "input": 256,
+              "output": 36
+            }
+          ]
+        },
+        "L0.3": {
+          "accepted_event": 88,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 20,
+              "agent": "a3",
+              "input": 606,
+              "output": 630
+            },
+            {
+              "event": 36,
+              "agent": "a3",
+              "input": 630,
+              "output": 48
+            },
+            {
+              "event": 52,
+              "agent": "a3",
+              "input": 48,
+              "output": 741
+            },
+            {
+              "event": 68,
+              "agent": "a3",
+              "input": 741,
+              "output": 187
+            }
+          ]
+        },
+        "L0.4": {
+          "accepted_event": 90,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 21,
+              "agent": "a4",
+              "input": 168,
+              "output": 938
+            },
+            {
+              "event": 37,
+              "agent": "a4",
+              "input": 938,
+              "output": 882
+            },
+            {
+              "event": 53,
+              "agent": "a4",
+              "input": 882,
+              "output": 780
+            },
+            {
+              "event": 69,
+              "agent": "a4",
+              "input": 780,
+              "output": 562
+            }
+          ]
+        },
+        "L0.5": {
+          "accepted_event": 92,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 22,
+              "agent": "a5",
+              "input": 185,
+              "output": 775
+            },
+            {
+              "event": 38,
+              "agent": "a5",
+              "input": 775,
+              "output": 694
+            },
+            {
+              "event": 54,
+              "agent": "a5",
+              "input": 694,
+              "output": 549
+            },
+            {
+              "event": 70,
+              "agent": "a5",
+              "input": 549,
+              "output": 370
+            }
+          ]
+        },
+        "L0.6": {
+          "accepted_event": 94,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 23,
+              "agent": "a6",
+              "input": 504,
+              "output": 428
+            },
+            {
+              "event": 39,
+              "agent": "a6",
+              "input": 428,
+              "output": 103
+            },
+            {
+              "event": 55,
+              "agent": "a6",
+              "input": 103,
+              "output": 672
+            },
+            {
+              "event": 71,
+              "agent": "a6",
+              "input": 672,
+              "output": 219
+            }
+          ]
+        },
+        "L0.7": {
+          "accepted_event": 96,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 24,
+              "agent": "a7",
+              "input": 962,
+              "output": 160
+            },
+            {
+              "event": 40,
+              "agent": "a7",
+              "input": 160,
+              "output": 189
+            },
+            {
+              "event": 56,
+              "agent": "a7",
+              "input": 189,
+              "output": 67
+            },
+            {
+              "event": 72,
+              "agent": "a7",
+              "input": 67,
+              "output": 251
+            }
+          ]
+        },
+        "L1.3": {
+          "accepted_event": 197,
+          "accepted_by": "a11",
+          "chain": [
+            {
+              "event": 132,
+              "agent": "a11",
+              "input": 255,
+              "output": 379
+            },
+            {
+              "event": 148,
+              "agent": "a11",
+              "input": 379,
+              "output": 220
+            },
+            {
+              "event": 164,
+              "agent": "a11",
+              "input": 220,
+              "output": 632
+            },
+            {
+              "event": 180,
+              "agent": "a11",
+              "input": 632,
+              "output": 531
+            }
+          ]
+        },
+        "L1.5": {
+          "accepted_event": 200,
+          "accepted_by": "a13",
+          "chain": [
+            {
+              "event": 134,
+              "agent": "a13",
+              "input": 406,
+              "output": 413
+            },
+            {
+              "event": 150,
+              "agent": "a13",
+              "input": 413,
+              "output": 771
+            },
+            {
+              "event": 166,
+              "agent": "a13",
+              "input": 771,
+              "output": 163
+            },
+            {
+              "event": 182,
+              "agent": "a13",
+              "input": 163,
+              "output": 305
+            }
+          ]
+        },
+        "L1.0": {
+          "accepted_event": 212,
+          "accepted_by": "a8",
+          "chain": [
+            {
+              "event": 145,
+              "agent": "a8",
+              "input": 406,
+              "output": 859
+            },
+            {
+              "event": 161,
+              "agent": "a8",
+              "input": 859,
+              "output": 362
+            },
+            {
+              "event": 177,
+              "agent": "a8",
+              "input": 362,
+              "output": 170
+            },
+            {
+              "event": 193,
+              "agent": "a8",
+              "input": 170,
+              "output": 58
+            }
+          ]
+        },
+        "L1.1": {
+          "accepted_event": 214,
+          "accepted_by": "a9",
+          "chain": [
+            {
+              "event": 146,
+              "agent": "a9",
+              "input": 406,
+              "output": 505
+            },
+            {
+              "event": 162,
+              "agent": "a9",
+              "input": 505,
+              "output": 457
+            },
+            {
+              "event": 178,
+              "agent": "a9",
+              "input": 457,
+              "output": 404
+            },
+            {
+              "event": 194,
+              "agent": "a9",
+              "input": 404,
+              "output": 954
+            }
+          ]
+        },
+        "L1.2": {
+          "accepted_event": 216,
+          "accepted_by": "a10",
+          "chain": [
+            {
+              "event": 147,
+              "agent": "a10",
+              "input": 291,
+              "output": 783
+            },
+            {
+              "event": 163,
+              "agent": "a10",
+              "input": 783,
+              "output": 427
+            },
+            {
+              "event": 179,
+              "agent": "a10",
+              "input": 427,
+              "output": 668
+            },
+            {
+              "event": 195,
+              "agent": "a10",
+              "input": 668,
+              "output": 681
+            }
+          ]
+        },
+        "L1.4": {
+          "accepted_event": 219,
+          "accepted_by": "a12",
+          "chain": [
+            {
+              "event": 149,
+              "agent": "a12",
+              "input": 790,
+              "output": 136
+            },
+            {
+              "event": 165,
+              "agent": "a12",
+              "input": 136,
+              "output": 825
+            },
+            {
+              "event": 181,
+              "agent": "a12",
+              "input": 825,
+              "output": 531
+            },
+            {
+              "event": 198,
+              "agent": "a12",
+              "input": 531,
+              "output": 295
+            }
+          ]
+        },
+        "L1.6": {
+          "accepted_event": 222,
+          "accepted_by": "a14",
+          "chain": [
+            {
+              "event": 151,
+              "agent": "a14",
+              "input": 579,
+              "output": 607
+            },
+            {
+              "event": 167,
+              "agent": "a14",
+              "input": 607,
+              "output": 332
+            },
+            {
+              "event": 183,
+              "agent": "a14",
+              "input": 332,
+              "output": 122
+            },
+            {
+              "event": 201,
+              "agent": "a14",
+              "input": 122,
+              "output": 714
+            }
+          ]
+        },
+        "L1.7": {
+          "accepted_event": 240,
+          "accepted_by": "a15",
+          "chain": [
+            {
+              "event": 168,
+              "agent": "a15",
+              "input": 287,
+              "output": 515
+            },
+            {
+              "event": 184,
+              "agent": "a15",
+              "input": 515,
+              "output": 60
+            },
+            {
+              "event": 202,
+              "agent": "a15",
+              "input": 60,
+              "output": 621
+            },
+            {
+              "event": 223,
+              "agent": "a15",
+              "input": 621,
+              "output": 434
+            }
+          ]
+        },
+        "L2.0": {
+          "accepted_event": 322,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 257,
+              "agent": "a0",
+              "input": 212,
+              "output": 630
+            },
+            {
+              "event": 273,
+              "agent": "a0",
+              "input": 630,
+              "output": 945
+            },
+            {
+              "event": 289,
+              "agent": "a0",
+              "input": 945,
+              "output": 412
+            },
+            {
+              "event": 305,
+              "agent": "a0",
+              "input": 412,
+              "output": 608
+            }
+          ]
+        },
+        "L2.1": {
+          "accepted_event": 324,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 258,
+              "agent": "a1",
+              "input": 772,
+              "output": 849
+            },
+            {
+              "event": 274,
+              "agent": "a1",
+              "input": 849,
+              "output": 965
+            },
+            {
+              "event": 290,
+              "agent": "a1",
+              "input": 965,
+              "output": 731
+            },
+            {
+              "event": 306,
+              "agent": "a1",
+              "input": 731,
+              "output": 431
+            }
+          ]
+        },
+        "L2.3": {
+          "accepted_event": 327,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 260,
+              "agent": "a3",
+              "input": 668,
+              "output": 303
+            },
+            {
+              "event": 276,
+              "agent": "a3",
+              "input": 303,
+              "output": 774
+            },
+            {
+              "event": 292,
+              "agent": "a3",
+              "input": 774,
+              "output": 343
+            },
+            {
+              "event": 308,
+              "agent": "a3",
+              "input": 343,
+              "output": 466
+            }
+          ]
+        },
+        "L2.4": {
+          "accepted_event": 329,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 261,
+              "agent": "a4",
+              "input": 772,
+              "output": 310
+            },
+            {
+              "event": 277,
+              "agent": "a4",
+              "input": 310,
+              "output": 427
+            },
+            {
+              "event": 293,
+              "agent": "a4",
+              "input": 427,
+              "output": 417
+            },
+            {
+              "event": 309,
+              "agent": "a4",
+              "input": 417,
+              "output": 353
+            }
+          ]
+        },
+        "L2.7": {
+          "accepted_event": 333,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 264,
+              "agent": "a7",
+              "input": 826,
+              "output": 961
+            },
+            {
+              "event": 280,
+              "agent": "a7",
+              "input": 961,
+              "output": 561
+            },
+            {
+              "event": 296,
+              "agent": "a7",
+              "input": 561,
+              "output": 494
+            },
+            {
+              "event": 312,
+              "agent": "a7",
+              "input": 494,
+              "output": 642
+            }
+          ]
+        },
+        "L2.2": {
+          "accepted_event": 345,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 275,
+              "agent": "a2",
+              "input": 115,
+              "output": 197
+            },
+            {
+              "event": 291,
+              "agent": "a2",
+              "input": 197,
+              "output": 75
+            },
+            {
+              "event": 307,
+              "agent": "a2",
+              "input": 75,
+              "output": 336
+            },
+            {
+              "event": 325,
+              "agent": "a2",
+              "input": 336,
+              "output": 675
+            }
+          ]
+        },
+        "L2.5": {
+          "accepted_event": 349,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 278,
+              "agent": "a5",
+              "input": 492,
+              "output": 829
+            },
+            {
+              "event": 294,
+              "agent": "a5",
+              "input": 829,
+              "output": 154
+            },
+            {
+              "event": 310,
+              "agent": "a5",
+              "input": 154,
+              "output": 908
+            },
+            {
+              "event": 330,
+              "agent": "a5",
+              "input": 908,
+              "output": 583
+            }
+          ]
+        },
+        "L2.6": {
+          "accepted_event": 351,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 279,
+              "agent": "a6",
+              "input": 739,
+              "output": 296
+            },
+            {
+              "event": 295,
+              "agent": "a6",
+              "input": 296,
+              "output": 466
+            },
+            {
+              "event": 311,
+              "agent": "a6",
+              "input": 466,
+              "output": 779
+            },
+            {
+              "event": 331,
+              "agent": "a6",
+              "input": 779,
+              "output": 511
+            }
+          ]
+        },
+        "L3.4": {
+          "accepted_event": 438,
+          "accepted_by": "a12",
+          "chain": [
+            {
+              "event": 373,
+              "agent": "a12",
+              "input": 961,
+              "output": 657
+            },
+            {
+              "event": 389,
+              "agent": "a12",
+              "input": 657,
+              "output": 149
+            },
+            {
+              "event": 405,
+              "agent": "a12",
+              "input": 149,
+              "output": 826
+            },
+            {
+              "event": 421,
+              "agent": "a12",
+              "input": 826,
+              "output": 793
+            }
+          ]
+        },
+        "L3.0": {
+          "accepted_event": 451,
+          "accepted_by": "a8",
+          "chain": [
+            {
+              "event": 385,
+              "agent": "a8",
+              "input": 258,
+              "output": 401
+            },
+            {
+              "event": 401,
+              "agent": "a8",
+              "input": 401,
+              "output": 812
+            },
+            {
+              "event": 417,
+              "agent": "a8",
+              "input": 812,
+              "output": 10
+            },
+            {
+              "event": 433,
+              "agent": "a8",
+              "input": 10,
+              "output": 160
+            }
+          ]
+        },
+        "L3.1": {
+          "accepted_event": 453,
+          "accepted_by": "a9",
+          "chain": [
+            {
+              "event": 386,
+              "agent": "a9",
+              "input": 283,
+              "output": 866
+            },
+            {
+              "event": 402,
+              "agent": "a9",
+              "input": 866,
+              "output": 461
+            },
+            {
+              "event": 418,
+              "agent": "a9",
+              "input": 461,
+              "output": 265
+            },
+            {
+              "event": 434,
+              "agent": "a9",
+              "input": 265,
+              "output": 687
+            }
+          ]
+        },
+        "L3.2": {
+          "accepted_event": 455,
+          "accepted_by": "a10",
+          "chain": [
+            {
+              "event": 387,
+              "agent": "a10",
+              "input": 225,
+              "output": 118
+            },
+            {
+              "event": 403,
+              "agent": "a10",
+              "input": 118,
+              "output": 578
+            },
+            {
+              "event": 419,
+              "agent": "a10",
+              "input": 578,
+              "output": 396
+            },
+            {
+              "event": 435,
+              "agent": "a10",
+              "input": 396,
+              "output": 769
+            }
+          ]
+        },
+        "L3.3": {
+          "accepted_event": 457,
+          "accepted_by": "a11",
+          "chain": [
+            {
+              "event": 388,
+              "agent": "a11",
+              "input": 961,
+              "output": 977
+            },
+            {
+              "event": 404,
+              "agent": "a11",
+              "input": 977,
+              "output": 293
+            },
+            {
+              "event": 420,
+              "agent": "a11",
+              "input": 293,
+              "output": 946
+            },
+            {
+              "event": 436,
+              "agent": "a11",
+              "input": 946,
+              "output": 199
+            }
+          ]
+        },
+        "L3.5": {
+          "accepted_event": 460,
+          "accepted_by": "a13",
+          "chain": [
+            {
+              "event": 390,
+              "agent": "a13",
+              "input": 191,
+              "output": 549
+            },
+            {
+              "event": 406,
+              "agent": "a13",
+              "input": 549,
+              "output": 826
+            },
+            {
+              "event": 422,
+              "agent": "a13",
+              "input": 826,
+              "output": 429
+            },
+            {
+              "event": 439,
+              "agent": "a13",
+              "input": 429,
+              "output": 116
+            }
+          ]
+        },
+        "L3.6": {
+          "accepted_event": 462,
+          "accepted_by": "a14",
+          "chain": [
+            {
+              "event": 391,
+              "agent": "a14",
+              "input": 961,
+              "output": 2
+            },
+            {
+              "event": 407,
+              "agent": "a14",
+              "input": 2,
+              "output": 464
+            },
+            {
+              "event": 423,
+              "agent": "a14",
+              "input": 464,
+              "output": 777
+            },
+            {
+              "event": 440,
+              "agent": "a14",
+              "input": 777,
+              "output": 65
+            }
+          ]
+        },
+        "L3.7": {
+          "accepted_event": 464,
+          "accepted_by": "a15",
+          "chain": [
+            {
+              "event": 392,
+              "agent": "a15",
+              "input": 106,
+              "output": 40
+            },
+            {
+              "event": 408,
+              "agent": "a15",
+              "input": 40,
+              "output": 331
+            },
+            {
+              "event": 424,
+              "agent": "a15",
+              "input": 331,
+              "output": 593
+            },
+            {
+              "event": 441,
+              "agent": "a15",
+              "input": 593,
+              "output": 718
+            }
+          ]
+        },
+        "FINAL": {
+          "accepted_event": 562,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 497,
+              "agent": "a0",
+              "input": 507,
+              "output": 446
+            },
+            {
+              "event": 513,
+              "agent": "a0",
+              "input": 446,
+              "output": 506
+            },
+            {
+              "event": 529,
+              "agent": "a0",
+              "input": 506,
+              "output": 382
+            },
+            {
+              "event": 545,
+              "agent": "a0",
+              "input": 382,
+              "output": 178
+            }
+          ]
+        }
+      },
+      "successful_apply_calls": 132,
+      "duplicate_apply_calls": 0,
+      "native_duplicate_work": 0,
+      "wrong_input_apply_calls": [],
+      "valid_apply_before_parent_acceptance": [],
+      "submission_attempts": 33,
+      "rejected_submissions": {},
+      "accepted_submission_provenance": {
+        "own": 33
+      },
+      "steps": 34,
+      "lower_bound": 25,
+      "b": 0.7352941176470589
+    },
+    {
+      "phase": {
+        "agents": 16,
+        "layer_excess": [
+          1,
+          3,
+          3,
+          1
+        ],
+        "join": 7,
+        "join_excess": 2,
+        "join_reads": 2,
+        "join_store_reads": 0
+      },
+      "mean_handoff_loss": 2.3333333333333335,
+      "alternating_disjoint_layer_owners": true,
+      "sharing_heuristic": "broadcast",
+      "ops": {
+        "send": 62,
+        "tasks": 36,
+        "apply": 132,
+        "inbox": 146,
+        "wait": 151,
+        "submit": 33
+      },
+      "llm_errors": 0,
+      "context_trims": 0,
+      "peak_context": 24965,
+      "overflows": 0,
+      "case": "dag/w8-g4/n16",
+      "agents": 16,
+      "seed": 101,
+      "solved": true,
+      "correctly_accepted_tasks": 33,
+      "accepted_tasks_with_preceding_valid_apply": 33,
+      "missing_apply_tasks": [],
+      "accepted_task_chain_evidence": {
+        "L0.0": {
+          "accepted_event": 82,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 17,
+              "agent": "a0",
+              "input": 160,
+              "output": 471
+            },
+            {
+              "event": 33,
+              "agent": "a0",
+              "input": 471,
+              "output": 231
+            },
+            {
+              "event": 49,
+              "agent": "a0",
+              "input": 231,
+              "output": 244
+            },
+            {
+              "event": 65,
+              "agent": "a0",
+              "input": 244,
+              "output": 51
+            }
+          ]
+        },
+        "L0.1": {
+          "accepted_event": 84,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 18,
+              "agent": "a1",
+              "input": 588,
+              "output": 870
+            },
+            {
+              "event": 34,
+              "agent": "a1",
+              "input": 870,
+              "output": 144
+            },
+            {
+              "event": 50,
+              "agent": "a1",
+              "input": 144,
+              "output": 404
+            },
+            {
+              "event": 66,
+              "agent": "a1",
+              "input": 404,
+              "output": 504
+            }
+          ]
+        },
+        "L0.2": {
+          "accepted_event": 86,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 19,
+              "agent": "a2",
+              "input": 562,
+              "output": 932
+            },
+            {
+              "event": 35,
+              "agent": "a2",
+              "input": 932,
+              "output": 985
+            },
+            {
+              "event": 51,
+              "agent": "a2",
+              "input": 985,
+              "output": 442
+            },
+            {
+              "event": 67,
+              "agent": "a2",
+              "input": 442,
+              "output": 489
+            }
+          ]
+        },
+        "L0.3": {
+          "accepted_event": 88,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 20,
+              "agent": "a3",
+              "input": 806,
+              "output": 548
+            },
+            {
+              "event": 36,
+              "agent": "a3",
+              "input": 548,
+              "output": 561
+            },
+            {
+              "event": 52,
+              "agent": "a3",
+              "input": 561,
+              "output": 749
+            },
+            {
+              "event": 68,
+              "agent": "a3",
+              "input": 749,
+              "output": 119
+            }
+          ]
+        },
+        "L0.4": {
+          "accepted_event": 90,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 21,
+              "agent": "a4",
+              "input": 368,
+              "output": 107
+            },
+            {
+              "event": 37,
+              "agent": "a4",
+              "input": 107,
+              "output": 935
+            },
+            {
+              "event": 53,
+              "agent": "a4",
+              "input": 935,
+              "output": 40
+            },
+            {
+              "event": 69,
+              "agent": "a4",
+              "input": 40,
+              "output": 612
+            }
+          ]
+        },
+        "L0.5": {
+          "accepted_event": 92,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 22,
+              "agent": "a5",
+              "input": 220,
+              "output": 741
+            },
+            {
+              "event": 38,
+              "agent": "a5",
+              "input": 741,
+              "output": 794
+            },
+            {
+              "event": 54,
+              "agent": "a5",
+              "input": 794,
+              "output": 303
+            },
+            {
+              "event": 70,
+              "agent": "a5",
+              "input": 303,
+              "output": 844
+            }
+          ]
+        },
+        "L0.6": {
+          "accepted_event": 94,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 23,
+              "agent": "a6",
+              "input": 968,
+              "output": 78
+            },
+            {
+              "event": 39,
+              "agent": "a6",
+              "input": 78,
+              "output": 620
+            },
+            {
+              "event": 55,
+              "agent": "a6",
+              "input": 620,
+              "output": 93
+            },
+            {
+              "event": 71,
+              "agent": "a6",
+              "input": 93,
+              "output": 988
+            }
+          ]
+        },
+        "L0.7": {
+          "accepted_event": 96,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 24,
+              "agent": "a7",
+              "input": 66,
+              "output": 649
+            },
+            {
+              "event": 40,
+              "agent": "a7",
+              "input": 649,
+              "output": 323
+            },
+            {
+              "event": 56,
+              "agent": "a7",
+              "input": 323,
+              "output": 102
+            },
+            {
+              "event": 72,
+              "agent": "a7",
+              "input": 102,
+              "output": 562
+            }
+          ]
+        },
+        "L1.1": {
+          "accepted_event": 195,
+          "accepted_by": "a9",
+          "chain": [
+            {
+              "event": 130,
+              "agent": "a9",
+              "input": 895,
+              "output": 961
+            },
+            {
+              "event": 146,
+              "agent": "a9",
+              "input": 961,
+              "output": 817
+            },
+            {
+              "event": 162,
+              "agent": "a9",
+              "input": 817,
+              "output": 866
+            },
+            {
+              "event": 178,
+              "agent": "a9",
+              "input": 866,
+              "output": 986
+            }
+          ]
+        },
+        "L1.4": {
+          "accepted_event": 199,
+          "accepted_by": "a12",
+          "chain": [
+            {
+              "event": 133,
+              "agent": "a12",
+              "input": 39,
+              "output": 907
+            },
+            {
+              "event": 149,
+              "agent": "a12",
+              "input": 907,
+              "output": 170
+            },
+            {
+              "event": 165,
+              "agent": "a12",
+              "input": 170,
+              "output": 87
+            },
+            {
+              "event": 181,
+              "agent": "a12",
+              "input": 87,
+              "output": 667
+            }
+          ]
+        },
+        "L1.5": {
+          "accepted_event": 201,
+          "accepted_by": "a13",
+          "chain": [
+            {
+              "event": 134,
+              "agent": "a13",
+              "input": 492,
+              "output": 128
+            },
+            {
+              "event": 150,
+              "agent": "a13",
+              "input": 128,
+              "output": 39
+            },
+            {
+              "event": 166,
+              "agent": "a13",
+              "input": 39,
+              "output": 94
+            },
+            {
+              "event": 182,
+              "agent": "a13",
+              "input": 94,
+              "output": 638
+            }
+          ]
+        },
+        "L1.3": {
+          "accepted_event": 216,
+          "accepted_by": "a11",
+          "chain": [
+            {
+              "event": 148,
+              "agent": "a11",
+              "input": 174,
+              "output": 631
+            },
+            {
+              "event": 164,
+              "agent": "a11",
+              "input": 631,
+              "output": 701
+            },
+            {
+              "event": 180,
+              "agent": "a11",
+              "input": 701,
+              "output": 205
+            },
+            {
+              "event": 197,
+              "agent": "a11",
+              "input": 205,
+              "output": 343
+            }
+          ]
+        },
+        "L1.0": {
+          "accepted_event": 230,
+          "accepted_by": "a8",
+          "chain": [
+            {
+              "event": 161,
+              "agent": "a8",
+              "input": 623,
+              "output": 119
+            },
+            {
+              "event": 177,
+              "agent": "a8",
+              "input": 119,
+              "output": 195
+            },
+            {
+              "event": 193,
+              "agent": "a8",
+              "input": 195,
+              "output": 741
+            },
+            {
+              "event": 212,
+              "agent": "a8",
+              "input": 741,
+              "output": 582
+            }
+          ]
+        },
+        "L1.2": {
+          "accepted_event": 233,
+          "accepted_by": "a10",
+          "chain": [
+            {
+              "event": 163,
+              "agent": "a10",
+              "input": 51,
+              "output": 998
+            },
+            {
+              "event": 179,
+              "agent": "a10",
+              "input": 998,
+              "output": 770
+            },
+            {
+              "event": 196,
+              "agent": "a10",
+              "input": 770,
+              "output": 624
+            },
+            {
+              "event": 214,
+              "agent": "a10",
+              "input": 624,
+              "output": 385
+            }
+          ]
+        },
+        "L1.6": {
+          "accepted_event": 238,
+          "accepted_by": "a14",
+          "chain": [
+            {
+              "event": 167,
+              "agent": "a14",
+              "input": 681,
+              "output": 871
+            },
+            {
+              "event": 183,
+              "agent": "a14",
+              "input": 871,
+              "output": 339
+            },
+            {
+              "event": 202,
+              "agent": "a14",
+              "input": 339,
+              "output": 309
+            },
+            {
+              "event": 219,
+              "agent": "a14",
+              "input": 309,
+              "output": 475
+            }
+          ]
+        },
+        "L1.7": {
+          "accepted_event": 240,
+          "accepted_by": "a15",
+          "chain": [
+            {
+              "event": 168,
+              "agent": "a15",
+              "input": 623,
+              "output": 209
+            },
+            {
+              "event": 184,
+              "agent": "a15",
+              "input": 209,
+              "output": 450
+            },
+            {
+              "event": 203,
+              "agent": "a15",
+              "input": 450,
+              "output": 810
+            },
+            {
+              "event": 220,
+              "agent": "a15",
+              "input": 810,
+              "output": 848
+            }
+          ]
+        },
+        "L2.6": {
+          "accepted_event": 312,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 247,
+              "agent": "a6",
+              "input": 624,
+              "output": 740
+            },
+            {
+              "event": 263,
+              "agent": "a6",
+              "input": 740,
+              "output": 810
+            },
+            {
+              "event": 279,
+              "agent": "a6",
+              "input": 810,
+              "output": 105
+            },
+            {
+              "event": 295,
+              "agent": "a6",
+              "input": 105,
+              "output": 322
+            }
+          ]
+        },
+        "L2.0": {
+          "accepted_event": 339,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 273,
+              "agent": "a0",
+              "input": 23,
+              "output": 927
+            },
+            {
+              "event": 289,
+              "agent": "a0",
+              "input": 927,
+              "output": 98
+            },
+            {
+              "event": 305,
+              "agent": "a0",
+              "input": 98,
+              "output": 32
+            },
+            {
+              "event": 322,
+              "agent": "a0",
+              "input": 32,
+              "output": 432
+            }
+          ]
+        },
+        "L2.2": {
+          "accepted_event": 342,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 275,
+              "agent": "a2",
+              "input": 142,
+              "output": 692
+            },
+            {
+              "event": 291,
+              "agent": "a2",
+              "input": 692,
+              "output": 287
+            },
+            {
+              "event": 307,
+              "agent": "a2",
+              "input": 287,
+              "output": 164
+            },
+            {
+              "event": 324,
+              "agent": "a2",
+              "input": 164,
+              "output": 554
+            }
+          ]
+        },
+        "L2.3": {
+          "accepted_event": 344,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 276,
+              "agent": "a3",
+              "input": 515,
+              "output": 209
+            },
+            {
+              "event": 292,
+              "agent": "a3",
+              "input": 209,
+              "output": 611
+            },
+            {
+              "event": 308,
+              "agent": "a3",
+              "input": 611,
+              "output": 195
+            },
+            {
+              "event": 325,
+              "agent": "a3",
+              "input": 195,
+              "output": 203
+            }
+          ]
+        },
+        "L2.4": {
+          "accepted_event": 346,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 277,
+              "agent": "a4",
+              "input": 834,
+              "output": 628
+            },
+            {
+              "event": 293,
+              "agent": "a4",
+              "input": 628,
+              "output": 604
+            },
+            {
+              "event": 309,
+              "agent": "a4",
+              "input": 604,
+              "output": 840
+            },
+            {
+              "event": 326,
+              "agent": "a4",
+              "input": 840,
+              "output": 912
+            }
+          ]
+        },
+        "L2.7": {
+          "accepted_event": 350,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 280,
+              "agent": "a7",
+              "input": 430,
+              "output": 587
+            },
+            {
+              "event": 296,
+              "agent": "a7",
+              "input": 587,
+              "output": 801
+            },
+            {
+              "event": 313,
+              "agent": "a7",
+              "input": 801,
+              "output": 470
+            },
+            {
+              "event": 329,
+              "agent": "a7",
+              "input": 470,
+              "output": 803
+            }
+          ]
+        },
+        "L2.1": {
+          "accepted_event": 361,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 290,
+              "agent": "a1",
+              "input": 233,
+              "output": 281
+            },
+            {
+              "event": 306,
+              "agent": "a1",
+              "input": 281,
+              "output": 705
+            },
+            {
+              "event": 323,
+              "agent": "a1",
+              "input": 705,
+              "output": 986
+            },
+            {
+              "event": 340,
+              "agent": "a1",
+              "input": 986,
+              "output": 240
+            }
+          ]
+        },
+        "L2.5": {
+          "accepted_event": 366,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 294,
+              "agent": "a5",
+              "input": 430,
+              "output": 685
+            },
+            {
+              "event": 310,
+              "agent": "a5",
+              "input": 685,
+              "output": 888
+            },
+            {
+              "event": 327,
+              "agent": "a5",
+              "input": 888,
+              "output": 437
+            },
+            {
+              "event": 347,
+              "agent": "a5",
+              "input": 437,
+              "output": 272
+            }
+          ]
+        },
+        "L3.3": {
+          "accepted_event": 453,
+          "accepted_by": "a11",
+          "chain": [
+            {
+              "event": 388,
+              "agent": "a11",
+              "input": 635,
+              "output": 894
+            },
+            {
+              "event": 404,
+              "agent": "a11",
+              "input": 894,
+              "output": 795
+            },
+            {
+              "event": 420,
+              "agent": "a11",
+              "input": 795,
+              "output": 750
+            },
+            {
+              "event": 436,
+              "agent": "a11",
+              "input": 750,
+              "output": 141
+            }
+          ]
+        },
+        "L3.7": {
+          "accepted_event": 458,
+          "accepted_by": "a15",
+          "chain": [
+            {
+              "event": 392,
+              "agent": "a15",
+              "input": 234,
+              "output": 848
+            },
+            {
+              "event": 408,
+              "agent": "a15",
+              "input": 848,
+              "output": 419
+            },
+            {
+              "event": 424,
+              "agent": "a15",
+              "input": 419,
+              "output": 180
+            },
+            {
+              "event": 440,
+              "agent": "a15",
+              "input": 180,
+              "output": 665
+            }
+          ]
+        },
+        "L3.0": {
+          "accepted_event": 468,
+          "accepted_by": "a8",
+          "chain": [
+            {
+              "event": 401,
+              "agent": "a8",
+              "input": 562,
+              "output": 202
+            },
+            {
+              "event": 417,
+              "agent": "a8",
+              "input": 202,
+              "output": 853
+            },
+            {
+              "event": 433,
+              "agent": "a8",
+              "input": 853,
+              "output": 329
+            },
+            {
+              "event": 449,
+              "agent": "a8",
+              "input": 329,
+              "output": 322
+            }
+          ]
+        },
+        "L3.1": {
+          "accepted_event": 470,
+          "accepted_by": "a9",
+          "chain": [
+            {
+              "event": 402,
+              "agent": "a9",
+              "input": 512,
+              "output": 143
+            },
+            {
+              "event": 418,
+              "agent": "a9",
+              "input": 143,
+              "output": 452
+            },
+            {
+              "event": 434,
+              "agent": "a9",
+              "input": 452,
+              "output": 760
+            },
+            {
+              "event": 450,
+              "agent": "a9",
+              "input": 760,
+              "output": 105
+            }
+          ]
+        },
+        "L3.2": {
+          "accepted_event": 472,
+          "accepted_by": "a10",
+          "chain": [
+            {
+              "event": 403,
+              "agent": "a10",
+              "input": 184,
+              "output": 643
+            },
+            {
+              "event": 419,
+              "agent": "a10",
+              "input": 643,
+              "output": 110
+            },
+            {
+              "event": 435,
+              "agent": "a10",
+              "input": 110,
+              "output": 361
+            },
+            {
+              "event": 451,
+              "agent": "a10",
+              "input": 361,
+              "output": 539
+            }
+          ]
+        },
+        "L3.4": {
+          "accepted_event": 475,
+          "accepted_by": "a12",
+          "chain": [
+            {
+              "event": 405,
+              "agent": "a12",
+              "input": 562,
+              "output": 332
+            },
+            {
+              "event": 421,
+              "agent": "a12",
+              "input": 332,
+              "output": 85
+            },
+            {
+              "event": 437,
+              "agent": "a12",
+              "input": 85,
+              "output": 338
+            },
+            {
+              "event": 454,
+              "agent": "a12",
+              "input": 338,
+              "output": 52
+            }
+          ]
+        },
+        "L3.5": {
+          "accepted_event": 477,
+          "accepted_by": "a13",
+          "chain": [
+            {
+              "event": 406,
+              "agent": "a13",
+              "input": 443,
+              "output": 529
+            },
+            {
+              "event": 422,
+              "agent": "a13",
+              "input": 529,
+              "output": 652
+            },
+            {
+              "event": 438,
+              "agent": "a13",
+              "input": 652,
+              "output": 656
+            },
+            {
+              "event": 455,
+              "agent": "a13",
+              "input": 656,
+              "output": 338
+            }
+          ]
+        },
+        "L3.6": {
+          "accepted_event": 479,
+          "accepted_by": "a14",
+          "chain": [
+            {
+              "event": 407,
+              "agent": "a14",
+              "input": 794,
+              "output": 203
+            },
+            {
+              "event": 423,
+              "agent": "a14",
+              "input": 203,
+              "output": 516
+            },
+            {
+              "event": 439,
+              "agent": "a14",
+              "input": 516,
+              "output": 358
+            },
+            {
+              "event": 456,
+              "agent": "a14",
+              "input": 358,
+              "output": 802
+            }
+          ]
+        },
+        "FINAL": {
+          "accepted_event": 578,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 513,
+              "agent": "a0",
+              "input": 964,
+              "output": 68
+            },
+            {
+              "event": 529,
+              "agent": "a0",
+              "input": 68,
+              "output": 877
+            },
+            {
+              "event": 545,
+              "agent": "a0",
+              "input": 877,
+              "output": 994
+            },
+            {
+              "event": 561,
+              "agent": "a0",
+              "input": 994,
+              "output": 360
+            }
+          ]
+        }
+      },
+      "successful_apply_calls": 132,
+      "duplicate_apply_calls": 0,
+      "native_duplicate_work": 0,
+      "wrong_input_apply_calls": [],
+      "valid_apply_before_parent_acceptance": [],
+      "submission_attempts": 33,
+      "rejected_submissions": {},
+      "accepted_submission_provenance": {
+        "own": 33
+      },
+      "steps": 35,
+      "lower_bound": 25,
+      "b": 0.7142857142857143
+    },
+    {
+      "phase": {
+        "agents": 16,
+        "layer_excess": [
+          1,
+          3,
+          2,
+          2
+        ],
+        "join": 7,
+        "join_excess": 2,
+        "join_reads": 2,
+        "join_store_reads": 0
+      },
+      "mean_handoff_loss": 2.3333333333333335,
+      "alternating_disjoint_layer_owners": true,
+      "sharing_heuristic": "broadcast",
+      "ops": {
+        "send": 53,
+        "tasks": 36,
+        "apply": 132,
+        "inbox": 122,
+        "wait": 175,
+        "submit": 33,
+        "put": 9
+      },
+      "llm_errors": 0,
+      "context_trims": 0,
+      "peak_context": 24822,
+      "overflows": 0,
+      "case": "dag/w8-g4/n16",
+      "agents": 16,
+      "seed": 102,
+      "solved": true,
+      "correctly_accepted_tasks": 33,
+      "accepted_tasks_with_preceding_valid_apply": 33,
+      "missing_apply_tasks": [],
+      "accepted_task_chain_evidence": {
+        "L0.0": {
+          "accepted_event": 82,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 17,
+              "agent": "a0",
+              "input": 796,
+              "output": 476
+            },
+            {
+              "event": 33,
+              "agent": "a0",
+              "input": 476,
+              "output": 841
+            },
+            {
+              "event": 49,
+              "agent": "a0",
+              "input": 841,
+              "output": 389
+            },
+            {
+              "event": 65,
+              "agent": "a0",
+              "input": 389,
+              "output": 47
+            }
+          ]
+        },
+        "L0.1": {
+          "accepted_event": 84,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 18,
+              "agent": "a1",
+              "input": 57,
+              "output": 11
+            },
+            {
+              "event": 34,
+              "agent": "a1",
+              "input": 11,
+              "output": 978
+            },
+            {
+              "event": 50,
+              "agent": "a1",
+              "input": 978,
+              "output": 989
+            },
+            {
+              "event": 66,
+              "agent": "a1",
+              "input": 989,
+              "output": 867
+            }
+          ]
+        },
+        "L0.2": {
+          "accepted_event": 86,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 19,
+              "agent": "a2",
+              "input": 237,
+              "output": 517
+            },
+            {
+              "event": 35,
+              "agent": "a2",
+              "input": 517,
+              "output": 452
+            },
+            {
+              "event": 51,
+              "agent": "a2",
+              "input": 452,
+              "output": 105
+            },
+            {
+              "event": 67,
+              "agent": "a2",
+              "input": 105,
+              "output": 684
+            }
+          ]
+        },
+        "L0.3": {
+          "accepted_event": 88,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 20,
+              "agent": "a3",
+              "input": 970,
+              "output": 52
+            },
+            {
+              "event": 36,
+              "agent": "a3",
+              "input": 52,
+              "output": 787
+            },
+            {
+              "event": 52,
+              "agent": "a3",
+              "input": 787,
+              "output": 722
+            },
+            {
+              "event": 68,
+              "agent": "a3",
+              "input": 722,
+              "output": 223
+            }
+          ]
+        },
+        "L0.4": {
+          "accepted_event": 90,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 21,
+              "agent": "a4",
+              "input": 481,
+              "output": 651
+            },
+            {
+              "event": 37,
+              "agent": "a4",
+              "input": 651,
+              "output": 106
+            },
+            {
+              "event": 53,
+              "agent": "a4",
+              "input": 106,
+              "output": 519
+            },
+            {
+              "event": 69,
+              "agent": "a4",
+              "input": 519,
+              "output": 442
+            }
+          ]
+        },
+        "L0.5": {
+          "accepted_event": 92,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 22,
+              "agent": "a5",
+              "input": 687,
+              "output": 183
+            },
+            {
+              "event": 38,
+              "agent": "a5",
+              "input": 183,
+              "output": 991
+            },
+            {
+              "event": 54,
+              "agent": "a5",
+              "input": 991,
+              "output": 525
+            },
+            {
+              "event": 70,
+              "agent": "a5",
+              "input": 525,
+              "output": 493
+            }
+          ]
+        },
+        "L0.6": {
+          "accepted_event": 94,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 23,
+              "agent": "a6",
+              "input": 651,
+              "output": 51
+            },
+            {
+              "event": 39,
+              "agent": "a6",
+              "input": 51,
+              "output": 503
+            },
+            {
+              "event": 55,
+              "agent": "a6",
+              "input": 503,
+              "output": 563
+            },
+            {
+              "event": 71,
+              "agent": "a6",
+              "input": 563,
+              "output": 911
+            }
+          ]
+        },
+        "L0.7": {
+          "accepted_event": 96,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 24,
+              "agent": "a7",
+              "input": 105,
+              "output": 970
+            },
+            {
+              "event": 40,
+              "agent": "a7",
+              "input": 970,
+              "output": 452
+            },
+            {
+              "event": 56,
+              "agent": "a7",
+              "input": 452,
+              "output": 5
+            },
+            {
+              "event": 72,
+              "agent": "a7",
+              "input": 5,
+              "output": 973
+            }
+          ]
+        },
+        "L1.3": {
+          "accepted_event": 213,
+          "accepted_by": "a11",
+          "chain": [
+            {
+              "event": 148,
+              "agent": "a11",
+              "input": 20,
+              "output": 484
+            },
+            {
+              "event": 164,
+              "agent": "a11",
+              "input": 484,
+              "output": 297
+            },
+            {
+              "event": 180,
+              "agent": "a11",
+              "input": 297,
+              "output": 175
+            },
+            {
+              "event": 196,
+              "agent": "a11",
+              "input": 175,
+              "output": 780
+            }
+          ]
+        },
+        "L1.0": {
+          "accepted_event": 227,
+          "accepted_by": "a8",
+          "chain": [
+            {
+              "event": 161,
+              "agent": "a8",
+              "input": 884,
+              "output": 115
+            },
+            {
+              "event": 177,
+              "agent": "a8",
+              "input": 115,
+              "output": 239
+            },
+            {
+              "event": 193,
+              "agent": "a8",
+              "input": 239,
+              "output": 325
+            },
+            {
+              "event": 209,
+              "agent": "a8",
+              "input": 325,
+              "output": 558
+            }
+          ]
+        },
+        "L1.1": {
+          "accepted_event": 229,
+          "accepted_by": "a9",
+          "chain": [
+            {
+              "event": 162,
+              "agent": "a9",
+              "input": 907,
+              "output": 382
+            },
+            {
+              "event": 178,
+              "agent": "a9",
+              "input": 382,
+              "output": 574
+            },
+            {
+              "event": 194,
+              "agent": "a9",
+              "input": 574,
+              "output": 17
+            },
+            {
+              "event": 210,
+              "agent": "a9",
+              "input": 17,
+              "output": 927
+            }
+          ]
+        },
+        "L1.2": {
+          "accepted_event": 231,
+          "accepted_by": "a10",
+          "chain": [
+            {
+              "event": 163,
+              "agent": "a10",
+              "input": 595,
+              "output": 742
+            },
+            {
+              "event": 179,
+              "agent": "a10",
+              "input": 742,
+              "output": 162
+            },
+            {
+              "event": 195,
+              "agent": "a10",
+              "input": 162,
+              "output": 920
+            },
+            {
+              "event": 211,
+              "agent": "a10",
+              "input": 920,
+              "output": 899
+            }
+          ]
+        },
+        "L1.4": {
+          "accepted_event": 234,
+          "accepted_by": "a12",
+          "chain": [
+            {
+              "event": 165,
+              "agent": "a12",
+              "input": 731,
+              "output": 453
+            },
+            {
+              "event": 181,
+              "agent": "a12",
+              "input": 453,
+              "output": 424
+            },
+            {
+              "event": 197,
+              "agent": "a12",
+              "input": 424,
+              "output": 839
+            },
+            {
+              "event": 214,
+              "agent": "a12",
+              "input": 839,
+              "output": 475
+            }
+          ]
+        },
+        "L1.5": {
+          "accepted_event": 236,
+          "accepted_by": "a13",
+          "chain": [
+            {
+              "event": 166,
+              "agent": "a13",
+              "input": 134,
+              "output": 688
+            },
+            {
+              "event": 182,
+              "agent": "a13",
+              "input": 688,
+              "output": 822
+            },
+            {
+              "event": 198,
+              "agent": "a13",
+              "input": 822,
+              "output": 810
+            },
+            {
+              "event": 215,
+              "agent": "a13",
+              "input": 810,
+              "output": 977
+            }
+          ]
+        },
+        "L1.6": {
+          "accepted_event": 238,
+          "accepted_by": "a14",
+          "chain": [
+            {
+              "event": 167,
+              "agent": "a14",
+              "input": 551,
+              "output": 465
+            },
+            {
+              "event": 183,
+              "agent": "a14",
+              "input": 465,
+              "output": 628
+            },
+            {
+              "event": 199,
+              "agent": "a14",
+              "input": 628,
+              "output": 192
+            },
+            {
+              "event": 216,
+              "agent": "a14",
+              "input": 192,
+              "output": 857
+            }
+          ]
+        },
+        "L1.7": {
+          "accepted_event": 240,
+          "accepted_by": "a15",
+          "chain": [
+            {
+              "event": 168,
+              "agent": "a15",
+              "input": 177,
+              "output": 773
+            },
+            {
+              "event": 184,
+              "agent": "a15",
+              "input": 773,
+              "output": 553
+            },
+            {
+              "event": 200,
+              "agent": "a15",
+              "input": 553,
+              "output": 96
+            },
+            {
+              "event": 217,
+              "agent": "a15",
+              "input": 96,
+              "output": 105
+            }
+          ]
+        },
+        "L2.0": {
+          "accepted_event": 338,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 273,
+              "agent": "a0",
+              "input": 784,
+              "output": 560
+            },
+            {
+              "event": 289,
+              "agent": "a0",
+              "input": 560,
+              "output": 920
+            },
+            {
+              "event": 305,
+              "agent": "a0",
+              "input": 920,
+              "output": 691
+            },
+            {
+              "event": 321,
+              "agent": "a0",
+              "input": 691,
+              "output": 528
+            }
+          ]
+        },
+        "L2.1": {
+          "accepted_event": 340,
+          "accepted_by": "a1",
+          "chain": [
+            {
+              "event": 274,
+              "agent": "a1",
+              "input": 485,
+              "output": 554
+            },
+            {
+              "event": 290,
+              "agent": "a1",
+              "input": 554,
+              "output": 951
+            },
+            {
+              "event": 306,
+              "agent": "a1",
+              "input": 951,
+              "output": 896
+            },
+            {
+              "event": 322,
+              "agent": "a1",
+              "input": 896,
+              "output": 202
+            }
+          ]
+        },
+        "L2.2": {
+          "accepted_event": 342,
+          "accepted_by": "a2",
+          "chain": [
+            {
+              "event": 275,
+              "agent": "a2",
+              "input": 876,
+              "output": 154
+            },
+            {
+              "event": 291,
+              "agent": "a2",
+              "input": 154,
+              "output": 239
+            },
+            {
+              "event": 307,
+              "agent": "a2",
+              "input": 239,
+              "output": 556
+            },
+            {
+              "event": 323,
+              "agent": "a2",
+              "input": 556,
+              "output": 646
+            }
+          ]
+        },
+        "L2.3": {
+          "accepted_event": 344,
+          "accepted_by": "a3",
+          "chain": [
+            {
+              "event": 276,
+              "agent": "a3",
+              "input": 402,
+              "output": 27
+            },
+            {
+              "event": 292,
+              "agent": "a3",
+              "input": 27,
+              "output": 831
+            },
+            {
+              "event": 308,
+              "agent": "a3",
+              "input": 831,
+              "output": 250
+            },
+            {
+              "event": 324,
+              "agent": "a3",
+              "input": 250,
+              "output": 137
+            }
+          ]
+        },
+        "L2.4": {
+          "accepted_event": 346,
+          "accepted_by": "a4",
+          "chain": [
+            {
+              "event": 277,
+              "agent": "a4",
+              "input": 485,
+              "output": 10
+            },
+            {
+              "event": 293,
+              "agent": "a4",
+              "input": 10,
+              "output": 571
+            },
+            {
+              "event": 309,
+              "agent": "a4",
+              "input": 571,
+              "output": 523
+            },
+            {
+              "event": 325,
+              "agent": "a4",
+              "input": 523,
+              "output": 162
+            }
+          ]
+        },
+        "L2.5": {
+          "accepted_event": 348,
+          "accepted_by": "a5",
+          "chain": [
+            {
+              "event": 278,
+              "agent": "a5",
+              "input": 535,
+              "output": 546
+            },
+            {
+              "event": 294,
+              "agent": "a5",
+              "input": 546,
+              "output": 145
+            },
+            {
+              "event": 310,
+              "agent": "a5",
+              "input": 145,
+              "output": 153
+            },
+            {
+              "event": 326,
+              "agent": "a5",
+              "input": 153,
+              "output": 97
+            }
+          ]
+        },
+        "L2.6": {
+          "accepted_event": 350,
+          "accepted_by": "a6",
+          "chain": [
+            {
+              "event": 279,
+              "agent": "a6",
+              "input": 637,
+              "output": 484
+            },
+            {
+              "event": 295,
+              "agent": "a6",
+              "input": 484,
+              "output": 748
+            },
+            {
+              "event": 311,
+              "agent": "a6",
+              "input": 748,
+              "output": 91
+            },
+            {
+              "event": 327,
+              "agent": "a6",
+              "input": 91,
+              "output": 33
+            }
+          ]
+        },
+        "L2.7": {
+          "accepted_event": 352,
+          "accepted_by": "a7",
+          "chain": [
+            {
+              "event": 280,
+              "agent": "a7",
+              "input": 415,
+              "output": 849
+            },
+            {
+              "event": 296,
+              "agent": "a7",
+              "input": 849,
+              "output": 54
+            },
+            {
+              "event": 312,
+              "agent": "a7",
+              "input": 54,
+              "output": 553
+            },
+            {
+              "event": 328,
+              "agent": "a7",
+              "input": 553,
+              "output": 453
+            }
+          ]
+        },
+        "L3.2": {
+          "accepted_event": 452,
+          "accepted_by": "a10",
+          "chain": [
+            {
+              "event": 387,
+              "agent": "a10",
+              "input": 174,
+              "output": 32
+            },
+            {
+              "event": 403,
+              "agent": "a10",
+              "input": 32,
+              "output": 955
+            },
+            {
+              "event": 419,
+              "agent": "a10",
+              "input": 955,
+              "output": 665
+            },
+            {
+              "event": 435,
+              "agent": "a10",
+              "input": 665,
+              "output": 450
+            }
+          ]
+        },
+        "L3.3": {
+          "accepted_event": 454,
+          "accepted_by": "a11",
+          "chain": [
+            {
+              "event": 388,
+              "agent": "a11",
+              "input": 808,
+              "output": 963
+            },
+            {
+              "event": 404,
+              "agent": "a11",
+              "input": 963,
+              "output": 423
+            },
+            {
+              "event": 420,
+              "agent": "a11",
+              "input": 423,
+              "output": 586
+            },
+            {
+              "event": 436,
+              "agent": "a11",
+              "input": 586,
+              "output": 887
+            }
+          ]
+        },
+        "L3.4": {
+          "accepted_event": 456,
+          "accepted_by": "a12",
+          "chain": [
+            {
+              "event": 389,
+              "agent": "a12",
+              "input": 665,
+              "output": 271
+            },
+            {
+              "event": 405,
+              "agent": "a12",
+              "input": 271,
+              "output": 189
+            },
+            {
+              "event": 421,
+              "agent": "a12",
+              "input": 189,
+              "output": 825
+            },
+            {
+              "event": 437,
+              "agent": "a12",
+              "input": 825,
+              "output": 433
+            }
+          ]
+        },
+        "L3.5": {
+          "accepted_event": 458,
+          "accepted_by": "a13",
+          "chain": [
+            {
+              "event": 390,
+              "agent": "a13",
+              "input": 615,
+              "output": 780
+            },
+            {
+              "event": 406,
+              "agent": "a13",
+              "input": 780,
+              "output": 701
+            },
+            {
+              "event": 422,
+              "agent": "a13",
+              "input": 701,
+              "output": 115
+            },
+            {
+              "event": 438,
+              "agent": "a13",
+              "input": 115,
+              "output": 353
+            }
+          ]
+        },
+        "L3.6": {
+          "accepted_event": 460,
+          "accepted_by": "a14",
+          "chain": [
+            {
+              "event": 391,
+              "agent": "a14",
+              "input": 486,
+              "output": 388
+            },
+            {
+              "event": 407,
+              "agent": "a14",
+              "input": 388,
+              "output": 379
+            },
+            {
+              "event": 423,
+              "agent": "a14",
+              "input": 379,
+              "output": 400
+            },
+            {
+              "event": 439,
+              "agent": "a14",
+              "input": 400,
+              "output": 822
+            }
+          ]
+        },
+        "L3.0": {
+          "accepted_event": 471,
+          "accepted_by": "a8",
+          "chain": [
+            {
+              "event": 401,
+              "agent": "a8",
+              "input": 486,
+              "output": 78
+            },
+            {
+              "event": 417,
+              "agent": "a8",
+              "input": 78,
+              "output": 992
+            },
+            {
+              "event": 433,
+              "agent": "a8",
+              "input": 992,
+              "output": 550
+            },
+            {
+              "event": 449,
+              "agent": "a8",
+              "input": 550,
+              "output": 195
+            }
+          ]
+        },
+        "L3.1": {
+          "accepted_event": 473,
+          "accepted_by": "a9",
+          "chain": [
+            {
+              "event": 402,
+              "agent": "a9",
+              "input": 195,
+              "output": 351
+            },
+            {
+              "event": 418,
+              "agent": "a9",
+              "input": 351,
+              "output": 651
+            },
+            {
+              "event": 434,
+              "agent": "a9",
+              "input": 651,
+              "output": 260
+            },
+            {
+              "event": 450,
+              "agent": "a9",
+              "input": 260,
+              "output": 99
+            }
+          ]
+        },
+        "L3.7": {
+          "accepted_event": 480,
+          "accepted_by": "a15",
+          "chain": [
+            {
+              "event": 408,
+              "agent": "a15",
+              "input": 679,
+              "output": 172
+            },
+            {
+              "event": 424,
+              "agent": "a15",
+              "input": 172,
+              "output": 306
+            },
+            {
+              "event": 440,
+              "agent": "a15",
+              "input": 306,
+              "output": 692
+            },
+            {
+              "event": 461,
+              "agent": "a15",
+              "input": 692,
+              "output": 83
+            }
+          ]
+        },
+        "FINAL": {
+          "accepted_event": 578,
+          "accepted_by": "a0",
+          "chain": [
+            {
+              "event": 513,
+              "agent": "a0",
+              "input": 322,
+              "output": 196
+            },
+            {
+              "event": 529,
+              "agent": "a0",
+              "input": 196,
+              "output": 40
+            },
+            {
+              "event": 545,
+              "agent": "a0",
+              "input": 40,
+              "output": 93
+            },
+            {
+              "event": 561,
+              "agent": "a0",
+              "input": 93,
+              "output": 712
+            }
+          ]
+        }
+      },
+      "successful_apply_calls": 132,
+      "duplicate_apply_calls": 0,
+      "native_duplicate_work": 0,
+      "wrong_input_apply_calls": [],
+      "valid_apply_before_parent_acceptance": [],
+      "submission_attempts": 33,
+      "rejected_submissions": {},
+      "accepted_submission_provenance": {
+        "own": 33
+      },
+      "steps": 35,
+      "lower_bound": 25,
+      "b": 0.7142857142857143
+    }
+  ],
+  "prediction_check": {
+    "frozen_T": {
+      "8": 42,
+      "16": 37
+    },
+    "frozen_handoff_loss": {
+      "8": 4.5,
+      "16": 2.7
+    },
+    "paired_seeds": [
+      {
+        "seed": 100,
+        "T8": 38,
+        "T16": 34,
+        "both_solved": true,
+        "T16_minus_T8": -4,
+        "T8_over_T16": 1.1176470588235294,
+        "handoff8": 3.3333333333333335,
+        "handoff16": 2,
+        "handoff16_minus_handoff8": -1.3333333333333335,
+        "T16_less_than_T8": true,
+        "handoff16_less_than_handoff8": true,
+        "alternating_crews16": true
+      },
+      {
+        "seed": 101,
+        "T8": 40,
+        "T16": 35,
+        "both_solved": true,
+        "T16_minus_T8": -5,
+        "T8_over_T16": 1.1428571428571428,
+        "handoff8": 3.6666666666666665,
+        "handoff16": 2.3333333333333335,
+        "handoff16_minus_handoff8": -1.333333333333333,
+        "T16_less_than_T8": true,
+        "handoff16_less_than_handoff8": true,
+        "alternating_crews16": true
+      },
+      {
+        "seed": 102,
+        "T8": 38,
+        "T16": 35,
+        "both_solved": true,
+        "T16_minus_T8": -3,
+        "T8_over_T16": 1.0857142857142856,
+        "handoff8": 3.3333333333333335,
+        "handoff16": 2.3333333333333335,
+        "handoff16_minus_handoff8": -1.0,
+        "T16_less_than_T8": true,
+        "handoff16_less_than_handoff8": true,
+        "alternating_crews16": true
+      }
+    ],
+    "all_seeds_16_faster": true,
+    "all_seeds_16_lower_handoff_loss": true,
+    "all_16_runs_have_alternating_disjoint_owners": true,
+    "interpretation": "Direction, approximate numerical predictions and trace evidence reported separately. Three paired seed labels; no formal significance threshold or causal intervention. No prediction refit."
+  },
+  "limits": "Only width8/depth4/grain4, three seeds, sizes8/16. No width8 single-agent LLM baseline: eta and solo speedup unavailable. Integer verifier does not require queries for arbitrary strategies; actual four-step chains audited. Communication labels are heuristic; examine messages and accepted ownership. Historical, development and chat usage excluded."
+}

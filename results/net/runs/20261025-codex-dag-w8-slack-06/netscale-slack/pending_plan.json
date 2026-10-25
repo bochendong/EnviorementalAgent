@@ -1,0 +1,74 @@
+[
+  {
+    "case": "dag/w8-g4/n8",
+    "seed": 100,
+    "agents": 8,
+    "calls": 1344,
+    "problem": {
+      "agents": 8,
+      "width": 8,
+      "depth": 4,
+      "grain": 4
+    }
+  },
+  {
+    "case": "dag/w8-g4/n16",
+    "seed": 100,
+    "agents": 16,
+    "calls": 2208,
+    "problem": {
+      "agents": 16,
+      "width": 8,
+      "depth": 4,
+      "grain": 4
+    }
+  },
+  {
+    "case": "dag/w8-g4/n8",
+    "seed": 101,
+    "agents": 8,
+    "calls": 1344,
+    "problem": {
+      "agents": 8,
+      "width": 8,
+      "depth": 4,
+      "grain": 4
+    }
+  },
+  {
+    "case": "dag/w8-g4/n16",
+    "seed": 101,
+    "agents": 16,
+    "calls": 2208,
+    "problem": {
+      "agents": 16,
+      "width": 8,
+      "depth": 4,
+      "grain": 4
+    }
+  },
+  {
+    "case": "dag/w8-g4/n8",
+    "seed": 102,
+    "agents": 8,
+    "calls": 1344,
+    "problem": {
+      "agents": 8,
+      "width": 8,
+      "depth": 4,
+      "grain": 4
+    }
+  },
+  {
+    "case": "dag/w8-g4/n16",
+    "seed": 102,
+    "agents": 16,
+    "calls": 2208,
+    "problem": {
+      "agents": 16,
+      "width": 8,
+      "depth": 4,
+      "grain": 4
+    }
+  }
+]

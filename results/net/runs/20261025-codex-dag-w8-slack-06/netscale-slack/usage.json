@@ -1,0 +1,156 @@
+{
+  "complete": true,
+  "formal_runs": 6,
+  "totals": {
+    "input_tokens": 52532693,
+    "cached_input_tokens": 21896960,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 148520,
+    "reasoning_output_tokens": 65826,
+    "total_tokens": 52681213
+  },
+  "interrupted_usage_totals": {
+    "input_tokens": 30506,
+    "cached_input_tokens": 17920,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 170,
+    "reasoning_output_tokens": 70,
+    "total_tokens": 30676
+  },
+  "all_receipted_usage_totals": {
+    "input_tokens": 52563199,
+    "cached_input_tokens": 21914880,
+    "output_tokens": 148690,
+    "reasoning_output_tokens": 65896,
+    "total_tokens": 52711889
+  },
+  "attempts_without_usage_receipt": 0,
+  "counting": "total_tokens=input_tokens+output_tokens; cached input and reasoning output are subsets. Each original successful request counted once, not per replay. Failed requests without receipts have unknown usage. Development, coding, chat and historical experiments excluded.",
+  "runs": [
+    {
+      "case": "dag/w8-g4/n8",
+      "agents": 8,
+      "seed": 100,
+      "successful_requests": 304,
+      "usage": {
+        "input_tokens": 5899872,
+        "cached_input_tokens": 2243968,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15256,
+        "reasoning_output_tokens": 5301,
+        "total_tokens": 5915128
+      },
+      "interrupted_attempts": 1,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {
+        "Reconnecting... 2/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ff564cc82d3a53-YYZ)": 1
+      },
+      "interrupted_usage_receipts": {
+        "input_tokens": 17374,
+        "cached_input_tokens": 8960,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 54,
+        "reasoning_output_tokens": 18
+      }
+    },
+    {
+      "case": "dag/w8-g4/n8",
+      "agents": 8,
+      "seed": 101,
+      "successful_requests": 320,
+      "usage": {
+        "input_tokens": 6266224,
+        "cached_input_tokens": 2784512,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 16264,
+        "reasoning_output_tokens": 5923,
+        "total_tokens": 6282488
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/w8-g4/n8",
+      "agents": 8,
+      "seed": 102,
+      "successful_requests": 304,
+      "usage": {
+        "input_tokens": 5872382,
+        "cached_input_tokens": 2657920,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 15661,
+        "reasoning_output_tokens": 5673,
+        "total_tokens": 5888043
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/w8-g4/n16",
+      "agents": 16,
+      "seed": 100,
+      "successful_requests": 544,
+      "usage": {
+        "input_tokens": 11575493,
+        "cached_input_tokens": 4393344,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 35092,
+        "reasoning_output_tokens": 16323,
+        "total_tokens": 11610585
+      },
+      "interrupted_attempts": 1,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {
+        "Reconnecting... 2/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ff4bcedbc2ade0-YYZ)": 1,
+        "Reconnecting... 3/5 (unexpected status 403 Forbidden: Unknown error, url: wss://chatgpt.com/backend-api/codex/responses, cf-ray: a4ff4bd3ba9d1804-YYZ)": 1
+      },
+      "interrupted_usage_receipts": {
+        "input_tokens": 13132,
+        "cached_input_tokens": 8960,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 116,
+        "reasoning_output_tokens": 52
+      }
+    },
+    {
+      "case": "dag/w8-g4/n16",
+      "agents": 16,
+      "seed": 101,
+      "successful_requests": 560,
+      "usage": {
+        "input_tokens": 11532116,
+        "cached_input_tokens": 4911744,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 33325,
+        "reasoning_output_tokens": 16427,
+        "total_tokens": 11565441
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/w8-g4/n16",
+      "agents": 16,
+      "seed": 102,
+      "successful_requests": 560,
+      "usage": {
+        "input_tokens": 11386606,
+        "cached_input_tokens": 4905472,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 32922,
+        "reasoning_output_tokens": 16179,
+        "total_tokens": 11419528
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    }
+  ]
+}

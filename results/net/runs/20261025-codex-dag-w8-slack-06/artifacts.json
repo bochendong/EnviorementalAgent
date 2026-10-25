@@ -1,0 +1,155 @@
+{
+  "complete": true,
+  "source_commit": "4f768d7760bc82454e79402158c8803e80e491d2",
+  "packaged_at_toronto": "2026-10-25T05:11:51.579216-04:00",
+  "files": {
+    "README.md": {
+      "bytes": 4691,
+      "sha256": "b49f0e4a94132efa356c2c1db98f44efe006a72fc5a45efd1a15aa27d574ecfe"
+    },
+    "audit-console.log": {
+      "bytes": 3430,
+      "sha256": "8561fe75d32192f00e28f57f01a4bc372c1d721bad6708cf65187b9903b555e7"
+    },
+    "audit_results.py": {
+      "bytes": 16797,
+      "sha256": "a2ecabb58f0f5ca2f4a94b14a78a44c4253a9954a02704606282a81aba8a6eea"
+    },
+    "launch.json": {
+      "bytes": 1265,
+      "sha256": "26df431f2f5b8786b0ab629834d07e26bb38cc1af71dd3e73665612621be5c22"
+    },
+    "netscale-slack/README.md": {
+      "bytes": 112,
+      "sha256": "8c259143a371d4247bc203d3c76c3d7d5276941a4f37a136de55ffb330b44b9a"
+    },
+    "netscale-slack/audit.json": {
+      "bytes": 148367,
+      "sha256": "15a62f90582128e784fffae1372ac10cbe8cf34c50eeca1474f66fab9eb94260"
+    },
+    "netscale-slack/codex-calls.tar.gz": {
+      "bytes": 12225218,
+      "sha256": "94718c3537aca9ef73678b611129fd7deedd1b5dfefd56bbd93d78fd77f88279"
+    },
+    "netscale-slack/codex-calls.tar.gz.sha256": {
+      "bytes": 85,
+      "sha256": "c54d48b3a81cf5d6f64c0f99d3d0cccbef7c1bde8919a36638eefe7566207ee4"
+    },
+    "netscale-slack/config.json": {
+      "bytes": 793,
+      "sha256": "fd211042c3e82a4caef32f2808473db412afbfd7a4d5a5e8e702e54b9358cfa8"
+    },
+    "netscale-slack/coordination-evidence.json": {
+      "bytes": 244143,
+      "sha256": "eb3db0d893139553261f7ff91c1c54d2a935dfe5f64fed0c185fbeb4e264457f"
+    },
+    "netscale-slack/pending_plan.json": {
+      "bytes": 1122,
+      "sha256": "384ea3caa441a6cff2a0e5968e5ec32694fc4495c655baa4cb132d6350530477"
+    },
+    "netscale-slack/runs.jsonl": {
+      "bytes": 19926,
+      "sha256": "3a9932c530529e5d53d63a0d0aa3cda671c1af6410770bedf6ce362e8d19c51b"
+    },
+    "netscale-slack/sources/codex_cli_model.py": {
+      "bytes": 10827,
+      "sha256": "85d99c47fec5a4ce36375fa215843a3b8d109de45c3517231a3d84f18314b033"
+    },
+    "netscale-slack/sources/codex_netscale.py": {
+      "bytes": 8310,
+      "sha256": "78b0d7d27c7ef0b12b86c8282262a47d007467a52bb47cf6462854bac28fbec7"
+    },
+    "netscale-slack/sources/designs.py": {
+      "bytes": 51365,
+      "sha256": "fa8b7e3f4e61cb4249d59943f12663e8d8063a2b61d25ffef827ae3d879de689"
+    },
+    "netscale-slack/sources/evaluate.py": {
+      "bytes": 22757,
+      "sha256": "91a16202c02f5b7ec5c674e9546cb002fb97c3fc26fcf260396eed7f89adbdf6"
+    },
+    "netscale-slack/sources/lockstep.py": {
+      "bytes": 3489,
+      "sha256": "1403b4dd9b5c1783a58d40fd0d30b4a7d0ea9ad19e75113ccc1878ed4c5b4cab"
+    },
+    "netscale-slack/sources/scaling.py": {
+      "bytes": 11909,
+      "sha256": "28972bc38ca69b2b32413ea368b391793bd47af4f836748ef6ed8cabd091b709"
+    },
+    "netscale-slack/sources/testset.py": {
+      "bytes": 11506,
+      "sha256": "f0e8baa3f920caeb7e078fd391485dab0ab0162ab1c547c485d5a60984a16c16"
+    },
+    "netscale-slack/sources/tools.py": {
+      "bytes": 3951,
+      "sha256": "a4f91f81b877b4a4d736c7e2cdcb4cda1c6fbdd682c6515fa02ed821dd9d139c"
+    },
+    "netscale-slack/status.json": {
+      "bytes": 71,
+      "sha256": "3c203c0f4956f34854278549699fc5d4c645aae66f998f0556decefd23a5da5c"
+    },
+    "netscale-slack/summary.md": {
+      "bytes": 2410,
+      "sha256": "f0d7a6b7d424929de20a0f1a279a3f011d14a7a9d8e20771181526f170e29452"
+    },
+    "netscale-slack/traces/peers__dag_w8-g4_n16__100.jsonl.gz": {
+      "bytes": 24317,
+      "sha256": "953843f0d631be56a79245bc08efb6b03914299d884c6234742afba5f43d8039"
+    },
+    "netscale-slack/traces/peers__dag_w8-g4_n16__101.jsonl.gz": {
+      "bytes": 19047,
+      "sha256": "e0fbfe2e1ac70c9048bb32c0a23f76287d612475455670f2e1419e7631ba2577"
+    },
+    "netscale-slack/traces/peers__dag_w8-g4_n16__102.jsonl.gz": {
+      "bytes": 20106,
+      "sha256": "c87cd1d1bfdd229513b487a441ecf11d5c68484e9912062d83581360edff353c"
+    },
+    "netscale-slack/traces/peers__dag_w8-g4_n8__100.jsonl.gz": {
+      "bytes": 10574,
+      "sha256": "f55d708795610aea86c55464af3d3bd01b34020f82889450d2035e52543336de"
+    },
+    "netscale-slack/traces/peers__dag_w8-g4_n8__101.jsonl.gz": {
+      "bytes": 10773,
+      "sha256": "047f7183a5c4d99b5f2e889475f32bd2a7fb9389397ad17411ef112ac6f70912"
+    },
+    "netscale-slack/traces/peers__dag_w8-g4_n8__102.jsonl.gz": {
+      "bytes": 10578,
+      "sha256": "4872e5a534e1e0acdc08ab41b6ee8fc3b85feb6a02b6ed5527c92832f82c981a"
+    },
+    "netscale-slack/usage.json": {
+      "bytes": 4960,
+      "sha256": "7569c7386fd2a34d506afa25a282a79ebb238049ce3958d88a0eaeca86c560ef"
+    },
+    "package_results.py": {
+      "bytes": 10029,
+      "sha256": "29f2de48c448148e4693d0f04d8ce748a653a55db23f8eb394517ab933f0ab42"
+    },
+    "predictions-2bc81ba.md": {
+      "bytes": 12776,
+      "sha256": "78360f6682585b530cf3bfc30f17c18ce56ea1b4831871663be0f0b86cddd433"
+    },
+    "preregistration.json": {
+      "bytes": 1925,
+      "sha256": "dd0c6abb518eea7200438fd4cb30b983f745d9ba0871009b264d7b2bab59a3fc"
+    },
+    "runner.log": {
+      "bytes": 831,
+      "sha256": "83b3ce3d3fed52bd188e4ce5bc39325b1378f190969890995ff5abf42c89622f"
+    },
+    "source-4f768d7.tar.gz": {
+      "bytes": 172225,
+      "sha256": "dbe81899165fdf613190ad2f079a3b5b5728741b13075a55ba0a223d8e648a38"
+    },
+    "source-4f768d7.tar.gz.sha256": {
+      "bytes": 88,
+      "sha256": "7bbfee2ebf4c677c35de1fda9a9a7eda90b70906d66e18d66efc190fe9835175"
+    },
+    "tests.xml": {
+      "bytes": 1558,
+      "sha256": "d34a926c9a670e77151774bc71239c68e15a76e59e8a2d4c1ff1271a252298c1"
+    },
+    "verification.json": {
+      "bytes": 149,
+      "sha256": "754865aa18f8f6e2df1d3cea879a6f63ea19e9a8db2810f05933842e560b17a3"
+    }
+  }
+}

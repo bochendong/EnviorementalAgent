@@ -1,0 +1,110 @@
+{
+  "complete": true,
+  "source_commit": "4f768d7760bc82454e79402158c8803e80e491d2",
+  "formal_runs": 6,
+  "solved_runs": 6,
+  "correctly_accepted_tasks": 198,
+  "all_accepted_tasks_have_preceding_valid_apply": true,
+  "all_observed_b_at_most_one": true,
+  "by_team_size": [
+    {
+      "agents": 8,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 38.666666666666664,
+      "lower_bound": 25,
+      "layered_bound": 25,
+      "b": 0.646551724137931,
+      "reference_steps": 33,
+      "a": 0.8534482758620691,
+      "eta": null,
+      "solo_speedup": null,
+      "mean_handoff_loss": 3.4444444444444446,
+      "mean_join_excess": 2.3333333333333335,
+      "mean_tool_calls": 309.3333333333333,
+      "mean_total_tokens": 6028553,
+      "mean_all_receipted_tokens": 6034362.333333333,
+      "predicted_T": 42,
+      "signed_T_error": -3.3333333333333357
+    },
+    {
+      "agents": 16,
+      "runs": 3,
+      "solved": 3,
+      "mean_rounds": 34.666666666666664,
+      "lower_bound": 25,
+      "layered_bound": 25,
+      "b": 0.7211538461538463,
+      "reference_steps": 31,
+      "a": 0.8942307692307693,
+      "eta": null,
+      "solo_speedup": null,
+      "mean_handoff_loss": 2.2222222222222223,
+      "mean_join_excess": 2,
+      "mean_tool_calls": 554.6666666666666,
+      "mean_total_tokens": 11531851.333333334,
+      "mean_all_receipted_tokens": 11536267.333333334,
+      "predicted_T": 37,
+      "signed_T_error": -2.3333333333333357
+    }
+  ],
+  "prediction_check": {
+    "frozen_T": {
+      "8": 42,
+      "16": 37
+    },
+    "frozen_handoff_loss": {
+      "8": 4.5,
+      "16": 2.7
+    },
+    "paired_seeds": [
+      {
+        "seed": 100,
+        "T8": 38,
+        "T16": 34,
+        "both_solved": true,
+        "T16_minus_T8": -4,
+        "T8_over_T16": 1.1176470588235294,
+        "handoff8": 3.3333333333333335,
+        "handoff16": 2,
+        "handoff16_minus_handoff8": -1.3333333333333335,
+        "T16_less_than_T8": true,
+        "handoff16_less_than_handoff8": true,
+        "alternating_crews16": true
+      },
+      {
+        "seed": 101,
+        "T8": 40,
+        "T16": 35,
+        "both_solved": true,
+        "T16_minus_T8": -5,
+        "T8_over_T16": 1.1428571428571428,
+        "handoff8": 3.6666666666666665,
+        "handoff16": 2.3333333333333335,
+        "handoff16_minus_handoff8": -1.333333333333333,
+        "T16_less_than_T8": true,
+        "handoff16_less_than_handoff8": true,
+        "alternating_crews16": true
+      },
+      {
+        "seed": 102,
+        "T8": 38,
+        "T16": 35,
+        "both_solved": true,
+        "T16_minus_T8": -3,
+        "T8_over_T16": 1.0857142857142856,
+        "handoff8": 3.3333333333333335,
+        "handoff16": 2.3333333333333335,
+        "handoff16_minus_handoff8": -1.0,
+        "T16_less_than_T8": true,
+        "handoff16_less_than_handoff8": true,
+        "alternating_crews16": true
+      }
+    ],
+    "all_seeds_16_faster": true,
+    "all_seeds_16_lower_handoff_loss": true,
+    "all_16_runs_have_alternating_disjoint_owners": true,
+    "interpretation": "Direction, approximate numerical predictions and trace evidence reported separately. Three paired seed labels; no formal significance threshold or causal intervention. No prediction refit."
+  }
+}
+USAGE {'input_tokens': 52532693, 'cached_input_tokens': 21896960, 'cache_write_input_tokens': 0, 'output_tokens': 148520, 'reasoning_output_tokens': 65826, 'total_tokens': 52681213}
