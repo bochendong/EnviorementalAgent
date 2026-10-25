@@ -1,0 +1,3746 @@
+{
+  "runs": [
+    {
+      "compliance": {
+        "all_task_execution_attempts_follow_columns": true,
+        "task_execution_violations": [],
+        "idle_agent_operations": {
+          "wait": 896
+        },
+        "idle_agent_nonwait_operations": {},
+        "idle_operations_by_agent": {
+          "a16": {
+            "wait": 56
+          },
+          "a17": {
+            "wait": 56
+          },
+          "a18": {
+            "wait": 56
+          },
+          "a19": {
+            "wait": 56
+          },
+          "a20": {
+            "wait": 56
+          },
+          "a21": {
+            "wait": 56
+          },
+          "a22": {
+            "wait": 56
+          },
+          "a23": {
+            "wait": 56
+          },
+          "a24": {
+            "wait": 56
+          },
+          "a25": {
+            "wait": 56
+          },
+          "a26": {
+            "wait": 56
+          },
+          "a27": {
+            "wait": 56
+          },
+          "a28": {
+            "wait": 56
+          },
+          "a29": {
+            "wait": 56
+          },
+          "a30": {
+            "wait": 56
+          },
+          "a31": {
+            "wait": 56
+          }
+        },
+        "accepted_final_owner": "a0",
+        "same_expected_owners_all_layers": true
+      },
+      "case": "dag/fixed-g4/n32",
+      "seed": 100,
+      "layer_owners_by_task_index": [
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ]
+      ],
+      "alternating_disjoint_layer_owners": false,
+      "note": "Ownership pattern is descriptive trace evidence, not a newly registered statistical test or causal intervention.",
+      "messages": [
+        {
+          "t": 209,
+          "round": 6,
+          "kind": "op",
+          "agent": "a0",
+          "op": "send",
+          "args": {
+            "data": {
+              "answer": 40,
+              "task": "L0.0"
+            },
+            "text": "L0.0 is complete; answer = 40. Please share each completed task's answer under its task ID in the shared store. I need L0.5 and L0.12 for L1.0.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 210,
+          "round": 6,
+          "kind": "op",
+          "agent": "a1",
+          "op": "send",
+          "args": {
+            "text": "L0.1 completed: answer 539. For my L1.1, please send the answers of L0.2 and L0.15 when available.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 211,
+          "round": 6,
+          "kind": "op",
+          "agent": "a2",
+          "op": "send",
+          "args": {
+            "text": "L0.2 is complete; its answer is 36. For my next task L1.2, please send the answers of L0.6 and L0.13 when available.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 217,
+          "round": 6,
+          "kind": "op",
+          "agent": "a8",
+          "op": "send",
+          "args": {
+            "text": "L0.8 completed: answer 38.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 220,
+          "round": 6,
+          "kind": "op",
+          "agent": "a11",
+          "op": "send",
+          "args": {
+            "text": "L0.11 is complete; its answer is 794.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 221,
+          "round": 6,
+          "kind": "op",
+          "agent": "a12",
+          "op": "send",
+          "args": {
+            "text": "L0.12 completed; answer is 276.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 222,
+          "round": 6,
+          "kind": "op",
+          "agent": "a13",
+          "op": "send",
+          "args": {
+            "text": "L0.13 completed: answer 278.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 223,
+          "round": 6,
+          "kind": "op",
+          "agent": "a14",
+          "op": "send",
+          "args": {
+            "text": "L0.14 completed: answer 279.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 224,
+          "round": 6,
+          "kind": "op",
+          "agent": "a15",
+          "op": "send",
+          "args": {
+            "text": "L0.15 completed: answer = 741.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 248,
+          "round": 7,
+          "kind": "op",
+          "agent": "a7",
+          "op": "send",
+          "args": {
+            "text": "L0.7 is complete; its answer is 251. For L1.7, please send me the answers to L0.1 and L0.12.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 251,
+          "round": 7,
+          "kind": "op",
+          "agent": "a10",
+          "op": "send",
+          "args": {
+            "text": "L0.10 answer is 456. For L1.10, please send me the answers of L0.0 and L0.12 (a0 and a12).",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 310,
+          "round": 9,
+          "kind": "op",
+          "agent": "a5",
+          "op": "send",
+          "args": {
+            "text": "Please publish completed task answers in the shared store under their task IDs. I need L0.10 and L0.11 for my L1.5; L0.5 = 370 is stored.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1990
+          }
+        },
+        {
+          "t": 341,
+          "round": 10,
+          "kind": "op",
+          "agent": "a4",
+          "op": "send",
+          "args": {
+            "text": "L0.4 = 562, saved under key L0.4. I need L0.14 and L0.15 for L1.4; please save completed results under their task IDs so dependents can read them.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1989
+          }
+        },
+        {
+          "t": 346,
+          "round": 10,
+          "kind": "op",
+          "agent": "a9",
+          "op": "send",
+          "args": {
+            "text": "Please publish your L0.13 answer in shared store key L0.13 when ready; I need it for L1.9.",
+            "to": "a13"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a13"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1989
+          }
+        },
+        {
+          "t": 1111,
+          "round": 33,
+          "kind": "op",
+          "agent": "a1",
+          "op": "send",
+          "args": {
+            "text": "Column 1 complete. L3.1 answer is 38, stored under L3.1 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1966
+          }
+        },
+        {
+          "t": 1157,
+          "round": 34,
+          "kind": "op",
+          "agent": "a5",
+          "op": "send",
+          "args": {
+            "text": "Column 5 is complete. L3.5 = 307, saved under key L3.5 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1965
+          }
+        },
+        {
+          "t": 1192,
+          "round": 35,
+          "kind": "op",
+          "agent": "a7",
+          "op": "send",
+          "args": {
+            "text": "Column 7 complete. L3.7 = 458, saved under key L3.7 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1964
+          }
+        },
+        {
+          "t": 1193,
+          "round": 35,
+          "kind": "op",
+          "agent": "a8",
+          "op": "send",
+          "args": {
+            "text": "Column 8 complete. L3.8 answer is 745, submitted successfully and stored under L3.8.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1964
+          }
+        },
+        {
+          "t": 1197,
+          "round": 35,
+          "kind": "op",
+          "agent": "a12",
+          "op": "send",
+          "args": {
+            "text": "L3.12 completed; answer is 600, stored under L3.12. All column 12 tasks are complete.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1964
+          }
+        },
+        {
+          "t": 1199,
+          "round": 35,
+          "kind": "op",
+          "agent": "a14",
+          "op": "send",
+          "args": {
+            "text": "L3.14 completed: answer 573, stored under L3.14. All tasks in column 14 are complete.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1964
+          }
+        },
+        {
+          "t": 1200,
+          "round": 35,
+          "kind": "op",
+          "agent": "a15",
+          "op": "send",
+          "args": {
+            "text": "Column 15 complete. L3.15 answer = 439, available in shared store under L3.15.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1964
+          }
+        },
+        {
+          "t": 1221,
+          "round": 36,
+          "kind": "op",
+          "agent": "a4",
+          "op": "send",
+          "args": {
+            "text": "L3.4 completed: answer 547, saved under key L3.4. All tasks in column 4 are done.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1963
+          }
+        },
+        {
+          "t": 1230,
+          "round": 36,
+          "kind": "op",
+          "agent": "a13",
+          "op": "send",
+          "args": {
+            "data": {
+              "answer": 331,
+              "task": "L3.13"
+            },
+            "text": "L3.13 completed: answer 331, stored under L3.13. All tasks in column 13 are complete.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1963
+          }
+        }
+      ]
+    },
+    {
+      "compliance": {
+        "all_task_execution_attempts_follow_columns": true,
+        "task_execution_violations": [],
+        "idle_agent_operations": {
+          "wait": 896
+        },
+        "idle_agent_nonwait_operations": {},
+        "idle_operations_by_agent": {
+          "a16": {
+            "wait": 56
+          },
+          "a17": {
+            "wait": 56
+          },
+          "a18": {
+            "wait": 56
+          },
+          "a19": {
+            "wait": 56
+          },
+          "a20": {
+            "wait": 56
+          },
+          "a21": {
+            "wait": 56
+          },
+          "a22": {
+            "wait": 56
+          },
+          "a23": {
+            "wait": 56
+          },
+          "a24": {
+            "wait": 56
+          },
+          "a25": {
+            "wait": 56
+          },
+          "a26": {
+            "wait": 56
+          },
+          "a27": {
+            "wait": 56
+          },
+          "a28": {
+            "wait": 56
+          },
+          "a29": {
+            "wait": 56
+          },
+          "a30": {
+            "wait": 56
+          },
+          "a31": {
+            "wait": 56
+          }
+        },
+        "accepted_final_owner": "a0",
+        "same_expected_owners_all_layers": true
+      },
+      "case": "dag/fixed-g4/n32",
+      "seed": 101,
+      "layer_owners_by_task_index": [
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ]
+      ],
+      "alternating_disjoint_layer_owners": false,
+      "note": "Ownership pattern is descriptive trace evidence, not a newly registered statistical test or causal intervention.",
+      "messages": [
+        {
+          "t": 210,
+          "round": 6,
+          "kind": "op",
+          "agent": "a1",
+          "op": "send",
+          "args": {
+            "text": "L0.1 completed: answer 504. Please share L0.0 and L0.14 answers so I can compute L1.1.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 211,
+          "round": 6,
+          "kind": "op",
+          "agent": "a2",
+          "op": "send",
+          "args": {
+            "text": "L0.2 completed: answer 489. For L1.2 I need the answers to L0.3 and L0.12; a3 and a12, please send them when available.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 213,
+          "round": 6,
+          "kind": "op",
+          "agent": "a4",
+          "op": "send",
+          "args": {
+            "data": {
+              "answer": 612,
+              "task": "L0.4"
+            },
+            "text": "L0.4 completed: answer 612.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 218,
+          "round": 6,
+          "kind": "op",
+          "agent": "a9",
+          "op": "send",
+          "args": {
+            "data": {
+              "answer": 600,
+              "task": "L0.9"
+            },
+            "text": "L0.9 completed; answer is 600.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 219,
+          "round": 6,
+          "kind": "op",
+          "agent": "a10",
+          "op": "send",
+          "args": {
+            "text": "L0.10 is done; its answer is 441.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 223,
+          "round": 6,
+          "kind": "op",
+          "agent": "a14",
+          "op": "send",
+          "args": {
+            "text": "L0.14 completed; answer = 86.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 241,
+          "round": 7,
+          "kind": "op",
+          "agent": "a0",
+          "op": "send",
+          "args": {
+            "text": "L0.0 answer = 51. Agents a8 and a9: please send your L0.8 and L0.9 answers so I can compute L1.0. Everyone: publish completed answers in shared store under the task ID for dependent columns to read.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 308,
+          "round": 9,
+          "kind": "op",
+          "agent": "a3",
+          "op": "send",
+          "args": {
+            "text": "L0.3 = 119, saved under key L0.3. Please publish completed answers in the shared store under their task IDs. I need L0.7 and L0.14 for L1.3; a7 and a14, please share those answers.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1990
+          }
+        },
+        {
+          "t": 343,
+          "round": 10,
+          "kind": "op",
+          "agent": "a6",
+          "op": "send",
+          "args": {
+            "text": "Please publish your L0.10 answer to shared key L0.10 or send it to me; I need it for L1.6.",
+            "to": "a10"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a10"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1989
+          }
+        },
+        {
+          "t": 1186,
+          "round": 35,
+          "kind": "op",
+          "agent": "a1",
+          "op": "send",
+          "args": {
+            "text": "Column 1 complete. L3.1 = 875, submitted and saved in shared store under L3.1.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1964
+          }
+        },
+        {
+          "t": 1188,
+          "round": 35,
+          "kind": "op",
+          "agent": "a3",
+          "op": "send",
+          "args": {
+            "text": "Column 3 complete. L3.3 = 461, saved in shared store under L3.3 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1964
+          }
+        },
+        {
+          "t": 1223,
+          "round": 36,
+          "kind": "op",
+          "agent": "a6",
+          "op": "send",
+          "args": {
+            "text": "Column 6 complete. L3.6 = 1, submitted and saved under shared key L3.6 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1963
+          }
+        }
+      ]
+    },
+    {
+      "compliance": {
+        "all_task_execution_attempts_follow_columns": true,
+        "task_execution_violations": [],
+        "idle_agent_operations": {
+          "wait": 784
+        },
+        "idle_agent_nonwait_operations": {},
+        "idle_operations_by_agent": {
+          "a16": {
+            "wait": 49
+          },
+          "a17": {
+            "wait": 49
+          },
+          "a18": {
+            "wait": 49
+          },
+          "a19": {
+            "wait": 49
+          },
+          "a20": {
+            "wait": 49
+          },
+          "a21": {
+            "wait": 49
+          },
+          "a22": {
+            "wait": 49
+          },
+          "a23": {
+            "wait": 49
+          },
+          "a24": {
+            "wait": 49
+          },
+          "a25": {
+            "wait": 49
+          },
+          "a26": {
+            "wait": 49
+          },
+          "a27": {
+            "wait": 49
+          },
+          "a28": {
+            "wait": 49
+          },
+          "a29": {
+            "wait": 49
+          },
+          "a30": {
+            "wait": 49
+          },
+          "a31": {
+            "wait": 49
+          }
+        },
+        "accepted_final_owner": "a0",
+        "same_expected_owners_all_layers": true
+      },
+      "case": "dag/fixed-g4/n32",
+      "seed": 102,
+      "layer_owners_by_task_index": [
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ],
+        [
+          "a0",
+          "a1",
+          "a2",
+          "a3",
+          "a4",
+          "a5",
+          "a6",
+          "a7",
+          "a8",
+          "a9",
+          "a10",
+          "a11",
+          "a12",
+          "a13",
+          "a14",
+          "a15"
+        ]
+      ],
+      "alternating_disjoint_layer_owners": false,
+      "note": "Ownership pattern is descriptive trace evidence, not a newly registered statistical test or causal intervention.",
+      "messages": [
+        {
+          "t": 209,
+          "round": 6,
+          "kind": "op",
+          "agent": "a0",
+          "op": "send",
+          "args": {
+            "text": "L0.0 answer is 47. Please send me your L0.1 answer so I can compute L1.0.",
+            "to": "a1"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a1"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 210,
+          "round": 6,
+          "kind": "op",
+          "agent": "a1",
+          "op": "send",
+          "args": {
+            "text": "L0.1 is complete: answer 867. For L1.1, I need the answers of L0.0 and L0.4; a0 and a4, please share those values.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 211,
+          "round": 6,
+          "kind": "op",
+          "agent": "a2",
+          "op": "send",
+          "args": {
+            "text": "L0.2 is complete; answer 684. For L1.2, please send me the answers to L0.6 and L0.13 when available.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 221,
+          "round": 6,
+          "kind": "op",
+          "agent": "a12",
+          "op": "send",
+          "args": {
+            "text": "L0.12 completed; answer = 376.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 222,
+          "round": 6,
+          "kind": "op",
+          "agent": "a13",
+          "op": "send",
+          "args": {
+            "text": "L0.13 completed: answer 221.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 223,
+          "round": 6,
+          "kind": "op",
+          "agent": "a14",
+          "op": "send",
+          "args": {
+            "text": "L0.14 completed successfully. Answer: 495.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1993
+          }
+        },
+        {
+          "t": 244,
+          "round": 7,
+          "kind": "op",
+          "agent": "a3",
+          "op": "send",
+          "args": {
+            "text": "L0.3 is done; answer = 223. a5, please send your L0.5 answer so I can compute L1.3.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 245,
+          "round": 7,
+          "kind": "op",
+          "agent": "a4",
+          "op": "send",
+          "args": {
+            "text": "L0.4 = 442. Please send your L0.11 answer; I need it to start L1.4.",
+            "to": "a11"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a11"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 246,
+          "round": 7,
+          "kind": "op",
+          "agent": "a5",
+          "op": "send",
+          "args": {
+            "text": "L0.5 completed: answer 493. For L1.5, I need the answers to L0.3 and L0.12; a3 and a12, please send them.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 247,
+          "round": 7,
+          "kind": "op",
+          "agent": "a6",
+          "op": "send",
+          "args": {
+            "text": "L0.6 completed: answer 911. For L1.6, I need L0.1 and L0.3 answers; a1 and a3, please send them.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 249,
+          "round": 7,
+          "kind": "op",
+          "agent": "a8",
+          "op": "send",
+          "args": {
+            "text": "L0.8 completed: answer 930. For L1.8 I need L0.3 and L0.9 answers; a3 and a9, please send your results.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 250,
+          "round": 7,
+          "kind": "op",
+          "agent": "a9",
+          "op": "send",
+          "args": {
+            "text": "L0.9 completed: answer 411. For L1.9, I need the answers to L0.0 and L0.2; a0 and a2, please send your results.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1992
+          }
+        },
+        {
+          "t": 275,
+          "round": 8,
+          "kind": "op",
+          "agent": "a2",
+          "op": "send",
+          "args": {
+            "text": "Please send your L0.6 answer so I can compute L1.2. I have L0.13 = 221.",
+            "to": "a6"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a6"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1991
+          }
+        },
+        {
+          "t": 309,
+          "round": 9,
+          "kind": "op",
+          "agent": "a4",
+          "op": "send",
+          "args": {
+            "text": "L0.4 completed: answer 442. For L1.4, I need L0.11's answer; a11, please send it.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1990
+          }
+        },
+        {
+          "t": 312,
+          "round": 9,
+          "kind": "op",
+          "agent": "a7",
+          "op": "send",
+          "args": {
+            "text": "Please publish completed task answers in the shared store under their task IDs for dependency lookup. L0.7 = 973 is stored. I need L0.4 and L0.10 for L1.7; please store those answers.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1990
+          }
+        },
+        {
+          "t": 315,
+          "round": 9,
+          "kind": "op",
+          "agent": "a10",
+          "op": "send",
+          "args": {
+            "text": "Please share the answer to L0.1 for my L1.10 dependency and put it under key L0.1. My L0.10 answer is 466, stored under L0.10.",
+            "to": "a1"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a1"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1990
+          }
+        },
+        {
+          "t": 316,
+          "round": 9,
+          "kind": "op",
+          "agent": "a11",
+          "op": "send",
+          "args": {
+            "text": "L0.11 = 589, stored under L0.11. Please store completed task answers under their task IDs for dependent columns. I need L0.6 and L0.14 for L1.11; a6 and a14, please share those answers.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1990
+          }
+        },
+        {
+          "t": 338,
+          "round": 10,
+          "kind": "op",
+          "agent": "a1",
+          "op": "send",
+          "args": {
+            "text": "Please send your L0.4 answer when available; I need it with L0.0 = 47 to compute L1.1.",
+            "to": "a4"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a4"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1989
+          }
+        },
+        {
+          "t": 352,
+          "round": 10,
+          "kind": "op",
+          "agent": "a15",
+          "op": "send",
+          "args": {
+            "text": "a0 and a4: please publish your L0.0 and L0.4 answers in the shared store under those task IDs; I need both for L1.15. L0.15 = 314 is already stored. Everyone, please store each completed task's answer under its task ID for downstream dependencies.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1989
+          }
+        },
+        {
+          "t": 434,
+          "round": 13,
+          "kind": "op",
+          "agent": "a0",
+          "op": "send",
+          "args": {
+            "text": "Completed column 0 results: L0.0 = 47; L1.0 = 581. Use these values for dependent tasks.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1986
+          }
+        },
+        {
+          "t": 476,
+          "round": 14,
+          "kind": "op",
+          "agent": "a3",
+          "op": "send",
+          "args": {
+            "text": "L1.3 completed; answer = 808.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1985
+          }
+        },
+        {
+          "t": 478,
+          "round": 14,
+          "kind": "op",
+          "agent": "a5",
+          "op": "send",
+          "args": {
+            "text": "L1.5 completed: answer 981.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1985
+          }
+        },
+        {
+          "t": 479,
+          "round": 14,
+          "kind": "op",
+          "agent": "a6",
+          "op": "send",
+          "args": {
+            "text": "L1.6 completed: answer 903.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1985
+          }
+        },
+        {
+          "t": 481,
+          "round": 14,
+          "kind": "op",
+          "agent": "a8",
+          "op": "send",
+          "args": {
+            "text": "L1.8 completed: answer 10.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1985
+          }
+        },
+        {
+          "t": 482,
+          "round": 14,
+          "kind": "op",
+          "agent": "a9",
+          "op": "send",
+          "args": {
+            "text": "I need your completed L0.0 answer for L1.9. Please send it or publish it under shared key L0.0; that key is currently missing.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1985
+          }
+        },
+        {
+          "t": 487,
+          "round": 14,
+          "kind": "op",
+          "agent": "a13",
+          "op": "send",
+          "args": {
+            "text": "L1.13 completed: answer 806.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1985
+          }
+        },
+        {
+          "t": 488,
+          "round": 14,
+          "kind": "op",
+          "agent": "a14",
+          "op": "send",
+          "args": {
+            "text": "L1.14 completed successfully. Answer: 948.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1985
+          }
+        },
+        {
+          "t": 508,
+          "round": 15,
+          "kind": "op",
+          "agent": "a2",
+          "op": "send",
+          "args": {
+            "text": "L1.2 completed: answer 879. L0.2 answer is 684.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1984
+          }
+        },
+        {
+          "t": 554,
+          "round": 16,
+          "kind": "op",
+          "agent": "a12",
+          "op": "send",
+          "args": {
+            "text": "L1.12 completed: answer 885, stored under L1.12.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1983
+          }
+        },
+        {
+          "t": 705,
+          "round": 21,
+          "kind": "op",
+          "agent": "a0",
+          "op": "send",
+          "args": {
+            "text": "L0.0 = 47, now stored under L0.0. Please send or store your L1.9 answer when complete; I need it for L2.0.",
+            "to": "a9"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a9"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1978
+          }
+        },
+        {
+          "t": 708,
+          "round": 21,
+          "kind": "op",
+          "agent": "a3",
+          "op": "send",
+          "args": {
+            "text": "For L2.3 I need your L1.15 answer when complete. Please send it or store it under L1.15. L1.13 = 806 is already known.",
+            "to": "a15"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a15"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1978
+          }
+        },
+        {
+          "t": 710,
+          "round": 21,
+          "kind": "op",
+          "agent": "a5",
+          "op": "send",
+          "args": {
+            "text": "For L2.5, I need your L1.9 answer when complete; please send it or store it under L1.9. I have L1.8 = 10.",
+            "to": "a9"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a9"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1978
+          }
+        },
+        {
+          "t": 746,
+          "round": 22,
+          "kind": "op",
+          "agent": "a6",
+          "op": "send",
+          "args": {
+            "text": "L2.6 completed: answer 12. My earlier results are L0.6 = 911 and L1.6 = 903.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1977
+          }
+        },
+        {
+          "t": 754,
+          "round": 22,
+          "kind": "op",
+          "agent": "a14",
+          "op": "send",
+          "args": {
+            "text": "L2.14 completed successfully: answer 288. Earlier column results: L0.14 = 495; L1.14 = 948.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1977
+          }
+        },
+        {
+          "t": 814,
+          "round": 24,
+          "kind": "op",
+          "agent": "a9",
+          "op": "send",
+          "args": {
+            "text": "L1.9 completed: answer 608, stored under L1.9. For L2.9 I need L1.1 and L1.4; a1 and a4, please send or store those answers.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1975
+          }
+        },
+        {
+          "t": 921,
+          "round": 27,
+          "kind": "op",
+          "agent": "a13",
+          "op": "send",
+          "args": {
+            "text": "For L3.13, I need your L2.0 answer when available; please send or store it. L2.6 = 12. My L2.13 = 734 is complete and stored.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1972
+          }
+        },
+        {
+          "t": 950,
+          "round": 28,
+          "kind": "op",
+          "agent": "a8",
+          "op": "send",
+          "args": {
+            "text": "For L3.8 I need your L2.1 answer; please send or store it when ready. L2.8 completed: answer 294, stored under L2.8.",
+            "to": "a1"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a1"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1971
+          }
+        },
+        {
+          "t": 1014,
+          "round": 30,
+          "kind": "op",
+          "agent": "a6",
+          "op": "send",
+          "args": {
+            "text": "For L3.6 I need L2.0 and L2.11; a0 and a11, please send or store those answers when complete. My results are stored: L0.6 = 911, L1.6 = 903, L2.6 = 12.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1969
+          }
+        },
+        {
+          "t": 1045,
+          "round": 31,
+          "kind": "op",
+          "agent": "a5",
+          "op": "send",
+          "args": {
+            "text": "L2.5 completed: answer 152, stored under L2.5. For L3.5, I need L2.10; a10, please share or store your answer when complete.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0",
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1968
+          }
+        },
+        {
+          "t": 1190,
+          "round": 35,
+          "kind": "op",
+          "agent": "a14",
+          "op": "send",
+          "args": {
+            "text": "L3.14 completed successfully: answer 910. Use 910 for FINAL.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1964
+          }
+        },
+        {
+          "t": 1218,
+          "round": 36,
+          "kind": "op",
+          "agent": "a8",
+          "op": "send",
+          "args": {
+            "text": "Column 8 complete. L3.8 = 898, submitted successfully and stored under L3.8 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1963
+          }
+        },
+        {
+          "t": 1220,
+          "round": 36,
+          "kind": "op",
+          "agent": "a10",
+          "op": "send",
+          "args": {
+            "text": "Column 10 complete. L3.10 = 500, stored under L3.10 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1963
+          }
+        },
+        {
+          "t": 1222,
+          "round": 36,
+          "kind": "op",
+          "agent": "a12",
+          "op": "send",
+          "args": {
+            "text": "L3.12 completed: answer 849, stored under L3.12. All column 12 tasks are complete.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1963
+          }
+        },
+        {
+          "t": 1247,
+          "round": 37,
+          "kind": "op",
+          "agent": "a4",
+          "op": "send",
+          "args": {
+            "text": "Column 4 complete. L3.4 = 331, stored under L3.4 for the final task. Earlier results: L0.4 = 442, L1.4 = 719, L2.4 = 683.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1962
+          }
+        },
+        {
+          "t": 1258,
+          "round": 37,
+          "kind": "op",
+          "agent": "a13",
+          "op": "send",
+          "args": {
+            "text": "L3.13 completed: answer 309, stored under L3.13. All column 13 tasks are complete.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1962
+          }
+        },
+        {
+          "t": 1280,
+          "round": 38,
+          "kind": "op",
+          "agent": "a2",
+          "op": "send",
+          "args": {
+            "text": "Column 2 complete. L3.2 = 186, submitted successfully and stored under L3.2 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1961
+          }
+        },
+        {
+          "t": 1286,
+          "round": 38,
+          "kind": "op",
+          "agent": "a7",
+          "op": "send",
+          "args": {
+            "text": "Column 7 is complete. L3.7 = 461, submitted successfully and stored under L3.7 for FINAL.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1961
+          }
+        },
+        {
+          "t": 1315,
+          "round": 39,
+          "kind": "op",
+          "agent": "a3",
+          "op": "send",
+          "args": {
+            "text": "Column 3 complete. L3.3 = 476, submitted successfully and stored under L3.3 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1960
+          }
+        },
+        {
+          "t": 1317,
+          "round": 39,
+          "kind": "op",
+          "agent": "a5",
+          "op": "send",
+          "args": {
+            "text": "L3.5 completed: answer 25, stored under L3.5. All tasks in column 5 are complete.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1960
+          }
+        },
+        {
+          "t": 1324,
+          "round": 39,
+          "kind": "op",
+          "agent": "a11",
+          "op": "send",
+          "args": {
+            "text": "L3.11 completed: answer 289, stored under L3.11. All column 11 tasks are done.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1960
+          }
+        },
+        {
+          "t": 1328,
+          "round": 39,
+          "kind": "op",
+          "agent": "a15",
+          "op": "send",
+          "args": {
+            "text": "Column 15 complete. L3.15 = 805, submitted and stored under L3.15 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1960
+          }
+        },
+        {
+          "t": 1345,
+          "round": 40,
+          "kind": "op",
+          "agent": "a0",
+          "op": "send",
+          "args": {
+            "text": "I am collecting answers for FINAL. Please send me your completed L3 column answer when available. L3.0 = 306; L2.0 = 483 is stored for dependent tasks.",
+            "to": "*"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a1",
+              "a2",
+              "a3",
+              "a4",
+              "a5",
+              "a6",
+              "a7",
+              "a8",
+              "a9",
+              "a10",
+              "a11",
+              "a12",
+              "a13",
+              "a14",
+              "a15",
+              "a16",
+              "a17",
+              "a18",
+              "a19",
+              "a20",
+              "a21",
+              "a22",
+              "a23",
+              "a24",
+              "a25",
+              "a26",
+              "a27",
+              "a28",
+              "a29",
+              "a30",
+              "a31"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1959
+          }
+        },
+        {
+          "t": 1351,
+          "round": 40,
+          "kind": "op",
+          "agent": "a6",
+          "op": "send",
+          "args": {
+            "text": "L3.6 completed: answer 111, stored under L3.6. All column 6 tasks are complete.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1959
+          }
+        },
+        {
+          "t": 1378,
+          "round": 41,
+          "kind": "op",
+          "agent": "a1",
+          "op": "send",
+          "args": {
+            "text": "L3.1 completed: answer 322, stored under L3.1. All column 1 tasks are complete.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1958
+          }
+        },
+        {
+          "t": 1386,
+          "round": 41,
+          "kind": "op",
+          "agent": "a9",
+          "op": "send",
+          "args": {
+            "text": "Column 9 complete. L3.9 = 679, stored under L3.9 for the final task.",
+            "to": "a0"
+          },
+          "cost": 1,
+          "obs": {
+            "ok": true,
+            "sent_to": [
+              "a0"
+            ],
+            "arrives_in_rounds": 0,
+            "budget": 1958
+          }
+        }
+      ]
+    }
+  ]
+}

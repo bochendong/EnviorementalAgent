@@ -1,0 +1,84 @@
+{
+  "complete": true,
+  "formal_runs": 3,
+  "totals": {
+    "input_tokens": 105702484,
+    "cached_input_tokens": 45048704,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 217284,
+    "reasoning_output_tokens": 86200,
+    "total_tokens": 105919768
+  },
+  "interrupted_usage_totals": {
+    "total_tokens": 0
+  },
+  "all_receipted_usage_totals": {
+    "input_tokens": 105702484,
+    "cached_input_tokens": 45048704,
+    "output_tokens": 217284,
+    "reasoning_output_tokens": 86200,
+    "total_tokens": 105919768
+  },
+  "attempts_without_usage_receipt": 26,
+  "counting": "Input+output only; cached input and reasoning output are subsets. Original successful requests once, not per replay. Failed receipts separately included; missing receipts have unknown usage. Historical control, coding, chat and development excluded.",
+  "runs": [
+    {
+      "case": "dag/fixed-g4/n32",
+      "agents": 32,
+      "seed": 100,
+      "successful_requests": 1792,
+      "usage": {
+        "input_tokens": 36938688,
+        "cached_input_tokens": 15451904,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 74227,
+        "reasoning_output_tokens": 29138,
+        "total_tokens": 37012915
+      },
+      "interrupted_attempts": 9,
+      "interrupted_attempts_without_usage": 9,
+      "interrupted_errors": {
+        "timeout": 9
+      },
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n32",
+      "agents": 32,
+      "seed": 101,
+      "successful_requests": 1792,
+      "usage": {
+        "input_tokens": 36820409,
+        "cached_input_tokens": 15630720,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 73550,
+        "reasoning_output_tokens": 28790,
+        "total_tokens": 36893959
+      },
+      "interrupted_attempts": 17,
+      "interrupted_attempts_without_usage": 17,
+      "interrupted_errors": {
+        "timeout": 17
+      },
+      "interrupted_usage_receipts": {}
+    },
+    {
+      "case": "dag/fixed-g4/n32",
+      "agents": 32,
+      "seed": 102,
+      "successful_requests": 1568,
+      "usage": {
+        "input_tokens": 31943387,
+        "cached_input_tokens": 13966080,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 69507,
+        "reasoning_output_tokens": 28272,
+        "total_tokens": 32012894
+      },
+      "interrupted_attempts": 0,
+      "interrupted_attempts_without_usage": 0,
+      "interrupted_errors": {},
+      "interrupted_usage_receipts": {}
+    }
+  ]
+}

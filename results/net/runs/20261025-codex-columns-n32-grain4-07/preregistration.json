@@ -1,0 +1,77 @@
+{
+  "prediction_commit": "c38db0a8338334a2449fc652e1e12c70556099c2",
+  "execution_source_commit": "f9c27c15b5223a9cd8706ce35a8e2503491f70a5",
+  "prediction_file": "predictions-c38db0a.md",
+  "prediction_file_sha256": "aa14afbb39d3eed164a9cb3d5d86366471e6dce6d580cde1d029f85973fac8bd",
+  "saved_before_launch_toronto": "2026-10-25T12:34:02.139385-04:00",
+  "suite": "netscale-intervene",
+  "design": "peers-columns",
+  "families": [
+    "fixed"
+  ],
+  "width": 16,
+  "depth": 4,
+  "grain": 4,
+  "sizes": [
+    32
+  ],
+  "seeds": [
+    100,
+    101,
+    102
+  ],
+  "predicted_T": 44,
+  "join_store_upper_approximation": 58,
+  "predicted_handoff_loss_range": [
+    4.7,
+    5.3
+  ],
+  "plain_handoff_range": [
+    2.3,
+    3.0
+  ],
+  "primary_claim": "Columns handoff loss rises toward the plain16 level; columns T is greater than plain32 T for each seed. If loss remains about2.7 and T near38, the proposed crew mechanism is wrong.",
+  "metric_definition": "Use fixed netagents.netscale.phases. Average layer1-3 excess over five work rounds; excludeL0; report join_excess and join_store_reads separately. Do not tune near/far thresholds after results.",
+  "compliance_definition": "Prompt-level intervention, not tool-enforced. Inspect every apply and submit: Lx.K must be performed only by aK (K0-15), FINAL only by a0. Flag a16-a31 task execution, cross-column work, and alternate crews. Task listings/messages are separate from task execution. Report noncompliance rather than rewriting trajectories.",
+  "reference_steps": 31,
+  "lower_bound": 25,
+  "layered_bound": 25,
+  "call_budget": 4416,
+  "per_member_budget": 138,
+  "baseline": {
+    "data_commit": "39140caa2d8c34845d06e5f9ab85b4005653c19e",
+    "model_source_commit": "adf004518204915f23733333db3897bdc98d3b02",
+    "plain_T_by_seed": {
+      "100": 39,
+      "101": 38,
+      "102": 37
+    },
+    "historical": true,
+    "usage_excluded": true,
+    "unchanged_files": {
+      "worldseeds/net/providers/dag.py": {
+        "identical": true,
+        "current_sha256": "190cef2968c479768ddc5909868365cb3ed0c6933d9786f8327174c681f40ad7"
+      },
+      "netagents/codex_cli_model.py": {
+        "identical": true,
+        "current_sha256": "85d99c47fec5a4ce36375fa215843a3b8d109de45c3517231a3d84f18314b033"
+      },
+      "netagents/lockstep.py": {
+        "identical": true,
+        "current_sha256": "1403b4dd9b5c1783a58d40fd0d30b4a7d0ea9ad19e75113ccc1878ed4c5b4cab"
+      },
+      "netagents/tools.py": {
+        "identical": true,
+        "current_sha256": "a4f91f81b877b4a4d736c7e2cdcb4cda1c6fbdd682c6515fa02ed821dd9d139c"
+      }
+    }
+  },
+  "limits": [
+    "Only three seeds; prompt adherence must be checked before mechanism interpretation.",
+    "Historical rather than contemporaneously rerun control; CLI version and per-call context trimming differ and must be reported. No extra baseline runs authorized.",
+    "About90million tokens is a rough estimate, not a measured cost or hard spending cap.",
+    "Integer verifier does not enforce queries; audit actual four-step chains.",
+    "No peers-msgjoin, sizes16, additional seeds, or protocol modifications in this run."
+  ]
+}

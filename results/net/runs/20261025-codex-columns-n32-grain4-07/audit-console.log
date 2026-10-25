@@ -1,0 +1,154 @@
+{
+  "complete": true,
+  "source_commit": "f9c27c15b5223a9cd8706ce35a8e2503491f70a5",
+  "formal_runs": 3,
+  "solved_runs": 3,
+  "correctly_accepted_tasks": 195,
+  "all_accepted_tasks_have_preceding_valid_apply": true,
+  "all_observed_b_at_most_one": true,
+  "summary": {
+    "agents": 32,
+    "runs": 3,
+    "solved": 3,
+    "mean_rounds": 53.666666666666664,
+    "mean_handoff_loss": 5.222222222222222,
+    "mean_join_excess": 12,
+    "lower_bound": 25,
+    "layered_bound": 25,
+    "reference_steps": 31,
+    "b": 0.46583850931677023,
+    "a": 0.577639751552795,
+    "mean_tool_calls": 1717.3333333333333,
+    "mean_successful_tokens": 35306589.333333336,
+    "mean_all_receipted_tokens": 35306589.333333336
+  },
+  "prediction_check": {
+    "frozen_T": 44,
+    "join_store_upper_approximation": 58,
+    "frozen_handoff_loss_range": [
+      4.7,
+      5.3
+    ],
+    "paired_seeds": [
+      {
+        "seed": 100,
+        "solved": true,
+        "columns_T": 56,
+        "plain_T": 39,
+        "T_difference": 17,
+        "columns_handoff": 4.666666666666667,
+        "plain_handoff": 3,
+        "handoff_difference": 1.666666666666667,
+        "columns_phase": {
+          "agents": 32,
+          "layer_excess": [
+            1,
+            6,
+            5,
+            3
+          ],
+          "join": 21,
+          "join_excess": 16,
+          "join_reads": 15,
+          "join_store_reads": 15
+        },
+        "plain_phase": {
+          "agents": 32,
+          "layer_excess": [
+            2,
+            4,
+            3,
+            2
+          ],
+          "join": 7,
+          "join_excess": 2,
+          "join_reads": 3,
+          "join_store_reads": 0
+        },
+        "plain_T_minus_final_acceptance_round": 1,
+        "columns_compliant": true
+      },
+      {
+        "seed": 101,
+        "solved": true,
+        "columns_T": 56,
+        "plain_T": 38,
+        "T_difference": 18,
+        "columns_handoff": 4.666666666666667,
+        "plain_handoff": 2.6666666666666665,
+        "handoff_difference": 2.0000000000000004,
+        "columns_phase": {
+          "agents": 32,
+          "layer_excess": [
+            1,
+            6,
+            4,
+            4
+          ],
+          "join": 21,
+          "join_excess": 16,
+          "join_reads": 15,
+          "join_store_reads": 15
+        },
+        "plain_phase": {
+          "agents": 32,
+          "layer_excess": [
+            2,
+            3,
+            3,
+            2
+          ],
+          "join": 7,
+          "join_excess": 2,
+          "join_reads": 2,
+          "join_store_reads": 0
+        },
+        "plain_T_minus_final_acceptance_round": 1,
+        "columns_compliant": true
+      },
+      {
+        "seed": 102,
+        "solved": true,
+        "columns_T": 49,
+        "plain_T": 37,
+        "T_difference": 12,
+        "columns_handoff": 6.333333333333333,
+        "plain_handoff": 2.3333333333333335,
+        "handoff_difference": 3.9999999999999996,
+        "columns_phase": {
+          "agents": 32,
+          "layer_excess": [
+            1,
+            10,
+            6,
+            3
+          ],
+          "join": 9,
+          "join_excess": 4,
+          "join_reads": 4,
+          "join_store_reads": 3
+        },
+        "plain_phase": {
+          "agents": 32,
+          "layer_excess": [
+            2,
+            2,
+            3,
+            2
+          ],
+          "join": 8,
+          "join_excess": 3,
+          "join_reads": 3,
+          "join_store_reads": 0
+        },
+        "plain_T_minus_final_acceptance_round": 0,
+        "columns_compliant": true
+      }
+    ],
+    "all_seeds_T_increases": true,
+    "all_seeds_handoff_increases": true,
+    "mean_T_signed_error": 9.666666666666664,
+    "interpretation": "Preserve numerical predictions and report each seed, compliance and join separately. Historical control and three seeds do not establish a universal causal effect; no post-hoc thresholds or refit."
+  }
+}
+USAGE {'input_tokens': 105702484, 'cached_input_tokens': 45048704, 'cache_write_input_tokens': 0, 'output_tokens': 217284, 'reasoning_output_tokens': 86200, 'total_tokens': 105919768}
