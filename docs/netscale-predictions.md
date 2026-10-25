@@ -212,6 +212,21 @@ python -m netagents.codex_netscale --suite netscale-intervene --design peers-col
 python -m netagents.codex_netscale --suite netscale-intervene --design peers-msgjoin --sizes 16 --out results/net/runs/<run>/msgjoin
 ```
 
+## Result of `peers-columns` on 32 agents (2026-10-25)
+
+`results/net/runs/20261025-codex-columns-n32-grain4-07`, seeds 100-102, paired with the plain 32-agent runs. The rule was obeyed throughout: a0-a15 did every task of their own column, a0 did the final task, and a16-a31 only waited. No second crew formed.
+
+| seed | plain 32: T | columns 32: T | plain: loss per layer | columns: loss per layer | join lost, plain / columns | join store reads, plain / columns |
+|---|---|---|---|---|---|---|
+| 100 | 39 | 56 | 3.0 | 4.7 | 2 / 16 | 0 / 15 |
+| 101 | 38 | 56 | 2.7 | 4.7 | 2 / 16 | 0 / 15 |
+| 102 | 37 | 49 | 2.3 | 6.3 | 3 / 4 | 0 / 3 |
+
+- **The predicted direction held on every seed.** Without a second crew, each later layer lost 5.2 rounds on average instead of 2.7 (predicted 4.7-5.3; two seeds at its lower edge, one above it). T rose by 12-18 rounds.
+- **T was 56, 56, 49, not 44.** The prediction allowed up to about 58 if the join was pulled from the store, and it was: on two seeds a0 read 15 answers from the store one by one and the join lost 16 rounds. On the third it read 3 and lost 4. That is the one-round-per-pulled-answer rule of the third prediction.
+- **Barred from working, 16 idle agents bought nothing.** The columns runs (56, 56, 49) are where the plain 16-agent runs were (44, 58, 50).
+- **What it does not isolate.** The rule also changed how the teams shared answers. They sent far fewer messages (12-55 against 134-182) and read the store more (64-102 reads against 58-127). The comparison is with earlier runs, not a concurrent random assignment.
+
 ## 中文摘要
 
 16 人和 32 人还没跑之前，先用两轮试跑的结果写下预测。
@@ -277,4 +292,12 @@ python -m netagents.codex_netscale --suite netscale-intervene --design peers-msg
 - **事后观察**：题目越宽，每层交接损失越大。
 
 结论：分班与交接损失降低之间的关联，在样本外得到了复现；因果检验要靠不准分班的 `peers-columns`。
+
+**不准分班的干预结果（32 人，10 月 25 日）**：
+
+- **规则被完整遵守**：a16 到 a31 只在等待，没有形成第二班。
+- **预测方向在每个种子上都成立**：每层交接损失从 2.7 轮升到 5.2 轮，T 从 38 轮升到 49 到 56 轮。
+- **汇总题**：有两个种子由 a0 从存储逐个读了 15 个答案，汇总多花 16 轮；第三个种子读 3 次，多花 4 轮。正好符合"每逐个读一个答案多花约一轮"。
+- **多出来的 16 人被禁止干活后，毫无帮助**：结果和普通 16 人相当。
+- **局限**：这条规则同时让团队少发消息、多用存储；对照组是之前的运行，不是同期随机分组。
 
