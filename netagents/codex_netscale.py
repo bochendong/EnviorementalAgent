@@ -37,15 +37,17 @@ def execute_job(case, seed, args, gate, stop):
     # the pilot's runs keep their directory names (cached calls resume from them); the full suite has two
     # families and two grains per size
     name = f"n{n}-seed{seed}" if args.suite == "netscale-pilot" else f"{case.id.split('/')[1]}-n{n}-seed{seed}"
+    if args.design != "peers":
+        name = f"{args.design}-{name}"
     directory = out / "episodes" / name
     model = CodexCLIModel(directory, args.model, args.reasoning_effort, gate, args.timeout, stop=stop)
     write_json(directory / "status.json", {"status": "running", "agents": n, "seed": seed, "call_budget": case.calls,
                                             "problem": case.opt, "started_epoch": time.time()})
-    trace = out / "traces" / f"peers__{case.id.replace('/', '_')}__{seed}.jsonl.gz"
+    trace = out / "traces" / f"{args.design}__{case.id.replace('/', '_')}__{seed}.jsonl.gz"
     settings = ModelSettings(tool_choice="required", parallel_tool_calls=False)
     try:
         result = {"model": f"codex-cli/{args.model}", "suite": args.suite,
-                  **run_one(DESIGNS["peers"], case, seed, model, settings, case.calls, trace=str(trace))}
+                  **run_one(DESIGNS[args.design], case, seed, model, settings, case.calls, trace=str(trace))}
         write_json(directory / "result.json", result)
         if result["llm_errors"]:
             raise RuntimeError(f"Model errors in {case.id}, seed {seed}; see {directory / 'result.json'}")
@@ -62,7 +64,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="gpt-6.1-sol")
     parser.add_argument("--reasoning-effort", default="high", choices=["low", "medium", "high", "xhigh"])
-    parser.add_argument("--suite", default="netscale-pilot", choices=["netscale-pilot", "netscale", "netscale-slack"])
+    parser.add_argument("--suite", default="netscale-pilot",
+                        choices=["netscale-pilot", "netscale", "netscale-slack", "netscale-intervene"])
+    parser.add_argument("--design", default="peers", choices=["peers", "peers-columns", "peers-msgjoin"],
+                        help="the peers design, or one of its interventions (netscale-intervene)")
     parser.add_argument("--families", nargs="+", default=None,
                         help="the problems to run (fixed, scaled, w8); default: fixed in netscale, all elsewhere")
     parser.add_argument("--sizes", nargs="+", type=int, default=[1, 2, 4, 8])
@@ -93,9 +98,10 @@ def main():
               "model_transport": "One Codex JSON tool selection per SDK model response; no outside capabilities"}
     if args.resume:
         previous = json.loads((out / "config.json").read_text())
-        for key in ("model", "reasoning_effort", "suite", "families", "sizes", "seeds", "grains", "agents_sdk", "sympy",
+        for key in ("model", "reasoning_effort", "suite", "design", "families", "sizes", "seeds", "grains", "agents_sdk", "sympy",
                     "git_commit"):
-            if previous[key] != config[key]:
+            # a key added to the runner after a run started (design, families) holds its default for that run
+            if previous.get(key, "peers" if key == "design" else config[key]) != config[key]:
                 raise ValueError(f"Resume configuration changed: {key}")
     else:
         write_json(out / "config.json", config)
@@ -125,7 +131,7 @@ def main():
                     rows.append(result)
                     with path.open("a") as file:
                         file.write(json.dumps(result) + "\n")
-                    write_summary(str(out), rows, f"netscale-pilot (Codex {args.model}, {args.reasoning_effort})")
+                    write_summary(str(out), rows, f"{args.suite} {args.design} (Codex {args.model}, {args.reasoning_effort})")
                     write_json(out / "status.json", {"status": "running", "planned_runs": planned,
                                                     "completed_runs": len(rows)})
                     print(json.dumps({k: result[k] for k in ("case", "seed", "solved", "done", "tasks", "steps", "reference_steps", "llm_tool_calls")}), flush=True)

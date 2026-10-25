@@ -563,3 +563,31 @@ def test_history_is_trimmed_before_every_model_call(mock_llm, monkeypatch):
     r = run_one(designs.DESIGNS["peers"], case, 0, model, settings, 40)  # one turn of up to 40 calls
     m = r["members"][0]
     assert m["trims"] > 0 and m["peak_context"] <= 3000
+
+
+def test_intervention_designs_add_one_rule(mock_llm):
+    from netagents.designs import COLUMNS_RULE, DESIGNS, MESSAGE_JOIN_RULE, PEERS_PROTOCOL, Member
+    from netagents.evaluate import run_one
+    from netagents.testset import SUITES, Case
+
+    model, settings = mock_llm
+    seen = []
+    orig = Member.__post_init__
+
+    def spy(self):
+        seen.append(self.protocol)
+        orig(self)
+
+    Member.__post_init__ = spy
+    try:
+        case = Case("dag/fixed/tiny", "dag/fixed", [0], opt={"agents": 3, "width": 2, "depth": 2}, lockstep=True)
+        for name, rule in (("peers-columns", COLUMNS_RULE), ("peers-msgjoin", MESSAGE_JOIN_RULE)):
+            seen.clear()
+            r = run_one(DESIGNS[name], case, 0, model, settings, 9)
+            assert r["design"] == name and seen == [PEERS_PROTOCOL.format(n=3) + " " + rule] * 3
+        seen.clear()
+        run_one(DESIGNS["peers"], case, 0, model, settings, 9)
+        assert seen == [PEERS_PROTOCOL.format(n=3)] * 3
+    finally:
+        Member.__post_init__ = orig
+    assert [c.id for c in SUITES["netscale-intervene"]] == ["dag/fixed-g4/n16", "dag/fixed-g4/n32"]

@@ -168,6 +168,27 @@ The primary claim concerns the handoff loss, measured per layer from the traces,
 python -m netagents.codex_netscale --suite netscale-slack --out results/net/runs/<run>/netscale-slack
 ```
 
+## Fourth prediction: two interventions (2026-10-25, before any run of them)
+
+Suite `netscale-intervene`: the fixed 16 x 4 problem, grain 4, seeds 100-102, the same cases as the plain peers runs above, so that each run pairs with its plain run seed by seed. Each intervention is the peers design with one rule added (`netagents/designs.py`); nothing else changes.
+
+**`peers-columns` on 32 agents: no second crew.** The assignment is fixed in advance: agent aK does column K in every layer, a0 also does the final task, and agents with no column take no task. This is the assignment the plain 16-agent teams chose themselves, with 16 idle agents added. If the second crew is what hid the handoff:
+
+- each later layer loses about as much as at 16 agents (4.7-5.3 rounds), not 2.3-3.0 as in the plain 32-agent runs;
+- T is about 25 + 2 + 3 x 5 + 2 = 44 (up to about 58 if the join is pulled from the store), against 37-39 for the plain 32-agent runs, and is longer than its plain run on every seed.
+
+If the layers still lose about 2.7 rounds and T stays near 38, the idle agents help in some other way, and the crew mechanism is wrong.
+
+**`peers-msgjoin` on 16 agents: the join by messages.** Every last-layer answer is sent to everyone at once, and the final task's solver reads its inbox rather than the store. If the join costs what its solver's reading costs:
+
+- the join loses 1-4 rounds on every seed, with no more than a few store reads by its solver (plain: 2, 16 and 7 rounds; 0, 15 and 6 reads);
+- the layers are unchanged (about 5 rounds lost each), so T is about 25 + 2 + 3 x 5 + 2 = 44, against 44, 58 and 50 for the plain runs.
+
+```bash
+python -m netagents.codex_netscale --suite netscale-intervene --design peers-columns --sizes 32 --out results/net/runs/<run>/columns
+python -m netagents.codex_netscale --suite netscale-intervene --design peers-msgjoin --sizes 16 --out results/net/runs/<run>/msgjoin
+```
+
 ## 中文摘要
 
 16 人和 32 人还没跑之前，先用两轮试跑的结果写下预测。
@@ -214,4 +235,14 @@ python -m netagents.codex_netscale --suite netscale-slack --out results/net/runs
 - 8 人（每题一人）每层多花约 4.5 轮；16 人（每题两人）约 2.7 轮。
 - T(16) < T(8)，并且每个种子都如此。
 - 预测的 T：4 人 62 轮，8 人 42 轮，16 人 37 轮。
+
+**第四个预测：两个干预实验（10 月 25 日，跑之前写下）**：
+
+- **不准分班（32 人，`peers-columns`）**：
+  - 设置：每人固定负责一列，a0 兼做汇总题，没有列的人不接任何题。这正是 16 人团队自己选的分工，只是多了 16 个闲人。
+  - 预测：如果"第二班藏延迟"成立，每层交接损失回到约 5 轮，T 约 44 轮，每个种子都比不加干预的 32 人（37 到 39 轮）慢。
+  - 如果仍是约 2.7 轮、T 约 38 轮，分班这个机制就是错的。
+- **汇总改用消息（16 人，`peers-msgjoin`）**：
+  - 设置：最后一层的答案一完成就发给所有人，汇总者从收件箱读，不从存储逐个读。
+  - 预测：每个种子的汇总损失都在 1 到 4 轮；每层交接不变，T 约 44 轮（不加干预时是 44、58、50）。
 

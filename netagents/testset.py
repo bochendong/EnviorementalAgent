@@ -156,6 +156,9 @@ SUITES: dict[str, list[Case]] = {
     "netscale-pilot": [netscale_case("fixed", n, TEST_SEEDS[:3], g) for g in NETSCALE_GRAINS for n in NETSCALE_PILOT],
     # do agents beyond one per task help? an 8-wide problem with one agent per task (8) and two (16), and 4 and
     # 12 around them (docs/netscale-predictions.md, third prediction)
+    # the interventions (designs peers-columns on 32 agents, peers-msgjoin on 16): the same cases as netscale's,
+    # so that each pairs with the plain peers runs seed by seed
+    "netscale-intervene": [netscale_case("fixed", n, TEST_SEEDS[:3], 4) for n in (16, 32)],
     "netscale-slack": [netscale_case("w8", n, TEST_SEEDS[:3], 4, width=8) for n in (4, 8, 12, 16)],
     "netscale": [netscale_case(f, n, TEST_SEEDS[:5], g) for g in NETSCALE_GRAINS for f in ("fixed", "scaled")
                  for n in NETSCALE_SIZES],

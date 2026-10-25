@@ -594,9 +594,13 @@ class Peers(Design):
     roles, no orchestrator, nothing prescribed about how to share the work. With one agent it is a single
     agent with the same briefing and tools, so a team's speed-up is measured against the same design."""
 
+    hint = ""  # an intervention's rule, added to the protocol of a team (PeersHint)
+
     async def run(self, env, model, settings, calls):
         names = list(env.public()["agents"])
         protocol = PEERS_PROTOCOL.format(n=len(names)) if len(names) > 1 else PEERS_ALONE
+        if self.hint and len(names) > 1:
+            protocol += " " + self.hint
         ms = [self.member(env, a, model, settings, protocol) for a in names]
         per = calls // len(ms)
         for r in range(self.rounds):  # a member that stops talking with calls left is prompted to go on
@@ -606,6 +610,22 @@ class Peers(Design):
             await asyncio.gather(*(m.turn("Begin." if r == 0 else "Continue: the problem is not solved yet.",
                                           per - m.calls) for m in live))
         return [m.report() for m in ms]
+
+
+# Interventions on the network-scale study's mechanisms (docs/netscale-predictions.md): the peers design with one
+# rule added, everything else unchanged.
+COLUMNS_RULE = ("The work is split by column, fixed in advance: agent aK does the tasks whose index is K (column K: "
+                "L0.K, L1.K, L2.K and so on, in every layer) and no others, and a0 also does the final task. If no task "
+                "has your index, take no task: wait until the problem is solved. Do not split into crews or take "
+                "another column's tasks.")
+MESSAGE_JOIN_RULE = ("When you finish a task of the last layer (an input of the final task), send its answer to "
+                     "everyone in one message at once. Whoever does the final task gathers those answers from its "
+                     "inbox (one read brings every message that has arrived), not from the store one key at a time.")
+
+
+@dataclass
+class PeersHint(Peers):
+    hint: str = ""
 
 
 # ====================================================================== Kim et al. 2025, ported
@@ -839,6 +859,12 @@ DESIGNS: dict[str, Design] = {d.name: d for d in [
           "once, nothing prescribed about sharing the work", "baseline", "team",
           ("not from a paper: the plainest team, so that what is measured is the agents' own coordination",),
           rounds=3),
+    PeersHint("peers-columns", "Peers, one column each (intervention)", "the network-scale study: peers with the "
+              "assignment fixed, one column per agent, no second crew", "baseline", "team",
+              ("peers plus COLUMNS_RULE: agents beyond the width take no task",), rounds=3, hint=COLUMNS_RULE),
+    PeersHint("peers-msgjoin", "Peers, join by messages (intervention)", "the network-scale study: peers with the "
+              "final task's inputs sent as messages and gathered from the inbox", "baseline", "team",
+              ("peers plus MESSAGE_JOIN_RULE",), rounds=3, hint=MESSAGE_JOIN_RULE),
     ReAct("react", "ReAct", "Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; "
           "code: ysymyth/ReAct, noahshinn/reflexion (MIT)", "port", "solo",
           ("native tool calls instead of Thought/Action text lines, with one sentence added to the instruction: "
