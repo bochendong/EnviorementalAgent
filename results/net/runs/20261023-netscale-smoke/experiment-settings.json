@@ -1,0 +1,65 @@
+{
+  "run": "20261023-netscale-smoke",
+  "source_commit": "0b8335b768aa6782492efc6f4260dd254739cc0b",
+  "source": "/scratch/bdong/worldseeds/code/0b8335b-20261023-netscale-smoke",
+  "settings": {
+    "ACCOUNT": "rrg-hup_gpu",
+    "CPU_ACCOUNT": "def-hup-ab_cpu",
+    "GPU_ACCOUNT": "rrg-hup_gpu",
+    "STAGE": "netscale-smoke",
+    "RUN": "20261023-netscale-smoke",
+    "TIME": "0-02:00",
+    "PACK": "1",
+    "NETSCALE_DESIGNS": "peers",
+    "GPU_RESOURCE": "h100:1",
+    "GPU_CPUS": "4",
+    "GPU_MEM": "32G",
+    "GPU_DEPENDENCY": "",
+    "WS_TIMEOUT": "900",
+    "WS_THINKING": "1",
+    "WS_TOOL_CHOICE": "required",
+    "WS_MAX_TOKENS": "3072",
+    "WS_TEMPERATURE": "0.6",
+    "WS_TOP_P": "0.95",
+    "WS_TOP_K": "20",
+    "MODEL_ID": "Qwen/Qwen3-8B",
+    "TP": "1",
+    "SERVER_MODE": "venv",
+    "EXTRA_VLLM_ARGS": "",
+    "MAX_MODEL_LEN": "65536",
+    "WS_CONTEXT_TOKENS": "39321",
+    "WS_CHARS_PER_TOKEN": "1.5",
+    "WS_ROOT": "/scratch/bdong/worldseeds/code/0b8335b-20261023-netscale-smoke",
+    "WS_STORE": "/scratch/bdong/worldseeds",
+    "NETAGENTS_PARALLEL": "2",
+    "NETAGENTS_TRANSCRIPTS": "1",
+    "PYTHONUNBUFFERED": "1",
+    "SEEDS": "1",
+    "DRY": "0"
+  },
+  "created_at_utc": "2026-10-23T20:00:38.583285+00:00",
+  "expected_gpu_jobs": 1,
+  "expected_cpu_summary_jobs": 1,
+  "expected_runs": 2,
+  "sizes": [
+    1,
+    8
+  ],
+  "seeds": [
+    100
+  ],
+  "problem": {
+    "provider": "dag",
+    "width": 16,
+    "depth": 4,
+    "grain": 1
+  },
+  "stage": "prepared",
+  "jobs": [],
+  "verification": {
+    "nibi_focused_tests_passed": 4,
+    "suite_shape_verified": true
+  },
+  "trace_coverage": "Both smoke cases have one seed; both save environment events and retained member conversations (2 traces).",
+  "scope": "Submit one smoke GPU job and its CPU summary now. The user conditionally authorized a new pilot (1/2/4/8 agents, grains1/4, 3 seeds;24 runs) only after this smoke passes. Verify both records and zero LLM errors, single-agent success and b near1; do not expand if the gate is ambiguous. No full netscale, automatic retry, or alternate settings. The previously cancelled periodic monitor is not recreated."
+}
