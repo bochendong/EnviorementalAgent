@@ -168,6 +168,29 @@ The primary claim concerns the handoff loss, measured per layer from the traces,
 python -m netagents.codex_netscale --suite netscale-slack --out results/net/runs/<run>/netscale-slack
 ```
 
+## Result on the 8-wide problem (2026-10-25)
+
+`results/net/runs/20261025-codex-dag-w8-slack-06`: 8 and 16 agents, seeds 100-102; 4 and 12 agents were not run. Every node's whole four-step apply chain was audited.
+
+| seed | T, 8 agents | T, 16 agents | loss per layer, 8 | loss per layer, 16 | join lost, 8 / 16 |
+|---|---|---|---|---|---|
+| 100 | 38 | 34 | 3.3 | 2.0 | 2 / 2 |
+| 101 | 40 | 35 | 3.7 | 2.3 | 3 / 2 |
+| 102 | 38 | 35 | 3.3 | 2.3 | 2 / 2 |
+
+- **The primary prediction held on every seed.** 16 agents lost less per layer than 8 (mean 2.2 against 3.4), and T(16) < T(8) (34.7 against 38.7).
+- **The numbers did not.** The prediction was T = 42 and 37, with losses of 4.5 and 2.7. Both teams were about 3 rounds faster, and both losses were smaller.
+- **The 16-agent teams formed two crews themselves, out of sample.** On all three seeds, a0-a7 did layers 0 and 2 and a8-a15 did layers 1 and 3, as the tasks each one actually had accepted show (`coordination-evidence.json`). The 8-agent teams worked by column.
+- **The secondary prediction (store pulls at the join) had nothing to test.** No join pulled from the store.
+
+Exploratory, not predicted: the loss per layer grows with the width. With one crew, it was 3.4 at width 8 against 4.1-5.1 at width 16; with two crews, 2.2 against 2.7. Each layer's handoff has more answers to pass on, and more messages to read, when the layer is wider.
+
+What this does and does not show:
+
+- Two shapes, six seeds: wherever there were twice as many agents as tasks in a layer, the team split into two crews and lost less per layer.
+- That is an association that replicated out of sample. It is not yet a cause: the teams that formed crews also changed how they shared answers.
+- `peers-columns` (below) is the causal test.
+
 ## Fourth prediction: two interventions (2026-10-25, before any run of them)
 
 Suite `netscale-intervene`: the fixed 16 x 4 problem, grain 4, seeds 100-102, the same cases as the plain peers runs above, so that each run pairs with its plain run seed by seed. Each intervention is the peers design with one rule added (`netagents/designs.py`); nothing else changes.
@@ -245,4 +268,13 @@ python -m netagents.codex_netscale --suite netscale-intervene --design peers-msg
 - **汇总改用消息（16 人，`peers-msgjoin`）**：
   - 设置：最后一层的答案一完成就发给所有人，汇总者从收件箱读，不从存储逐个读。
   - 预测：每个种子的汇总损失都在 1 到 4 轮；每层交接不变，T 约 44 轮（不加干预时是 44、58、50）。
+
+**宽 8 的结果（10 月 25 日）**：
+
+- **主要预测在每个种子上都成立**：16 人每层交接损失低于 8 人（平均 2.2 对 3.4 轮），而且 T(16) < T(8)（34.7 对 38.7）。
+- **具体数值没有命中**：两组都比预测快了约 3 轮。
+- **16 人在新形状上又自发分成了两班**（a0 到 a7 做第 0、2 层，a8 到 a15 做第 1、3 层），实际接受的任务也印证了这一点。
+- **事后观察**：题目越宽，每层交接损失越大。
+
+结论：分班与交接损失降低之间的关联，在样本外得到了复现；因果检验要靠不准分班的 `peers-columns`。
 
