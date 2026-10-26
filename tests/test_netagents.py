@@ -566,7 +566,7 @@ def test_history_is_trimmed_before_every_model_call(mock_llm, monkeypatch):
 
 
 def test_intervention_designs_add_one_rule(mock_llm):
-    from netagents.designs import COLUMNS_RULE, DESIGNS, MESSAGE_JOIN_RULE, PEERS_PROTOCOL, Member
+    from netagents.designs import COLUMNS_RULE, DESIGNS, LEDGER_RULE, MESSAGE_JOIN_RULE, PEERS_PROTOCOL, Member
     from netagents.evaluate import run_one
     from netagents.testset import SUITES, Case
 
@@ -581,10 +581,12 @@ def test_intervention_designs_add_one_rule(mock_llm):
     Member.__post_init__ = spy
     try:
         case = Case("dag/fixed/tiny", "dag/fixed", [0], opt={"agents": 3, "width": 2, "depth": 2}, lockstep=True)
-        for name, rule in (("peers-columns", COLUMNS_RULE), ("peers-msgjoin", MESSAGE_JOIN_RULE)):
+        for name, rule in (("peers-columns", COLUMNS_RULE), ("peers-msgjoin", MESSAGE_JOIN_RULE),
+                           ("peers-ledger", LEDGER_RULE)):
             seen.clear()
             r = run_one(DESIGNS[name], case, 0, model, settings, 9)
             assert r["design"] == name and seen == [PEERS_PROTOCOL.format(n=3) + " " + rule] * 3
+            assert all(("ledger" in m) == (name == "peers-ledger") for m in r["members"])
         seen.clear()
         run_one(DESIGNS["peers"], case, 0, model, settings, 9)
         assert seen == [PEERS_PROTOCOL.format(n=3)] * 3
@@ -607,3 +609,98 @@ def test_lockstep_runs_save_their_progress(mock_llm, tmp_path):
     assert sum(state["ops"].values()) == sum(r["ops"].values())
     if r["steps"] >= 20:
         assert (tmp_path / "progress" / "peers__tiny__0.trace.jsonl.gz").exists()
+
+
+def _walk(env, raw, rounds):
+    """Members that work down the full task list in order, as the Qwen3-8B team of the 2026-10-25 smoke did
+    (results/net/runs/20261023-netscale-smoke): apply a task from inputs they know (recomputing an input they
+    lack), submit, go on to the next. With a ledger they move the first task it lists as open to the front and keep
+    the answers it hands back. Returns the calls made until the episode was over."""
+    import re
+
+    names, order = list(raw.agents), list(raw.tasks)
+    deps = {t: list(raw.tasks[t].deps) for t in order}
+    known = {a: {} for a in names}
+    queue = {a: list(order) for a in names}
+    todo = {a: None for a in names}  # a value waiting to be submitted: (task, value)
+    calls = 0
+    for _ in range(rounds):
+        for a in names:
+            if raw.done:
+                return calls
+            calls += 1
+            if todo[a]:
+                task, v = todo[a]
+                todo[a] = None
+                obs = env.step(a, "submit", {"task": task, "artifact": str(v)})
+            else:
+                task = queue[a][0]
+                while any(d not in known[a] for d in deps[task]):
+                    task = next(d for d in deps[task] if d not in known[a])
+                x = [known[a][d] for d in deps[task]] or int(re.search(r"x = (\d+)", raw.tasks[task].text).group(1))
+                obs = env.step(a, "apply", {"task": task, "x": x})
+                if "f(x)" in obs:
+                    known[a][task] = obs["f(x)"]
+                    todo[a] = (task, obs["f(x)"])
+            if obs.get("answer") is not None:
+                known[a][obs["task"]] = int(obs["answer"])
+            for t in obs.get("open_now", []):
+                known[a].update({d: int(v) for d, v in t.get("inputs", {}).items()})
+            queue[a] = [t for t in queue[a] if t not in known[a]]
+            if obs.get("open_now"):
+                first = obs["open_now"][0]["id"]
+                queue[a] = [first] + [t for t in queue[a] if t != first]
+    return calls
+
+def test_ledger_stops_a_team_redoing_done_tasks():
+    from netagents.client import LocalEnv
+    from netagents.designs import Guarded, Ledger
+    from netagents.evaluate import failure_signals
+    from worldseeds.net import presets
+
+    def team(ledger):
+        raw = presets.build("dag/fixed", opt={"agents": 8, "width": 16, "depth": 4, "grain": 1})
+        raw.reset(100)
+        env = LocalEnv(raw)
+        led = Ledger(env, list(raw.agents)) if ledger else None
+        calls = _walk(Guarded(env, led) if ledger else env, raw, 400)
+        return raw, calls, led
+
+    plain, plain_calls, _ = team(False)
+    led_env, led_calls, led = team(True)
+    assert plain.solved and led_env.solved
+    sig = failure_signals(plain), failure_signals(led_env)
+    # without the ledger every member redoes every task: most submissions are refused as already done
+    assert sig[0]["wrong_submissions"] > 300 and sig[0]["duplicate_work"] > 300
+    assert sig[1]["wrong_submissions"] == 0 and sig[1]["duplicate_work"] < sig[0]["duplicate_work"] // 4
+    assert led_calls < plain_calls // 2 and led_env.actions < plain.actions // 3
+    hits = {k: sum(c[k] for c in led.counts.values()) for k in ("done_calls", "done_submits", "taken", "cached")}
+    assert hits["done_submits"] == 0 and sum(hits.values()) > 0
+
+
+def test_ledger_answers_from_the_record_without_an_action():
+    from netagents.client import LocalEnv
+    from netagents.designs import Guarded, Ledger
+    from worldseeds.net import presets
+
+    raw = presets.build("dag/fixed", opt={"agents": 2, "width": 2, "depth": 1, "grain": 1})
+    raw.reset(0)
+    env = LocalEnv(raw)
+    led = Ledger(env, ["a0", "a1"])
+    g = Guarded(env, led)
+    start = int(raw.tasks["L0.0"].text.split("x = ")[1].split(".")[0])
+    v = g.step("a0", "apply", {"task": "L0.0", "x": start})["f(x)"]
+    acts = raw.actions
+    assert "working on L0.0" in g.step("a1", "apply", {"task": "L0.0", "x": start})["error"]  # a teammate is on it
+    again = g.step("a0", "apply", {"task": "L0.0", "x": start})
+    assert again["cached"] and again["f(x)"] == v and raw.actions == acts  # a repeat costs nothing
+    ok = g.step("a0", "submit", {"task": "L0.0", "artifact": str(v)})
+    assert ok["ok"] and [t["id"] for t in ok["open_now"]] == ["L0.1"]
+    late = g.step("a1", "submit", {"task": "L0.0", "artifact": str(v)})
+    assert not late["ok"] and late["answer"] == str(v) and late["ledger"]
+    seen = g.step("a1", "apply", {"task": "L0.0", "x": start})
+    assert seen["answer"] == str(v) and "already done by a0" in seen["note"]
+    assert led.counts["a1"] == {"done_calls": 1, "done_submits": 1, "taken": 1, "cached": 0}
+    assert raw.actions == acts + 1  # only a0's submission reached the environment
+    fin = g.step("a1", "apply", {"task": "FINAL", "x": 0})  # the final task opens only when both are done
+    assert "f(x)" in fin or "error" in fin

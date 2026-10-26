@@ -22,7 +22,10 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import re
 from dataclasses import dataclass, field, replace
+
+from worldseeds.net.env import ALL_NET_OPS
 
 from .tools import briefing, function_tools
 
@@ -596,11 +599,19 @@ class Peers(Design):
 
     hint = ""  # an intervention's rule, added to the protocol of a team (PeersHint)
 
+    def wrap(self, env, names):
+        """The environment as the members see it (PeersLedger puts the team's ledger in between)."""
+        return env
+
+    def extra(self, name: str) -> dict:
+        return {}
+
     async def run(self, env, model, settings, calls):
         names = list(env.public()["agents"])
         protocol = PEERS_PROTOCOL.format(n=len(names)) if len(names) > 1 else PEERS_ALONE
         if self.hint and len(names) > 1:
             protocol += " " + self.hint
+        env = self.wrap(env, names)
         ms = [self.member(env, a, model, settings, protocol) for a in names]
         per = calls // len(ms)
         for r in range(self.rounds):  # a member that stops talking with calls left is prompted to go on
@@ -609,7 +620,7 @@ class Peers(Design):
                 break
             await asyncio.gather(*(m.turn("Begin." if r == 0 else "Continue: the problem is not solved yet.",
                                           per - m.calls) for m in live))
-        return [m.report() for m in ms]
+        return [{**m.report(), **self.extra(m.name)} for m in ms]
 
 
 # Interventions on the network-scale study's mechanisms (docs/netscale-predictions.md): the peers design with one
@@ -626,6 +637,151 @@ MESSAGE_JOIN_RULE = ("When you finish a task of the last layer (an input of the 
 @dataclass
 class PeersHint(Peers):
     hint: str = ""
+
+
+LEDGER_RULE = ("The team's ledger is kept for you: a call on a task that is already done, or that a teammate is "
+               "working on, comes back at once (no action spent) with the task's answer if it has one and the tasks "
+               "open now; take one of those.")
+
+
+# The 2-hour Qwen3-8B smoke of 2026-10-25 (results/net/runs/20261023-netscale-smoke): a team of 8 spent its 888
+# calls and finished 53 of 65 tasks. Every member was briefed with the same list of open tasks and worked down it
+# without looking again, one task behind whoever was ahead: 250 of the 347 applies were on tasks already done, and
+# 262 of the 289 refused submissions were "already done by ...". The ledger is the bookkeeping a framework would
+# keep for such a team, kept by the harness between the members and the environment (which is not changed).
+class Ledger:
+    """A peers team's shared record: the answers its members handed in that were accepted, who is on which task,
+    and each member's own results. A call on a task already done, or on a task a teammate is working on, is
+    answered from the ledger without reaching the environment (no action, no round), with the answer if there is
+    one and the tasks open now; so is a member's repeat of a pure call it has made before. ``counts`` says, per
+    member, how often each happened."""
+
+    PURE = ("apply",)  # provider operations whose result depends on their arguments only
+    SHOWN = 6  # open tasks listed in an answer from the ledger
+    TASK_ID = re.compile(r"\b(?:L\d+\.\d+|FINAL)\b")
+
+    def __init__(self, env, names: list[str], stale: int = 3):
+        self.env, self.names, self.stale = env, list(names), stale
+        self.answers: dict[str, tuple[str, str]] = {}  # task -> (answer, who handed it in)
+        self.on: dict[str, tuple[str, int]] = {}  # member -> (task of its last provider call, round)
+        self.mine: dict[tuple, dict] = {}  # (member, op, args) -> observation, for pure ops
+        self.counts = {a: {"done_calls": 0, "done_submits": 0, "taken": 0, "cached": 0} for a in names}
+        self.net = set(ALL_NET_OPS)
+
+    def round(self) -> int:
+        r = getattr(self.env, "round", None)  # lockstep time, when the run has it
+        return r if isinstance(r, int) else self.env.observe(self.names[0])["round"]
+
+    def open_now(self, agent: str) -> dict:
+        """The tasks open and ready now, those a teammate is on left out, starting at a different place for each
+        member (so that a team does not crowd onto the first one), with the answers the ledger knows of the
+        tasks each one names."""
+        work = [t for t in self.env.observe(agent)["workable"] if t["id"] not in self.taken(agent)]
+        if work:
+            k = self.names.index(agent) * len(work) // len(self.names) if agent in self.names else 0
+            work = work[k:] + work[:k]
+        out = []
+        for t in work[:self.SHOWN]:
+            known = {d: self.answers[d][0] for d in self.TASK_ID.findall(t["text"])
+                     if d in self.answers and d != t["id"]}
+            out.append({"id": t["id"], "text": t["text"], **({"inputs": known} if known else {})})
+        return {"open_now": out}
+
+    def taken(self, agent: str) -> set[str]:
+        now = self.round()
+        return {t for b, (t, r) in self.on.items() if b != agent and t not in self.answers and now - r <= self.stale}
+
+    def before(self, agent: str, op: str, args: dict) -> dict | None:
+        """An answer from the ledger, or None: the call goes to the environment."""
+        task = args.get("task") if isinstance(args, dict) else None
+        if not isinstance(task, str):
+            return None
+        c = self.counts.setdefault(agent, {"done_calls": 0, "done_submits": 0, "taken": 0, "cached": 0})
+        if task in self.answers:
+            answer, by = self.answers[task]
+            if op == "submit":
+                c["done_submits"] += 1
+                return {"ok": False, "error": f"already done by {by}", "task": task, "answer": answer, "ledger": True,
+                        **self.open_now(agent)}
+            if op not in self.net:
+                c["done_calls"] += 1
+                return {"ok": True, "task": task, "note": f"{task} is already done by {by}; its accepted answer is "
+                        f"{answer}. Take an open task.", "answer": answer, "ledger": True, **self.open_now(agent)}
+            return None
+        if op in self.net:
+            return None
+        if task in self.taken(agent):
+            b = next(b for b, (t, _) in self.on.items() if t == task and b != agent)
+            c["taken"] += 1
+            return {"ok": False, "error": f"{b} is working on {task}; take another task", "ledger": True,
+                    **self.open_now(agent)}
+        hit = self.mine.get((agent, op, json.dumps(args, sort_keys=True))) if op in self.PURE else None
+        if hit is not None:
+            c["cached"] += 1
+            return {**hit, "cached": True}
+        return None
+
+    def after(self, agent: str, op: str, args: dict, obs: dict) -> dict:
+        task = args.get("task") if isinstance(args, dict) else None
+        if not isinstance(task, str):
+            return obs
+        if op == "submit":
+            if obs.get("ok"):
+                self.answers[task] = (str(args.get("artifact", "")).strip(), agent)
+                self.on.pop(agent, None)
+                return {**obs, **self.open_now(agent)}
+            if str(obs.get("error", "")).startswith("already done"):
+                return {**obs, **self.open_now(agent)}
+            return obs
+        if op not in self.net:
+            self.on[agent] = (task, self.round())
+            if op in self.PURE and obs.get("ok", True) and "error" not in obs:
+                self.mine[(agent, op, json.dumps(args, sort_keys=True))] = obs
+        return obs
+
+    def report(self, agent: str) -> dict:
+        return {"ledger": dict(self.counts.get(agent, {}))}
+
+
+class Guarded:
+    """The environment as a ledger team's member sees it: every call passes the ledger first."""
+
+    def __init__(self, env, ledger: Ledger):
+        self._inner, self.ledger = env, ledger
+        if hasattr(env, "astep"):
+            self.astep = self._astep
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+    def step(self, agent: str, op: str, args: dict | None = None) -> dict:
+        args = dict(args or {})
+        hit = self.ledger.before(agent, op, args)
+        return hit if hit is not None else self.ledger.after(agent, op, args, self._inner.step(agent, op, args))
+
+    async def _astep(self, agent: str, op: str, args: dict | None = None) -> dict:
+        args = dict(args or {})
+        hit = self.ledger.before(agent, op, args)
+        if hit is not None:
+            return hit
+        return self.ledger.after(agent, op, args, await self._inner.astep(agent, op, args))
+
+
+@dataclass
+class PeersLedger(Peers):
+    """Peers with the team's bookkeeping done by the harness (Ledger); the protocol says so in one sentence."""
+
+    hint: str = ""
+
+    def wrap(self, env, names):
+        self._ledger = None
+        if len(names) < 2:
+            return env  # one agent has no teammates to collide with
+        self._ledger = Ledger(env, names)
+        return Guarded(env, self._ledger)
+
+    def extra(self, name: str) -> dict:
+        return self._ledger.report(name) if getattr(self, "_ledger", None) else {}
 
 
 # ====================================================================== Kim et al. 2025, ported
@@ -865,6 +1021,12 @@ DESIGNS: dict[str, Design] = {d.name: d for d in [
     PeersHint("peers-msgjoin", "Peers, join by messages (intervention)", "the network-scale study: peers with the "
               "final task's inputs sent as messages and gathered from the inbox", "baseline", "team",
               ("peers plus MESSAGE_JOIN_RULE",), rounds=3, hint=MESSAGE_JOIN_RULE),
+    PeersLedger("peers-ledger", "Peers with a shared ledger (intervention)", "the network-scale study: peers whose "
+                "calls on done or taken tasks are answered by the harness from the team's ledger", "baseline", "team",
+                ("peers plus LEDGER_RULE; the harness answers calls on done tasks (with the accepted answer), on "
+                 "tasks a teammate called in the last 3 rounds, and a member's repeated applies, without an "
+                 "action; those calls are counted per member under 'ledger', not in the environment's metrics",),
+                rounds=3, hint=LEDGER_RULE),
     ReAct("react", "ReAct", "Yao et al., ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023; "
           "code: ysymyth/ReAct, noahshinn/reflexion (MIT)", "port", "solo",
           ("native tool calls instead of Thought/Action text lines, with one sentence added to the instruction: "
