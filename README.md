@@ -78,8 +78,14 @@ notes on the board and deliver orders. The page shows what the environment recor
 ```bash
 python -m netagents.replays                      # reference teams -> web/replays/codeworld.json
 python -m netagents.replays --llm                # LLM teams      -> web/replays/llm.json
+python -m netagents.replays --reference --dag results/net/runs/<run>/<suite>/traces/*.jsonl.gz   # netscale runs -> web/replays/dag.json
 python -m http.server -d web 8000                # open http://localhost:8000
 ```
+
+Network-scale runs on the DAG provider play in the same town: layer k of the DAG is district k and every task a
+machine, playback goes a lockstep round at a time, a panel shows the task graph filling in and tasks done over
+rounds against the scripted reference and the lower bound, and the **Network** overlay draws who passed answers
+to whom in the last rounds (gold: messages, blue: through the shared store).
 
 | | |
 |---|---|
