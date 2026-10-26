@@ -72,6 +72,9 @@ Sampling-and-voting scales with agent count on reasoning benchmarks \citep{li202
 Failure taxonomies attribute many multi-agent failures to inter-agent misalignment \citep{cemri2025fail}.
 Our environment makes decomposability a parameter (width, depth and grain) and gives the exact best case, so the cost of coordination can be measured in rounds.
 
+\paragraph{Parallel and pipelined LLM agents.}
+A growing line of systems work makes agents run in parallel or in a pipeline by design. LLMCompiler plans a DAG of tool calls and dispatches independent ones at once \citep{kim2024llmcompiler}; DynTaskMAS and TIPEX schedule ready nodes of a dependency graph across agents \citep{yu2025dyntaskmas,xu2026tipex}; M1-Parallel races several agent teams \citep{zhang2025m1parallel}; and StreamMA streams each reasoning step downstream so that the next agent starts before the previous one finishes \citep{yang2026streamma}. In all of these the schedule is engineered and success is measured in wall-clock latency on benchmarks. Closest to our question, Hogwild! Inference lets several workers share one KV cache and finds that they sometimes split the work without being told how \citep{rodionov2025hogwild}. We study the complementary case: no scheduler, agents that coordinate only through messages and a store, and a task whose optimal makespan is known. The two crews we observe are a pipeline that the agents build themselves, and we measure what it recovers against the bound.
+
 \paragraph{Parallel performance models.}
 Amdahl's law \citep{amdahl1967}, Brent's bound \citep{brent1974,graham1969}, bulk synchronous parallelism (BSP) \citep{valiant1990bsp} and the Universal Scalability Law (USL) \citep{gunther2007usl} describe how parallel programs scale. We test whether the last two predict LLM teams; neither does.
 
