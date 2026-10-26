@@ -40,7 +40,16 @@ export SERVER_MODE="${SERVER_MODE:-venv}"
 export VLLM_SIF="${VLLM_SIF:-$WS_STORE/vllm-openai.sif}"
 
 load_modules() {
-  module load StdEnv/2023 python/3.11 gcc cuda/12.6 2>/dev/null || module load python/3.11
-  module load opencv/4.13.0
-  module load "${RDKIT_MODULE:-rdkit/2025.09.4}"
+  # DeepGEMM's 128-bit inline PTX needs a newer NVCC than the default 12.6.
+  # An explicitly requested toolchain must fail closed, not silently fall back.
+  if [ -n "${CUDA_MODULE:-}" ]; then
+    module load StdEnv/2023 python/3.11 gcc "$CUDA_MODULE" || return
+  else
+    module load StdEnv/2023 python/3.11 gcc cuda/12.6 2>/dev/null || module load python/3.11 || return
+  fi
+  module load opencv/4.13.0 || return
+  module load "${RDKIT_MODULE:-rdkit/2025.09.4}" || return
+  if [ -n "${CUDA_MODULE:-}" ]; then
+    module is-loaded "$CUDA_MODULE" || { echo "Required CUDA module was replaced: $CUDA_MODULE" >&2; return 1; }
+  fi
 }

@@ -42,11 +42,16 @@ else
   if ! env "${vllm_driver_env[@]}" python -u - > "$SERVER_LOG" 2>&1 <<'PY'
 import json
 import os
+import shutil
+import subprocess
 import torch
 from vllm.utils.import_utils import import_pynvml
 
 print(json.dumps({"phase": "GPU preflight", "cuda_visible_devices": os.environ.get("CUDA_VISIBLE_DEVICES"),
                   "torch": torch.__version__, "cuda_build": torch.version.cuda,
+                  "cuda_module": os.environ.get("CUDA_MODULE"), "cuda_home": os.environ.get("CUDA_HOME"),
+                  "nvcc": shutil.which("nvcc"),
+                  "nvcc_version": subprocess.check_output(["nvcc", "--version"], text=True) if shutil.which("nvcc") else None,
                   "cuda_available": torch.cuda.is_available(), "device_count": torch.cuda.device_count(),
                   "nvml_preload": os.environ.get("LD_PRELOAD", "")}), flush=True)
 if not torch.cuda.is_available() or torch.cuda.device_count() < 1:

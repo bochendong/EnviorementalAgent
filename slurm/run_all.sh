@@ -89,7 +89,7 @@ else
   [ -f "$PLAN" ] || printf "experiment\tdesign\tjob\tcommand\n" > "$PLAN"
   { echo "commit $(git rev-parse HEAD)  ($(git rev-parse --abbrev-ref HEAD))"; echo "submitted $(date -Is)";
   git status --short | sed 's/^/changed /'; } >> "$RUN_DIR/commit.txt"
-{ echo "# $(date -Is), stage $STAGE"; for v in ACCOUNT CPU_ACCOUNT GPU_ACCOUNT GPU_RESOURCE GPU_CPUS GPU_MEM GPU_DEPENDENCY MODEL_ID SERVED_NAME TP MAX_MODEL_LEN EXTRA_VLLM_ARGS SERVER_MODE \
+{ echo "# $(date -Is), stage $STAGE"; for v in ACCOUNT CPU_ACCOUNT GPU_ACCOUNT GPU_RESOURCE GPU_CPUS GPU_MEM GPU_DEPENDENCY MODEL_ID SERVED_NAME TP MAX_MODEL_LEN EXTRA_VLLM_ARGS SERVER_MODE CUDA_MODULE \
   DESIGNS FRAMEWORKS SEEDS N TIME NETSCALE_DESIGNS WS_THINKING WS_MAX_TOKENS WS_CONTEXT_TOKENS NETAGENTS_PARALLEL; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
 fi
 
