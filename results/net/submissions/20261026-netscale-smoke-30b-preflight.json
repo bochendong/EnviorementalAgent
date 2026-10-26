@@ -1,0 +1,23 @@
+{
+  "source_commit": "0406489c534a4285c8436dd8411c78c951bb08d1",
+  "tests": [
+    "test_lockstep_runs_save_their_progress",
+    "test_history_is_trimmed_before_every_model_call"
+  ],
+  "passed": 2,
+  "elapsed_seconds": 27.97,
+  "environment": "Nibi existing venv-agent, mocked model only",
+  "suite": "netscale-smoke",
+  "cases": [
+    "dag/fixed-g1/n1",
+    "dag/fixed-g1/n8"
+  ],
+  "progress": "per-round JSON and environment event checkpoint every20 rounds",
+  "intended_resources": {
+    "gpu": "h100:1",
+    "cpus": 4,
+    "ram_gb": 64,
+    "time_hours": 6
+  },
+  "real_model_run_before_submission": false
+}

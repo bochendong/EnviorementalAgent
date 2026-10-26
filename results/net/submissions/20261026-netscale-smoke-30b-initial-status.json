@@ -1,0 +1,19 @@
+{
+  "observed_toronto": "2026-10-26T00:51:38.132224-04:00",
+  "jobs": [
+    {
+      "job": "25021202",
+      "design": "peers",
+      "stdout": "JobId=25021202 JobName=net-netscale-smoke UserId=bdong(3159057) GroupId=bdong(3159057) MCS_label=N/A Priority=1058583 Nice=0 Account=rrg-hup_gpu QOS=normal JobState=PENDING Reason=Priority Dependency=(null) Requeue=0 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=06:00:00 TimeMin=N/A SubmitTime=2026-10-26T00:51:22 EligibleTime=2026-10-26T00:51:22 AccrueTime=2026-10-26T00:51:22 StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-26T00:51:37 Scheduler=Main Partition=gpubase_bygpu_b2,gpubackfill AllocNode:Sid=l5:3291645 ReqNodeList=(null) ExcNodeList=(null) NodeList= NumNodes=1 NumCPUs=4 NumTasks=1 CPUs/Task=4 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=4,mem=64G,node=1,billing=12200,gres/gpu=1,gres/gpu:h100=1 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=4 MinMemoryNode=64G MinTmpDiskNode=0 Features=(null) DelayBoot=00:00:00 OverSubscribe=OK Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/scratch/bdong/worldseeds/code/0406489-20261026-netscale-smoke-30b/slurm/net_eval.sh SubmitLine=sbatch --account=rrg-hup_gpu --parsable --gpus-per-node=h100:1 --cpus-per-task=4 --mem=64G --job-name=net-netscale-smoke --time=0-06:00 --output=/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/logs/%x-%j.out --export=ALL,SUITE=netscale-smoke,DESIGNS=peers,ROUTE=case,OUT=/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/netscale-smoke/all,LOG_DIR=/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/logs,SEEDS=1 slurm/net_eval.sh WorkDir=/scratch/bdong/worldseeds/code/0406489-20261026-netscale-smoke-30b StdErr= StdIn=/dev/null StdOut=/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/logs/net-netscale-smoke-25021202.out TresPerNode=gres/gpu:h100:1 TresPerTask=cpu=4\n",
+      "stderr": "",
+      "code": 0
+    },
+    {
+      "job": "25021203",
+      "design": "summary",
+      "stdout": "JobId=25021203 JobName=net-netscale-smoke-summary UserId=bdong(3159057) GroupId=bdong(3159057) MCS_label=N/A Priority=1882660 Nice=0 Account=def-hup-ab_cpu QOS=normal JobState=PENDING Reason=Dependency Dependency=afterany:25021202(unfulfilled) Requeue=0 Restarts=0 BatchFlag=1 Reboot=0 ExitCode=0:0 RunTime=00:00:00 TimeLimit=00:30:00 TimeMin=N/A SubmitTime=2026-10-26T00:51:22 EligibleTime=Unknown AccrueTime=Unknown StartTime=Unknown EndTime=Unknown Deadline=N/A SuspendTime=None SecsPreSuspend=0 LastSchedEval=2026-10-26T00:51:22 Scheduler=Main Partition=cpubase_bycore_b1,cpubackfill AllocNode:Sid=l5:3291645 ReqNodeList=(null) ExcNodeList=(null) NodeList= NumNodes=1 NumCPUs=1 NumTasks=1 CPUs/Task=1 ReqB:S:C:T=0:0:*:* ReqTRES=cpu=1,mem=4G,node=1,billing=1000 AllocTRES=(null) Socks/Node=* NtasksPerN:B:S:C=0:0:*:* CoreSpec=* MinCPUsNode=1 MinMemoryNode=4G MinTmpDiskNode=0 Features=[sapphire|granite|mi300a|cascade] DelayBoot=00:00:00 OverSubscribe=OK Contiguous=0 Licenses=(null) LicensesAlloc=(null) Network=(null) Command=/scratch/bdong/worldseeds/code/0406489-20261026-netscale-smoke-30b/slurm/net_summary.sh SubmitLine=sbatch --account=def-hup-ab_cpu --parsable --job-name=net-netscale-smoke-summary --dependency=afterany:25021202 --output=/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/logs/%x-%j.out --export=ALL,DIR=/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/netscale-smoke slurm/net_summary.sh WorkDir=/scratch/bdong/worldseeds/code/0406489-20261026-netscale-smoke-30b StdErr= StdIn=/dev/null StdOut=/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/logs/net-netscale-smoke-summary-25021203.out TresPerTask=cpu=1\n",
+      "stderr": "",
+      "code": 0
+    }
+  ]
+}

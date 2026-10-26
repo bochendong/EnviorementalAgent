@@ -1,0 +1,12 @@
+/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/download-weights.sh: line 5: slurm/env.sh: No such file or directory
+[90mHint: A new version of huggingface_hub (2.3.0) is available! You are using version 2.1.1+computecanada.
+To update, run: hf update[0m
+[90mHint: The `hf-cli` skill is not installed. Run `hf skills add -g` to teach your AI agents how to use the `hf` CLI.[0m
+Still waiting to acquire lock on /scratch/bdong/worldseeds/models/Qwen3-30B-A3B-FP8/.cache/huggingface/.gitignore.lock (elapsed: 0.1 seconds)
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+[32m✓ Downloaded[0m
+  path: /scratch/bdong/worldseeds/models/Qwen3-30B-A3B-FP8
+  File "<stdin>", line 2
+    p=pathlib.Path('/scratch/bdong/worldseeds/results/net/runs/20261026-netscale-smoke-30b/weight-download-status.json');s=json.loads(p.read_text());s.update(state='complete' if sys.argv[1]=='0' else 'failed',exit_code=int(sys.argv[1]),finished_utc=datetime.datetime.now(datetime.timezone.utc).isoformat());t=p.with_suffix('.tmp');t.write_text(json.dumps(s,indent=2)+'
+                                                                                                                                                                                                                                                                                                                                                                               ^
+SyntaxError: unterminated string literal (detected at line 2)
