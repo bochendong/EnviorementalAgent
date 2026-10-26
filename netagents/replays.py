@@ -90,7 +90,7 @@ def reference_run(width: int, depth: int, n: int, seed: int, grain: int, fanin: 
     return ref, env.events
 
 
-def dag_replays(paths: list[str], with_reference: bool) -> list[dict]:
+def dag_replays(paths: list[str], with_reference: bool, skin: str = "campus") -> list[dict]:
     reps = []
     for path in paths:
         ev = read_trace(path)
@@ -102,14 +102,14 @@ def dag_replays(paths: list[str], with_reference: bool) -> list[dict]:
         design = name.split("__")[0]
         what = f"{shape['depth']} layers of {shape['width']} tasks and a final task, grain {shape['grain']}, seed {seed}"
         rep = dag_replay(ev, **shape, title=f"{design}: {n} agents (seed {seed})",
-                         description=f"The {design} team on {what}.", reference=ref)
+                         description=f"The {design} team on {what}.", reference=ref, skin=skin)
         reps.append(rep)
         print(f"{rep['title']:<50} {rep['dag']['rounds']} rounds (reference {ref['rounds']}, bound "
               f"{rep['dag']['lower_bound']}), {len(rep['sprints'][0]['events'])} scenes")
         if with_reference:
             r2 = dag_replay(ref_events, **shape, title=f"reference ({ref['sharing']}): {n} agents (seed {seed})",
                             description=f"The scripted reference team ({ref['sharing']} sharing) on {what}.",
-                            reference=ref)
+                            reference=ref, skin=skin)
             rep["dag"]["pair"] = r2["title"]
             if all(r["title"] != r2["title"] for r in reps):
                 reps.append(r2)
@@ -125,12 +125,14 @@ def main():
     ap.add_argument("--out", default="")
     ap.add_argument("--dag", nargs="+", default=[], metavar="TRACE", help="saved traces of DAG runs (netscale)")
     ap.add_argument("--reference", action="store_true", help="with --dag: also the scripted reference team's run")
+    ap.add_argument("--skin", choices=["seedville", "campus"], default="",
+                    help="how the page draws the town (default: seedville, campus for --dag)")
     a = ap.parse_args()
     here = os.path.join(os.path.dirname(__file__), "..", "web", "replays")
     if a.dag:
         out = a.out or os.path.join(here, "dag.json")
         with open(out, "w") as f:
-            json.dump({"replays": dag_replays(a.dag, a.reference)}, f, separators=(",", ":"), default=str)
+            json.dump({"replays": dag_replays(a.dag, a.reference, a.skin or "campus")}, f, separators=(",", ":"), default=str)
         print(f"wrote {out} ({os.path.getsize(out) / 1e6:.1f} MB)")
         return
     out = a.out or os.path.join(here, "llm.json" if a.llm else "codeworld.json")
@@ -150,7 +152,7 @@ def main():
             def policy(env, share=share):
                 solve_codeworld(env, share)
         raw = run(opt, net, a.seed, policy, a.universe)
-        reps.append(town_replay(raw, title, desc))
+        reps.append(town_replay(raw, title, desc, a.skin or "seedville"))
         m = raw.metrics()
         print(f"{title:<62} {m['done']}/{m['tasks']} delivered, {m['actions']} actions, {len(raw.events)} events")
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)

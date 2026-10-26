@@ -347,6 +347,9 @@ def machine(kind, v):
     return t.done()
 
 
+LOOKS_KINDS = ("mill", "churn", "rack", "press", "oven", "furnace", "anvil", "cart", "still", "shelf", "table")
+
+
 def looks():
     """One sprite per kind of machine (see worldseeds/codeworld/recipes.py LOOK)."""
     out = {}

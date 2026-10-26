@@ -33,8 +33,10 @@ def _short(x, n: int = 160) -> str:
     return s if len(s) <= n else s[:n] + "…"
 
 
-def town_replay(env: NetworkEnv, title: str = "", description: str = "") -> dict:
-    """The replay of everything ``env`` has recorded since its reset (CodeWorld provider, town theme)."""
+def town_replay(env: NetworkEnv, title: str = "", description: str = "", skin: str = "seedville") -> dict:
+    """The replay of everything ``env`` has recorded since its reset (CodeWorld provider, town theme). ``skin``
+    is how the page draws the town: "seedville" (a village, web/tools/kairoart.py) or "campus" (AgentCity, a
+    research campus, web/tools/campusart.py)."""
     p = env.provider
     u = getattr(p, "u", None)
     if p.name != "codeworld" or u is None or u.map is None:
@@ -129,7 +131,7 @@ def town_replay(env: NetworkEnv, title: str = "", description: str = "") -> dict
                          "target": list(pr.target), "dev": dev})
     m = env.metrics()
     budget = env.cfg.budget
-    return {"kind": "codeworld", "title": title or f"{len(names)} agents", "description": description,
+    return {"kind": "codeworld", "title": title or f"{len(names)} agents", "description": description, "skin": skin,
             "mode": "network", "team": len(names), "capacity": None, "walk": False, "batch": False,
             "board": env.cfg.board, "library": env.cfg.store, "post": env.cfg.messaging,
             "shortcuts": bool(u.map.shortcuts), "money": False, "policy": "network", "budget": budget,
@@ -141,7 +143,7 @@ def town_replay(env: NetworkEnv, title: str = "", description: str = "") -> dict
 
 
 def dag_replay(events: list[dict], width: int, depth: int, grain: int = 1, fanin: int = 2, title: str = "",
-               description: str = "", reference: dict | None = None) -> dict:
+               description: str = "", reference: dict | None = None, skin: str = "campus") -> dict:
     """The replay of a run on the DAG provider (worldseeds/net/providers/dag.py), told in the town: layer k of the
     DAG is district k (the final task has a district of its own), every task a machine there. ``events`` is a
     NetworkEnv's event log, or a saved trace (netagents/evaluate.py save_trace); every scene keeps its lockstep
@@ -262,7 +264,7 @@ def dag_replay(events: list[dict], width: int, depth: int, grain: int = 1, fanin
            "lower_bound": max(math.ceil(tasks * (grain + 1) / n), (depth + 1) * (grain + 1)),
            "reference": reference}
     budget = cfg.get("budget", 0)
-    return {"kind": "codeworld", "title": title or f"{n} agents on a DAG", "description": description,
+    return {"kind": "codeworld", "title": title or f"{n} agents on a DAG", "description": description, "skin": skin,
             "mode": "network", "team": n, "capacity": None, "walk": False, "batch": False,
             "board": cfg.get("board", True), "library": cfg.get("store", True), "post": cfg.get("messaging", True),
             "shortcuts": False, "money": False, "policy": "network", "budget": budget,

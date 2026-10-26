@@ -87,6 +87,10 @@ machine, playback goes a lockstep round at a time, a panel shows the task graph 
 rounds against the scripted reference and the lower bound, and the **Network** overlay draws who passed answers
 to whom in the last rounds (gold: messages, blue: through the shared store).
 
+A replay can be drawn in one of two skins: **SeedVille** (a village, `web/tools/kairoart.py`) or **AgentCity** (a
+research campus with labs, server racks, a data centre for the shared store and a relay tower for messages,
+`web/tools/campusart.py`). DAG replays use AgentCity; `--skin campus` draws CodeWorld runs there too.
+
 | | |
 |---|---|
 | ![districts](docs/images/workshops_districts.png) | ![a workshop](docs/images/workshops_closeup.png) |

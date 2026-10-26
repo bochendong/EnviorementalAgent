@@ -18,6 +18,18 @@ const KIND_COLOR = { bakery: "#e0823a", smithy: "#59606e", florist: "#e86a8a", m
 const KIND_TITLE = { bakery: "Bakery", smithy: "Smithy", florist: "Florist", mine: "Mine", clinic: "Clinic", inn: "Inn",
                      shop: "Shop", farm: "Farm" };
 const THEME_BG = { town: "#4f9a3a", farm: "#5aa040", beach: "#3f8ed8", mountain: "#6a8a48" };
+/* the AgentCity skin (web/tools/campusart.py): the same maps as a research campus */
+const CAMPUS = {
+  area: { town: "HQ", farm: "Compute Park", beach: "Waterfront", mountain: "Research Hill" },
+  bg: { town: "#2f3d52", farm: "#3a4150", beach: "#2e8fb4", mountain: "#2c6a44" },
+  kind: { bakery: "ML Lab", clinic: "Bio Lab", farm: "GPU Hall", florist: "Data Lab", mine: "Robotics", smithy: "Hardware",
+          inn: "Studio", shop: "Ops Center" },
+  building: { library: "data center", post: "relay tower", board: "big screen" },
+};
+function campus() { return !!(S.run && S.run.skin === "campus"); }
+function K() { return campus() ? "kc" : "k"; }
+function chKey(look) { return `ch_${campus() ? "eng_" : ""}${look}`; }
+function kindTitle(k) { return (campus() ? CAMPUS.kind[k] : KIND_TITLE[k]) || cap(k); }
 const TOP = 1e5;                      // depth of labels and speech above the maps
 const NAMES = ["Rosa", "Tomas", "Ivy", "Bram", "Lena", "Otto", "Mira", "Finn", "Hana", "Leo", "Clara", "Abe"];
 const ALL_LOOKS = NAMES.flatMap(n => Object.keys(COLORS).map(c => `${n}_${c}`));
@@ -47,10 +59,10 @@ function placeTitle(module) {
   if (!module) return "the plaza";
   if (module.includes(":")) {
     const [kind, d] = module.split(":");
-    return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[+d].name) + " " : "the ") + BUILDING_TITLE[kind];
+    return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[+d].name) + " " : "the ") + (campus() ? CAMPUS.building : BUILDING_TITLE)[kind];
   }
   const ws = workshop(module); if (!ws) return module;
-  const t = KIND_TITLE[ws.w.kind] || cap(ws.w.kind);
+  const t = kindTitle(ws.w.kind);
   return S.run.world.districts.length > 1 ? `${cap(ws.d.name)} ${t}` : `the ${t.toLowerCase()}`;
 }
 function owner(module) {
@@ -65,7 +77,7 @@ function chipText(fn) { return S.run.dag ? dagTask(fn) || verbOf(fn) : verbOf(fn
 /* ===================================================================== geometry */
 function worldMap() { return S.run.world.map; }
 function areaOf(name) { return worldMap().areas.find(a => a.name === name); }
-function areaTitle(a) { return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[a.district].name) + " " : "") + a.title; }
+function areaTitle(a) { return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[a.district].name) + " " : "") + (campus() ? CAMPUS.area[a.theme] : a.title); }
 /* the maps lie in one world grid (their offsets come from the engine), touching at their exits */
 function bounds() {
   if (S.B && S.B.run === S.run) return S.B;
@@ -130,8 +142,10 @@ class Boot extends Phaser.Scene {
     this.add.rectangle(GW / 2, GH / 2, 304, 14).setStrokeStyle(2, 0x7a4a26);
     this.load.on("progress", p => bar.width = 300 * p);
     this.load.atlas("k", `${A}kairo.png`, `${A}kairo.json`);
+    this.load.atlas("kc", `${A}campus.png`, `${A}campus.json`);
     this.load.atlas("ui", `${A}ui.png`, `${A}ui.json`);
-    for (const k of ALL_LOOKS) this.load.spritesheet(`ch_${k}`, `${A}chars/${k}.png`, { frameWidth: 16, frameHeight: 32 });
+    for (const k of ALL_LOOKS) for (const pre of ["", "eng_"])
+      this.load.spritesheet(`ch_${pre}${k}`, `${A}chars/${pre}${k}.png`, { frameWidth: 16, frameHeight: 32 });
   }
   create() {
     for (const k of this.textures.getTextureKeys().filter(k => k.startsWith("ch_")))
@@ -200,7 +214,7 @@ class Town extends Phaser.Scene {
     this.tweens.killAll(); this.time.removeAllEvents();
     this.children.removeAll(true);
     this.sprites = {}; this.shops = {}; this.machines = {}; this.waters = [];
-    this.cameras.main.setBackgroundColor("#1f3326");
+    this.cameras.main.setBackgroundColor(campus() ? "#18202c" : "#1f3326");
     const rnd = new Phaser.Math.RandomDataGenerator(["seedville"]);
     this.titles = []; this.storms = {};
     this.wild(rnd);
@@ -238,10 +252,10 @@ class Town extends Phaser.Scene {
     for (let Y = b.y0; Y <= b.y1; Y++) for (let X = b.x0; X <= b.x1; X++) {
       if (inside(X, Y)) continue;
       const p = isoG(X, Y), sea = Y >= seaY, trail = trails.has(`${X},${Y}`);
-      const img = this.add.image(p.x, p.y, "k", sea ? "water0" : trail ? "path_dirt" : "g_town").setOrigin(.5, 0).setDepth(-1e4);
+      const img = this.add.image(p.x, p.y, K(), sea ? "water0" : trail ? "path_dirt" : "g_town").setOrigin(.5, 0).setDepth(-1e4);
       if (sea) { this.waters.push(img); continue; }
       if (trail) continue;
-      if (rnd.frac() < .5) this.add.image(p.x, p.y + TH, "k", Y < 0 ? "tree_pine" : rnd.pick(["tree_round0", "tree_round1", "tree_pine"]))
+      if (rnd.frac() < (campus() ? .3 : .5)) this.add.image(p.x, p.y + TH, K(), Y < 0 && !campus() ? "tree_pine" : rnd.pick(["tree_round0", "tree_round1", "tree_pine"]))
         .setOrigin(.5, 1).setDepth(p.y + TH / 2);
     }
   }
@@ -256,7 +270,7 @@ class Town extends Phaser.Scene {
       a.grid.forEach((row, y) => [...row].forEach((ch, x) => { if ("=pb".includes(ch)) paths.push([x, y]); }));
       const n = a.theme === "town" ? 4 : 2;
       for (let k = 0; k < n && paths.length; k++) {
-        const key = `ch_${rnd.pick(looks)}`, start = rnd.pick(paths), c = centre(a, ...start);
+        const key = chKey(rnd.pick(looks)), start = rnd.pick(paths), c = centre(a, ...start);
         const sp = this.add.sprite(c.x, c.y, key, 0).setOrigin(.5, 1).setDepth(c.y + 2);
         const f = { sp, key, a, at: start };
         this.folk.push(f);
@@ -333,9 +347,9 @@ class Town extends Phaser.Scene {
       else if (ch === "f") f = "field";
       else if (ch === "~" || ch === "b") f = "water0";
       else if ("wim".includes(ch)) { const w = roomAt(gx, gy); f = w ? `floor_${w.kind}` : f; }
-      const img = this.add.image(p.x, p.y, "k", f).setOrigin(.5, 0).setDepth(-1e4);
+      const img = this.add.image(p.x, p.y, K(), f).setOrigin(.5, 0).setDepth(-1e4);
       if (f === "water0") this.waters.push(img);
-      if (ch === "b") this.add.image(p.x, p.y, "k", "pier").setOrigin(.5, 0).setDepth(-9e3);
+      if (ch === "b") this.add.image(p.x, p.y, K(), "pier").setOrigin(.5, 0).setDepth(-9e3);
       const stand = fr => this.stand(a, gx, gy, fr);
       if (ch === "T") stand({ town: rnd.pick(["tree_round0", "tree_round1"]), farm: rnd.pick(["tree_round0", "tree_round1"]),
         mountain: "tree_pine", beach: "tree_palm" }[theme]);
@@ -351,19 +365,19 @@ class Town extends Phaser.Scene {
     // the map's name, shown when zoomed out (the maps touch, so the roads themselves are the exits)
     const c = centre(a, W / 2, H / 2);
     const title = this.add.text(c.x, c.y, areaTitle(a), { fontFamily: "Pixelify Sans", fontSize: "28px", color: "#fff6df",
-      backgroundColor: THEME_BG[theme], padding: { x: 10, y: 3 } }).setOrigin(.5).setResolution(2).setDepth(TOP + 10).setAlpha(.85);
+      backgroundColor: (campus() ? CAMPUS.bg : THEME_BG)[theme], padding: { x: 10, y: 3 } }).setOrigin(.5).setResolution(2).setDepth(TOP + 10).setAlpha(.85);
     (this.titles = this.titles || []).push(title);
   }
 
   /* a town building (library, post office, notice board) */
   building(a, bd) {
     if (bd.kind === "board") { this.stand(a, bd.x, bd.y, "b_board"); return; }
-    const f = this.textures.getFrame("k", `b_${bd.kind}`), p = iso(a, bd.x, bd.y), n = bd.w + bd.h;
-    const img = this.add.image(p.x, p.y, "k", `b_${bd.kind}`)
+    const f = this.textures.getFrame(K(), `b_${bd.kind}`), p = iso(a, bd.x, bd.y), n = bd.w + bd.h;
+    const img = this.add.image(p.x, p.y, K(), `b_${bd.kind}`)
       .setOrigin(bd.h / n, (f.height - n * TH / 2) / f.height).setDepth(iso(a, bd.x + bd.w / 2, bd.y + bd.h / 2).y + TH / 2);
     const top = iso(a, bd.x + bd.w / 2, bd.y);
-    this.add.text(top.x, top.y - 30, { library: "Library", post: "Post office" }[bd.kind], { fontFamily: "Pixelify Sans",
-      fontSize: "10px", color: "#fff6df", backgroundColor: "#4a2a14", padding: { x: 4, y: 1 } })
+    this.add.text(top.x, top.y - 30, cap((campus() ? CAMPUS.building : BUILDING_TITLE)[bd.kind]), { fontFamily: "Pixelify Sans",
+      fontSize: "10px", color: "#fff6df", backgroundColor: campus() ? "#1f2a3a" : "#4a2a14", padding: { x: 4, y: 1 } })
       .setOrigin(.5, 1).setResolution(4).setDepth(TOP);
     return img;
   }
@@ -371,7 +385,7 @@ class Town extends Phaser.Scene {
   /* something standing on tile (gx, gy): its tile diamond is the bottom 16 rows of the frame */
   stand(a, gx, gy, frame, dz = 0) {
     const p = iso(a, gx, gy);
-    return this.add.image(p.x, p.y + TH, "k", frame).setOrigin(.5, 1).setDepth(p.y + TH / 2 + dz);
+    return this.add.image(p.x, p.y + TH, K(), frame).setOrigin(.5, 1).setDepth(p.y + TH / 2 + dz);
   }
 
   room(a, w) {
@@ -395,14 +409,14 @@ class Town extends Phaser.Scene {
     });
     const own = owner(w.module), top = iso(a, r.x + 3, r.y);
     const tasks = w.machines.map(m => m.task).filter(Boolean);
-    const label = this.add.text(top.x, top.y - 22, S.run.dag ? (tasks.join(" · ") || "idle") : `${KIND_TITLE[k]}${own ? " · " + nick(own) : ""}`, {
-      fontFamily: "Pixelify Sans", fontSize: "10px", color: "#fff6df", backgroundColor: own ? colorOf(own) : KIND_COLOR[k],
+    const label = this.add.text(top.x, top.y - 22, S.run.dag ? (tasks.join(" · ") || "idle") : `${kindTitle(k)}${own ? " · " + nick(own) : ""}`, {
+      fontFamily: "Pixelify Sans", fontSize: "10px", color: "#fff6df", backgroundColor: own ? colorOf(own) : campus() ? "#2f3d52" : KIND_COLOR[k],
       padding: { x: 4, y: 1 } }).setOrigin(.5, 1).setResolution(4).setDepth(TOP);
     this.shops[w.module] = { label, area: a.name };
   }
 
   dev(d) {
-    const key = `ch_${d.look.join("_")}`;
+    const key = chKey(d.look.join("_"));
     const p = placeSpot(d.home, d.name);
     const sh = this.add.ellipse(p.x, p.y, 12, 5, 0x000000, .3);
     const sp = this.add.sprite(p.x, p.y, key, 0).setOrigin(.5, 1);
@@ -943,7 +957,7 @@ function machineText(w, m) {
   }
   const k = S.run.devs.filter(d => S.books[d.name].includes(m.name)).map(d => d.look[0]);
   const state = S.broken && S.broken.has(m.name) ? " OUT OF ORDER." : S.drifted && S.drifted.has(m.name) ? " Re-tuned this sprint." : "";
-  return `${KIND_TITLE[w.kind]} · ${m.title || verbOf(m.name)}: ${m.in} → ${m.out}.${state} ` +
+  return `${kindTitle(w.kind)} · ${m.title || verbOf(m.name)}: ${m.in} → ${m.out}.${state} ` +
     (k.length ? `Knows its rule: ${k.join(", ")}.` : "Nobody knows its rule yet.");
 }
 
@@ -961,7 +975,7 @@ function renderMoney() {
   const score = d => Math.round(((S.coins[d.name] || 0) + 5 * (S.rep[d.name] || 0)) * factor);
   const flow = Object.entries(S.flows).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(" · ");
   $("money").innerHTML = `<div class="tre"><span>Treasury <i class="coin"></i>${S.treasury}</span><span>inequality (Gini) ${gini.toFixed(2)}</span></div>` +
-    devs.map((d, i) => `<div class="row"><img alt="" src="${A}portraits/${d.look.join("_")}.png"><span>${i === 0 ? "♛ " : ""}${d.look[0]}` +
+    devs.map((d, i) => `<div class="row"><img alt="" src="${A}portraits/${campus() ? "eng_" : ""}${d.look.join("_")}.png"><span>${i === 0 ? "♛ " : ""}${d.look[0]}` +
       `${d.generosity != null && S.run.policy !== "llm" ? ` <span>gives ${Math.round(d.generosity * 100)}%</span>` : ""}</span>` +
       `<b><i class="coin"></i>${S.coins[d.name] || 0}</b><span>★${S.rep[d.name] || 0} · score ${score(d)}</span></div>`).join("") +
     `<div class="legend">Score = coins + 5 × reputation, × ${factor.toFixed(2)} for how the town's goals are going.${S.tally.exploits ? ` Rule-bending attempts refused: ${S.tally.exploits}.` : ""}</div>` +
@@ -1068,13 +1082,13 @@ function render(last) {
     const role = S.run.dag ? (d.nick !== d.name ? d.name : "") : d.owns.length && S.run.mode !== "solo" ? `master of ${d.owns.map(placeTitle).join(", ").replace(/the /g, "")}` : "works alone";
     const pct = Math.max(0, 100 * S.budget[d.name] / sp.budget);
     const doing = S.active[d.name] ? ` · on ${S.active[d.name]}` : "";
-    return `<div class="dev${last && last.dev === d.name ? " active" : ""}"><img alt="" src="${A}portraits/${d.look.join("_")}.png">` +
+    return `<div class="dev${last && last.dev === d.name ? " active" : ""}"><img alt="" src="${A}portraits/${campus() ? "eng_" : ""}${d.look.join("_")}.png">` +
       `<div><div class="nm">${d.look[0]} ${S.run.money ? `<span class="coins"><i class="coin"></i>${S.coins[d.name] || 0} ★${S.rep[d.name] || 0}</span> ` : ""}<span class="role">${role}${doing}</span></div>` +
       `<div class="budget" title="${S.budget[d.name]} of ${sp.budget} actions left"><i style="width:${pct}%"></i></div>` +
       `<div class="chips">${chips || '<span class="cap">nothing in mind yet</span>'}</div>` +
       `<div class="cap">${S.run.dag ? `${book.length} task${book.length === 1 ? "" : "s"} handed in` : `${book.length}${capacity ? " / " + capacity : ""} rules in mind`} · ${S.budget[d.name]} actions left</div></div></div>`;
   }).join("");
-  $("devsLegend").textContent = S.run.dag ? "Chips are the tasks each agent has handed in (gold: just now). The bar is the budget left." :
+  $("devsLegend").textContent = S.run.dag ? "Chips are the tasks each agent has handed in (outlined: just now). The bar is the budget left." :
     "Chips are the rules each one keeps in mind (gold: just learned, red: just forgotten). The bar is the time left this sprint.";
   renderMaps();
   renderNews();
@@ -1099,8 +1113,9 @@ function renderDag() {
   const r = Math.max(2.5, Math.min(6, (H - 2 * pad) / D.width / 2.4));
   for (const t of D.tasks) {
     const s2 = st(t.id), p = at[t.id], rr = t.final ? r * 1.8 : r;
-    const fill = s2.state === "done" ? colorOf(s2.by) : s2.state === "working" ? "#fff6df" : ready(t) ? "#e5c588" : "#b9a27a";
-    const stroke = s2.state === "working" ? colorOf(s2.by) : "#4a2a14";
+    const c = campus();
+    const fill = s2.state === "done" ? colorOf(s2.by) : s2.state === "working" ? "#ffffff" : ready(t) ? (c ? "#dce6f2" : "#e5c588") : (c ? "#aeb9c8" : "#b9a27a");
+    const stroke = s2.state === "working" ? colorOf(s2.by) : c ? "#1f2a3a" : "#4a2a14";
     nodes += `<circle cx="${p.x}" cy="${p.y}" r="${rr}" fill="${fill}" stroke="${stroke}" stroke-width="${s2.state === "working" ? 2 : 1}"` +
       ` class="${s2.state === "working" ? "pulse" : ""}"><title>${t.id}${s2.by ? " · " + nick(s2.by) : ""}</title></circle>`;
   }
@@ -1132,9 +1147,22 @@ function renderDag() {
 }
 function esc(s) { return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
 
+/* the page's words and colours follow the run's skin */
+function skinPage() {
+  const c = campus();
+  document.body.classList.toggle("campus", c);
+  $("pageTitle").textContent = c ? "AgentCity" : "SeedVille Workshops";
+  $("pageTag").textContent = c ? "A research campus run by a network of agents: who works on what, who tells whom, and where the time goes."
+    : "A town too big for one head: a town, a farm, a beach and a mountain, apprentices, masters and the orders they fill together.";
+  $("logTitle").textContent = c ? "Event log" : "Town crier";
+  $("devsTitle").textContent = c ? "Agents" : "Apprentices";
+  document.title = c ? "AgentCity" : "SeedVille Workshops";
+}
+
 function chooseRun(k) {
   play(false);
   S.run = S.runs[k]; S.sprint = 0; S.pos = 0;
+  skinPage();
   $("sprint").innerHTML = S.run.sprints.map((s, i) =>
     `<option value="${i}">Sprint ${s.index}: ${s.metrics.done}/${s.metrics.projects} delivered</option>`).join("");
   const r = S.run, n = r.world.districts.reduce((m, d) => m + d.workshops.reduce((a, w) => a + w.machines.length, 0), 0);
