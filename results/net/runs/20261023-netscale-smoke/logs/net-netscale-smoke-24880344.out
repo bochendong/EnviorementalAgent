@@ -1,0 +1,4 @@
+waiting for vLLM on port 20344 (log: /scratch/bdong/worldseeds/results/net/runs/20261023-netscale-smoke/logs/vllm-24880344.log)
+server up after 160s
+dag/fixed-g1/n8                  seed 100 peers         solved False done 53/65 calls 888 tokens 12644437 errors 0 overflows 6 ops {'apply': 347, 'submit': 342, 'tasks': 140, 'send': 20}
+[2026-10-25T05:21:13.027] error: *** JOB 24880344 ON g8 CANCELLED AT 2026-10-25T05:21:13 DUE TO TIME LIMIT ***

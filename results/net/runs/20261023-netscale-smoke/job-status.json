@@ -1,0 +1,32 @@
+{
+  "observed_toronto": "2026-10-25T23:36:36.210176-04:00",
+  "commands": [
+    {
+      "cmd": [
+        "sacct",
+        "-X",
+        "-j",
+        "24880344,24880348",
+        "--format=JobID,State,Start,End,Elapsed,ExitCode,AllocTRES",
+        "-n",
+        "-P"
+      ],
+      "stdout": "24880344|TIMEOUT|2026-10-25T03:21:07|2026-10-25T05:21:13|02:00:06|0:0|billing=12200,cpu=4,gres/gpu:h100=1,gres/gpu=1,mem=32G,node=1\n24880348|COMPLETED|2026-10-25T05:21:21|2026-10-25T05:21:28|00:00:07|0:0|billing=1000,cpu=1,mem=4G,node=1\n",
+      "stderr": "",
+      "code": 0
+    },
+    {
+      "cmd": [
+        "squeue",
+        "-j",
+        "24880344,24880348",
+        "-h",
+        "-o",
+        "%i|%T|%R|%S|%M"
+      ],
+      "stdout": "",
+      "stderr": "",
+      "code": 0
+    }
+  ]
+}

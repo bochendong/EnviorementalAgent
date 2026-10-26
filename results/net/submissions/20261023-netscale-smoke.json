@@ -54,7 +54,7 @@
     "depth": 4,
     "grain": 1
   },
-  "stage": "submitted",
+  "stage": "timeout_incomplete",
   "jobs": [
     {
       "experiment": "netscale-smoke",
@@ -244,5 +244,21 @@
         "verified": true
       }
     ]
+  },
+  "final_results": {
+    "observed_toronto": "2026-10-25T23:36:36-04:00",
+    "gpu_state": "TIMEOUT",
+    "summary_state": "COMPLETED",
+    "records_expected": 2,
+    "records_saved": 1,
+    "single_agent": "missing_no_checkpoint",
+    "eight_agents": {
+      "solved": false,
+      "done": 53,
+      "tasks": 65,
+      "llm_errors": 0,
+      "thinking_output_fallbacks": 6
+    },
+    "pilot_gate": "failed_do_not_submit"
   }
 }
