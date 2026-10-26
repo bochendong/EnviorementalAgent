@@ -50,6 +50,8 @@ We build an environment where this bound holds exactly for LLM agents, and use i
 \textbf{(Q2)} Where, step by step, does the remaining time go?
 \textbf{(Q3)} Do teams organize themselves to recover it, and can we show that causally?
 
+\todo{Figure 1 teaser: split-screen replay (web/compare.html, PR \#2) of plain 32 agents (38 rounds) against no second crew (56 rounds); at round 30 half of the columns team's actions are waits. Export its SVG curve.}
+
 \paragraph{Contributions.}
 \begin{itemize}\setlength\itemsep{1pt}
 \item \textbf{An environment with exact bounds.} Tasks are chains of a hidden keyed hash with no repeated value, laid out as a layered DAG (\S\ref{sec:env}). Reasoning cannot skip an evaluation, so total work and span are hard lower bounds for any strategy, and every accepted answer is audited call by call.
