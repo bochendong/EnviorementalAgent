@@ -30,6 +30,7 @@ class Lockstep(LocalEnv):
         self.round = 0
         self.solved_at: int | None = None
         self.acted = {a: 0 for a in self.order}  # rounds in which each agent acted
+        self.on_round = None  # called after every round (evaluate.run_one saves a run's progress with it)
 
     def join(self, agent: str):
         self.live.add(agent)
@@ -66,6 +67,8 @@ class Lockstep(LocalEnv):
             self.round += 1
             if self.solved_at is None and self._env.solved:
                 self.solved_at = self.round
+            if self.on_round is not None:
+                self.on_round(self)
             for a, (until, fut, obs) in list(self.busy.items()):
                 if until <= self.round:
                     del self.busy[a]

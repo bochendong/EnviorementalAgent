@@ -15,9 +15,10 @@
 #          decomposable vs sequential tasks and shared vs split tools; one packed job (PACK=1)
 #   load   when is splitting the work worth it? CodeWorld of 4, 8, 12 modules, tools shared or split among
 #          four (LOAD_DESIGNS, default sas centralized decentralized); one packed job
-#   netscale-smoke  before the pilot, under 2 GPU hours: one single agent and one team of 8 on the fixed DAG,
-#          grain 1, one seed; every netscale stage runs 2 teams at once (NETAGENTS_PARALLEL) with replies of
-#          at most 3072 tokens (WS_MAX_TOKENS)
+#   netscale-smoke  before the pilot, at most 6 GPU hours: one single agent and one team of 8 on the fixed
+#          DAG, grain 1, one seed; every netscale stage runs 2 teams at once (NETAGENTS_PARALLEL) with replies
+#          of at most 3072 tokens (WS_MAX_TOKENS) and an FP8 KV cache (EXTRA_VLLM_ARGS); each run's progress
+#          is saved every round under <exp>/all/progress/. On one H100: MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 GPU_RESOURCE=h100:1
 #   netscale-pilot  agent-network scaling, the pilot: teams of 1, 2, 4, 8 identical agents ("peers") on one
 #          DAG problem of known work and span, 3 seeds, time in lockstep rounds against the scripted
 #          reference (netagents/scaling.py); one packed job. netscale: 1-32 agents, fixed and scaled problems,
@@ -158,7 +159,12 @@ PY
     # once and shorter replies keep every request well inside WS_TIMEOUT (the 2026-10-21 Nibi pilot timed out
     # with 8 runs at once and 8192-token replies: results/net/submissions/20261021-netscale-pilot-final-report.md)
     export NETAGENTS_PARALLEL="${NETAGENTS_PARALLEL:-2}" WS_MAX_TOKENS="${WS_MAX_TOKENS:-3072}"
-    [ "$exp" = netscale-smoke ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-02:00 ;;
+    # a team's members all ask at once each round, each with up to WS_CONTEXT_TOKENS of history: an FP8 KV
+    # cache holds twice as many tokens (Qwen3-30B-A3B-FP8 on one H100: about 40 GB of cache)
+    export EXTRA_VLLM_ARGS="${EXTRA_VLLM_ARGS:---kv-cache-dtype fp8}"
+    # a single agent takes 130 or more rounds one request at a time: the 2-hour smoke of 2026-10-25 ended
+    # before it was done (results/net/submissions/20261023-netscale-smoke-final-report.md)
+    [ "$exp" = netscale-smoke ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-06:00 ;;
   esac
   pack="${PACK:-$(case "$exp" in focus|load|netscale*) echo 1 ;; *) echo 0 ;; esac)}"
   if [ "${FRAMEWORKS:-0}" = 1 ] && { [ "$exp" = compat-framework ] || [ "$exp" = test ]; }; then

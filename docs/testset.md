@@ -170,6 +170,8 @@ How does a team of LLM agents scale on a problem that is larger than one agent, 
   - each seed's T, and how each run's team passed answers on (store, broadcast or batch).
 - **The pilot**: fixed, grain 1 and 4, N = 1, 2, 4, 8, 3 seeds (24 runs).
 - **On Nibi** (an open model served by vLLM), every netscale stage runs 2 teams at once, with replies of at most 3072 tokens. Each member's history is trimmed before every model call, not only at the start of a turn. The first Nibi pilot (2026-10-21) ran on the old recurrence DAG with 8 runs at once and 8192-token replies; its requests timed out and its histories outgrew the window (`results/net/submissions/20261021-netscale-pilot-final-report.md`).
+- **The smoke stage** runs for up to 6 hours with an FP8 KV cache. Each run's state is saved every round, and its events every 20 rounds, under `progress/`. In the 2-hour smoke of 2026-10-25, the single agent was still working when the job ended and left no record. Its team of 8 Qwen3-8B agents duplicated most of their work: 262 of 289 refused submissions were tasks already done. They spent the whole call budget and finished 53 of 65 tasks.
+- **On one H100**, use `MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 GPU_RESOURCE=h100:1`. Download the weights on a login node first.
 
 ```bash
 ACCOUNT=... STAGE=netscale-smoke bash slurm/run_all.sh     # first: 1 and 8 agents, one seed, under 2 GPU hours

@@ -104,14 +104,36 @@ def play(design, env, model, settings, calls) -> list[dict]:
     return asyncio.run(go())
 
 
+def save_progress(raw, lock, path: str, every: int = 20):
+    """A lockstep run's state after a round, at path.json (every round) and its events so far at
+    path.trace.jsonl.gz (every ``every`` rounds), so that a job stopped by its time limit still shows how far
+    each run got (the 2026-10-25 Nibi smoke lost its single agent's whole run that way)."""
+    import time
+
+    m = raw.metrics()
+    ops = Counter(e["op"] for e in raw.events if e.get("kind") == "op")
+    state = {"round": lock.round, "solved": m["solved"], "solved_step": lock.solved_at, "done": m["done"],
+             "tasks": m["tasks"], "actions": m["actions"], "acted": dict(lock.acted), "ops": dict(ops),
+             "wrong_submissions": sum(1 for e in raw.events if e.get("kind") == "op" and e["op"] == "submit"
+                                      and not e["obs"].get("ok")), "updated": time.time()}
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path + ".json.tmp", "w") as f:
+        json.dump(state, f)
+    os.replace(path + ".json.tmp", path + ".json")
+    if lock.round % every == 0:
+        save_trace(raw, path + ".trace.jsonl.gz")
+
+
 def run_one(design, case, seed, model, settings, calls, route: str | None = None, trace: str = "",
-            memory: str = "") -> dict:
+            memory: str = "", progress: str = "") -> dict:
     route = route or case.route
     if design.network_route:  # a copy: the registry's designs stay as they are
         design = replace(design, route=route)
     raw = case.build(design.variant, **({"memory_file": memory} if memory else {}))
     raw.reset(seed)
     env = Lockstep(raw) if case.lockstep else LocalEnv(raw)
+    if case.lockstep and progress:
+        env.on_round = lambda lock: save_progress(raw, lock, progress)
     reports = play(design, env, model, settings, calls)
     timing = {}
     if case.lockstep:  # the team's time and the scripted team's on the same problem (netagents/scaling.py)
@@ -295,7 +317,9 @@ def _chain(case, design: str, todo, memory: str, o: dict, bad, lock) -> list[dic
             if k < o["traces"] else ""
         try:  # a fresh client per run: an async client must not outlive the event loop it was made in
             r = {"model": cfg.model, "suite": o["suite"],
-                 **run_one(d, case, seed, lambda: make_model(cfg), settings, calls, o["route"], trace, memory)}
+                 **run_one(d, case, seed, lambda: make_model(cfg), settings, calls, o["route"], trace, memory,
+                           progress=os.path.join(o["out"], "progress",
+                                                 f"{d.name}__{case.id.replace('/', '_')}__{seed}"))}
         except Exception as e:  # noqa: BLE001 (one broken run must not stop the others; a rerun retries it)
             with lock:
                 bad.value += 1

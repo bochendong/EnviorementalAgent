@@ -591,3 +591,19 @@ def test_intervention_designs_add_one_rule(mock_llm):
     finally:
         Member.__post_init__ = orig
     assert [c.id for c in SUITES["netscale-intervene"]] == ["dag/fixed-g4/n16", "dag/fixed-g4/n32"]
+
+
+def test_lockstep_runs_save_their_progress(mock_llm, tmp_path):
+    from netagents.designs import DESIGNS
+    from netagents.evaluate import run_one
+    from netagents.testset import Case
+
+    model, settings = mock_llm
+    case = Case("dag/fixed/tiny", "dag/fixed", [0], opt={"agents": 3, "width": 2, "depth": 2}, lockstep=True)
+    path = str(tmp_path / "progress" / "peers__tiny__0")
+    r = run_one(DESIGNS["peers"], case, 0, model, settings, 60, progress=path)
+    state = json.load(open(path + ".json"))
+    assert state["round"] == r["steps"] and state["tasks"] == r["tasks"] and state["done"] == r["done"]
+    assert sum(state["ops"].values()) == sum(r["ops"].values())
+    if r["steps"] >= 20:
+        assert (tmp_path / "progress" / "peers__tiny__0.trace.jsonl.gz").exists()
