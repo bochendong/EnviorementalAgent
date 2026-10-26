@@ -18,10 +18,23 @@ const KIND_COLOR = { bakery: "#e0823a", smithy: "#59606e", florist: "#e86a8a", m
 const KIND_TITLE = { bakery: "Bakery", smithy: "Smithy", florist: "Florist", mine: "Mine", clinic: "Clinic", inn: "Inn",
                      shop: "Shop", farm: "Farm" };
 const THEME_BG = { town: "#4f9a3a", farm: "#5aa040", beach: "#3f8ed8", mountain: "#6a8a48" };
+/* the AgentCity skin (web/tools/campusart.py): the same maps as a research campus */
+const CAMPUS = {
+  area: { town: "HQ", farm: "Compute Park", beach: "Waterfront", mountain: "Research Hill" },
+  bg: { town: "#2f3d52", farm: "#3a4150", beach: "#2e8fb4", mountain: "#2c6a44" },
+  kind: { bakery: "ML Lab", clinic: "Bio Lab", farm: "GPU Hall", florist: "Data Lab", mine: "Robotics", smithy: "Hardware",
+          inn: "Studio", shop: "Ops Center" },
+  building: { library: "data center", post: "relay tower", board: "big screen" },
+};
+function campus() { return !!(S.run && S.run.skin === "campus"); }
+function K() { return campus() ? "kc" : "k"; }
+function chKey(look) { return `ch_${campus() ? "eng_" : ""}${look}`; }
+function kindTitle(k) { return (campus() ? CAMPUS.kind[k] : KIND_TITLE[k]) || cap(k); }
 const TOP = 1e5;                      // depth of labels and speech above the maps
 const NAMES = ["Rosa", "Tomas", "Ivy", "Bram", "Lena", "Otto", "Mira", "Finn", "Hana", "Leo", "Clara", "Abe"];
 const ALL_LOOKS = NAMES.flatMap(n => Object.keys(COLORS).map(c => `${n}_${c}`));
 const WALK_PX = 70;                   // townsfolk walking speed, pixels per second
+const NET_ROUNDS = 6;                 // DAG runs: a message stays on the network overlay this many rounds
 
 const $ = id => document.getElementById(id);
 const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
@@ -29,13 +42,13 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 /* ===================================================================== state */
 const S = {
   runs: [], run: null, sprint: 0, pos: 0, playing: false, speed: 3, timer: null, scene: null,
-  follow: true, followDev: null, view: null,
+  follow: true, followDev: null, view: null, showNet: true,
   // reconstructed from the replay up to `pos`
   books: {}, budget: {}, loc: {}, orders: {}, active: {}, tally: null, fresh: {}, gone: {},
 };
 
 function devOf(name) { return S.run.devs.find(d => d.name === name); }
-function nick(name) { const d = devOf(name); return d ? d.look[0] : name; }
+function nick(name) { const d = devOf(name); return d ? d.nick || d.look[0] : name; }
 function colorOf(name) { const d = devOf(name); return d ? COLORS[d.look[1]] : "#777"; }
 function workshop(module) {
   for (const d of S.run.world.districts) for (const w of d.workshops) if (w.module === module) return { d, w };
@@ -46,10 +59,10 @@ function placeTitle(module) {
   if (!module) return "the plaza";
   if (module.includes(":")) {
     const [kind, d] = module.split(":");
-    return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[+d].name) + " " : "the ") + BUILDING_TITLE[kind];
+    return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[+d].name) + " " : "the ") + (campus() ? CAMPUS.building : BUILDING_TITLE)[kind];
   }
   const ws = workshop(module); if (!ws) return module;
-  const t = KIND_TITLE[ws.w.kind] || cap(ws.w.kind);
+  const t = kindTitle(ws.w.kind);
   return S.run.world.districts.length > 1 ? `${cap(ws.d.name)} ${t}` : `the ${t.toLowerCase()}`;
 }
 function owner(module) {
@@ -57,11 +70,14 @@ function owner(module) {
   const d = S.run.devs.find(d => d.owns.includes(module)); return d ? d.name : null; }
 function moduleOf(fn) { return fn.split(".")[0]; }
 function verbOf(fn) { return fn.split(".")[1]; }
+/* DAG runs (netscale): every task is a machine; layer k is district k */
+function dagTask(fn) { const t = S.run.dag && S.run.dag.tasks.find(x => x.fn === fn); return t ? t.id : null; }
+function chipText(fn) { return S.run.dag ? dagTask(fn) || verbOf(fn) : verbOf(fn); }
 
 /* ===================================================================== geometry */
 function worldMap() { return S.run.world.map; }
 function areaOf(name) { return worldMap().areas.find(a => a.name === name); }
-function areaTitle(a) { return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[a.district].name) + " " : "") + a.title; }
+function areaTitle(a) { return (S.run.world.districts.length > 1 ? cap(S.run.world.districts[a.district].name) + " " : "") + (campus() ? CAMPUS.area[a.theme] : a.title); }
 /* the maps lie in one world grid (their offsets come from the engine), touching at their exits */
 function bounds() {
   if (S.B && S.B.run === S.run) return S.B;
@@ -126,8 +142,10 @@ class Boot extends Phaser.Scene {
     this.add.rectangle(GW / 2, GH / 2, 304, 14).setStrokeStyle(2, 0x7a4a26);
     this.load.on("progress", p => bar.width = 300 * p);
     this.load.atlas("k", `${A}kairo.png`, `${A}kairo.json`);
+    this.load.atlas("kc", `${A}campus.png`, `${A}campus.json`);
     this.load.atlas("ui", `${A}ui.png`, `${A}ui.json`);
-    for (const k of ALL_LOOKS) this.load.spritesheet(`ch_${k}`, `${A}chars/${k}.png`, { frameWidth: 16, frameHeight: 32 });
+    for (const k of ALL_LOOKS) for (const pre of ["", "eng_"])
+      this.load.spritesheet(`ch_${pre}${k}`, `${A}chars/${pre}${k}.png`, { frameWidth: 16, frameHeight: 32 });
   }
   create() {
     for (const k of this.textures.getTextureKeys().filter(k => k.startsWith("ch_")))
@@ -157,24 +175,52 @@ class Town extends Phaser.Scene {
     });
     this.input.on("pointerdown", p => { if (p.event.detail === 2) this.overview(); });
     seek(S.pos, true);
-    this.view(S.view || worldMap().plaza.area, true);
+    if (S.run.dag) this.viewDistrict(0, true); else this.view(S.view || worldMap().plaza.area, true);
   }
 
   update() {  // names of the maps when zoomed out; labels of workshops when zoomed in
     const far = this.cameras.main.zoom < 1.2;
     for (const t of this.titles || []) t.setVisible(far);
+    this.network();
+  }
+
+  /* who talks to whom: a line between two agents for the messages of the last rounds (thicker: more of them),
+     drawn between where they stand now */
+  network() {
+    const g = this.net; if (!g) return;
+    g.clear();
+    if (!S.showNet || !S.edges) return;
+    const now = S.round || 0;
+    for (const [k, e] of Object.entries(S.edges)) {
+      const age = now - e.last; if (age > NET_ROUNDS) continue;
+      const [a, b] = k.split("|"), A1 = this.sprites[a], B1 = this.sprites[b]; if (!A1 || !B1) continue;
+      const alpha = .85 * (1 - age / (NET_ROUNDS + 1)), w = Math.min(4, 1 + Math.log2(e.n));
+      g.lineStyle(w, e.kind === "store" ? 0x5fc4ff : 0xf2b632, alpha)
+        .lineBetween(A1.sp.x, A1.sp.y - 18, B1.sp.x, B1.sp.y - 18);
+    }
+  }
+
+  /* the camera on one district (a layer of the DAG): its four maps */
+  viewDistrict(d, instant) {
+    const as = worldMap().areas.filter(a => a.district === d); if (!as.length) return;
+    const W = worldMap().W, H = worldMap().H;
+    const xs = as.flatMap(a => [iso(a, 0, H).x, iso(a, W, 0).x]), ys = as.flatMap(a => [iso(a, 0, 0).y - 50, iso(a, W, H).y]);
+    const l = Math.min(...xs), r = Math.max(...xs), t = Math.min(...ys), b = Math.max(...ys);
+    S.view = `district:${d}`;
+    this.glide((l + r) / 2, (t + b) / 2, Math.min(GW / (r - l + 20), GH / (b - t + 20)), instant);
   }
 
   build() {
     this.tweens.killAll(); this.time.removeAllEvents();
     this.children.removeAll(true);
     this.sprites = {}; this.shops = {}; this.machines = {}; this.waters = [];
-    this.cameras.main.setBackgroundColor("#1f3326");
+    this.cameras.main.setBackgroundColor(campus() ? "#18202c" : "#1f3326");
     const rnd = new Phaser.Math.RandomDataGenerator(["seedville"]);
     this.titles = []; this.storms = {};
     this.wild(rnd);
     for (const a of worldMap().areas) this.area(a, rnd);
     this.links = this.add.graphics().setDepth(-2e4);
+    this.net = this.add.graphics().setDepth(TOP - 1);
     this.time.addEvent({ delay: 600, loop: true, callback: () => {
       const f = (this.time.now / 600 | 0) % 2 ? "water1" : "water0";
       for (const w of this.waters) w.setFrame(f);
@@ -206,10 +252,10 @@ class Town extends Phaser.Scene {
     for (let Y = b.y0; Y <= b.y1; Y++) for (let X = b.x0; X <= b.x1; X++) {
       if (inside(X, Y)) continue;
       const p = isoG(X, Y), sea = Y >= seaY, trail = trails.has(`${X},${Y}`);
-      const img = this.add.image(p.x, p.y, "k", sea ? "water0" : trail ? "path_dirt" : "g_town").setOrigin(.5, 0).setDepth(-1e4);
+      const img = this.add.image(p.x, p.y, K(), sea ? "water0" : trail ? "path_dirt" : "g_town").setOrigin(.5, 0).setDepth(-1e4);
       if (sea) { this.waters.push(img); continue; }
       if (trail) continue;
-      if (rnd.frac() < .5) this.add.image(p.x, p.y + TH, "k", Y < 0 ? "tree_pine" : rnd.pick(["tree_round0", "tree_round1", "tree_pine"]))
+      if (rnd.frac() < (campus() ? .3 : .5)) this.add.image(p.x, p.y + TH, K(), Y < 0 && !campus() ? "tree_pine" : rnd.pick(["tree_round0", "tree_round1", "tree_pine"]))
         .setOrigin(.5, 1).setDepth(p.y + TH / 2);
     }
   }
@@ -224,7 +270,7 @@ class Town extends Phaser.Scene {
       a.grid.forEach((row, y) => [...row].forEach((ch, x) => { if ("=pb".includes(ch)) paths.push([x, y]); }));
       const n = a.theme === "town" ? 4 : 2;
       for (let k = 0; k < n && paths.length; k++) {
-        const key = `ch_${rnd.pick(looks)}`, start = rnd.pick(paths), c = centre(a, ...start);
+        const key = chKey(rnd.pick(looks)), start = rnd.pick(paths), c = centre(a, ...start);
         const sp = this.add.sprite(c.x, c.y, key, 0).setOrigin(.5, 1).setDepth(c.y + 2);
         const f = { sp, key, a, at: start };
         this.folk.push(f);
@@ -252,6 +298,7 @@ class Town extends Phaser.Scene {
 
   /* the customers of this sprint's orders: they wait at the plaza and leave when served */
   syncCustomers(animate) {
+    if (S.run.dag) return;
     const sp = sprint(), key = `${S.runs.indexOf(S.run)}/${S.sprint}`;
     if (this.customerKey !== key) {
       for (const c of Object.values(this.customers)) c.sp.destroy();
@@ -300,9 +347,9 @@ class Town extends Phaser.Scene {
       else if (ch === "f") f = "field";
       else if (ch === "~" || ch === "b") f = "water0";
       else if ("wim".includes(ch)) { const w = roomAt(gx, gy); f = w ? `floor_${w.kind}` : f; }
-      const img = this.add.image(p.x, p.y, "k", f).setOrigin(.5, 0).setDepth(-1e4);
+      const img = this.add.image(p.x, p.y, K(), f).setOrigin(.5, 0).setDepth(-1e4);
       if (f === "water0") this.waters.push(img);
-      if (ch === "b") this.add.image(p.x, p.y, "k", "pier").setOrigin(.5, 0).setDepth(-9e3);
+      if (ch === "b") this.add.image(p.x, p.y, K(), "pier").setOrigin(.5, 0).setDepth(-9e3);
       const stand = fr => this.stand(a, gx, gy, fr);
       if (ch === "T") stand({ town: rnd.pick(["tree_round0", "tree_round1"]), farm: rnd.pick(["tree_round0", "tree_round1"]),
         mountain: "tree_pine", beach: "tree_palm" }[theme]);
@@ -318,19 +365,19 @@ class Town extends Phaser.Scene {
     // the map's name, shown when zoomed out (the maps touch, so the roads themselves are the exits)
     const c = centre(a, W / 2, H / 2);
     const title = this.add.text(c.x, c.y, areaTitle(a), { fontFamily: "Pixelify Sans", fontSize: "28px", color: "#fff6df",
-      backgroundColor: THEME_BG[theme], padding: { x: 10, y: 3 } }).setOrigin(.5).setResolution(2).setDepth(TOP + 10).setAlpha(.85);
+      backgroundColor: (campus() ? CAMPUS.bg : THEME_BG)[theme], padding: { x: 10, y: 3 } }).setOrigin(.5).setResolution(2).setDepth(TOP + 10).setAlpha(.85);
     (this.titles = this.titles || []).push(title);
   }
 
   /* a town building (library, post office, notice board) */
   building(a, bd) {
     if (bd.kind === "board") { this.stand(a, bd.x, bd.y, "b_board"); return; }
-    const f = this.textures.getFrame("k", `b_${bd.kind}`), p = iso(a, bd.x, bd.y), n = bd.w + bd.h;
-    const img = this.add.image(p.x, p.y, "k", `b_${bd.kind}`)
+    const f = this.textures.getFrame(K(), `b_${bd.kind}`), p = iso(a, bd.x, bd.y), n = bd.w + bd.h;
+    const img = this.add.image(p.x, p.y, K(), `b_${bd.kind}`)
       .setOrigin(bd.h / n, (f.height - n * TH / 2) / f.height).setDepth(iso(a, bd.x + bd.w / 2, bd.y + bd.h / 2).y + TH / 2);
     const top = iso(a, bd.x + bd.w / 2, bd.y);
-    this.add.text(top.x, top.y - 30, { library: "Library", post: "Post office" }[bd.kind], { fontFamily: "Pixelify Sans",
-      fontSize: "10px", color: "#fff6df", backgroundColor: "#4a2a14", padding: { x: 4, y: 1 } })
+    this.add.text(top.x, top.y - 30, cap((campus() ? CAMPUS.building : BUILDING_TITLE)[bd.kind]), { fontFamily: "Pixelify Sans",
+      fontSize: "10px", color: "#fff6df", backgroundColor: campus() ? "#1f2a3a" : "#4a2a14", padding: { x: 4, y: 1 } })
       .setOrigin(.5, 1).setResolution(4).setDepth(TOP);
     return img;
   }
@@ -338,7 +385,7 @@ class Town extends Phaser.Scene {
   /* something standing on tile (gx, gy): its tile diamond is the bottom 16 rows of the frame */
   stand(a, gx, gy, frame, dz = 0) {
     const p = iso(a, gx, gy);
-    return this.add.image(p.x, p.y + TH, "k", frame).setOrigin(.5, 1).setDepth(p.y + TH / 2 + dz);
+    return this.add.image(p.x, p.y + TH, K(), frame).setOrigin(.5, 1).setDepth(p.y + TH / 2 + dz);
   }
 
   room(a, w) {
@@ -361,14 +408,15 @@ class Town extends Phaser.Scene {
       this.machines[m.name] = { img, bulb, mark };
     });
     const own = owner(w.module), top = iso(a, r.x + 3, r.y);
-    const label = this.add.text(top.x, top.y - 22, `${KIND_TITLE[k]}${own ? " · " + nick(own) : ""}`, {
-      fontFamily: "Pixelify Sans", fontSize: "10px", color: "#fff6df", backgroundColor: own ? colorOf(own) : KIND_COLOR[k],
+    const tasks = w.machines.map(m => m.task).filter(Boolean);
+    const label = this.add.text(top.x, top.y - 22, S.run.dag ? (tasks.join(" · ") || "idle") : `${kindTitle(k)}${own ? " · " + nick(own) : ""}`, {
+      fontFamily: "Pixelify Sans", fontSize: "10px", color: "#fff6df", backgroundColor: own ? colorOf(own) : campus() ? "#2f3d52" : KIND_COLOR[k],
       padding: { x: 4, y: 1 } }).setOrigin(.5, 1).setResolution(4).setDepth(TOP);
     this.shops[w.module] = { label, area: a.name };
   }
 
   dev(d) {
-    const key = `ch_${d.look.join("_")}`;
+    const key = chKey(d.look.join("_"));
     const p = placeSpot(d.home, d.name);
     const sh = this.add.ellipse(p.x, p.y, 12, 5, 0x000000, .3);
     const sp = this.add.sprite(p.x, p.y, key, 0).setOrigin(.5, 1);
@@ -419,6 +467,13 @@ class Town extends Phaser.Scene {
 
   follow(name) {
     if (!S.follow || !name) return;
+    if (S.run.dag) {
+      const n = S.hot && Object.keys(S.hot).length ? S.hot : {};  // where this round's work is
+      if (!Object.keys(n).length) return;
+      const d = +Object.keys(n).sort((x, y) => n[y] - n[x] || x - y)[0];
+      if (S.view !== `district:${d}`) { this.viewDistrict(d); renderMaps(); }
+      return;
+    }
     const a = this.sprites[name].area;
     if (a && a !== S.view) { this.view(a); renderMaps(); }
   }
@@ -524,6 +579,18 @@ class Town extends Phaser.Scene {
       { x: A1.x, y: A1.y - 24, duration: Math.max(ms * .45, 200), ease: "Sine.easeInOut", onComplete: () => env.destroy() }] });
   }
 
+  /* a message: a dot flies from the sender to each receiver */
+  rays(a, tos, ms) {
+    if (!ms) return;
+    const A1 = this.sprites[a].sp;
+    for (const b of tos) {
+      const B1 = this.sprites[b] && this.sprites[b].sp; if (!B1) continue;
+      const dot = this.add.circle(A1.x, A1.y - 20, 2.5, 0xf2b632).setStrokeStyle(1, 0x26160e).setDepth(TOP + 4);
+      this.tweens.add({ targets: dot, x: B1.x, y: B1.y - 20, duration: Math.max(ms * .8, 250), ease: "Sine.easeInOut",
+        onComplete: () => dot.destroy() });
+    }
+  }
+
   flash(fn, ms) {
     const m = this.machines[fn]; if (!m || !ms) return;
     m.img.setTint(0xfff1b0);
@@ -598,15 +665,34 @@ function reset() {
   S.drifted = new Set(S.worldEvents.filter(e => e.kind === "drift").map(e => e.fn));
   S.storm = new Set(sp.storm || []);
   for (const e of S.worldEvents) say(eventText(e));
+  S.round = 0; S.edges = {}; S.writers = {}; S.hot = {};
+  S.tasks = {};
+  for (const t of (S.run.dag ? S.run.dag.tasks : [])) S.tasks[t.id] = { state: "pending", by: null };
+}
+
+/* DAG runs: the index after the last event of each round, so playback can go a round at a time */
+function roundEnds() {
+  const sp = sprint();
+  if (sp._ends) return sp._ends;
+  const ev = sp.events, ends = [];
+  for (let i = 0; i < ev.length; i++) if (i === ev.length - 1 || ev[i + 1].round !== ev[i].round) ends.push(i + 1);
+  return (sp._ends = ends);
+}
+function edge(a, b, kind) {
+  if (!a || !b || a === b) return;
+  const k = a < b ? `${a}|${b}` : `${b}|${a}`, e = S.edges[k] || (S.edges[k] = { n: 0, last: 0, kind });
+  e.n++; e.last = S.round; e.kind = kind;
 }
 
 /* apply one event; ms > 0 animates it */
 function apply(e, ms) {
   const sc = S.scene, who = e.dev, t = S.tally;
-  if (e.budget !== undefined) S.budget[who] = e.budget;
+  if (e.budget !== undefined && e.budget !== null) S.budget[who] = e.budget;
+  if (e.round !== undefined) { if (e.round !== S.round) S.hot = {}; S.round = e.round; }
   S.fresh[who] = null; S.gone[who] = [];
   switch (e.kind) {
     case "tool":
+      t.tools = (t.tools || 0) + 1;
       if (e.tool === "study" && e.args.function && !e.out.startsWith("Out of budget")) {
         sc.study(who, e.args.function, ms);
       }
@@ -642,11 +728,36 @@ function apply(e, ms) {
       say(`★★ ${g ? g.title : e.goal} is done!`);
       break;
     }
+    case "compute": {
+      t.compute = (t.compute || 0) + 1;
+      { const ws = workshop(moduleOf(e.fn)); if (ws) S.hot[ws.d.index] = (S.hot[ws.d.index] || 0) + 1; }
+      sc.study(who, e.fn, ms); sc.flash(e.fn, ms);
+      sc.float(who, `${e.task}: f(${e.x}) = ${e.y}`, "#f2b632", ms);
+      say(`${nick(who)} runs ${e.task}: f(${e.x}) = ${e.y}.`, true);
+      break;
+    }
+    case "message": {
+      t.letters++;
+      for (const to of e.to) edge(who, to, "msg");
+      sc.rays(who, e.to, ms); sc.emote(who, "emote_note", ms);
+      say(`${nick(who)} → ${e.broadcast ? "everyone" : e.to.map(nick).join(", ")}: “${e.text}”`);
+      break;
+    }
+    case "inbox":
+      t.inbox = (t.inbox || 0) + 1;
+      if (ms && e.n) sc.float(who, `inbox +${e.n}`, "#bfe6ff", ms);
+      say(`${nick(who)} reads its inbox: ${e.n} message${e.n === 1 ? "" : "s"}.`, true);
+      break;
+    case "wait":
+      t.wait = (t.wait || 0) + 1;
+      if (ms && S.speed <= 3) sc.emote(who, "emote_zzz", ms);
+      break;
     case "start":
+      if (S.tasks && S.tasks[e.project]) { S.tasks[e.project].state = "working"; S.tasks[e.project].by = who; }
       if (!S.orders[e.project]) break;  // a goal's part (see goal_start)
       S.orders[e.project].state = "working"; S.orders[e.project].by = who; S.active[who] = e.project;
       sc.emote(who, "emote_q", ms);
-      say(`${nick(who)} takes order ${e.project}: ${orderText(S.orders[e.project].p)}.`);
+      say(S.run.dag ? `${nick(who)} starts ${e.project}.` : `${nick(who)} takes order ${e.project}: ${orderText(S.orders[e.project].p)}.`);
       break;
     case "walk":
       S.loc[who] = e.to; t.walk += e.cost || 0;
@@ -716,12 +827,14 @@ function apply(e, ms) {
       break;
     case "read":
       t.read++;
+      edge(who, S.writers[e.fn], "store");
       sc.emote(who, "emote_note", ms);
       sc.float(who, `library +${1 + (e.also || []).length}`, "#bfe6ff", ms);
       say(`${nick(who)} reads ${e.fn} at the library` + ((e.also || []).length ? ` and ${e.also.length} more rule${e.also.length > 1 ? "s" : ""}.` : "."));
       break;
     case "deposit": {
       t.wrote++;
+      S.writers[e.fn] = who;
       if (who in S.rep) S.rep[who] += 1;
       const ency = S.goals.find(g => g.kind === "encyclopedia"), p = ency && ency.parts.find(x => x.fn === e.fn);
       if (p) p.done = p.done || sprint().index;
@@ -756,6 +869,14 @@ function apply(e, ms) {
         if (!e.ok) say(`${nick(who)}'s try for a goal comes out wrong.`);
         break;
       }
+      if (S.tasks && S.tasks[e.project]) {
+        if (e.ok) { S.tasks[e.project] = { state: "done", by: who, round: e.round }; S.books[who].push(e.program[0]); S.fresh[who] = e.program[0]; }
+        else t.wrong++;
+        S.orders[e.project].state = e.ok ? "done" : S.orders[e.project].state; S.active[who] = null;
+        if (e.ok) { t.done++; sc.emote(who, "emote_heart", ms); if (e.project === "FINAL") sc.confetti(who, ms); }
+        say(e.ok ? `${nick(who)} hands in ${e.project} = ${e.answer}.` : `${nick(who)} hands in ${e.project} = ${e.answer}: wrong.`);
+        break;
+      }
       S.orders[e.project].state = e.ok ? "done" : "failed"; S.active[who] = null;
       t[e.ok ? "done" : "failed"]++;
       sc.emote(who, e.ok ? "emote_heart" : "emote_bang", ms);
@@ -776,7 +897,8 @@ function seek(n, instant) {
   const ev = sprint().events;
   n = Math.max(0, Math.min(n, ev.length));
   if (instant || n < S.pos) { reset(); S.pos = 0; }
-  const animate = !instant && n === S.pos + 1;
+  const ends = S.run.dag ? roundEnds() : null;
+  const animate = !instant && (n === S.pos + 1 || (ends && n === ends.find(x => x > S.pos)));
   while (S.pos < n) {
     const e = ev[S.pos++];
     apply(e, animate ? 1000 / S.speed : 0);
@@ -789,14 +911,40 @@ function seek(n, instant) {
   S.scene.syncCustomers(animate);
   if (last && S.follow) { S.followDev = last.dev; if (!animate) S.scene.follow(last.dev); else if (last.kind !== "walk") S.scene.follow(last.dev); }
   render(last);
+  report();
 }
+
+/* embedded in web/compare.html: the parent page sets the run and the round, and hears where this run is */
+const EMBED = new URLSearchParams(location.search).has("embed");
+function report() {
+  if (!EMBED || !S.run) return;
+  const D = S.run.dag, t = S.tally, ev = sprint().events;
+  parent.postMessage({ type: "state", run: S.runs.indexOf(S.run), round: S.pos ? S.round + 1 : 0, done: t.done,
+    tasks: D ? D.tasks.length : sprint().projects.length, rounds: D ? D.rounds : ev.length, solved: D ? D.solved : null,
+    waits: t.wait || 0, actions: S.pos, messages: t.letters, reads: t.read, writes: t.wrote, compute: t.compute || 0,
+    inbox: t.inbox || 0, submits: t.done + (t.wrong || 0), tools: t.tools || 0,
+    end: S.pos >= ev.length }, "*");
+}
+function seekRound(r, animate) {
+  const ev = sprint().events;
+  let n = 0;
+  while (n < ev.length && ev[n].round < r) n++;  // the events of rounds before r
+  if (animate && n > S.pos && n === roundEnds().find(x => x > S.pos)) seek(n); else seek(n, true);
+}
+if (EMBED) window.addEventListener("message", e => {
+  const m = e.data || {};
+  if (m.type === "run" && S.runs[m.run]) { chooseRun(m.run); report(); }
+  else if (m.type === "round" && S.run && S.run.dag && S.scene) seekRound(m.round, m.animate);
+  else if (m.type === "speed") S.speed = m.speed;
+  else if (m.type === "net") { S.showNet = m.on; renderMaps(); }
+});
 
 function step() {
   if (S.pos >= sprint().events.length) {
     if (S.sprint < S.run.sprints.length - 1) { S.sprint++; $("sprint").value = S.sprint; seek(0, true); return; }
     play(false); return;
   }
-  seek(S.pos + 1);
+  seek(S.run.dag ? roundEnds().find(x => x > S.pos) : S.pos + 1);
 }
 
 function play(on) {
@@ -828,9 +976,15 @@ function eventText(e) {
 }
 
 function machineText(w, m) {
+  if (S.run.dag) {
+    if (!m.task) return "An idle machine: no task here.";
+    const t = S.run.dag.tasks.find(x => x.id === m.task), st = S.tasks[m.task];
+    return `Task ${m.task}${t.deps.length ? ` (needs ${t.deps.join(", ")})` : ""}: ` +
+      (st.state === "done" ? `done by ${nick(st.by)} in round ${st.round + 1}.` : st.state === "working" ? `${nick(st.by)} is on it.` : "not started.");
+  }
   const k = S.run.devs.filter(d => S.books[d.name].includes(m.name)).map(d => d.look[0]);
   const state = S.broken && S.broken.has(m.name) ? " OUT OF ORDER." : S.drifted && S.drifted.has(m.name) ? " Re-tuned this sprint." : "";
-  return `${KIND_TITLE[w.kind]} · ${m.title || verbOf(m.name)}: ${m.in} → ${m.out}.${state} ` +
+  return `${kindTitle(w.kind)} · ${m.title || verbOf(m.name)}: ${m.in} → ${m.out}.${state} ` +
     (k.length ? `Knows its rule: ${k.join(", ")}.` : "Nobody knows its rule yet.");
 }
 
@@ -848,7 +1002,7 @@ function renderMoney() {
   const score = d => Math.round(((S.coins[d.name] || 0) + 5 * (S.rep[d.name] || 0)) * factor);
   const flow = Object.entries(S.flows).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(" · ");
   $("money").innerHTML = `<div class="tre"><span>Treasury <i class="coin"></i>${S.treasury}</span><span>inequality (Gini) ${gini.toFixed(2)}</span></div>` +
-    devs.map((d, i) => `<div class="row"><img alt="" src="${A}portraits/${d.look.join("_")}.png"><span>${i === 0 ? "♛ " : ""}${d.look[0]}` +
+    devs.map((d, i) => `<div class="row"><img alt="" src="${A}portraits/${campus() ? "eng_" : ""}${d.look.join("_")}.png"><span>${i === 0 ? "♛ " : ""}${d.look[0]}` +
       `${d.generosity != null && S.run.policy !== "llm" ? ` <span>gives ${Math.round(d.generosity * 100)}%</span>` : ""}</span>` +
       `<b><i class="coin"></i>${S.coins[d.name] || 0}</b><span>★${S.rep[d.name] || 0} · score ${score(d)}</span></div>`).join("") +
     `<div class="legend">Score = coins + 5 × reputation, × ${factor.toFixed(2)} for how the town's goals are going.${S.tally.exploits ? ` Rule-bending attempts refused: ${S.tally.exploits}.` : ""}</div>` +
@@ -893,10 +1047,17 @@ function renderMaps() {
   const box = $("maps"); if (!box || !S.run || !S.scene || !S.scene.sprites) return;
   const here = {};
   for (const [n, s] of Object.entries(S.scene.sprites)) here[s.area] = (here[s.area] || 0) + 1;
+  const dist = {};
+  for (const a of worldMap().areas) dist[a.district] = (dist[a.district] || 0) + (here[a.name] || 0);
   box.innerHTML = `<button id="bFollow" class="${S.follow ? "on" : ""}">Follow</button>` +
     `<button id="bAll" class="${S.view ? "" : "on"}">All maps</button>` +
+    (S.run.dag ? `<button id="bNet" class="${S.showNet ? "on" : ""}">Network</button>` +
+      S.run.world.districts.map(d => `<button data-district="${d.index}" class="${S.view === "district:" + d.index ? "on" : ""}">` +
+        `${cap(d.name)}${dist[d.index] ? ` · ${dist[d.index]}` : ""}</button>`).join("") :
     worldMap().areas.map(a => `<button data-area="${a.name}" class="${S.view === a.name ? "on" : ""}">` +
-      `${areaTitle(a)}${here[a.name] ? ` · ${here[a.name]}` : ""}</button>`).join("");
+      `${areaTitle(a)}${here[a.name] ? ` · ${here[a.name]}` : ""}</button>`).join(""));
+  if ($("bNet")) $("bNet").onclick = () => { S.showNet = !S.showNet; renderMaps(); };
+  for (const b of box.querySelectorAll("[data-district]")) b.onclick = () => { S.follow = false; S.scene.viewDistrict(+b.dataset.district); renderMaps(); };
   $("bFollow").onclick = () => { S.follow = !S.follow; if (S.follow && S.followDev) S.scene.follow(S.followDev); renderMaps(); };
   $("bAll").onclick = () => S.scene.overview();
   for (const b of box.querySelectorAll("[data-area]")) b.onclick = () => { S.follow = false; S.scene.view(b.dataset.area); renderMaps(); };
@@ -908,7 +1069,18 @@ function render(last) {
   const known = new Set(Object.values(S.books).flat());
   const total = S.run.world.districts.reduce((n, d) => n + d.workshops.reduce((m, w) => m + w.machines.length, 0), 0);
   const stat = (v, l) => `<div><b>${v}</b> <span>${l}</span></div>`;
-  $("stats").innerHTML = [
+  $("dagPanel").hidden = !S.run.dag; $("ordersPanel").hidden = !!S.run.dag;
+  if (S.run.dag) {
+    const D = S.run.dag, idle = t.wait || 0, acts = S.pos ? ev.slice(0, S.pos).length : 0;
+    $("stats").innerHTML = [
+      stat(`${S.pos ? S.round + 1 : 0}`, `round${D.solved ? ` of ${D.rounds}` : ""}`), stat(`${t.done}/${D.tasks.length}`, "tasks done"),
+      stat(D.reference ? D.reference.rounds : "–", "reference"), stat(D.lower_bound, "lower bound"),
+      stat(t.compute || 0, "applies"), stat(t.letters, "messages"),
+      stat(`${t.read}/${t.wrote}`, "store read/wrote"), stat(t.inbox || 0, "inbox reads"),
+      stat(acts ? `${Math.round(100 * idle / acts)}%` : "–", "of actions waiting"),
+    ].join("");
+    renderDag();
+  } else $("stats").innerHTML = [
     stat(`${t.done}/${sp.projects.length}`, "delivered"), stat(t.failed, "failed"),
     stat(`${S.pos}/${ev.length}`, "steps"),
     stat(t.study, "studied"), stat(`${t.ask}`, `asked${t.unanswered ? ` (${t.unanswered} no idea)` : ""}`),
@@ -932,37 +1104,103 @@ function render(last) {
       const own = owner(moduleOf(fn));
       const ws = workshop(moduleOf(fn));
       const bg = own ? colorOf(own) : (ws && KIND_COLOR[ws.w.kind]) || "#6e4b2c";
-      return `<span class="chip${S.fresh[d.name] === fn ? " new" : ""}" style="background:${bg}" title="${fn}">${verbOf(fn)}</span>`;
-    }).concat(S.gone[d.name].map(fn => `<span class="chip gone" title="${fn}">${verbOf(fn)}</span>`)).join("");
-    const role = d.owns.length && S.run.mode !== "solo" ? `master of ${d.owns.map(placeTitle).join(", ").replace(/the /g, "")}` : "works alone";
+      return `<span class="chip${S.fresh[d.name] === fn ? " new" : ""}" style="background:${S.run.dag ? colorOf(d.name) : bg}" title="${fn}">${chipText(fn)}</span>`;
+    }).concat(S.gone[d.name].map(fn => `<span class="chip gone" title="${fn}">${chipText(fn)}</span>`)).join("");
+    const role = S.run.dag ? (d.nick !== d.name ? d.name : "") : d.owns.length && S.run.mode !== "solo" ? `master of ${d.owns.map(placeTitle).join(", ").replace(/the /g, "")}` : "works alone";
     const pct = Math.max(0, 100 * S.budget[d.name] / sp.budget);
     const doing = S.active[d.name] ? ` · on ${S.active[d.name]}` : "";
-    return `<div class="dev${last && last.dev === d.name ? " active" : ""}"><img alt="" src="${A}portraits/${d.look.join("_")}.png">` +
+    return `<div class="dev${last && last.dev === d.name ? " active" : ""}"><img alt="" src="${A}portraits/${campus() ? "eng_" : ""}${d.look.join("_")}.png">` +
       `<div><div class="nm">${d.look[0]} ${S.run.money ? `<span class="coins"><i class="coin"></i>${S.coins[d.name] || 0} ★${S.rep[d.name] || 0}</span> ` : ""}<span class="role">${role}${doing}</span></div>` +
       `<div class="budget" title="${S.budget[d.name]} of ${sp.budget} actions left"><i style="width:${pct}%"></i></div>` +
       `<div class="chips">${chips || '<span class="cap">nothing in mind yet</span>'}</div>` +
-      `<div class="cap">${book.length}${capacity ? " / " + capacity : ""} rules in mind · ${S.budget[d.name]} actions left</div></div></div>`;
+      `<div class="cap">${S.run.dag ? `${book.length} task${book.length === 1 ? "" : "s"} handed in` : `${book.length}${capacity ? " / " + capacity : ""} rules in mind`} · ${S.budget[d.name]} actions left</div></div></div>`;
   }).join("");
+  $("devsLegend").textContent = S.run.dag ? "Chips are the tasks each agent has handed in (outlined: just now). The bar is the budget left." :
+    "Chips are the rules each one keeps in mind (gold: just learned, red: just forgotten). The bar is the time left this sprint.";
   renderMaps();
   renderNews();
   renderGoals();
   renderMoney();
   $("log").innerHTML = S.log.slice(0, 40).map(x => `<div>${esc(x)}</div>`).join("");
 }
+/* the task DAG: one column per layer, a node per task (its solver's colour once done), edges to its parents;
+   below, tasks done over rounds against the reference team and the lower bound */
+function renderDag() {
+  const D = S.run.dag, W = 352, H = 230, cols = D.depth + 1, pad = 14;
+  const xOf = l => pad + (W - 2 * pad) * l / Math.max(1, cols - 1);
+  const yOf = (t) => t.final ? H / 2 : pad + (H - 2 * pad) * (+t.id.split(".")[1] + .5) / D.width;
+  const at = {}; for (const t of D.tasks) at[t.id] = { x: xOf(t.layer), y: yOf(t) };
+  const st = id => S.tasks[id] || { state: "pending" };
+  const ready = t => t.deps.every(d => st(d).state === "done");
+  let edges = "", nodes = "";
+  for (const t of D.tasks) for (const d of t.deps) {
+    const on = st(d).state === "done";
+    edges += `<line x1="${at[d].x}" y1="${at[d].y}" x2="${at[t.id].x}" y2="${at[t.id].y}" class="${on ? "e on" : "e"}"/>`;
+  }
+  const r = Math.max(2.5, Math.min(6, (H - 2 * pad) / D.width / 2.4));
+  for (const t of D.tasks) {
+    const s2 = st(t.id), p = at[t.id], rr = t.final ? r * 1.8 : r;
+    const c = campus();
+    const fill = s2.state === "done" ? colorOf(s2.by) : s2.state === "working" ? "#ffffff" : ready(t) ? (c ? "#dce6f2" : "#e5c588") : (c ? "#aeb9c8" : "#b9a27a");
+    const stroke = s2.state === "working" ? colorOf(s2.by) : c ? "#1f2a3a" : "#4a2a14";
+    nodes += `<circle cx="${p.x}" cy="${p.y}" r="${rr}" fill="${fill}" stroke="${stroke}" stroke-width="${s2.state === "working" ? 2 : 1}"` +
+      ` class="${s2.state === "working" ? "pulse" : ""}"><title>${t.id}${s2.by ? " · " + nick(s2.by) : ""}</title></circle>`;
+  }
+  const labels = Array.from({ length: cols }, (_, l) => `<text x="${xOf(l)}" y="${H - 1}" class="lab">${l === D.depth ? "final" : "L" + l}</text>`).join("");
+  $("dagGraph").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="task DAG">${edges}${nodes}${labels}</svg>`;
+  // tasks done over rounds
+  const pair = D.pair && S.runs.find(x => x.title === D.pair);
+  const curve = dd => { const rs = Object.values(dd.done).map(x => x.round).sort((a, b) => a - b); return rs; };
+  const mine = curve(D), other = pair ? curve(pair.dag) : null;
+  const T = Math.max(D.rounds, D.reference ? D.reference.rounds : 0, other ? pair.dag.rounds : 0, D.lower_bound) + 2;
+  const CW = 352, CH = 110, L = 28, B = 18;
+  const X = rr => L + (CW - L - 6) * rr / T, Y = n => CH - B - (CH - B - 6) * n / D.tasks.length;
+  const path = (rs, upto) => { let d = `M${X(0)},${Y(0)}`, n = 0;
+    for (const rr of rs) { if (upto !== undefined && rr > upto) break; d += `L${X(rr)},${Y(n)}L${X(rr)},${Y(++n)}`; }
+    return d + (upto !== undefined ? `L${X(Math.max(upto, rs[n - 1] || 0))},${Y(n)}` : ""); };
+  const now = S.pos ? S.round + 1 : 0;
+  const vline = (x, cls, txt) => `<line x1="${X(x)}" x2="${X(x)}" y1="6" y2="${CH - B}" class="${cls}"/><text x="${X(x) + 2}" y="14" class="lab l">${txt}</text>`;
+  $("dagChart").innerHTML = `<svg viewBox="0 0 ${CW} ${CH}" role="img" aria-label="tasks done over rounds">` +
+    `<line x1="${L}" x2="${CW - 6}" y1="${CH - B}" y2="${CH - B}" class="ax"/><line x1="${L}" x2="${L}" y1="6" y2="${CH - B}" class="ax"/>` +
+    `<text x="${L - 3}" y="${Y(D.tasks.length) + 4}" class="lab r">${D.tasks.length}</text><text x="${L - 3}" y="${CH - B}" class="lab r">0</text>` +
+    `<text x="${CW - 6}" y="${CH - 4}" class="lab r">rounds</text>` +
+    vline(D.lower_bound, "bound", "bound") + (D.reference ? vline(D.reference.rounds, "ref", "ref") : "") +
+    (other ? `<path d="${path(other)}" class="c other"/>` : "") +
+    `<path d="${path(mine)}" class="c ghost"/><path d="${path(mine, now)}" class="c mine"/>` +
+    `<line x1="${X(now)}" x2="${X(now)}" y1="6" y2="${CH - B}" class="now"/></svg>`;
+  $("dagLegend").innerHTML = `<span class="sw mine"></span>this run (${D.solved ? D.rounds + " rounds" : "not solved"})` +
+    (other ? ` <span class="sw other"></span>${esc(pair.title.split(":")[0])} (${pair.dag.rounds})` : "") +
+    ` · bound ${D.lower_bound}${D.reference ? ` · reference ${D.reference.rounds} (${D.reference.sharing})` : ""}`;
+}
 function esc(s) { return s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
+
+/* the page's words and colours follow the run's skin */
+function skinPage() {
+  const c = campus();
+  document.body.classList.toggle("campus", c);
+  $("pageTitle").textContent = c ? "AgentCity" : "SeedVille Workshops";
+  $("pageTag").textContent = c ? "A research campus run by a network of agents: who works on what, who tells whom, and where the time goes."
+    : "A town too big for one head: a town, a farm, a beach and a mountain, apprentices, masters and the orders they fill together.";
+  $("logTitle").textContent = c ? "Event log" : "Town crier";
+  $("devsTitle").textContent = c ? "Agents" : "Apprentices";
+  document.title = c ? "AgentCity" : "SeedVille Workshops";
+}
 
 function chooseRun(k) {
   play(false);
   S.run = S.runs[k]; S.sprint = 0; S.pos = 0;
+  skinPage();
   $("sprint").innerHTML = S.run.sprints.map((s, i) =>
     `<option value="${i}">Sprint ${s.index}: ${s.metrics.done}/${s.metrics.projects} delivered</option>`).join("");
   const r = S.run, n = r.world.districts.reduce((m, d) => m + d.workshops.reduce((a, w) => a + w.machines.length, 0), 0);
-  $("runDesc").textContent = `${r.description} ${r.team} apprentice${r.team > 1 ? "s" : ""}, ${n} machines in ` +
+  $("runDesc").textContent = r.dag ? `${r.description} Every round each agent takes one action; a task is a machine, ` +
+    `layer k of the DAG is district k.` : `${r.description} ${r.team} apprentice${r.team > 1 ? "s" : ""}, ${n} machines in ` +
     `${r.world.districts.length} district${r.world.districts.length > 1 ? "s" : ""}, ` +
     `${r.capacity ? r.capacity + " rules per head" : "unlimited memory"}, ${r.budget} actions each per sprint` +
     `${r.walk ? ", walking costs time" : ""}.`;
   reset();
-  if (S.scene) { S.scene.build(); S.view = null; seek(0, true); S.scene.view(worldMap().plaza.area, true); }
+  if (S.scene) { S.scene.build(); S.view = null; seek(0, true);
+    if (r.dag) S.scene.viewDistrict(0, true); else S.scene.view(worldMap().plaza.area, true); }
 }
 
 function wire() {
@@ -971,8 +1209,11 @@ function wire() {
   $("sprint").onchange = e => { play(false); S.sprint = +e.target.value; seek(0, true); };
   $("bFirst").onclick = () => { play(false); seek(0, true); };
   $("bLast").onclick = () => { play(false); seek(sprint().events.length, true); };
-  $("bPrev").onclick = () => { play(false); seek(S.pos - 1, true); };
-  $("bNext").onclick = () => { play(false); seek(S.pos + 1); };
+  $("bPrev").onclick = () => {
+    play(false);
+    seek(S.run.dag ? [0, ...roundEnds()].filter(x => x < S.pos).pop() || 0 : S.pos - 1, true);
+  };
+  $("bNext").onclick = () => { play(false); if (S.run.dag) step(); else seek(S.pos + 1); };
   $("bPlay").onclick = () => play(!S.playing);
   $("speed").onchange = e => { S.speed = +e.target.value; if (S.playing) play(true); };
   $("scrub").oninput = e => { play(false); seek(+e.target.value, true); };
@@ -1000,6 +1241,12 @@ function load(data) {
     scene: [Boot, Town] });
   const q = new URLSearchParams(location.search);
   if (q.has("run")) { $("runs").value = q.get("run"); chooseRun(+q.get("run")); }
+  document.body.classList.toggle("embed", EMBED);
+  if (EMBED) parent.postMessage({ type: "runs", runs: S.runs.map((r, i) => ({ i, title: r.title, dag: !!r.dag,
+    rounds: r.dag ? r.dag.rounds : null, pair: r.dag ? r.dag.pair || null : null, agents: r.team,
+    seed: r.dag ? r.dag.seed : null, tasks: r.dag ? r.dag.tasks.length : null, bound: r.dag ? r.dag.lower_bound : null,
+    reference: r.dag && r.dag.reference ? r.dag.reference.rounds : null,
+    curve: r.dag ? Object.values(r.dag.done).map(x => x.round).sort((a, b) => a - b) : [] })) }, "*");
 }
 
 (async () => {
@@ -1007,10 +1254,12 @@ function load(data) {
     const r = await fetch("replays/codeworld.json");
     if (!r.ok) throw new Error(r.status);
     const data = await r.json();
-    try {  // LLM apprentices' runs, if recorded (scripts/build_codeworld_web.py --llm)
-      const l = await fetch("replays/llm.json");
-      if (l.ok) data.replays = (await l.json()).replays.concat(data.replays);
-    } catch (e) { /* none yet */ }
+    for (const extra of ["replays/llm.json", "replays/dag.json"]) {  // LLM teams' runs and DAG runs, if recorded
+      try {
+        const l = await fetch(extra);
+        if (l.ok) data.replays = (await l.json()).replays.concat(data.replays);
+      } catch (e) { /* none yet */ }
+    }
     load(data);
   } catch (e) {
     toast("No replays/codeworld.json yet: run scripts/build_codeworld_web.py, or load a replay file.");

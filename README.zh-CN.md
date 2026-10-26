@@ -78,8 +78,15 @@ CodeWorld 提供者用小镇主题时，任何一次运行都能在浏览器里�
 ```bash
 python -m netagents.replays                      # 参考团队 -> web/replays/codeworld.json
 python -m netagents.replays --llm                # LLM 团队  -> web/replays/llm.json
+python -m netagents.replays --reference --dag results/net/runs/<run>/<suite>/traces/*.jsonl.gz   # netscale 运行 -> web/replays/dag.json
 python -m http.server -d web 8000                # 打开 http://localhost:8000
 ```
+
+DAG 上的规模实验（netscale）也能在同一个小镇里回放：DAG 的第 k 层是第 k 个街区，每个任务是一台机器，播放按 lockstep 轮次推进。侧栏显示任务图逐步点亮，以及完成任务数随轮次的曲线，并和脚本参考团队、理论下界对照。**Network** 叠加层画出最近几轮里谁把答案传给了谁（金色是消息，蓝色是经过共享存储）。
+
+回放有两种画风：**SeedVille**（乡村小镇，`web/tools/kairoart.py`）和 **AgentCity**（科技研究园区：实验室和服务器机柜，共享存储画成数据中心，消息走通信塔，`web/tools/campusart.py`）。DAG 回放默认用 AgentCity；CodeWorld 的运行加 `--skin campus` 也能画成园区。
+
+`web/compare.html` 把两次 DAG 运行左右分屏、按同一轮次同步播放：默认挑同一个问题上的两种设计，没有的话就是一个团队和它的脚本参考团队。下面是两边完成任务数随轮次的曲线（带下界和参考线），以及各自的动作花在哪里（做任务、沟通、等待）。**Save chart** 把曲线导出成独立的 SVG，可以直接放进论文。用 `compare.html?l=<run>&r=<run>` 指定两边的运行。
 
 ## 在 Nibi 上运行
 

@@ -27,6 +27,23 @@
   --font-text: "VT323", "Courier New", monospace;
   color-scheme: dark;
 }
+/* AgentCity: cool slate panels on a night-blue page */
+body.campus {
+  --night: #121925; --night-2: #1b2433; --wood: #3a4a62; --wood-dark: #1f2a3a;
+  --parchment: #e8edf4; --parchment-2: #cdd6e3; --ink: #1b2433; --ink-soft: #4f5d73;
+  --gold: #4ab8ff; --cream: #f4f8fc; --ok: #2f9e5a; --bad: #d24a3a;
+}
+body.campus h1 { color: #e8f4ff; text-shadow: 3px 3px 0 #1f6fb0; }
+body.campus .budget, body.campus .goal .bar { background: #c3ccd9; }
+body.campus .order.working { background: #dbe6f3; }
+/* embedded in compare.html: only the map */
+body.embed { padding: 0; background: #18202c; overflow: hidden; }
+body.embed #game { aspect-ratio: auto; height: 100vh; }
+body.embed #gamebox { background: #18202c; }
+body.embed .wrap { max-width: none; }
+body.embed header, body.embed .side, body.embed .main > div > .panel { display: none !important; }
+body.embed .main { grid-template-columns: minmax(0, 1fr); }
+body.embed #gamebox { border: 0; border-radius: 0; box-shadow: none; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }
@@ -101,6 +118,23 @@ i.coin { display: inline-block; width: 9px; height: 9px; border-radius: 50%; bac
 .goal .part { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; gap: 4px; font-size: 15px; line-height: 1.05; }
 .goal .part .ok { color: var(--ok); font-family: var(--font-display); }
 .goal .part .who { color: var(--ink-soft); font-size: 14px; }
+#dagGraph svg, #dagChart svg { display: block; width: 100%; height: auto; }
+#dagGraph .e { stroke: #b9a27a; stroke-width: .6; opacity: .55; }
+body.campus #dagGraph .e { stroke: #8a97aa; }
+#dagGraph .e.on { stroke: var(--wood); opacity: .9; }
+#dagGraph .pulse { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { #dagGraph .pulse { animation: none; } }
+#dagGraph .lab, #dagChart .lab { font-family: var(--font-text); font-size: 13px; fill: var(--ink-soft); text-anchor: middle; }
+#dagChart .lab.r { text-anchor: end; } #dagChart .lab.l { text-anchor: start; }
+#dagChart .ax { stroke: var(--ink-soft); stroke-width: 1; }
+#dagChart .c { fill: none; stroke-width: 2; }
+#dagChart .c.mine { stroke: var(--bad); } #dagChart .c.ghost { stroke: var(--bad); opacity: .2; }
+#dagChart .c.other { stroke: var(--ok); stroke-dasharray: 4 3; }
+#dagChart .bound { stroke: var(--ink-soft); stroke-dasharray: 2 3; } #dagChart .ref { stroke: var(--ok); stroke-dasharray: 2 3; }
+#dagChart .now { stroke: var(--gold); stroke-width: 2; }
+.sw { display: inline-block; width: 12px; height: 3px; vertical-align: middle; margin-right: 3px; }
+.sw.mine { background: var(--bad); } .sw.other { background: var(--ok); }
 #toast { position: absolute; left: 12px; bottom: 12px; background: var(--parchment); color: var(--ink); border: 3px solid var(--wood); border-radius: 4px; padding: 4px 8px; }
 </style>
 </head>
@@ -108,8 +142,8 @@ i.coin { display: inline-block; width: 9px; height: 9px; border-radius: 50%; bac
 <div class="wrap">
   <header>
     <div>
-      <h1>SeedVille Workshops</h1>
-      <p class="tag">A town too big for one head: a town, a farm, a beach and a mountain, apprentices, masters and the orders they fill together.</p>
+      <h1 id="pageTitle">SeedVille Workshops</h1>
+      <p class="tag" id="pageTag">A town too big for one head: a town, a farm, a beach and a mountain, apprentices, masters and the orders they fill together.</p>
     </div>
   </header>
   <div class="main">
@@ -120,7 +154,7 @@ i.coin { display: inline-block; width: 9px; height: 9px; border-radius: 50%; bac
         <div class="bar" id="maps"></div>
       </div>
       <div class="panel" style="margin-top:10px">
-        <h2>Town crier</h2>
+        <h2 id="logTitle">Town crier</h2>
         <div id="log"></div>
       </div>
     </div>
@@ -160,14 +194,20 @@ i.coin { display: inline-block; width: 9px; height: 9px; border-radius: 50%; bac
         <h2>Notice board</h2>
         <div id="boardPosts"></div>
       </div>
-      <div class="panel">
+      <div class="panel" id="dagPanel" hidden>
+        <h2>Task graph</h2>
+        <div id="dagGraph"></div>
+        <div id="dagChart"></div>
+        <div class="legend" id="dagLegend"></div>
+      </div>
+      <div class="panel" id="ordersPanel">
         <h2>Orders</h2>
         <div id="orders"></div>
       </div>
       <div class="panel">
-        <h2>Apprentices</h2>
+        <h2 id="devsTitle">Apprentices</h2>
         <div id="devs"></div>
-        <div class="legend">Chips are the rules each one keeps in mind (gold: just learned, red: just forgotten). The bar is the time left this sprint.</div>
+        <div class="legend" id="devsLegend">Chips are the rules each one keeps in mind (gold: just learned, red: just forgotten). The bar is the time left this sprint.</div>
       </div>
     </div>
   </div>

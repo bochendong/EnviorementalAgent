@@ -313,7 +313,7 @@ def _overalls(spr, direction):
 
 
 def frame(direction, step, skin, hair_ramp, style, shirt, pants="#4a4f6e", shoes="#4a2c1a",
-          hat=False, overalls=False):
+          hat=False, overalls=False, badge=False):
     """direction: down|left|up (right = mirrored left); step: 0 stand, 1 step A, 2 step B."""
     sk = skin
     sh = ramp3(shirt)
@@ -354,6 +354,12 @@ def frame(direction, step, skin, hair_ramp, style, shirt, pants="#4a4f6e", shoes
                 spr.px[21][x] = None
     if overalls:
         _overalls(spr, direction)
+    if badge and direction == "down":  # an ID badge on a lanyard
+        for y in (14, 15, 16):
+            spr.put(6 + (y - 14) // 2, y, _hx("#3a4150"))
+        spr.put(7, 17, _hx("#ffffff")); spr.put(8, 17, _hx("#ffffff")); spr.put(7, 18, _hx("#4ab8ff")); spr.put(8, 18, _hx("#ffffff"))
+    elif badge and direction == "left":
+        spr.put(5, 17, _hx("#ffffff")); spr.put(5, 18, _hx("#4ab8ff"))
     if direction != "up":
         _face(spr, direction, sk)
     hp = _hair_pixels(style if not hat else "short", direction)

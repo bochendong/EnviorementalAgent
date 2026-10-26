@@ -294,6 +294,26 @@ def test_town_replay_shows_what_the_environment_recorded():
         town_replay(env_())
 
 
+def test_dag_replay_plays_a_netscale_run_in_the_town():
+    from netagents.replays import dag_shape, reference_run
+    from worldseeds.net.replay import dag_replay
+
+    ref, events = reference_run(width=4, depth=2, n=2, seed=3, grain=2)
+    assert dag_shape(events) == {"width": 4, "depth": 2, "grain": 2}
+    r = dag_replay(events, 4, 2, grain=2, reference=ref)
+    d, ev = r["dag"], r["sprints"][0]["events"]
+    assert d["solved"] and len(d["tasks"]) == 9 and d["rounds"] == ref["rounds"] and d["lower_bound"] == ref["lower_bound"]
+    kinds = {x["kind"] for x in ev}
+    assert {"walk", "start", "compute", "submit"} <= kinds
+    assert all("round" in x for x in ev) and [x["round"] for x in ev] == sorted(x["round"] for x in ev)
+    machines = {m["name"]: m for dd in r["world"]["districts"] for w in dd["workshops"] for m in w["machines"]}
+    for t in d["tasks"]:  # every task is a machine in the district of its layer
+        assert machines[t["fn"]]["task"] == t["id"]
+        assert next(dd["index"] for dd in r["world"]["districts"] for w in dd["workshops"]
+                    if any(m["name"] == t["fn"] for m in w["machines"])) == t["layer"]
+    assert sum(1 for x in ev if x["kind"] == "submit" and x["ok"]) == 9
+
+
 def test_math_linked_problems_form_one_chain():
     e = env_(NetConfig(budget=80), providers.make("math", problems=["recurrence"] * 3, linked=True, free_roles=True,
                                                   explorers=1, algebraists=0))

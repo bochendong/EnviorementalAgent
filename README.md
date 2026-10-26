@@ -78,8 +78,23 @@ notes on the board and deliver orders. The page shows what the environment recor
 ```bash
 python -m netagents.replays                      # reference teams -> web/replays/codeworld.json
 python -m netagents.replays --llm                # LLM teams      -> web/replays/llm.json
+python -m netagents.replays --reference --dag results/net/runs/<run>/<suite>/traces/*.jsonl.gz   # netscale runs -> web/replays/dag.json
 python -m http.server -d web 8000                # open http://localhost:8000
 ```
+
+Network-scale runs on the DAG provider play in the same town: layer k of the DAG is district k and every task a
+machine, playback goes a lockstep round at a time, a panel shows the task graph filling in and tasks done over
+rounds against the scripted reference and the lower bound, and the **Network** overlay draws who passed answers
+to whom in the last rounds (gold: messages, blue: through the shared store).
+
+A replay can be drawn in one of two skins: **SeedVille** (a village, `web/tools/kairoart.py`) or **AgentCity** (a
+research campus with labs, server racks, a data centre for the shared store and a relay tower for messages,
+`web/tools/campusart.py`). DAG replays use AgentCity; `--skin campus` draws CodeWorld runs there too.
+
+`web/compare.html` plays two DAG runs side by side, in step (the same round on both sides): by default two
+designs on the same problem, else a team and its scripted reference. Under them, tasks done over rounds for
+both with the bound and the reference, and where each team's actions went (tasks, talk, waiting). **Save
+chart** writes that chart as a standalone SVG for a paper. `compare.html?l=<run>&r=<run>` picks the runs.
 
 | | |
 |---|---|
