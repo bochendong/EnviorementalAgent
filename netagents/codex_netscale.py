@@ -66,7 +66,8 @@ def main():
     parser.add_argument("--reasoning-effort", default="high", choices=["low", "medium", "high", "xhigh"])
     parser.add_argument("--suite", default="netscale-pilot",
                         choices=["netscale-pilot", "netscale", "netscale-slack", "netscale-intervene"])
-    parser.add_argument("--design", default="peers", choices=["peers", "peers-columns", "peers-msgjoin"],
+    parser.add_argument("--design", default="peers",
+                        choices=["peers", "peers-columns", "peers-msgjoin", "peers-ledger"],
                         help="the peers design, or one of its interventions (netscale-intervene)")
     parser.add_argument("--families", nargs="+", default=None,
                         help="the problems to run (fixed, scaled, w8); default: fixed in netscale, all elsewhere")
