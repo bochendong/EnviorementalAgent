@@ -91,6 +91,11 @@ A replay can be drawn in one of two skins: **SeedVille** (a village, `web/tools/
 research campus with labs, server racks, a data centre for the shared store and a relay tower for messages,
 `web/tools/campusart.py`). DAG replays use AgentCity; `--skin campus` draws CodeWorld runs there too.
 
+`web/compare.html` plays two DAG runs side by side, in step (the same round on both sides): by default two
+designs on the same problem, else a team and its scripted reference. Under them, tasks done over rounds for
+both with the bound and the reference, and where each team's actions went (tasks, talk, waiting). **Save
+chart** writes that chart as a standalone SVG for a paper. `compare.html?l=<run>&r=<run>` picks the runs.
+
 | | |
 |---|---|
 | ![districts](docs/images/workshops_districts.png) | ![a workshop](docs/images/workshops_closeup.png) |

@@ -36,6 +36,14 @@ body.campus {
 body.campus h1 { color: #e8f4ff; text-shadow: 3px 3px 0 #1f6fb0; }
 body.campus .budget, body.campus .goal .bar { background: #c3ccd9; }
 body.campus .order.working { background: #dbe6f3; }
+/* embedded in compare.html: only the map */
+body.embed { padding: 0; background: #18202c; overflow: hidden; }
+body.embed #game { aspect-ratio: auto; height: 100vh; }
+body.embed #gamebox { background: #18202c; }
+body.embed .wrap { max-width: none; }
+body.embed header, body.embed .side, body.embed .main > div > .panel { display: none !important; }
+body.embed .main { grid-template-columns: minmax(0, 1fr); }
+body.embed #gamebox { border: 0; border-radius: 0; box-shadow: none; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }

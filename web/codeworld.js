@@ -692,6 +692,7 @@ function apply(e, ms) {
   S.fresh[who] = null; S.gone[who] = [];
   switch (e.kind) {
     case "tool":
+      t.tools = (t.tools || 0) + 1;
       if (e.tool === "study" && e.args.function && !e.out.startsWith("Out of budget")) {
         sc.study(who, e.args.function, ms);
       }
@@ -910,7 +911,33 @@ function seek(n, instant) {
   S.scene.syncCustomers(animate);
   if (last && S.follow) { S.followDev = last.dev; if (!animate) S.scene.follow(last.dev); else if (last.kind !== "walk") S.scene.follow(last.dev); }
   render(last);
+  report();
 }
+
+/* embedded in web/compare.html: the parent page sets the run and the round, and hears where this run is */
+const EMBED = new URLSearchParams(location.search).has("embed");
+function report() {
+  if (!EMBED || !S.run) return;
+  const D = S.run.dag, t = S.tally, ev = sprint().events;
+  parent.postMessage({ type: "state", run: S.runs.indexOf(S.run), round: S.pos ? S.round + 1 : 0, done: t.done,
+    tasks: D ? D.tasks.length : sprint().projects.length, rounds: D ? D.rounds : ev.length, solved: D ? D.solved : null,
+    waits: t.wait || 0, actions: S.pos, messages: t.letters, reads: t.read, writes: t.wrote, compute: t.compute || 0,
+    inbox: t.inbox || 0, submits: t.done + (t.wrong || 0), tools: t.tools || 0,
+    end: S.pos >= ev.length }, "*");
+}
+function seekRound(r, animate) {
+  const ev = sprint().events;
+  let n = 0;
+  while (n < ev.length && ev[n].round < r) n++;  // the events of rounds before r
+  if (animate && n > S.pos && n === roundEnds().find(x => x > S.pos)) seek(n); else seek(n, true);
+}
+if (EMBED) window.addEventListener("message", e => {
+  const m = e.data || {};
+  if (m.type === "run" && S.runs[m.run]) { chooseRun(m.run); report(); }
+  else if (m.type === "round" && S.run && S.run.dag && S.scene) seekRound(m.round, m.animate);
+  else if (m.type === "speed") S.speed = m.speed;
+  else if (m.type === "net") { S.showNet = m.on; renderMaps(); }
+});
 
 function step() {
   if (S.pos >= sprint().events.length) {
@@ -1214,6 +1241,12 @@ function load(data) {
     scene: [Boot, Town] });
   const q = new URLSearchParams(location.search);
   if (q.has("run")) { $("runs").value = q.get("run"); chooseRun(+q.get("run")); }
+  document.body.classList.toggle("embed", EMBED);
+  if (EMBED) parent.postMessage({ type: "runs", runs: S.runs.map((r, i) => ({ i, title: r.title, dag: !!r.dag,
+    rounds: r.dag ? r.dag.rounds : null, pair: r.dag ? r.dag.pair || null : null, agents: r.team,
+    seed: r.dag ? r.dag.seed : null, tasks: r.dag ? r.dag.tasks.length : null, bound: r.dag ? r.dag.lower_bound : null,
+    reference: r.dag && r.dag.reference ? r.dag.reference.rounds : null,
+    curve: r.dag ? Object.values(r.dag.done).map(x => x.round).sort((a, b) => a - b) : [] })) }, "*");
 }
 
 (async () => {
