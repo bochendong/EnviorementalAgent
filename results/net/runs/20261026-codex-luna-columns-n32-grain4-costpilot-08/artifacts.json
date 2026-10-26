@@ -1,0 +1,169 @@
+{
+  "status": "aborted_invalid_pilot_not_completed",
+  "source_commit": "f9c27c15b5223a9cd8706ce35a8e2503491f70a5",
+  "packaged_at_toronto": "2026-10-26T15:16:30.353872-04:00",
+  "raw_calls_in_archive": "columns/codex-calls.tar.gz",
+  "files": {
+    "README.md": {
+      "bytes": 3558,
+      "sha256": "1f8b60e486c55a31f485fd6a79abaf3be8803e0277e2348ef178c8204168072a"
+    },
+    "allowance-after.json": {
+      "bytes": 1062,
+      "sha256": "47be4eb817df46936850764de32f481527b5386c546b35c3792b2f6430aefe9c"
+    },
+    "allowance-before.json": {
+      "bytes": 1060,
+      "sha256": "b28092c01a704883ddf259efeb5364283f2330b4a5e15b5a12cbab02877a5bbb"
+    },
+    "audit-console.log": {
+      "bytes": 450,
+      "sha256": "755879a957480facdccf04b3c64827709e3cd58dfad3c092d9b336b763585c57"
+    },
+    "audit_results.py": {
+      "bytes": 10923,
+      "sha256": "ecce684fd966e40a55f07ce9ed0496b360d932e7d574e998d45bb9b98552a1d8"
+    },
+    "baseline-sol-columns/audit.json": {
+      "bytes": 148640,
+      "sha256": "fb285e1a8f69efd6cabcd27ca440fb93fdeca0bf38ebe20f780ace92147a9036"
+    },
+    "baseline-sol-columns/config.json": {
+      "bytes": 821,
+      "sha256": "89992b27d9814aa70be23223c9e925a419483cfd05d13d155d1a1a105ca8f4c6"
+    },
+    "baseline-sol-columns/runs.jsonl": {
+      "bytes": 7219,
+      "sha256": "faf4632bc6e51b27baa7716c79bf14982a8e2bba3999b53d3cc655d0c982b950"
+    },
+    "baseline-sol-columns/traces/peers-columns__dag_fixed-g4_n32__100.jsonl.gz": {
+      "bytes": 34499,
+      "sha256": "a83e3c6a35f9ae604002fdabbcc62ff39dd8634e39b0b4a140e1aac1505a3419"
+    },
+    "baseline-sol-columns/usage.json": {
+      "bytes": 2464,
+      "sha256": "b797023940cea806874bd56bcbea2a83832425f14b4ff4bb1cf2c5bf49dce87f"
+    },
+    "columns/audit.json": {
+      "bytes": 107988,
+      "sha256": "5b392cc315ea4634c9b4e7704f6eb91bdbbc0c094640b536ffa592c35fa64670"
+    },
+    "columns/codex-calls.tar.gz": {
+      "bytes": 15966573,
+      "sha256": "08f7468f730c30e1d8f105e458f2482e9b770427139844973f4076a6b71e8a9b"
+    },
+    "columns/codex-calls.tar.gz.sha256": {
+      "bytes": 85,
+      "sha256": "993483de51ca1751024f49946ddc2362a231c8b5e510bc73eff21d9e015a718e"
+    },
+    "columns/config.json": {
+      "bytes": 817,
+      "sha256": "e60ebf927a90a85a6d75788ef368e08d0944d4c98714aacd24f36beacd5ffa7c"
+    },
+    "columns/pending_plan.json": {
+      "bytes": 195,
+      "sha256": "de9a7434b7028ca99d1a020591ee48d8246dd9af66c0e2f48e4502a591c04b06"
+    },
+    "columns/reconstructed-host-observations.jsonl.gz": {
+      "bytes": 52224,
+      "sha256": "a6c36bf18387982eeaa6f6ef9ec64710ebdd291d2b29930b3b1a70e3f71ec45d"
+    },
+    "columns/sources/codex_cli_model.py": {
+      "bytes": 10827,
+      "sha256": "85d99c47fec5a4ce36375fa215843a3b8d109de45c3517231a3d84f18314b033"
+    },
+    "columns/sources/codex_netscale.py": {
+      "bytes": 8824,
+      "sha256": "93755d1aa1d59579b9881c41a772ffc50a17b2a8eb2bb0b9858cb5b75c92c3d1"
+    },
+    "columns/sources/designs.py": {
+      "bytes": 53112,
+      "sha256": "a4ae5251b397b5aaed36e922886aebe8bc549b32ff0a11ada94c9dcc9266c563"
+    },
+    "columns/sources/evaluate.py": {
+      "bytes": 22757,
+      "sha256": "91a16202c02f5b7ec5c674e9546cb002fb97c3fc26fcf260396eed7f89adbdf6"
+    },
+    "columns/sources/lockstep.py": {
+      "bytes": 3489,
+      "sha256": "1403b4dd9b5c1783a58d40fd0d30b4a7d0ea9ad19e75113ccc1878ed4c5b4cab"
+    },
+    "columns/sources/scaling.py": {
+      "bytes": 11909,
+      "sha256": "28972bc38ca69b2b32413ea368b391793bd47af4f836748ef6ed8cabd091b709"
+    },
+    "columns/sources/testset.py": {
+      "bytes": 11775,
+      "sha256": "dfebea6ac719090a96855525b052c654b77e39fe926fba0ebf2859faf39816d7"
+    },
+    "columns/sources/tools.py": {
+      "bytes": 3951,
+      "sha256": "a4f91f81b877b4a4d736c7e2cdcb4cda1c6fbdd682c6515fa02ed821dd9d139c"
+    },
+    "columns/status.json": {
+      "bytes": 70,
+      "sha256": "36bdef4b9dbfe8b0ed44e3da3e015e00f106af54fadb9121a5513b2af4dc732d"
+    },
+    "columns/usage.json": {
+      "bytes": 1490,
+      "sha256": "298944e6968d3496c75043cdca875d1b58ef39f880ddc10e17c3a10b8a38b85e"
+    },
+    "cost-comparison.json": {
+      "bytes": 625,
+      "sha256": "db623d77ba31d162e65e509065a9b1c5e4198d19edc2cfc33f3720de2cb9e98a"
+    },
+    "launch.json": {
+      "bytes": 1170,
+      "sha256": "ec6b7063f747bdfd75526bf264f7faa10639c4eed58cb928d9591811579ee353"
+    },
+    "launch.pid": {
+      "bytes": 6,
+      "sha256": "f4e6e3b59913318f3365a5f05b52dcc18853924a953dd97829d212401cfaf8c2"
+    },
+    "monitor-state.json": {
+      "bytes": 162,
+      "sha256": "2c38f6ccddf3a6fcb13e330e82a1ffb91c4d0fc6cda7797ad8b2764a69a7ff02"
+    },
+    "package_results.py": {
+      "bytes": 4860,
+      "sha256": "3982715f52e4500006c5a50b8883af05c868a5f164c0f1e273c9959d8bfb124a"
+    },
+    "pilot-plan.json": {
+      "bytes": 1315,
+      "sha256": "71829845d76c2cea968e1c1f0218b47fb8dab5b1a76918c78c6350f633403381"
+    },
+    "raw-call-hashes.json": {
+      "bytes": 4397221,
+      "sha256": "4fe0f8c2265413b9308a757ba8e57a903ea762903ccd7977f3d6ea90244c8c26"
+    },
+    "runner.log": {
+      "bytes": 298,
+      "sha256": "fcfda9a5263fe0c9ba06dea9ef65dbec00fb1a2bf08c8f7de9d69be510930474"
+    },
+    "source-f9c27c1.tar.gz": {
+      "bytes": 175221,
+      "sha256": "8447793145727b30eb98c6e5fe34aa61d5c6f91a21d86bf79c5f520f89b190e7"
+    },
+    "source-f9c27c1.tar.gz.sha256": {
+      "bytes": 88,
+      "sha256": "c4f3399553a45c5c0be863b245207b1d895443a9d32c1decb4b4ba6553b92f9e"
+    },
+    "termination.json": {
+      "bytes": 1717,
+      "sha256": "c3f3c7f6d006813f5153a4880a8bc58356718fb804e5794fa8962cee328d2e7a"
+    },
+    "tests.log": {
+      "bytes": 99,
+      "sha256": "9a73f88f046308a7f6641168d1c97955c21febcaf953cd6f2e40d9b6e3f9d545"
+    },
+    "tests.xml": {
+      "bytes": 1662,
+      "sha256": "7690962558f2c5ad897d094c2847efa946af7e5f5419ae046f37699338d83365"
+    },
+    "verification.json": {
+      "bytes": 269,
+      "sha256": "18fcd86d3143297cd1f25f70be9dbec1bb22d2eb572e0ae5c3ee441fc05494dc"
+    }
+  },
+  "self_hash": false
+}

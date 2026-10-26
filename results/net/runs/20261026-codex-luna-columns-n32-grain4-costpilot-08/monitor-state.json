@@ -1,0 +1,8 @@
+{
+  "automation_id": "luna",
+  "automation_deleted": true,
+  "state": "stopped_invalid_protocol",
+  "no_resume": true,
+  "pid": 21263,
+  "process_absent": true
+}

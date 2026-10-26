@@ -1,0 +1,13 @@
+{
+  "same_reset_window": true,
+  "before_used_percent": 2,
+  "after_used_percent": 37,
+  "observed_shared_account_delta_percentage_points": 35,
+  "experiment_attribution": "Not isolated; integer percentage, shared account includes other activity.",
+  "known_tokens": 161420649,
+  "known_tokens_ratio_to_completed_sol_seed100": 4.361197949418466,
+  "39_repetitions_of_aborted_observation_tokens": 6295405311,
+  "39_successful_runs_feasibility": "Not established; invalid aborted pilot did not solve the task. Do not extrapolate successful completion costs.",
+  "correctly_observed_accepted_nodes": 27,
+  "completed_T": null
+}

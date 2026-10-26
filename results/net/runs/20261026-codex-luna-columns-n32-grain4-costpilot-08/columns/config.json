@@ -1,0 +1,29 @@
+{
+  "model": "gpt-6-luna",
+  "reasoning_effort": "high",
+  "suite": "netscale-intervene",
+  "design": "peers-columns",
+  "families": [
+    "fixed"
+  ],
+  "sizes": [
+    32
+  ],
+  "seeds": [
+    100
+  ],
+  "grains": [
+    4
+  ],
+  "parallel_runs": 1,
+  "inference_concurrency": 2,
+  "timeout": 180,
+  "resume": false,
+  "out": "/Users/dongbochen/Documents/GitHub/EnviorementalAgent/results/net/runs/20261026-codex-luna-columns-n32-grain4-costpilot-08/columns",
+  "codex_version": "codex-cli 0.164.0-alpha.11.1",
+  "git_commit": "f9c27c15b5223a9cd8706ce35a8e2503491f70a5",
+  "agents_sdk": "0.23.1",
+  "sympy": "1.14.0",
+  "protocol": "Original Peers + Lockstep + SUITES['netscale-pilot'] + run_one + write_summary",
+  "model_transport": "One Codex JSON tool selection per SDK model response; no outside capabilities"
+}

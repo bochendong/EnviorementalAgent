@@ -1,0 +1,8 @@
+{
+  "status": "aborted_invalid_pilot_not_completed",
+  "archive_files_byte_verified": 22900,
+  "credential_scan_matches": 0,
+  "source_archive_hash_verified": true,
+  "formal_terminal_trace_available": false,
+  "reconstructed_observation_limitations_preserved": true
+}

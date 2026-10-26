@@ -1,0 +1,52 @@
+{
+  "status": "stopped_invalid_protocol",
+  "stopped_at_toronto": "2026-10-26T15:10:08.188510-04:00",
+  "pid": 21263,
+  "reason": "Two member calls were rejected for forbidden outside capability; other members kept consuming budget. Stopped invalid pilot rather than treat it as valid scientific comparison.",
+  "failures": [
+    {
+      "path": "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a3/000032/failure.json",
+      "error": "Codex used an outside capability: mcp_tool_call",
+      "outside_events": [
+        {
+          "event_type": "item.started",
+          "item_type": "mcp_tool_call",
+          "server": "codex",
+          "tool": "list_mcp_resources",
+          "status": "in_progress"
+        },
+        {
+          "event_type": "item.completed",
+          "item_type": "mcp_tool_call",
+          "server": "codex",
+          "tool": "list_mcp_resources",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "path": "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a30/000086/failure.json",
+      "error": "Codex used an outside capability: mcp_tool_call",
+      "outside_events": [
+        {
+          "event_type": "item.started",
+          "item_type": "mcp_tool_call",
+          "server": "codex",
+          "tool": "list_mcp_resources",
+          "status": "in_progress"
+        },
+        {
+          "event_type": "item.completed",
+          "item_type": "mcp_tool_call",
+          "server": "codex",
+          "tool": "list_mcp_resources",
+          "status": "completed"
+        }
+      ]
+    }
+  ],
+  "weekly_used_percent_observed_before_stop": 36,
+  "completed_T": null,
+  "observed_accepted_tasks_before_stop": 27,
+  "no_automatic_resume": true
+}

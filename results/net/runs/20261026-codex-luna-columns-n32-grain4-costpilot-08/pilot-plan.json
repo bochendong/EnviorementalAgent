@@ -1,0 +1,35 @@
+{
+  "purpose": "One full cost/feasibility pilot of GPT-6 Luna; no new scientific prediction, no 39-run authorization implied",
+  "saved_before_launch": "2026-10-26T10:38:21.254548-04:00",
+  "source_commit": "f9c27c15b5223a9cd8706ce35a8e2503491f70a5",
+  "model": "gpt-6-luna",
+  "reasoning_effort": "high",
+  "suite": "netscale-intervene",
+  "design": "peers-columns",
+  "families": [
+    "fixed"
+  ],
+  "sizes": [
+    32
+  ],
+  "grains": [
+    4
+  ],
+  "seeds": [
+    100
+  ],
+  "parallel_runs": 1,
+  "inference_concurrency": 2,
+  "baseline_commit": "7f7bf0190f5727d4d04aadbc7005f65208e5f1ee",
+  "baseline_seed100_T": 56,
+  "baseline_seed100_tokens": 37012915,
+  "baseline_3seed_mean_tokens": 35306589.333333336,
+  "weekly_used_percent_before": 2,
+  "weekly_reset_epoch": 1793603863,
+  "limits": [
+    "Single selected historical seed already observed under Sol; exploratory cost pilot, not independent validation.",
+    "Subscription percentage has coarse rounding and shared account activity; cannot exactly attribute percentage change or convert credits to included weekly allowance.",
+    "Luna may take more rounds or fail; report completion, rule compliance and unknown failed-request usage.",
+    "One full run only; preserve prompts, protocol, source and all raw calls. No quota resets or purchases."
+  ]
+}

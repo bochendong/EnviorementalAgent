@@ -1,0 +1,23 @@
+{
+  "accepted_tasks": 27,
+  "chain_missing": [],
+  "known_tokens": 161420649,
+  "success_requests": 3266,
+  "failed_known_tokens": 241426,
+  "unknown_attempts": 3,
+  "observed_ops": {
+    "apply": 194,
+    "wait": 1778,
+    "status": 13,
+    "submit": 45,
+    "tasks": 158,
+    "send": 65,
+    "keys": 25,
+    "inbox": 715
+  },
+  "budget_order": false,
+  "column_violations": 22,
+  "duplicate_applies": 47,
+  "wrong_inputs": 54,
+  "rejections": 18
+}

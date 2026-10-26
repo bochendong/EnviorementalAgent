@@ -1,0 +1,37 @@
+{
+  "successful_requests": 3266,
+  "successful_usage": {
+    "input_tokens": 160505401,
+    "cached_input_tokens": 97343872,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 673822,
+    "reasoning_output_tokens": 513138,
+    "total_tokens": 161179223
+  },
+  "failed_receipted_usage": {
+    "input_tokens": 240575,
+    "cached_input_tokens": 155008,
+    "cache_write_input_tokens": 0,
+    "output_tokens": 851,
+    "reasoning_output_tokens": 673,
+    "total_tokens": 241426
+  },
+  "all_receipted_usage_totals": {
+    "input_tokens": 160745976,
+    "cached_input_tokens": 97498880,
+    "output_tokens": 674673,
+    "reasoning_output_tokens": 513811,
+    "total_tokens": 161420649
+  },
+  "attempts_without_receipt": [
+    "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a13/000100.interrupted-1793041262070018000",
+    "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a29/000104",
+    "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a31/000100.interrupted-1793041262069958000"
+  ],
+  "failed_attempts_with_receipts": [
+    "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a28/000104",
+    "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a3/000032",
+    "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a30/000086"
+  ],
+  "counting": "Input+output. Cached input and reasoning output are subsets. Each saved original attempt once. Failed and killed requests without receipts unknown. No historical/development/chat usage."
+}

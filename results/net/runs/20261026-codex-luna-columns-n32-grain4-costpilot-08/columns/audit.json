@@ -1,0 +1,3730 @@
+{
+  "status": "stopped_invalid_protocol",
+  "scientifically_valid_completed_run": false,
+  "completed_T": null,
+  "model": "gpt-6-luna",
+  "seed": 100,
+  "expected_tasks": 65,
+  "observed_accepted_tasks": 27,
+  "final_accepted": false,
+  "observed_native_operations_with_outputs": 2993,
+  "progress_operation_count": 3266,
+  "observed_ops": {
+    "apply": 194,
+    "wait": 1778,
+    "status": 13,
+    "submit": 45,
+    "tasks": 158,
+    "send": 65,
+    "keys": 25,
+    "inbox": 715
+  },
+  "global_order_verified_by_budget": false,
+  "accepted_evidence": {
+    "L0.0": {
+      "agent": "a0",
+      "chain": {
+        "0": {
+          "observation_index": 0,
+          "agent": "a0",
+          "input": 3,
+          "output": 774
+        },
+        "1": {
+          "observation_index": 26,
+          "agent": "a0",
+          "input": 774,
+          "output": 528
+        },
+        "2": {
+          "observation_index": 58,
+          "agent": "a0",
+          "input": 528,
+          "output": 70
+        },
+        "3": {
+          "observation_index": 89,
+          "agent": "a0",
+          "input": 70,
+          "output": 40
+        }
+      },
+      "observation_index": 121
+    },
+    "L0.1": {
+      "agent": "a1",
+      "chain": {
+        "0": {
+          "observation_index": 1,
+          "agent": "a1",
+          "input": 901,
+          "output": 368
+        },
+        "1": {
+          "observation_index": 27,
+          "agent": "a1",
+          "input": 368,
+          "output": 604
+        },
+        "2": {
+          "observation_index": 59,
+          "agent": "a1",
+          "input": 604,
+          "output": 149
+        },
+        "3": {
+          "observation_index": 90,
+          "agent": "a1",
+          "input": 149,
+          "output": 539
+        }
+      },
+      "observation_index": 122
+    },
+    "L0.2": {
+      "agent": "a2",
+      "chain": {
+        "0": {
+          "observation_index": 2,
+          "agent": "a2",
+          "input": 871,
+          "output": 833
+        },
+        "1": {
+          "observation_index": 28,
+          "agent": "a2",
+          "input": 833,
+          "output": 238
+        },
+        "2": {
+          "observation_index": 60,
+          "agent": "a2",
+          "input": 238,
+          "output": 256
+        },
+        "3": {
+          "observation_index": 91,
+          "agent": "a2",
+          "input": 256,
+          "output": 36
+        }
+      },
+      "observation_index": 123
+    },
+    "L0.3": {
+      "agent": "a3",
+      "chain": {
+        "0": {
+          "observation_index": 3,
+          "agent": "a3",
+          "input": 606,
+          "output": 630
+        },
+        "1": {
+          "observation_index": 29,
+          "agent": "a3",
+          "input": 630,
+          "output": 48
+        },
+        "2": {
+          "observation_index": 61,
+          "agent": "a3",
+          "input": 48,
+          "output": 741
+        },
+        "3": {
+          "observation_index": 92,
+          "agent": "a3",
+          "input": 741,
+          "output": 187
+        }
+      },
+      "observation_index": 124
+    },
+    "L0.4": {
+      "agent": "a4",
+      "chain": {
+        "0": {
+          "observation_index": 4,
+          "agent": "a4",
+          "input": 168,
+          "output": 938
+        },
+        "1": {
+          "observation_index": 30,
+          "agent": "a4",
+          "input": 938,
+          "output": 882
+        },
+        "2": {
+          "observation_index": 62,
+          "agent": "a4",
+          "input": 882,
+          "output": 780
+        },
+        "3": {
+          "observation_index": 93,
+          "agent": "a4",
+          "input": 780,
+          "output": 562
+        }
+      },
+      "observation_index": 125
+    },
+    "L0.5": {
+      "agent": "a5",
+      "chain": {
+        "0": {
+          "observation_index": 5,
+          "agent": "a5",
+          "input": 185,
+          "output": 775
+        },
+        "1": {
+          "observation_index": 31,
+          "agent": "a5",
+          "input": 775,
+          "output": 694
+        },
+        "2": {
+          "observation_index": 63,
+          "agent": "a5",
+          "input": 694,
+          "output": 549
+        },
+        "3": {
+          "observation_index": 94,
+          "agent": "a5",
+          "input": 549,
+          "output": 370
+        }
+      },
+      "observation_index": 126
+    },
+    "L0.6": {
+      "agent": "a6",
+      "chain": {
+        "0": {
+          "observation_index": 6,
+          "agent": "a6",
+          "input": 504,
+          "output": 428
+        },
+        "1": {
+          "observation_index": 32,
+          "agent": "a6",
+          "input": 428,
+          "output": 103
+        },
+        "2": {
+          "observation_index": 64,
+          "agent": "a6",
+          "input": 103,
+          "output": 672
+        },
+        "3": {
+          "observation_index": 95,
+          "agent": "a6",
+          "input": 672,
+          "output": 219
+        }
+      },
+      "observation_index": 127
+    },
+    "L0.7": {
+      "agent": "a7",
+      "chain": {
+        "0": {
+          "observation_index": 7,
+          "agent": "a7",
+          "input": 962,
+          "output": 160
+        },
+        "1": {
+          "observation_index": 33,
+          "agent": "a7",
+          "input": 160,
+          "output": 189
+        },
+        "2": {
+          "observation_index": 65,
+          "agent": "a7",
+          "input": 189,
+          "output": 67
+        },
+        "3": {
+          "observation_index": 96,
+          "agent": "a7",
+          "input": 67,
+          "output": 251
+        }
+      },
+      "observation_index": 128
+    },
+    "L0.8": {
+      "agent": "a8",
+      "chain": {
+        "0": {
+          "observation_index": 8,
+          "agent": "a8",
+          "input": 241,
+          "output": 780
+        },
+        "1": {
+          "observation_index": 34,
+          "agent": "a8",
+          "input": 780,
+          "output": 159
+        },
+        "2": {
+          "observation_index": 66,
+          "agent": "a8",
+          "input": 159,
+          "output": 173
+        },
+        "3": {
+          "observation_index": 97,
+          "agent": "a8",
+          "input": 173,
+          "output": 38
+        }
+      },
+      "observation_index": 129
+    },
+    "L0.9": {
+      "agent": "a9",
+      "chain": {
+        "0": {
+          "observation_index": 9,
+          "agent": "a9",
+          "input": 855,
+          "output": 585
+        },
+        "1": {
+          "observation_index": 35,
+          "agent": "a9",
+          "input": 585,
+          "output": 424
+        },
+        "2": {
+          "observation_index": 67,
+          "agent": "a9",
+          "input": 424,
+          "output": 215
+        },
+        "3": {
+          "observation_index": 98,
+          "agent": "a9",
+          "input": 215,
+          "output": 886
+        }
+      },
+      "observation_index": 130
+    },
+    "L0.10": {
+      "agent": "a10",
+      "chain": {
+        "0": {
+          "observation_index": 10,
+          "agent": "a10",
+          "input": 854,
+          "output": 552
+        },
+        "1": {
+          "observation_index": 36,
+          "agent": "a10",
+          "input": 552,
+          "output": 152
+        },
+        "2": {
+          "observation_index": 68,
+          "agent": "a10",
+          "input": 152,
+          "output": 844
+        },
+        "3": {
+          "observation_index": 99,
+          "agent": "a10",
+          "input": 844,
+          "output": 456
+        }
+      },
+      "observation_index": 131
+    },
+    "L0.11": {
+      "agent": "a11",
+      "chain": {
+        "0": {
+          "observation_index": 11,
+          "agent": "a11",
+          "input": 751,
+          "output": 3
+        },
+        "1": {
+          "observation_index": 37,
+          "agent": "a11",
+          "input": 3,
+          "output": 7
+        },
+        "2": {
+          "observation_index": 69,
+          "agent": "a11",
+          "input": 7,
+          "output": 531
+        },
+        "3": {
+          "observation_index": 100,
+          "agent": "a11",
+          "input": 531,
+          "output": 794
+        }
+      },
+      "observation_index": 132
+    },
+    "L0.12": {
+      "agent": "a12",
+      "chain": {
+        "0": {
+          "observation_index": 38,
+          "agent": "a12",
+          "input": 441,
+          "output": 839
+        },
+        "1": {
+          "observation_index": 70,
+          "agent": "a12",
+          "input": 839,
+          "output": 759
+        },
+        "2": {
+          "observation_index": 101,
+          "agent": "a12",
+          "input": 759,
+          "output": 875
+        },
+        "3": {
+          "observation_index": 133,
+          "agent": "a12",
+          "input": 875,
+          "output": 276
+        }
+      },
+      "observation_index": 153
+    },
+    "L0.13": {
+      "agent": "a13",
+      "chain": {
+        "0": {
+          "observation_index": 39,
+          "agent": "a13",
+          "input": 395,
+          "output": 823
+        },
+        "1": {
+          "observation_index": 71,
+          "agent": "a13",
+          "input": 823,
+          "output": 261
+        },
+        "2": {
+          "observation_index": 102,
+          "agent": "a13",
+          "input": 261,
+          "output": 247
+        },
+        "3": {
+          "observation_index": 134,
+          "agent": "a13",
+          "input": 247,
+          "output": 278
+        }
+      },
+      "observation_index": 154
+    },
+    "L0.14": {
+      "agent": "a14",
+      "chain": {
+        "0": {
+          "observation_index": 40,
+          "agent": "a14",
+          "input": 480,
+          "output": 186
+        },
+        "1": {
+          "observation_index": 72,
+          "agent": "a14",
+          "input": 186,
+          "output": 281
+        },
+        "2": {
+          "observation_index": 103,
+          "agent": "a14",
+          "input": 281,
+          "output": 688
+        },
+        "3": {
+          "observation_index": 135,
+          "agent": "a14",
+          "input": 688,
+          "output": 279
+        }
+      },
+      "observation_index": 155
+    },
+    "L0.15": {
+      "agent": "a15",
+      "chain": {
+        "0": {
+          "observation_index": 200,
+          "agent": "a15",
+          "input": 116,
+          "output": 838
+        },
+        "1": {
+          "observation_index": 226,
+          "agent": "a15",
+          "input": 838,
+          "output": 280
+        },
+        "2": {
+          "observation_index": 250,
+          "agent": "a15",
+          "input": 280,
+          "output": 407
+        },
+        "3": {
+          "observation_index": 275,
+          "agent": "a15",
+          "input": 407,
+          "output": 741
+        }
+      },
+      "observation_index": 305
+    },
+    "L1.3": {
+      "agent": "a3",
+      "chain": {
+        "0": {
+          "observation_index": 460,
+          "agent": "a3",
+          "input": 227,
+          "output": 670
+        },
+        "1": {
+          "observation_index": 489,
+          "agent": "a3",
+          "input": 670,
+          "output": 891
+        },
+        "2": {
+          "observation_index": 517,
+          "agent": "a3",
+          "input": 891,
+          "output": 761
+        },
+        "3": {
+          "observation_index": 548,
+          "agent": "a3",
+          "input": 761,
+          "output": 206
+        }
+      },
+      "observation_index": 576
+    },
+    "L1.5": {
+      "agent": "a5",
+      "chain": {
+        "0": {
+          "observation_index": 550,
+          "agent": "a5",
+          "input": 250,
+          "output": 943
+        },
+        "1": {
+          "observation_index": 578,
+          "agent": "a5",
+          "input": 943,
+          "output": 835
+        },
+        "2": {
+          "observation_index": 607,
+          "agent": "a5",
+          "input": 835,
+          "output": 823
+        },
+        "3": {
+          "observation_index": 634,
+          "agent": "a5",
+          "input": 823,
+          "output": 709
+        }
+      },
+      "observation_index": 666
+    },
+    "L1.12": {
+      "agent": "a12",
+      "chain": {
+        "0": {
+          "observation_index": 584,
+          "agent": "a12",
+          "input": 250,
+          "output": 691
+        },
+        "1": {
+          "observation_index": 613,
+          "agent": "a12",
+          "input": 691,
+          "output": 199
+        },
+        "2": {
+          "observation_index": 641,
+          "agent": "a12",
+          "input": 199,
+          "output": 764
+        },
+        "3": {
+          "observation_index": 673,
+          "agent": "a12",
+          "input": 764,
+          "output": 100
+        }
+      },
+      "observation_index": 766
+    },
+    "L1.6": {
+      "agent": "a6",
+      "chain": {
+        "0": {
+          "observation_index": 728,
+          "agent": "a6",
+          "input": 781,
+          "output": 201
+        },
+        "1": {
+          "observation_index": 760,
+          "agent": "a6",
+          "input": 201,
+          "output": 11
+        },
+        "2": {
+          "observation_index": 789,
+          "agent": "a6",
+          "input": 11,
+          "output": 427
+        },
+        "3": {
+          "observation_index": 818,
+          "agent": "a6",
+          "input": 427,
+          "output": 30
+        }
+      },
+      "observation_index": 847
+    },
+    "L1.14": {
+      "agent": "a14",
+      "chain": {
+        "0": {
+          "observation_index": 736,
+          "agent": "a14",
+          "input": 356,
+          "output": 359
+        },
+        "1": {
+          "observation_index": 768,
+          "agent": "a14",
+          "input": 359,
+          "output": 685
+        },
+        "2": {
+          "observation_index": 796,
+          "agent": "a14",
+          "input": 685,
+          "output": 80
+        },
+        "3": {
+          "observation_index": 825,
+          "agent": "a14",
+          "input": 80,
+          "output": 654
+        }
+      },
+      "observation_index": 854
+    },
+    "L1.1": {
+      "agent": "a1",
+      "chain": {
+        "0": {
+          "observation_index": 1051,
+          "agent": "a1",
+          "input": 777,
+          "output": 390
+        },
+        "1": {
+          "observation_index": 1080,
+          "agent": "a1",
+          "input": 390,
+          "output": 981
+        },
+        "2": {
+          "observation_index": 1109,
+          "agent": "a1",
+          "input": 981,
+          "output": 206
+        },
+        "3": {
+          "observation_index": 1139,
+          "agent": "a1",
+          "input": 206,
+          "output": 244
+        }
+      },
+      "observation_index": 1168
+    },
+    "L1.13": {
+      "agent": "a13",
+      "chain": {
+        "0": {
+          "observation_index": 1179,
+          "agent": "a13",
+          "input": 257,
+          "output": 0
+        },
+        "1": {
+          "observation_index": 1208,
+          "agent": "a13",
+          "input": 0,
+          "output": 267
+        },
+        "2": {
+          "observation_index": 1238,
+          "agent": "a13",
+          "input": 267,
+          "output": 253
+        },
+        "3": {
+          "observation_index": 1268,
+          "agent": "a13",
+          "input": 253,
+          "output": 401
+        }
+      },
+      "observation_index": 1296
+    },
+    "L1.8": {
+      "agent": "a8",
+      "chain": {
+        "0": {
+          "observation_index": 1292,
+          "agent": "a8",
+          "input": 303,
+          "output": 984
+        },
+        "1": {
+          "observation_index": 1320,
+          "agent": "a8",
+          "input": 984,
+          "output": 822
+        },
+        "2": {
+          "observation_index": 1350,
+          "agent": "a8",
+          "input": 822,
+          "output": 918
+        },
+        "3": {
+          "observation_index": 1380,
+          "agent": "a8",
+          "input": 918,
+          "output": 145
+        }
+      },
+      "observation_index": 1410
+    },
+    "L1.15": {
+      "agent": "a15",
+      "chain": {
+        "0": {
+          "observation_index": 1478,
+          "agent": "a15",
+          "input": 101,
+          "output": 97
+        },
+        "1": {
+          "observation_index": 1508,
+          "agent": "a15",
+          "input": 97,
+          "output": 556
+        },
+        "2": {
+          "observation_index": 1537,
+          "agent": "a15",
+          "input": 556,
+          "output": 663
+        },
+        "3": {
+          "observation_index": 1568,
+          "agent": "a15",
+          "input": 663,
+          "output": 502
+        }
+      },
+      "observation_index": 1598
+    },
+    "L1.11": {
+      "agent": "a11",
+      "chain": {
+        "0": {
+          "observation_index": 2763,
+          "agent": "a11",
+          "input": 818,
+          "output": 523
+        },
+        "1": {
+          "observation_index": 2789,
+          "agent": "a11",
+          "input": 523,
+          "output": 491
+        },
+        "2": {
+          "observation_index": 2816,
+          "agent": "a11",
+          "input": 491,
+          "output": 206
+        },
+        "3": {
+          "observation_index": 2844,
+          "agent": "a11",
+          "input": 206,
+          "output": 444
+        }
+      },
+      "observation_index": 2873
+    },
+    "L1.4": {
+      "agent": "a4",
+      "chain": {
+        "0": {
+          "observation_index": 2782,
+          "agent": "a4",
+          "input": 20,
+          "output": 833
+        },
+        "1": {
+          "observation_index": 2810,
+          "agent": "a4",
+          "input": 833,
+          "output": 583
+        },
+        "2": {
+          "observation_index": 2837,
+          "agent": "a4",
+          "input": 583,
+          "output": 809
+        },
+        "3": {
+          "observation_index": 2866,
+          "agent": "a4",
+          "input": 809,
+          "output": 854
+        }
+      },
+      "observation_index": 2895
+    }
+  },
+  "unreadable_saved_observations": [
+    {
+      "call_id": "call_a0_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a0_10_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a0_14_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a0_77_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a0_96_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a0_101_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_10_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_15_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_17_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_18_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_42_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_43_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_44_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a1_72_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a10_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a10_10_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a10_11_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a10_12_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a10_13_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a10_14_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a10_15_333e831add8e",
+      "op": "tasks",
+      "error": "Expecting ',' delimiter: line 1 column 6002 (char 6001)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a11_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a11_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a11_7_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a11_8_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a11_9_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a11_12_333e831add8e",
+      "op": "tasks",
+      "error": "Expecting ',' delimiter: line 1 column 6002 (char 6001)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_0_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_7_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_8_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_9_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_10_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_28_333e831add8e",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5999 (char 5998)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_29_333e831add8e",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5999 (char 5998)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_30_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_36_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_37_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_39_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_40_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_45_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_46_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_48_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_53_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_57_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_60_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_65_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_69_75684f39a7f0",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5999 (char 5998)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_85_4bdc1891ccc0",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5885 (char 5884)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_93_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_99_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a12_101_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_0_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_7_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_53_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_56_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_59_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_60_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_61_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_63_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_65_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_67_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_70_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_71_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_73_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_74_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_75_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_76_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_77_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_79_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_82_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_84_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_86_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_87_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_90_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_92_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_93_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_94_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_96_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_97_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_98_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_100_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_101_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a13_103_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_0_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_7_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_8_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_9_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_10_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_13_333e831add8e",
+      "op": "tasks",
+      "error": "Expecting ',' delimiter: line 1 column 6002 (char 6001)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_32_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_33_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_38_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_40_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_41_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_44_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_49_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_55_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_82_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_86_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_88_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_95_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a14_102_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_12_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_13_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_14_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_15_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_16_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_17_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_18_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_20_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_21_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_22_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_83_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_86_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_94_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_95_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_97_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_101_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a15_102_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a16_38_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a16_55_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a16_70_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a16_74_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a16_86_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a16_96_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a17_14_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a17_29_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a17_65_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a18_0_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a18_24_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a18_37_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a19_4_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a19_27_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_14_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_16_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_17_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_48_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_92_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_101_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_102_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a2_103_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_0_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_8_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_18_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_22_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_45_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_57_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_74_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_81_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a20_101_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a21_18_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a21_45_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a21_95_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a22_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a22_22_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a22_24_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a22_82_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a23_2_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a23_8_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a23_18_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a23_20_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a24_33_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a24_71_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a25_0_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a25_9_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a25_36_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a25_56_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a26_21_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a26_28_333e831add8e",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5999 (char 5998)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a27_80_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a27_94_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a28_44_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a28_77_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a29_31_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a29_91_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_7_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_8_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_9_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_23_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_28_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_29_333e831add8e",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5999 (char 5998)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a3_30_333e831add8e",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5999 (char 5998)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a31_75_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_7_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_8_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_9_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_11_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_12_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_13_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_16_333e831add8e",
+      "op": "tasks",
+      "error": "Expecting ',' delimiter: line 1 column 6002 (char 6001)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_101_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a4_102_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a5_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a5_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a5_25_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a5_28_333e831add8e",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5999 (char 5998)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_19_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_20_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_21_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_22_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_31_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_32_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_33_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_100_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a6_103_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_7_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_8_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_9_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_10_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_12_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_13_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_14_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_97_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_101_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_102_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a7_103_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_6_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_7_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_13_333e831add8e",
+      "op": "tasks",
+      "error": "Expecting ',' delimiter: line 1 column 6002 (char 6001)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_17_333e831add8e",
+      "op": "tasks",
+      "error": "Expecting ',' delimiter: line 1 column 6002 (char 6001)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_20_333e831add8e",
+      "op": "tasks",
+      "error": "Expecting ',' delimiter: line 1 column 6002 (char 6001)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_52_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_58_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_59_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_64_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_66_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_67_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_72_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_81_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a8_84_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5887 (char 5886)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    },
+    {
+      "call_id": "call_a9_5_992b462f5a2c",
+      "op": "tasks",
+      "error": "Unterminated string starting at: line 1 column 5889 (char 5888)",
+      "note": "Original saved tool output was truncated; not reconstructed or rewritten."
+    }
+  ],
+  "accepted_nodes_without_full_ordered_chain": [],
+  "wrong_input_applies": [
+    {
+      "call_id": "call_a6_14_1f4ba5a14b5d",
+      "agent": "a6",
+      "decision_index": 14,
+      "op": "apply",
+      "args": {
+        "task": "L1.6",
+        "x": 497
+      },
+      "obs": {
+        "task": "L1.6",
+        "x": 497,
+        "f(x)": 450,
+        "ok": true,
+        "result_id": "r64",
+        "budget": 1986
+      }
+    },
+    {
+      "call_id": "call_a13_14_13f61e4e3c92",
+      "agent": "a13",
+      "decision_index": 14,
+      "op": "apply",
+      "args": {
+        "task": "L1.13",
+        "x": 497
+      },
+      "obs": {
+        "task": "L1.13",
+        "x": 497,
+        "f(x)": 263,
+        "ok": true,
+        "result_id": "r65",
+        "budget": 1985
+      }
+    },
+    {
+      "call_id": "call_a6_15_861dd5c476df",
+      "agent": "a6",
+      "decision_index": 15,
+      "op": "apply",
+      "args": {
+        "task": "L1.6",
+        "x": 450
+      },
+      "obs": {
+        "task": "L1.6",
+        "x": 450,
+        "f(x)": 957,
+        "ok": true,
+        "result_id": "r66",
+        "budget": 1985
+      }
+    },
+    {
+      "call_id": "call_a6_16_3d9d5c826d34",
+      "agent": "a6",
+      "decision_index": 16,
+      "op": "apply",
+      "args": {
+        "task": "L1.6",
+        "x": 957
+      },
+      "obs": {
+        "task": "L1.6",
+        "x": 957,
+        "f(x)": 465,
+        "ok": true,
+        "result_id": "r67",
+        "budget": 1984
+      }
+    },
+    {
+      "call_id": "call_a13_16_9f14e4eb8bbe",
+      "agent": "a13",
+      "decision_index": 16,
+      "op": "apply",
+      "args": {
+        "task": "L1.13",
+        "x": 263
+      },
+      "obs": {
+        "task": "L1.13",
+        "x": 263,
+        "f(x)": 934,
+        "ok": true,
+        "result_id": "r68",
+        "budget": 1984
+      }
+    },
+    {
+      "call_id": "call_a6_17_62980a13b92a",
+      "agent": "a6",
+      "decision_index": 17,
+      "op": "apply",
+      "args": {
+        "task": "L1.6",
+        "x": 465
+      },
+      "obs": {
+        "task": "L1.6",
+        "x": 465,
+        "f(x)": 234,
+        "ok": true,
+        "result_id": "r70",
+        "budget": 1983
+      }
+    },
+    {
+      "call_id": "call_a13_17_d647c8665ad9",
+      "agent": "a13",
+      "decision_index": 17,
+      "op": "apply",
+      "args": {
+        "task": "L1.13",
+        "x": 934
+      },
+      "obs": {
+        "task": "L1.13",
+        "x": 934,
+        "f(x)": 963,
+        "ok": true,
+        "result_id": "r71",
+        "budget": 1983
+      }
+    },
+    {
+      "call_id": "call_a13_19_a0fd94158de7",
+      "agent": "a13",
+      "decision_index": 19,
+      "op": "apply",
+      "args": {
+        "task": "L1.13",
+        "x": 963
+      },
+      "obs": {
+        "task": "L1.13",
+        "x": 963,
+        "f(x)": 478,
+        "ok": true,
+        "result_id": "r74",
+        "budget": 1981
+      }
+    },
+    {
+      "call_id": "call_a13_20_a0fd94158de7",
+      "agent": "a13",
+      "decision_index": 20,
+      "op": "apply",
+      "args": {
+        "task": "L1.13",
+        "x": 963
+      },
+      "obs": {
+        "task": "L1.13",
+        "x": 963,
+        "f(x)": 478,
+        "ok": true,
+        "result_id": "r78",
+        "budget": 1980
+      }
+    },
+    {
+      "call_id": "call_a12_25_991c5bc58d11",
+      "agent": "a12",
+      "decision_index": 25,
+      "op": "apply",
+      "args": {
+        "task": "L1.12",
+        "x": 100
+      },
+      "obs": {
+        "task": "L1.12",
+        "x": 100,
+        "f(x)": 33,
+        "ok": true,
+        "result_id": "r93",
+        "budget": 1974
+      }
+    },
+    {
+      "call_id": "call_a11_26_c66409834c0f",
+      "agent": "a11",
+      "decision_index": 26,
+      "op": "apply",
+      "args": {
+        "task": "L1.11",
+        "x": 101
+      },
+      "obs": {
+        "task": "L1.11",
+        "x": 101,
+        "f(x)": 306,
+        "ok": true,
+        "result_id": "r95",
+        "budget": 1975
+      }
+    },
+    {
+      "call_id": "call_a11_27_e105f1e28be3",
+      "agent": "a11",
+      "decision_index": 27,
+      "op": "apply",
+      "args": {
+        "task": "L1.11",
+        "x": 306
+      },
+      "obs": {
+        "task": "L1.11",
+        "x": 306,
+        "f(x)": 910,
+        "ok": true,
+        "result_id": "r98",
+        "budget": 1974
+      }
+    },
+    {
+      "call_id": "call_a11_28_41d86139efd4",
+      "agent": "a11",
+      "decision_index": 28,
+      "op": "apply",
+      "args": {
+        "task": "L1.11",
+        "x": 910
+      },
+      "obs": {
+        "task": "L1.11",
+        "x": 910,
+        "f(x)": 798,
+        "ok": true,
+        "result_id": "r101",
+        "budget": 1973
+      }
+    },
+    {
+      "call_id": "call_a11_29_b6f537a4b0c1",
+      "agent": "a11",
+      "decision_index": 29,
+      "op": "apply",
+      "args": {
+        "task": "L1.11",
+        "x": 798
+      },
+      "obs": {
+        "task": "L1.11",
+        "x": 798,
+        "f(x)": 668,
+        "ok": true,
+        "result_id": "r105",
+        "budget": 1972
+      }
+    },
+    {
+      "call_id": "call_a11_33_11ff02dbf71c",
+      "agent": "a11",
+      "decision_index": 33,
+      "op": "apply",
+      "args": {
+        "task": "L1.11",
+        "x": 19
+      },
+      "obs": {
+        "task": "L1.11",
+        "x": 19,
+        "f(x)": 370,
+        "ok": true,
+        "result_id": "r110",
+        "budget": 1968
+      }
+    },
+    {
+      "call_id": "call_a4_37_8ad56cbd5821",
+      "agent": "a4",
+      "decision_index": 37,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": [
+          480,
+          741
+        ]
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 221,
+        "f(x)": 374,
+        "ok": true,
+        "result_id": "r114",
+        "budget": 1965
+      }
+    },
+    {
+      "call_id": "call_a4_38_963b1ce0dd1b",
+      "agent": "a4",
+      "decision_index": 38,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 374
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 374,
+        "f(x)": 172,
+        "ok": true,
+        "result_id": "r117",
+        "budget": 1964
+      }
+    },
+    {
+      "call_id": "call_a4_39_68cdae906f82",
+      "agent": "a4",
+      "decision_index": 39,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 172
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 172,
+        "f(x)": 311,
+        "ok": true,
+        "result_id": "r120",
+        "budget": 1963
+      }
+    },
+    {
+      "call_id": "call_a11_39_1ddb04efd164",
+      "agent": "a11",
+      "decision_index": 39,
+      "op": "apply",
+      "args": {
+        "task": "L1.11",
+        "x": 370
+      },
+      "obs": {
+        "task": "L1.11",
+        "x": 370,
+        "f(x)": 845,
+        "ok": true,
+        "result_id": "r121",
+        "budget": 1962
+      }
+    },
+    {
+      "call_id": "call_a4_40_a545a6dbb2f0",
+      "agent": "a4",
+      "decision_index": 40,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 311
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 311,
+        "f(x)": 542,
+        "ok": true,
+        "result_id": "r123",
+        "budget": 1962
+      }
+    },
+    {
+      "call_id": "call_a11_40_57530ec0c41f",
+      "agent": "a11",
+      "decision_index": 40,
+      "op": "apply",
+      "args": {
+        "task": "L1.11",
+        "x": 845
+      },
+      "obs": {
+        "task": "L1.11",
+        "x": 845,
+        "f(x)": 538,
+        "ok": true,
+        "result_id": "r124",
+        "budget": 1961
+      }
+    },
+    {
+      "call_id": "call_a11_56_f41c539adb12",
+      "agent": "a11",
+      "decision_index": 56,
+      "op": "apply",
+      "args": {
+        "task": "L1.11",
+        "x": 538
+      },
+      "obs": {
+        "task": "L1.11",
+        "x": 538,
+        "f(x)": 183,
+        "ok": true,
+        "result_id": "r138",
+        "budget": 1945
+      }
+    },
+    {
+      "call_id": "call_a1_77_da9ee55c7905",
+      "agent": "a1",
+      "decision_index": 77,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 980
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 980,
+        "f(x)": 162,
+        "ok": true,
+        "result_id": "r142",
+        "budget": 1942
+      }
+    },
+    {
+      "call_id": "call_a1_79_73c4e5677354",
+      "agent": "a1",
+      "decision_index": 79,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 162
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 162,
+        "f(x)": 857,
+        "ok": true,
+        "result_id": "r143",
+        "budget": 1940
+      }
+    },
+    {
+      "call_id": "call_a1_80_e78976589da0",
+      "agent": "a1",
+      "decision_index": 80,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 857
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 857,
+        "f(x)": 847,
+        "ok": true,
+        "result_id": "r144",
+        "budget": 1939
+      }
+    },
+    {
+      "call_id": "call_a1_81_dc59735e65ee",
+      "agent": "a1",
+      "decision_index": 81,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 847
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 847,
+        "f(x)": 752,
+        "ok": true,
+        "result_id": "r145",
+        "budget": 1938
+      }
+    },
+    {
+      "call_id": "call_a0_90_4f04f5794f62",
+      "agent": "a0",
+      "decision_index": 90,
+      "op": "apply",
+      "args": {
+        "task": "L1.0",
+        "x": 811
+      },
+      "obs": {
+        "task": "L1.0",
+        "x": 811,
+        "f(x)": 170,
+        "ok": true,
+        "result_id": "r147",
+        "budget": 1917
+      }
+    },
+    {
+      "call_id": "call_a7_90_da9ee55c7905",
+      "agent": "a7",
+      "decision_index": 90,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 980
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 980,
+        "f(x)": 162,
+        "ok": true,
+        "result_id": "r148",
+        "budget": 1916
+      }
+    },
+    {
+      "call_id": "call_a10_90_f03b1e7a713d",
+      "agent": "a10",
+      "decision_index": 90,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 481
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 481,
+        "f(x)": 259,
+        "ok": true,
+        "result_id": "r149",
+        "budget": 1915
+      }
+    },
+    {
+      "call_id": "call_a0_91_3eb1f21efb71",
+      "agent": "a0",
+      "decision_index": 91,
+      "op": "apply",
+      "args": {
+        "task": "L1.0",
+        "x": 170
+      },
+      "obs": {
+        "task": "L1.0",
+        "x": 170,
+        "f(x)": 58,
+        "ok": true,
+        "result_id": "r151",
+        "budget": 1916
+      }
+    },
+    {
+      "call_id": "call_a7_91_73c4e5677354",
+      "agent": "a7",
+      "decision_index": 91,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 162
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 162,
+        "f(x)": 857,
+        "ok": true,
+        "result_id": "r152",
+        "budget": 1915
+      }
+    },
+    {
+      "call_id": "call_a10_91_c298c9cc4d8a",
+      "agent": "a10",
+      "decision_index": 91,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 259
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 259,
+        "f(x)": 553,
+        "ok": true,
+        "result_id": "r153",
+        "budget": 1914
+      }
+    },
+    {
+      "call_id": "call_a0_92_e7c2385a63a8",
+      "agent": "a0",
+      "decision_index": 92,
+      "op": "apply",
+      "args": {
+        "task": "L1.0",
+        "x": 58
+      },
+      "obs": {
+        "task": "L1.0",
+        "x": 58,
+        "f(x)": 985,
+        "ok": true,
+        "result_id": "r155",
+        "budget": 1915
+      }
+    },
+    {
+      "call_id": "call_a7_92_e78976589da0",
+      "agent": "a7",
+      "decision_index": 92,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 857
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 857,
+        "f(x)": 847,
+        "ok": true,
+        "result_id": "r158",
+        "budget": 1914
+      }
+    },
+    {
+      "call_id": "call_a10_92_21e57c975837",
+      "agent": "a10",
+      "decision_index": 92,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 553
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 553,
+        "f(x)": 57,
+        "ok": true,
+        "result_id": "r159",
+        "budget": 1913
+      }
+    },
+    {
+      "call_id": "call_a0_93_f2968971d5d4",
+      "agent": "a0",
+      "decision_index": 93,
+      "op": "apply",
+      "args": {
+        "task": "L1.0",
+        "x": 985
+      },
+      "obs": {
+        "task": "L1.0",
+        "x": 985,
+        "f(x)": 309,
+        "ok": true,
+        "result_id": "r161",
+        "budget": 1914
+      }
+    },
+    {
+      "call_id": "call_a7_93_dc59735e65ee",
+      "agent": "a7",
+      "decision_index": 93,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 847
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 847,
+        "f(x)": 752,
+        "ok": true,
+        "result_id": "r164",
+        "budget": 1913
+      }
+    },
+    {
+      "call_id": "call_a10_93_6ae3888ce5cd",
+      "agent": "a10",
+      "decision_index": 93,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 57
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 57,
+        "f(x)": 688,
+        "ok": true,
+        "result_id": "r165",
+        "budget": 1912
+      }
+    },
+    {
+      "call_id": "call_a10_96_f03b1e7a713d",
+      "agent": "a10",
+      "decision_index": 96,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 481
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 481,
+        "f(x)": 259,
+        "ok": true,
+        "result_id": "r172",
+        "budget": 1909
+      }
+    },
+    {
+      "call_id": "call_a1_97_da9ee55c7905",
+      "agent": "a1",
+      "decision_index": 97,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 980
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 980,
+        "f(x)": 162,
+        "ok": true,
+        "result_id": "r174",
+        "budget": 1922
+      }
+    },
+    {
+      "call_id": "call_a10_97_c298c9cc4d8a",
+      "agent": "a10",
+      "decision_index": 97,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 259
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 259,
+        "f(x)": 553,
+        "ok": true,
+        "result_id": "r176",
+        "budget": 1908
+      }
+    },
+    {
+      "call_id": "call_a7_99_71ebb131b9e0",
+      "agent": "a7",
+      "decision_index": 99,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": [
+          539,
+          441
+        ]
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 980,
+        "f(x)": 162,
+        "ok": true,
+        "result_id": "r181",
+        "budget": 1908
+      }
+    },
+    {
+      "call_id": "call_a10_99_21e57c975837",
+      "agent": "a10",
+      "decision_index": 99,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 553
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 553,
+        "f(x)": 57,
+        "ok": true,
+        "result_id": "r182",
+        "budget": 1906
+      }
+    },
+    {
+      "call_id": "call_a14_99_a0f66a914f6c",
+      "agent": "a14",
+      "decision_index": 99,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 395
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 395,
+        "f(x)": 541,
+        "ok": true,
+        "result_id": "r183",
+        "budget": 1929
+      }
+    },
+    {
+      "call_id": "call_a0_100_4f04f5794f62",
+      "agent": "a0",
+      "decision_index": 100,
+      "op": "apply",
+      "args": {
+        "task": "L1.0",
+        "x": 811
+      },
+      "obs": {
+        "task": "L1.0",
+        "x": 811,
+        "f(x)": 170,
+        "ok": true,
+        "result_id": "r184",
+        "budget": 1907
+      }
+    },
+    {
+      "call_id": "call_a1_100_73c4e5677354",
+      "agent": "a1",
+      "decision_index": 100,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 162
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 162,
+        "f(x)": 857,
+        "ok": true,
+        "result_id": "r185",
+        "budget": 1919
+      }
+    },
+    {
+      "call_id": "call_a14_100_02ed422c5d7b",
+      "agent": "a14",
+      "decision_index": 100,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 541
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 541,
+        "f(x)": 105,
+        "ok": true,
+        "result_id": "r186",
+        "budget": 1928
+      }
+    },
+    {
+      "call_id": "call_a6_101_60aa60205282",
+      "agent": "a6",
+      "decision_index": 101,
+      "op": "apply",
+      "args": {
+        "task": "L1.2",
+        "x": 614
+      },
+      "obs": {
+        "task": "L1.2",
+        "x": 614,
+        "f(x)": 16,
+        "ok": true,
+        "result_id": "r187",
+        "budget": 1909
+      }
+    },
+    {
+      "call_id": "call_a10_101_f03b1e7a713d",
+      "agent": "a10",
+      "decision_index": 101,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 481
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 481,
+        "f(x)": 259,
+        "ok": true,
+        "result_id": "r188",
+        "budget": 1904
+      }
+    },
+    {
+      "call_id": "call_a14_101_81908634b242",
+      "agent": "a14",
+      "decision_index": 101,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 105
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 105,
+        "f(x)": 877,
+        "ok": true,
+        "result_id": "r189",
+        "budget": 1927
+      }
+    },
+    {
+      "call_id": "call_a6_102_f0dc675281c2",
+      "agent": "a6",
+      "decision_index": 102,
+      "op": "apply",
+      "args": {
+        "task": "L1.2",
+        "x": 16
+      },
+      "obs": {
+        "task": "L1.2",
+        "x": 16,
+        "f(x)": 40,
+        "ok": true,
+        "result_id": "r190",
+        "budget": 1908
+      }
+    },
+    {
+      "call_id": "call_a10_102_c298c9cc4d8a",
+      "agent": "a10",
+      "decision_index": 102,
+      "op": "apply",
+      "args": {
+        "task": "L1.10",
+        "x": 259
+      },
+      "obs": {
+        "task": "L1.10",
+        "x": 259,
+        "f(x)": 553,
+        "ok": true,
+        "result_id": "r191",
+        "budget": 1903
+      }
+    },
+    {
+      "call_id": "call_a0_103_4f04f5794f62",
+      "agent": "a0",
+      "decision_index": 103,
+      "op": "apply",
+      "args": {
+        "task": "L1.0",
+        "x": 811
+      },
+      "obs": {
+        "task": "L1.0",
+        "x": 811,
+        "f(x)": 170,
+        "ok": true,
+        "result_id": "r192",
+        "budget": 1904
+      }
+    },
+    {
+      "call_id": "call_a14_103_aa84f21fabe6",
+      "agent": "a14",
+      "decision_index": 103,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 877
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 877,
+        "f(x)": 129,
+        "ok": true,
+        "result_id": "r193",
+        "budget": 1925
+      }
+    }
+  ],
+  "duplicate_applies": 47,
+  "rejected_submissions": {
+    "not the answer": 12,
+    "already done by a4": 1,
+    "already done by a8": 2,
+    "already done by a15": 1,
+    "already done by a7": 1,
+    "already done by a6": 1
+  },
+  "valid_applies_before_parent_acceptance": [],
+  "column_execution_violations": [
+    {
+      "call_id": "call_a24_20_5423abd015e6",
+      "agent": "a24",
+      "decision_index": 20,
+      "op": "apply",
+      "args": {
+        "task": "L0.8",
+        "x": 241
+      },
+      "obs": {
+        "task": "L0.8",
+        "x": 241,
+        "f(x)": 780,
+        "ok": true,
+        "result_id": "r79",
+        "budget": 1999
+      }
+    },
+    {
+      "call_id": "call_a24_21_a74aa7b69677",
+      "agent": "a24",
+      "decision_index": 21,
+      "op": "apply",
+      "args": {
+        "task": "L0.8",
+        "x": 780
+      },
+      "obs": {
+        "task": "L0.8",
+        "x": 780,
+        "f(x)": 159,
+        "ok": true,
+        "result_id": "r83",
+        "budget": 1998
+      }
+    },
+    {
+      "call_id": "call_a24_22_02ad48651c54",
+      "agent": "a24",
+      "decision_index": 22,
+      "op": "apply",
+      "args": {
+        "task": "L0.8",
+        "x": 159
+      },
+      "obs": {
+        "task": "L0.8",
+        "x": 159,
+        "f(x)": 173,
+        "ok": true,
+        "result_id": "r87",
+        "budget": 1997
+      }
+    },
+    {
+      "call_id": "call_a24_23_fa557e8192a8",
+      "agent": "a24",
+      "decision_index": 23,
+      "op": "apply",
+      "args": {
+        "task": "L0.8",
+        "x": 173
+      },
+      "obs": {
+        "task": "L0.8",
+        "x": 173,
+        "f(x)": 38,
+        "ok": true,
+        "result_id": "r91",
+        "budget": 1996
+      }
+    },
+    {
+      "call_id": "call_a24_24_16ac0bcf0c91",
+      "agent": "a24",
+      "decision_index": 24,
+      "op": "submit",
+      "args": {
+        "artifact": "38",
+        "task": "L0.8"
+      },
+      "obs": {
+        "ok": false,
+        "error": "already done by a8",
+        "budget": 1995
+      }
+    },
+    {
+      "call_id": "call_a1_77_da9ee55c7905",
+      "agent": "a1",
+      "decision_index": 77,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 980
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 980,
+        "f(x)": 162,
+        "ok": true,
+        "result_id": "r142",
+        "budget": 1942
+      }
+    },
+    {
+      "call_id": "call_a1_79_73c4e5677354",
+      "agent": "a1",
+      "decision_index": 79,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 162
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 162,
+        "f(x)": 857,
+        "ok": true,
+        "result_id": "r143",
+        "budget": 1940
+      }
+    },
+    {
+      "call_id": "call_a1_80_e78976589da0",
+      "agent": "a1",
+      "decision_index": 80,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 857
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 857,
+        "f(x)": 847,
+        "ok": true,
+        "result_id": "r144",
+        "budget": 1939
+      }
+    },
+    {
+      "call_id": "call_a1_81_dc59735e65ee",
+      "agent": "a1",
+      "decision_index": 81,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 847
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 847,
+        "f(x)": 752,
+        "ok": true,
+        "result_id": "r145",
+        "budget": 1938
+      }
+    },
+    {
+      "call_id": "call_a1_82_55c7336ecc9c",
+      "agent": "a1",
+      "decision_index": 82,
+      "op": "submit",
+      "args": {
+        "artifact": "752",
+        "task": "L1.7"
+      },
+      "obs": {
+        "ok": false,
+        "task": "L1.7",
+        "value": 0.0,
+        "error": "not the answer",
+        "budget": 1937
+      }
+    },
+    {
+      "call_id": "call_a4_92_d5814c73a76d",
+      "agent": "a4",
+      "decision_index": 92,
+      "op": "apply",
+      "args": {
+        "task": "L0.14",
+        "x": 480
+      },
+      "obs": {
+        "task": "L0.14",
+        "x": 480,
+        "f(x)": 186,
+        "ok": true,
+        "result_id": "r156",
+        "budget": 1911
+      }
+    },
+    {
+      "call_id": "call_a4_93_bf36d68da8f4",
+      "agent": "a4",
+      "decision_index": 93,
+      "op": "apply",
+      "args": {
+        "task": "L0.14",
+        "x": 186
+      },
+      "obs": {
+        "task": "L0.14",
+        "x": 186,
+        "f(x)": 281,
+        "ok": true,
+        "result_id": "r162",
+        "budget": 1910
+      }
+    },
+    {
+      "call_id": "call_a4_94_73059c41fa82",
+      "agent": "a4",
+      "decision_index": 94,
+      "op": "apply",
+      "args": {
+        "task": "L0.14",
+        "x": 281
+      },
+      "obs": {
+        "task": "L0.14",
+        "x": 281,
+        "f(x)": 688,
+        "ok": true,
+        "result_id": "r166",
+        "budget": 1909
+      }
+    },
+    {
+      "call_id": "call_a4_95_50b91f7dbd86",
+      "agent": "a4",
+      "decision_index": 95,
+      "op": "apply",
+      "args": {
+        "task": "L0.14",
+        "x": 688
+      },
+      "obs": {
+        "task": "L0.14",
+        "x": 688,
+        "f(x)": 279,
+        "ok": true,
+        "result_id": "r168",
+        "budget": 1908
+      }
+    },
+    {
+      "call_id": "call_a1_97_da9ee55c7905",
+      "agent": "a1",
+      "decision_index": 97,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 980
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 980,
+        "f(x)": 162,
+        "ok": true,
+        "result_id": "r174",
+        "budget": 1922
+      }
+    },
+    {
+      "call_id": "call_a14_99_a0f66a914f6c",
+      "agent": "a14",
+      "decision_index": 99,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 395
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 395,
+        "f(x)": 541,
+        "ok": true,
+        "result_id": "r183",
+        "budget": 1929
+      }
+    },
+    {
+      "call_id": "call_a1_100_73c4e5677354",
+      "agent": "a1",
+      "decision_index": 100,
+      "op": "apply",
+      "args": {
+        "task": "L1.7",
+        "x": 162
+      },
+      "obs": {
+        "task": "L1.7",
+        "x": 162,
+        "f(x)": 857,
+        "ok": true,
+        "result_id": "r185",
+        "budget": 1919
+      }
+    },
+    {
+      "call_id": "call_a14_100_02ed422c5d7b",
+      "agent": "a14",
+      "decision_index": 100,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 541
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 541,
+        "f(x)": 105,
+        "ok": true,
+        "result_id": "r186",
+        "budget": 1928
+      }
+    },
+    {
+      "call_id": "call_a6_101_60aa60205282",
+      "agent": "a6",
+      "decision_index": 101,
+      "op": "apply",
+      "args": {
+        "task": "L1.2",
+        "x": 614
+      },
+      "obs": {
+        "task": "L1.2",
+        "x": 614,
+        "f(x)": 16,
+        "ok": true,
+        "result_id": "r187",
+        "budget": 1909
+      }
+    },
+    {
+      "call_id": "call_a14_101_81908634b242",
+      "agent": "a14",
+      "decision_index": 101,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 105
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 105,
+        "f(x)": 877,
+        "ok": true,
+        "result_id": "r189",
+        "budget": 1927
+      }
+    },
+    {
+      "call_id": "call_a6_102_f0dc675281c2",
+      "agent": "a6",
+      "decision_index": 102,
+      "op": "apply",
+      "args": {
+        "task": "L1.2",
+        "x": 16
+      },
+      "obs": {
+        "task": "L1.2",
+        "x": 16,
+        "f(x)": 40,
+        "ok": true,
+        "result_id": "r190",
+        "budget": 1908
+      }
+    },
+    {
+      "call_id": "call_a14_103_aa84f21fabe6",
+      "agent": "a14",
+      "decision_index": 103,
+      "op": "apply",
+      "args": {
+        "task": "L1.4",
+        "x": 877
+      },
+      "obs": {
+        "task": "L1.4",
+        "x": 877,
+        "f(x)": 129,
+        "ok": true,
+        "result_id": "r193",
+        "budget": 1925
+      }
+    }
+  ],
+  "forbidden_cli_events": [
+    {
+      "path": "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a3/000032",
+      "event_type": "item.started",
+      "type": "mcp_tool_call",
+      "server": "codex",
+      "tool": "list_mcp_resources"
+    },
+    {
+      "path": "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a3/000032",
+      "event_type": "item.completed",
+      "type": "mcp_tool_call",
+      "server": "codex",
+      "tool": "list_mcp_resources"
+    },
+    {
+      "path": "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a30/000086",
+      "event_type": "item.started",
+      "type": "mcp_tool_call",
+      "server": "codex",
+      "tool": "list_mcp_resources"
+    },
+    {
+      "path": "columns/episodes/peers-columns-fixed-g4-n32-seed100/calls/a30/000086",
+      "event_type": "item.completed",
+      "type": "mcp_tool_call",
+      "server": "codex",
+      "tool": "list_mcp_resources"
+    }
+  ],
+  "context_trims": null,
+  "overflows": null,
+  "limits": [
+    "Aborted before run_one returned: no formal row/full native trace/member terminal reports. Host observations reconstructed from saved conversations and may omit final unobserved outputs.",
+    "This is invalid/aborted exploratory cost evidence, not a completed prediction test or a normal Luna cost benchmark.",
+    "Global parent-acceptance chronology cannot be fully checked without the terminal native trace. Ordered chain evidence uses saved per-member decision order.",
+    "Context trim/overflow terminal counters unavailable. Shared rounded subscription percent does not isolate experiment cost."
+  ]
+}
