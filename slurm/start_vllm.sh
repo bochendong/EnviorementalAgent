@@ -17,7 +17,7 @@ mkdir -p "$VLLM_CACHE_ROOT" "$TORCHINDUCTOR_CACHE_DIR" "$TRITON_CACHE_DIR"
 VLLM_ARGS=(--host 127.0.0.1 --port "$PORT" --served-model-name "$SERVED_NAME"
            --tensor-parallel-size "$TP" --max-model-len "$MAX_MODEL_LEN"
            --gpu-memory-utilization 0.90 --max-num-seqs 64
-           --enable-auto-tool-choice --tool-call-parser hermes --enable-prefix-caching)
+           --enable-auto-tool-choice --tool-call-parser "${TOOL_PARSER:-hermes}" --enable-prefix-caching)
 [ -n "${REASONING_PARSER:-}" ] && VLLM_ARGS+=(--reasoning-parser "$REASONING_PARSER")
 if [ "$MAX_MODEL_LEN" -gt "${NATIVE_LEN:-32768}" ]; then  # YaRN beyond the trained context
   FACTOR=$(awk "BEGIN{print $MAX_MODEL_LEN / ${NATIVE_LEN:-32768}}")

@@ -154,6 +154,9 @@ SUITES: dict[str, list[Case]] = {
     # before a GPU pilot: one single agent and one team of 8, one seed (slurm/run_all.sh STAGE=netscale-smoke)
     "netscale-smoke": [netscale_case("fixed", n, TEST_SEEDS[:1], 1) for n in (1, 8)],
     "netscale-pilot": [netscale_case("fixed", n, TEST_SEEDS[:3], g) for g in NETSCALE_GRAINS for n in NETSCALE_PILOT],
+    # which open model can run the protocol at all? one agent on the fixed grain-4 problem (65 tasks), 3 seeds at
+    # once (slurm/run_all.sh STAGE=netscale-screen); a model passes when it solves all 65 with b >= 0.9
+    "netscale-screen": [netscale_case("fixed", 1, TEST_SEEDS[:3], 4)],
     # do agents beyond one per task help? an 8-wide problem with one agent per task (8) and two (16), and 4 and
     # 12 around them (docs/netscale-predictions.md, third prediction)
     # the interventions (designs peers-columns on 32 agents, peers-msgjoin on 16): the same cases as netscale's,

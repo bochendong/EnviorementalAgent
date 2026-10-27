@@ -607,3 +607,11 @@ def test_lockstep_runs_save_their_progress(mock_llm, tmp_path):
     assert sum(state["ops"].values()) == sum(r["ops"].values())
     if r["steps"] >= 20:
         assert (tmp_path / "progress" / "peers__tiny__0.trace.jsonl.gz").exists()
+
+
+def test_model_screen_is_one_agent_on_the_65_task_grain_4_problem():
+    from netagents.testset import SUITES
+
+    (case,) = SUITES["netscale-screen"]
+    assert case.id == "dag/fixed-g4/n1" and case.seeds == [100, 101, 102] and case.lockstep
+    assert case.opt["width"] * case.opt["depth"] + 1 == 65

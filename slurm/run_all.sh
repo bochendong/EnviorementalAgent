@@ -19,6 +19,9 @@
 #          DAG, grain 1, one seed; every netscale stage runs 2 teams at once (NETAGENTS_PARALLEL) with replies
 #          of at most 3072 tokens (WS_MAX_TOKENS) and an FP8 KV cache (EXTRA_VLLM_ARGS); each run's progress
 #          is saved every round under <exp>/all/progress/. On one H100: MODEL_ID=Qwen/Qwen3-30B-A3B-FP8 GPU_RESOURCE=h100:1
+#   netscale-screen  which open model can run the protocol? one agent, fixed DAG, grain 4 (65 tasks), 3 seeds at
+#          once, 2 hours; passes when every seed is solved with b >= 0.9. MODEL_ID=openai/gpt-oss-120b or
+#          Qwen/Qwen3-30B-A3B-Instruct-2507-FP8 (no thinking; tool_choice=required runs as structured output)
 #   netscale-pilot  agent-network scaling, the pilot: teams of 1, 2, 4, 8 identical agents ("peers") on one
 #          DAG problem of known work and span, 3 seeds, time in lockstep rounds against the scripted
 #          reference (netagents/scaling.py); one packed job. netscale: 1-32 agents, fixed and scaled problems,
@@ -89,7 +92,7 @@ else
   [ -f "$PLAN" ] || printf "experiment\tdesign\tjob\tcommand\n" > "$PLAN"
   { echo "commit $(git rev-parse HEAD)  ($(git rev-parse --abbrev-ref HEAD))"; echo "submitted $(date -Is)";
   git status --short | sed 's/^/changed /'; } >> "$RUN_DIR/commit.txt"
-{ echo "# $(date -Is), stage $STAGE"; for v in ACCOUNT CPU_ACCOUNT GPU_ACCOUNT GPU_RESOURCE GPU_CPUS GPU_MEM GPU_DEPENDENCY MODEL_ID SERVED_NAME TP MAX_MODEL_LEN EXTRA_VLLM_ARGS SERVER_MODE CUDA_MODULE \
+{ echo "# $(date -Is), stage $STAGE"; for v in ACCOUNT CPU_ACCOUNT GPU_ACCOUNT GPU_RESOURCE GPU_CPUS GPU_MEM GPU_DEPENDENCY MODEL_ID SERVED_NAME TP MAX_MODEL_LEN NATIVE_LEN TOOL_PARSER REASONING_PARSER EXTRA_VLLM_ARGS SERVER_MODE CUDA_MODULE \
   DESIGNS FRAMEWORKS SEEDS N TIME NETSCALE_DESIGNS WS_THINKING WS_MAX_TOKENS WS_CONTEXT_TOKENS NETAGENTS_PARALLEL; do echo "$v=${!v:-}"; done; } >> "$RUN_DIR/env.txt"
 fi
 
@@ -158,13 +161,16 @@ PY
     # lockstep teams wait for their slowest member, and each member makes one request per round: fewer runs at
     # once and shorter replies keep every request well inside WS_TIMEOUT (the 2026-10-21 Nibi pilot timed out
     # with 8 runs at once and 8192-token replies: results/net/submissions/20261021-netscale-pilot-final-report.md)
-    export NETAGENTS_PARALLEL="${NETAGENTS_PARALLEL:-2}" WS_MAX_TOKENS="${WS_MAX_TOKENS:-3072}"
+    # the model screen's 3 seeds run at once
+    export NETAGENTS_PARALLEL="${NETAGENTS_PARALLEL:-$([ "$exp" = netscale-screen ] && echo 3 || echo 2)}" WS_MAX_TOKENS="${WS_MAX_TOKENS:-3072}"
     # a team's members all ask at once each round, each with up to WS_CONTEXT_TOKENS of history: an FP8 KV
     # cache holds twice as many tokens (Qwen3-30B-A3B-FP8 on one H100: about 40 GB of cache)
     export EXTRA_VLLM_ARGS="${EXTRA_VLLM_ARGS:---kv-cache-dtype fp8}"
     # a single agent takes 130 or more rounds one request at a time: the 2-hour smoke of 2026-10-25 ended
     # before it was done (results/net/submissions/20261023-netscale-smoke-final-report.md)
-    [ "$exp" = netscale-smoke ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-06:00 ;;
+    [ "$exp" = netscale-smoke ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-06:00
+    # the model screen is budgeted at about 2 H100 hours; its 3 seeds run at once
+    [ "$exp" = netscale-screen ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-02:00 ;;
   esac
   pack="${PACK:-$(case "$exp" in focus|load|netscale*) echo 1 ;; *) echo 0 ;; esac)}"
   if [ "${FRAMEWORKS:-0}" = 1 ] && { [ "$exp" = compat-framework ] || [ "$exp" = test ]; }; then

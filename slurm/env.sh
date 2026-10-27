@@ -28,7 +28,15 @@ export MAX_MODEL_LEN="${MAX_MODEL_LEN:-65536}"
 export NATIVE_LEN="${NATIVE_LEN:-32768}"
 # Thinking on, with the reasoning kept out of answers and histories (netagents/llm.py explains why).
 export WS_THINKING="${WS_THINKING:-1}"
-case "$MODEL_ID" in *Qwen3*|*qwen3*) export REASONING_PARSER="${REASONING_PARSER:-qwen3}" ;; esac
+# Parsers per model family. Qwen3 thinks (qwen3 reasoning parser); the 2507 Instruct models do not think at all,
+# and are trained on 256k tokens. gpt-oss speaks Harmony (openai parsers) and has its own YaRN up to 128k.
+TOOL_PARSER_DEFAULT=hermes
+case "$MODEL_ID" in
+  *gpt-oss*) TOOL_PARSER_DEFAULT=openai; export REASONING_PARSER="${REASONING_PARSER-openai_gptoss}" NATIVE_LEN=131072 ;;
+  *Qwen3*Instruct-2507*|*qwen3*instruct-2507*) export REASONING_PARSER="${REASONING_PARSER-}" NATIVE_LEN=262144 WS_THINKING=0 ;;
+  *Qwen3*|*qwen3*) export REASONING_PARSER="${REASONING_PARSER:-qwen3}" ;;
+esac
+export TOOL_PARSER="${TOOL_PARSER:-$TOOL_PARSER_DEFAULT}"
 export REASONING_PARSER="${REASONING_PARSER:-}"
 # History an agent keeps before each turn (estimated tokens): the window less room for tools and output.
 export WS_CONTEXT_TOKENS="${WS_CONTEXT_TOKENS:-$((MAX_MODEL_LEN * 6 / 10))}"

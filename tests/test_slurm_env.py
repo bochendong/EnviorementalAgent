@@ -28,3 +28,20 @@ def test_missing_requested_cuda_does_not_fall_back():
 def test_dependency_cannot_silently_replace_cuda():
     r = load('module() { if [[ "$1" == is-loaded ]]; then return 1; fi; return 0; }')
     assert r.returncode != 0 and 'Required CUDA module was replaced' in r.stderr
+
+
+def parsers(model):
+    r = subprocess.run(['bash', '-c', 'source "$1"; echo "$TOOL_PARSER|$REASONING_PARSER|$NATIVE_LEN|$WS_THINKING"',
+                        'test', str(ENV)],
+                       env={k: v for k, v in os.environ.items()
+                            if k not in ('TOOL_PARSER', 'REASONING_PARSER', 'NATIVE_LEN', 'WS_THINKING')}
+                       | {'SCRATCH': '/tmp', 'MODEL_ID': model}, capture_output=True, text=True)
+    return r.stdout.strip()
+
+
+def test_parsers_follow_the_model_family():
+    assert parsers('Qwen/Qwen3-30B-A3B-FP8') == 'hermes|qwen3|32768|1'
+    # no thinking at all, trained on 256k: no reasoning parser, so tool_choice=required is structured output
+    assert parsers('Qwen/Qwen3-30B-A3B-Instruct-2507-FP8') == 'hermes||262144|0'
+    # Harmony, and its own YaRN up to 128k (start_vllm.sh must not add another)
+    assert parsers('openai/gpt-oss-120b') == 'openai|openai_gptoss|131072|1'
