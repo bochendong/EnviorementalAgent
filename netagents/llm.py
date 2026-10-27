@@ -57,12 +57,13 @@ class LLMConfig:
 
 
 def make_model(cfg: LLMConfig):
-    from agents import OpenAIChatCompletionsModel, set_tracing_disabled
+    from agents import set_tracing_disabled
     from openai import AsyncOpenAI
+    from .validated_model import ValidatedChatCompletionsModel
 
     set_tracing_disabled(True)  # tracing would upload to OpenAI's servers
     client = AsyncOpenAI(base_url=cfg.base_url, api_key=cfg.api_key, timeout=cfg.timeout, max_retries=3)
-    return OpenAIChatCompletionsModel(model=cfg.model, openai_client=client)
+    return ValidatedChatCompletionsModel(model=cfg.model, openai_client=client)
 
 
 def without_thinking(settings):

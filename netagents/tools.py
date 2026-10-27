@@ -17,11 +17,28 @@ def _describe(op: dict) -> str:
     return f"{op['doc']} [costs {op['cost']} action{'s' if op['cost'] != 1 else ''}]"
 
 
+def _arguments(arguments):
+    """Decode tool arguments without treating a scalar or array as an object."""
+    if arguments is None:
+        return {}
+    if isinstance(arguments, str):
+        arguments = json.loads(arguments)
+    if not isinstance(arguments, dict):
+        raise ValueError("arguments must be a JSON object")
+    return arguments
+
+
+def _argument_error(error):
+    if isinstance(error, json.JSONDecodeError):
+        return f"arguments are not JSON: {error}"
+    return f"invalid tool arguments: {error}"
+
+
 def call(env, agent: str, name: str, arguments: str | dict | None, limit: int = 6000) -> str:
     try:
-        args = json.loads(arguments) if isinstance(arguments, str) else dict(arguments or {})
-    except json.JSONDecodeError as e:
-        obs = {"ok": False, "error": f"arguments are not JSON: {e}"}
+        args = _arguments(arguments)
+    except (ValueError, TypeError) as e:
+        obs = {"ok": False, "error": _argument_error(e)}
     else:
         obs = env.step(agent, name, args)
     text = json.dumps(obs, default=str)
@@ -39,9 +56,9 @@ def function_tools(env, agent: str, limit: int = 6000, keep=None) -> list:
         async def invoke(ctx, arguments, _op=op["name"]):
             if hasattr(env, "astep"):  # lockstep time (netagents/lockstep.py): wait for the round
                 try:
-                    args = json.loads(arguments) if isinstance(arguments, str) else dict(arguments or {})
-                except json.JSONDecodeError as e:
-                    return json.dumps({"ok": False, "error": f"arguments are not JSON: {e}"})
+                    args = _arguments(arguments)
+                except (ValueError, TypeError) as e:
+                    return json.dumps({"ok": False, "error": _argument_error(e)})
                 text = json.dumps(await env.astep(agent, _op, args), default=str)
                 return text if len(text) <= limit else text[:limit] + " ...(cut)"
             return call(env, agent, _op, arguments, limit)

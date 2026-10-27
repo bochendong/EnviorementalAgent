@@ -25,6 +25,7 @@ SUITE="${SUITE:-dev}"
 DESIGNS="${DESIGNS:-all}"
 ROUTE="${ROUTE:-case}"
 OUT="${OUT:-$WS_STORE/results/net/eval/$SERVED_NAME/$SUITE-$ROUTE/${SLURM_JOB_ID:-local}}"
+export NETAGENTS_VALIDATION_LOG_DIR="${NETAGENTS_VALIDATION_LOG_DIR:-$OUT/validation-events}"
 
 source slurm/start_vllm.sh
 python -m netagents.evaluate --suite "$SUITE" --designs $DESIGNS --route "$ROUTE" --out "$OUT" ${SEEDS:+--seeds "$SEEDS"}
