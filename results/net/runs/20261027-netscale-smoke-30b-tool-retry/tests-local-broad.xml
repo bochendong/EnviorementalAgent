@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="2" tests="79" time="8.031" timestamp="2026-10-27T01:55:23.443940-04:00" hostname="32:64:d2:4c:74:41"><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[null]" time="0.170" /><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[1.2]" time="0.012" /><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[&quot;hello&quot;]" time="0.012" /><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[[]]" time="0.011" /><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[[[&quot;x&quot;,1]]]" time="0.011" /><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[{broken]" time="0.011" /><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[4]" time="0.011" /><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[False]" time="0.011" /><testcase classname="tests.test_tool_validation" name="test_invalid_arguments_do_not_enter_environment[bad8]" time="0.011" /><testcase classname="tests.test_tool_validation" name="test_rejected_arguments_do_not_strand_lockstep_peers" time="0.011" /><testcase classname="tests.test_tool_validation" name="test_retries_parser_failures_and_counts_every_receipt" time="0.014" /><testcase classname="tests.test_tool_validation" name="test_retries_are_bounded_and_failures_are_recorded" time="0.001" /><testcase classname="tests.test_tool_validation" name="test_text_reply_allowed_when_tools_are_not_required" time="0.001" /><testcase classname="tests.test_netagents" name="test_reference_teams_solve_every_provider[codeworld-400]" time="0.003" /><testcase classname="tests.test_netagents" name="test_reference_teams_solve_every_provider[math-200]" time="0.038" /><testcase classname="tests.test_netagents" name="test_reference_teams_solve_every_provider[website-100]" time="0.018"><failure message="AssertionError: {'provider': 'website', 'solved': False, 'rounds': 5, 'actions': 16, ...}&#10;assert False&#10; +  where False = &lt;worldseeds.net.env.NetworkEnv object at 0x10bf508f0&gt;.solved">name = 'website', budget = 100
+
+    @pytest.mark.parametrize("name,budget", [("codeworld", 400), ("math", 200), ("website", 100), ("molecule", 600)])
+    def test_reference_teams_solve_every_provider(name, budget):
+        raw, env = local(name, budget=budget)
+        SOLVERS[name](env)
+&gt;       assert raw.solved, raw.metrics()
+E       AssertionError: {'provider': 'website', 'solved': False, 'rounds': 5, 'actions': 16, ...}
+E       assert False
+E        +  where False = &lt;worldseeds.net.env.NetworkEnv object at 0x10bf508f0&gt;.solved
+
+tests/test_netagents.py:30: AssertionError</failure></testcase><testcase classname="tests.test_netagents" name="test_reference_teams_solve_every_provider[molecule-600]" time="0.001"><failure message="ModuleNotFoundError: No module named 'rdkit'">name = 'molecule', budget = 600
+
+    @pytest.mark.parametrize("name,budget", [("codeworld", 400), ("math", 200), ("website", 100), ("molecule", 600)])
+    def test_reference_teams_solve_every_provider(name, budget):
+&gt;       raw, env = local(name, budget=budget)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_netagents.py:28: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_netagents.py:21: in local
+    raw = NetworkEnv(providers.make(name), NetConfig(**cfg))
+                     ^^^^^^^^^^^^^^^^^^^^
+worldseeds/net/providers/__init__.py:20: in make
+    return getattr(importlib.import_module(mod), cls)(**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+&lt;frozen importlib._bootstrap&gt;:1387: in _gcd_import
+    ???
+&lt;frozen importlib._bootstrap&gt;:1360: in _find_and_load
+    ???
+&lt;frozen importlib._bootstrap&gt;:1331: in _find_and_load_unlocked
+    ???
+&lt;frozen importlib._bootstrap&gt;:935: in _load_unlocked
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:999: in exec_module
+    ???
+&lt;frozen importlib._bootstrap&gt;:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Molecule design as a task provider: edit molecules, measure them, meet a target profile (RDKit).
+    
+    Chemists change molecules with named edits (put a fluorine on an aromatic carbon, turn a CH into N,
+    remove a substituent ...) and compute exact properties. Biologists run assays: the activity against
+    the target and toxicity, both hidden functions of the structure, measured with noise and expensive.
+    Only molecules someone has made (the starting ones and the products of edits) can be assayed, so the
+    two roles depend on each other.
+    
+    The hidden activity is drawn from the seed: a few structural motifs that help (and one that hurts), a
+    preferred lipophilicity and a size penalty. It is learnable from assays, like a real structure-activity
+    relationship, and ``oracle="package.module:function"`` replaces it with any SMILES -&gt; float model.
+    
+    Tasks climb a ladder (a hit, then a lead, then a candidate with low toxicity); thresholds are calibrated
+    at reset by a search over the edit space, so every episode is solvable. Your own targets can come from
+    JSON: {"start": [smiles...], "tasks": [{"id", "text", "deps", "final", "need": {"activity": 7,
+    "qed": 0.5, "mw": 450, "tox": 0.3, "sim": 0.3, "logp_max": 4}}]} (``mw``, ``tox`` and ``*_max`` are
+    maxima, the rest minima; ``sim`` is the Tanimoto similarity to the first start molecule;
+    ``activity_gain`` asks for that much more activity than the first start molecule has).
+    """
+    
+    from __future__ import annotations
+    
+    import importlib
+    import json
+    import random
+    
+&gt;   from rdkit import Chem, DataStructs, RDLogger
+E   ModuleNotFoundError: No module named 'rdkit'
+
+worldseeds/net/providers/molecule.py:27: ModuleNotFoundError</failure></testcase><testcase classname="tests.test_netagents" name="test_sharing_laws_saves_work_in_codeworld" time="0.003" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[0-team]" time="0.039" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[0-solo]" time="0.029" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[0-nonet]" time="0.010" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[1-team]" time="0.036" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[1-solo]" time="0.029" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[1-nonet]" time="0.010" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[100-team]" time="0.037" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[100-solo]" time="0.030" /><testcase classname="tests.test_netagents" name="test_reference_math_team_handles_linked_recurrences[100-nonet]" time="0.012" /><testcase classname="tests.test_netagents" name="test_reference_teams_need_the_network[codeworld/easy]" time="0.001" /><testcase classname="tests.test_netagents" name="test_reference_teams_need_the_network[math/easy]" time="0.069" /><testcase classname="tests.test_netagents" name="test_reference_teams_need_the_network[website/easy]" time="0.020"><failure message="assert False&#10; +  where False = &lt;worldseeds.net.env.NetworkEnv object at 0x10bfa9c10&gt;.solved">name = 'website/easy'
+
+    @pytest.mark.parametrize("name", ["codeworld/easy", "math/easy", "website/easy", "molecule/easy"])
+    def test_reference_teams_need_the_network(name):
+        raw = build(name)
+        raw.reset(0)
+        SOLVERS[raw.provider.name](LocalEnv(raw))
+&gt;       assert raw.solved
+E       assert False
+E        +  where False = &lt;worldseeds.net.env.NetworkEnv object at 0x10bfa9c10&gt;.solved
+
+tests/test_netagents.py:60: AssertionError</failure></testcase><testcase classname="tests.test_netagents" name="test_reference_teams_need_the_network[molecule/easy]" time="0.001"><failure message="ModuleNotFoundError: No module named 'rdkit'">name = 'molecule/easy'
+
+    @pytest.mark.parametrize("name", ["codeworld/easy", "math/easy", "website/easy", "molecule/easy"])
+    def test_reference_teams_need_the_network(name):
+&gt;       raw = build(name)
+              ^^^^^^^^^^^
+
+tests/test_netagents.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+worldseeds/net/presets.py:233: in build
+    return NetworkEnv(providers.make(prov, **opt), NetConfig(**{k: v for k, v in {**net, **net_overrides}.items()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worldseeds/net/providers/__init__.py:20: in make
+    return getattr(importlib.import_module(mod), cls)(**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+&lt;frozen importlib._bootstrap&gt;:1387: in _gcd_import
+    ???
+&lt;frozen importlib._bootstrap&gt;:1360: in _find_and_load
+    ???
+&lt;frozen importlib._bootstrap&gt;:1331: in _find_and_load_unlocked
+    ???
+&lt;frozen importlib._bootstrap&gt;:935: in _load_unlocked
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:999: in exec_module
+    ???
+&lt;frozen importlib._bootstrap&gt;:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Molecule design as a task provider: edit molecules, measure them, meet a target profile (RDKit).
+    
+    Chemists change molecules with named edits (put a fluorine on an aromatic carbon, turn a CH into N,
+    remove a substituent ...) and compute exact properties. Biologists run assays: the activity against
+    the target and toxicity, both hidden functions of the structure, measured with noise and expensive.
+    Only molecules someone has made (the starting ones and the products of edits) can be assayed, so the
+    two roles depend on each other.
+    
+    The hidden activity is drawn from the seed: a few structural motifs that help (and one that hurts), a
+    preferred lipophilicity and a size penalty. It is learnable from assays, like a real structure-activity
+    relationship, and ``oracle="package.module:function"`` replaces it with any SMILES -&gt; float model.
+    
+    Tasks climb a ladder (a hit, then a lead, then a candidate with low toxicity); thresholds are calibrated
+    at reset by a search over the edit space, so every episode is solvable. Your own targets can come from
+    JSON: {"start": [smiles...], "tasks": [{"id", "text", "deps", "final", "need": {"activity": 7,
+    "qed": 0.5, "mw": 450, "tox": 0.3, "sim": 0.3, "logp_max": 4}}]} (``mw``, ``tox`` and ``*_max`` are
+    maxima, the rest minima; ``sim`` is the Tanimoto similarity to the first start molecule;
+    ``activity_gain`` asks for that much more activity than the first start molecule has).
+    """
+    
+    from __future__ import annotations
+    
+    import importlib
+    import json
+    import random
+    
+&gt;   from rdkit import Chem, DataStructs, RDLogger
+E   ModuleNotFoundError: No module named 'rdkit'
+
+worldseeds/net/providers/molecule.py:27: ModuleNotFoundError</failure></testcase><testcase classname="tests.test_netagents" name="test_random_calls_never_break_a_provider[codeworld]" time="0.003" /><testcase classname="tests.test_netagents" name="test_random_calls_never_break_a_provider[dag]" time="0.005" /><testcase classname="tests.test_netagents" name="test_random_calls_never_break_a_provider[math]" time="0.036" /><testcase classname="tests.test_netagents" name="test_random_calls_never_break_a_provider[molecule]" time="0.001"><failure message="ModuleNotFoundError: No module named 'rdkit'">name = 'molecule'
+
+    @pytest.mark.parametrize("name", sorted(providers.PROVIDERS))
+    def test_random_calls_never_break_a_provider(name):
+&gt;       raw, env = local(name, 2, budget=60, market="claim", topology="random", latency=1, outage=.1, store_price=1,
+                         credits=2)
+
+tests/test_netagents.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_netagents.py:21: in local
+    raw = NetworkEnv(providers.make(name), NetConfig(**cfg))
+                     ^^^^^^^^^^^^^^^^^^^^
+worldseeds/net/providers/__init__.py:20: in make
+    return getattr(importlib.import_module(mod), cls)(**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+&lt;frozen importlib._bootstrap&gt;:1387: in _gcd_import
+    ???
+&lt;frozen importlib._bootstrap&gt;:1360: in _find_and_load
+    ???
+&lt;frozen importlib._bootstrap&gt;:1331: in _find_and_load_unlocked
+    ???
+&lt;frozen importlib._bootstrap&gt;:935: in _load_unlocked
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:999: in exec_module
+    ???
+&lt;frozen importlib._bootstrap&gt;:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Molecule design as a task provider: edit molecules, measure them, meet a target profile (RDKit).
+    
+    Chemists change molecules with named edits (put a fluorine on an aromatic carbon, turn a CH into N,
+    remove a substituent ...) and compute exact properties. Biologists run assays: the activity against
+    the target and toxicity, both hidden functions of the structure, measured with noise and expensive.
+    Only molecules someone has made (the starting ones and the products of edits) can be assayed, so the
+    two roles depend on each other.
+    
+    The hidden activity is drawn from the seed: a few structural motifs that help (and one that hurts), a
+    preferred lipophilicity and a size penalty. It is learnable from assays, like a real structure-activity
+    relationship, and ``oracle="package.module:function"`` replaces it with any SMILES -&gt; float model.
+    
+    Tasks climb a ladder (a hit, then a lead, then a candidate with low toxicity); thresholds are calibrated
+    at reset by a search over the edit space, so every episode is solvable. Your own targets can come from
+    JSON: {"start": [smiles...], "tasks": [{"id", "text", "deps", "final", "need": {"activity": 7,
+    "qed": 0.5, "mw": 450, "tox": 0.3, "sim": 0.3, "logp_max": 4}}]} (``mw``, ``tox`` and ``*_max`` are
+    maxima, the rest minima; ``sim`` is the Tanimoto similarity to the first start molecule;
+    ``activity_gain`` asks for that much more activity than the first start molecule has).
+    """
+    
+    from __future__ import annotations
+    
+    import importlib
+    import json
+    import random
+    
+&gt;   from rdkit import Chem, DataStructs, RDLogger
+E   ModuleNotFoundError: No module named 'rdkit'
+
+worldseeds/net/providers/molecule.py:27: ModuleNotFoundError</failure></testcase><testcase classname="tests.test_netagents" name="test_random_calls_never_break_a_provider[website]" time="0.012"><failure message="AssertionError: assert not [{'t': 45, 'round': 11, 'kind': 'provider_error', 'op': 'run_tests', ...}, {'t': 64, 'round': 16, 'kind': 'provider_error', 'op': 'verify', ...}]">name = 'website'
+
+    @pytest.mark.parametrize("name", sorted(providers.PROVIDERS))
+    def test_random_calls_never_break_a_provider(name):
+        raw, env = local(name, 2, budget=60, market="claim", topology="random", latency=1, outage=.1, store_price=1,
+                         credits=2)
+        random_policy(env, 120, 2)
+&gt;       assert not [ev for ev in raw.events if ev["kind"] == "provider_error"]
+E       AssertionError: assert not [{'t': 45, 'round': 11, 'kind': 'provider_error', 'op': 'run_tests', ...}, {'t': 64, 'round': 16, 'kind': 'provider_error', 'op': 'verify', ...}]
+
+tests/test_netagents.py:73: AssertionError</failure></testcase><testcase classname="tests.test_netagents" name="test_tools_and_briefing" time="0.025" /><testcase classname="tests.test_netagents" name="test_the_same_team_over_http" time="0.552"><failure message="assert (False)">def test_the_same_team_over_http():
+        """A reference team gets the same result in this process and over the HTTP API."""
+        raw, env = local("website", 3, budget=100)
+        SOLVERS["website"](env)
+        here = raw.metrics()
+        served = NetworkEnv(providers.make("website"), NetConfig(budget=100))
+        served.reset(3)
+        srv = HTTPServer(("127.0.0.1", 0), make_handler(served))
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            remote = RemoteEnv(f"http://127.0.0.1:{srv.server_address[1]}")
+            SOLVERS["website"](remote)
+            there = remote.metrics()
+        finally:
+            srv.shutdown()
+&gt;       assert there["solved"] and there["actions"] == here["actions"]
+E       assert (False)
+
+tests/test_netagents.py:104: AssertionError</failure></testcase><testcase classname="tests.test_netagents" name="test_every_design_runs_within_the_same_call_budget" time="0.811" /><testcase classname="tests.test_netagents" name="test_designs_restrict_what_members_may_do" time="0.012" /><testcase classname="tests.test_netagents" name="test_test_set_is_well_formed" time="0.029"><failure message="ModuleNotFoundError: No module named 'rdkit'">def test_test_set_is_well_formed():
+        from netagents.testset import DEV_SEEDS, SUITES, TEST_SEEDS
+    
+        assert not set(DEV_SEEDS) &amp; set(TEST_SEEDS)
+        for suite, cases in SUITES.items():
+            for c in cases:
+&gt;               raw = c.build("team")
+                      ^^^^^^^^^^^^^^^
+
+tests/test_netagents.py:157: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+netagents/testset.py:91: in build
+    return presets.build(self.preset, variant, opt=self.opt, net_change={**self.net, **net})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worldseeds/net/presets.py:233: in build
+    return NetworkEnv(providers.make(prov, **opt), NetConfig(**{k: v for k, v in {**net, **net_overrides}.items()
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+worldseeds/net/providers/__init__.py:20: in make
+    return getattr(importlib.import_module(mod), cls)(**options)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../../../.cache/codex-runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+&lt;frozen importlib._bootstrap&gt;:1387: in _gcd_import
+    ???
+&lt;frozen importlib._bootstrap&gt;:1360: in _find_and_load
+    ???
+&lt;frozen importlib._bootstrap&gt;:1331: in _find_and_load_unlocked
+    ???
+&lt;frozen importlib._bootstrap&gt;:935: in _load_unlocked
+    ???
+&lt;frozen importlib._bootstrap_external&gt;:999: in exec_module
+    ???
+&lt;frozen importlib._bootstrap&gt;:488: in _call_with_frames_removed
+    ???
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    """Molecule design as a task provider: edit molecules, measure them, meet a target profile (RDKit).
+    
+    Chemists change molecules with named edits (put a fluorine on an aromatic carbon, turn a CH into N,
+    remove a substituent ...) and compute exact properties. Biologists run assays: the activity against
+    the target and toxicity, both hidden functions of the structure, measured with noise and expensive.
+    Only molecules someone has made (the starting ones and the products of edits) can be assayed, so the
+    two roles depend on each other.
+    
+    The hidden activity is drawn from the seed: a few structural motifs that help (and one that hurts), a
+    preferred lipophilicity and a size penalty. It is learnable from assays, like a real structure-activity
+    relationship, and ``oracle="package.module:function"`` replaces it with any SMILES -&gt; float model.
+    
+    Tasks climb a ladder (a hit, then a lead, then a candidate with low toxicity); thresholds are calibrated
+    at reset by a search over the edit space, so every episode is solvable. Your own targets can come from
+    JSON: {"start": [smiles...], "tasks": [{"id", "text", "deps", "final", "need": {"activity": 7,
+    "qed": 0.5, "mw": 450, "tox": 0.3, "sim": 0.3, "logp_max": 4}}]} (``mw``, ``tox`` and ``*_max`` are
+    maxima, the rest minima; ``sim`` is the Tanimoto similarity to the first start molecule;
+    ``activity_gain`` asks for that much more activity than the first start molecule has).
+    """
+    
+    from __future__ import annotations
+    
+    import importlib
+    import json
+    import random
+    
+&gt;   from rdkit import Chem, DataStructs, RDLogger
+E   ModuleNotFoundError: No module named 'rdkit'
+
+worldseeds/net/providers/molecule.py:27: ModuleNotFoundError</failure></testcase><testcase classname="tests.test_netagents" name="test_autogen_teams_run_through_the_http_api" time="0.000"><skipped type="pytest.skip" message="set NETAGENTS_PY_AUTOGEN to a Python with autogen-agentchat 0.7.5">/Users/dongbochen/Documents/GitHub/EnviorementalAgent/tests/test_netagents.py:164: set NETAGENTS_PY_AUTOGEN to a Python with autogen-agentchat 0.7.5</skipped></testcase><testcase classname="tests.test_netagents" name="test_camel_role_play_runs_through_the_http_api" time="0.000"><skipped type="pytest.skip" message="set NETAGENTS_PY_CAMEL to a Python with camel-ai 0.2.90">/Users/dongbochen/Documents/GitHub/EnviorementalAgent/tests/test_netagents.py:181: set NETAGENTS_PY_CAMEL to a Python with camel-ai 0.2.90</skipped></testcase><testcase classname="tests.test_netagents" name="test_fidelity_scoring_is_strict" time="0.002" /><testcase classname="tests.test_netagents" name="test_channel_routes_messages_through_the_framework_or_the_network" time="0.024" /><testcase classname="tests.test_netagents" name="test_compat_track_and_published_findings" time="0.022" /><testcase classname="tests.test_netagents" name="test_designs_run_on_both_tracks" time="0.531" /><testcase classname="tests.test_netagents" name="test_orchestrators_handle_missing_network_findings[network0-centralized]" time="0.200" /><testcase classname="tests.test_netagents" name="test_orchestrators_handle_missing_network_findings[network0-hybrid]" time="0.210" /><testcase classname="tests.test_netagents" name="test_orchestrators_handle_missing_network_findings[network1-centralized]" time="0.163" /><testcase classname="tests.test_netagents" name="test_orchestrators_handle_missing_network_findings[network1-hybrid]" time="0.167" /><testcase classname="tests.test_netagents" name="test_runs_resume_and_summaries_merge" time="0.003" /><testcase classname="tests.test_netagents" name="test_history_is_trimmed_without_orphan_tool_results" time="0.002" /><testcase classname="tests.test_netagents" name="test_llm_settings_are_shared" time="0.000" /><testcase classname="tests.test_netagents" name="test_a_team_of_one_is_not_shown_sharing_tools" time="0.049" /><testcase classname="tests.test_netagents" name="test_calibration_verdicts" time="0.000" /><testcase classname="tests.test_netagents" name="test_designs_run_under_the_new_mechanisms" time="2.107" /><testcase classname="tests.test_netagents" name="test_a_step_whose_thinking_runs_out_is_redone_without_thinking" time="0.535" /><testcase classname="tests.test_netagents" name="test_load_suite_grows_the_world_not_the_work" time="0.017" /><testcase classname="tests.test_netagents" name="test_scaling_reference_obeys_brent_and_solves" time="0.060" /><testcase classname="tests.test_netagents" name="test_lockstep_rounds_wait_for_every_working_agent" time="0.032" /><testcase classname="tests.test_netagents" name="test_peers_run_in_lockstep_against_the_reference" time="0.034" /><testcase classname="tests.test_netagents" name="test_netscale_table_and_usl_fit" time="0.052" /><testcase classname="tests.test_netagents" name="test_batch_reference_and_sharing_labels" time="0.013" /><testcase classname="tests.test_netagents" name="test_superstep_overhead_and_prediction" time="0.059" /><testcase classname="tests.test_netagents" name="test_phases_of_a_scripted_run" time="0.004" /><testcase classname="tests.test_netagents" name="test_history_is_trimmed_before_every_model_call" time="0.168" /><testcase classname="tests.test_netagents" name="test_intervention_designs_add_one_rule" time="0.065" /><testcase classname="tests.test_netagents" name="test_lockstep_runs_save_their_progress" time="0.713" /><testcase classname="tests.test_slurm_env" name="test_requested_cuda_module_is_loaded_and_retained" time="0.020" /><testcase classname="tests.test_slurm_env" name="test_missing_requested_cuda_does_not_fall_back" time="0.014" /><testcase classname="tests.test_slurm_env" name="test_dependency_cannot_silently_replace_cuda" time="0.011" /><testcase classname="tests.test_nvml_preload.NvmlPreloadTests" name="test_absolute_library_repairs_soname_lookup_failure" time="0.003" /><testcase classname="tests.test_nvml_preload.NvmlPreloadTests" name="test_missing_library_is_not_returned" time="0.000" /><testcase classname="tests.test_nvml_preload.NvmlPreloadTests" name="test_normal_loader_needs_no_preload" time="0.000" /><testcase classname="tests.test_nvml_preload.NvmlPreloadTests" name="test_unloadable_library_reports_underlying_error" time="0.000" /><testcase classname="tests.test_codex_cli_model" name="test_native_peers_and_lockstep_use_one_operation_per_response" time="0.011" /><testcase classname="tests.test_codex_cli_model" name="test_pilot_configuration" time="0.002" /><testcase classname="tests.test_codex_cli_model" name="test_transport_audit_rejects_outside_capabilities" time="0.000" /></testsuite></testsuites>
