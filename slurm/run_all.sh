@@ -22,6 +22,8 @@
 #   netscale-screen  which open model can run the protocol? one agent, fixed DAG, grain 4 (65 tasks), 3 seeds at
 #          once, 2 hours; passes when every seed is solved with b >= 0.9. MODEL_ID=openai/gpt-oss-120b or
 #          Qwen/Qwen3-30B-A3B-Instruct-2507-FP8 (no thinking; tool_choice=required runs as structured output)
+#   netscale-main  the paper's open-weight replication of Table 2: 1, 2, 4, 8, 16, 32 peers, fixed DAG, grain 4,
+#          seeds 100-102 (18 runs), 2 at once, 2 days; only with a model that passed netscale-screen
 #   netscale-pilot  agent-network scaling, the pilot: teams of 1, 2, 4, 8 identical agents ("peers") on one
 #          DAG problem of known work and span, 3 seeds, time in lockstep rounds against the scripted
 #          reference (netagents/scaling.py); one packed job. netscale: 1-32 agents, fixed and scaled problems,
@@ -170,7 +172,9 @@ PY
     # before it was done (results/net/submissions/20261023-netscale-smoke-final-report.md)
     [ "$exp" = netscale-smoke ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-06:00
     # the model screen is budgeted at about 2 H100 hours; its 3 seeds run at once
-    [ "$exp" = netscale-screen ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-02:00 ;;
+    [ "$exp" = netscale-screen ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=0-02:00
+    # the replication grid: 18 runs, a single agent alone about 330 rounds; resumes skip finished runs
+    [ "$exp" = netscale-main ] && [ "$TIME" = 1-00:00 ] && TIME_EXP=2-00:00 ;;
   esac
   pack="${PACK:-$(case "$exp" in focus|load|netscale*) echo 1 ;; *) echo 0 ;; esac)}"
   if [ "${FRAMEWORKS:-0}" = 1 ] && { [ "$exp" = compat-framework ] || [ "$exp" = test ]; }; then

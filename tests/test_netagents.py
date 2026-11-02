@@ -615,3 +615,15 @@ def test_model_screen_is_one_agent_on_the_65_task_grain_4_problem():
     (case,) = SUITES["netscale-screen"]
     assert case.id == "dag/fixed-g4/n1" and case.seeds == [100, 101, 102] and case.lockstep
     assert case.opt["width"] * case.opt["depth"] + 1 == 65
+
+
+def test_main_replication_is_the_grain_4_scaling_grid_of_table_2():
+    from netagents.testset import SUITES
+
+    cases = SUITES["netscale-main"]
+    assert [c.opt["agents"] for c in cases] == [1, 2, 4, 8, 16, 32]
+    assert all(c.id == f"dag/fixed-g4/n{c.opt['agents']}" and c.seeds == [100, 101, 102] and c.lockstep
+               for c in cases)
+    # the same cases (ids and call budgets) as the frontier runs, so the two models pair seed by seed
+    intervene = {c.id: c for c in SUITES["netscale-intervene"]}
+    assert all(c.calls == intervene[c.id].calls for c in cases if c.id in intervene)
