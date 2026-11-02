@@ -603,7 +603,10 @@ class Peers(Design):
             protocol += " " + self.hint
         ms = [self.member(env, a, model, settings, protocol) for a in names]
         per = calls // len(ms)
-        for r in range(self.rounds):  # a member that stops talking with calls left is prompted to go on
+        # a member that stops talking with calls left is prompted to go on, at most this many turns in all;
+        # NETAGENTS_PEERS_TURNS raises it for models that end turns early (gpt-oss with tool_choice=auto)
+        turns = int(os.environ.get("NETAGENTS_PEERS_TURNS") or self.rounds)
+        for r in range(turns):
             live = [m for m in ms if not m.finished() and m.calls < per]
             if not live or self._pool[0] <= 0:
                 break

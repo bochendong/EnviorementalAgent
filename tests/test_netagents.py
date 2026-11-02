@@ -615,3 +615,30 @@ def test_model_screen_is_one_agent_on_the_65_task_grain_4_problem():
     (case,) = SUITES["netscale-screen"]
     assert case.id == "dag/fixed-g4/n1" and case.seeds == [100, 101, 102] and case.lockstep
     assert case.opt["width"] * case.opt["depth"] + 1 == 65
+
+
+def test_peers_prompts_a_quitting_agent_again_up_to_the_turn_limit(monkeypatch):
+    import asyncio
+
+    from netagents import designs
+
+    turns = []
+
+    class Env:
+        def public(self):
+            return {"agents": ["a0"], "config": {}}
+
+    async def turn(self, message, max_calls):
+        turns.append(message)  # ends its turn at once, with every call left
+        return "done"
+
+    monkeypatch.setattr(designs.Member, "__post_init__", lambda self: None)
+    monkeypatch.setattr(designs.Member, "turn", turn)
+    monkeypatch.setattr(designs.Member, "finished", lambda self: False)
+    peers = designs.DESIGNS["peers"]
+    asyncio.run(peers.play(Env(), None, None, 40))
+    assert len(turns) == peers.rounds == 3 and turns[0] == "Begin."
+    turns.clear()
+    monkeypatch.setenv("NETAGENTS_PEERS_TURNS", "20")
+    asyncio.run(peers.play(Env(), None, None, 40))
+    assert len(turns) == 20 and set(turns[1:]) == {"Continue: the problem is not solved yet."}
