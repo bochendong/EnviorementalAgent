@@ -637,3 +637,30 @@ def test_concurrent_control_pairs_with_the_earlier_16_and_32_agent_cases():
     for name in ("netscale-intervene", "netscale"):
         earlier = {c.id: c.calls for c in SUITES[name]}
         assert all(earlier[c.id] == c.calls for c in control)
+
+
+def test_control_slices_keep_the_two_32_agent_arms_in_step(tmp_path):
+    import json
+
+    from netagents.netscale_control import ARMS, command, next_slice
+
+    def finish(arm, n):
+        (tmp_path / arm).mkdir(exist_ok=True)
+        (tmp_path / arm / "config.json").write_text("{}")
+        (tmp_path / arm / "runs.jsonl").write_text("".join(json.dumps({"seed": s}) + "\n" for s in ARMS[arm][2][:n]))
+
+    assert next_slice(tmp_path) == [("plain32", 1), ("columns32", 1)]
+    cmd = command(tmp_path, "columns32", 1, "m", "high")
+    assert cmd[cmd.index("--seeds") + 1:cmd.index("--model")] == ["101", "104", "100", "103", "102"]
+    assert "--max-runs" in cmd and "--resume" not in cmd
+    finish("plain32", 1)  # columns32 was cut off in slice 1: it alone resumes, plain32 waits
+    assert next_slice(tmp_path) == [("columns32", 1)]
+    finish("columns32", 1)
+    assert next_slice(tmp_path) == [("plain32", 1), ("columns32", 1)]
+    assert "--resume" in command(tmp_path, "plain32", 1, "m", "high")
+    finish("plain32", 5), finish("columns32", 5)
+    assert next_slice(tmp_path) == [("plain16", 2)]
+    finish("plain16", 1)
+    assert next_slice(tmp_path) == [("plain16", 1)]
+    finish("plain16", 2)
+    assert next_slice(tmp_path) == []

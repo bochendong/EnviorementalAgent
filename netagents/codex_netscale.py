@@ -2,6 +2,7 @@
 
     python -m netagents.codex_netscale --model gpt-6.1-sol --out results/net/runs/codex/netscale-pilot
     python -m netagents.codex_netscale --suite netscale --sizes 16 32 --grains 4 --seeds 100 101 102 --out ...
+    add --max-runs 1 to run one more team and stop; the same command with --resume continues
 
 Keeps Peers, Lockstep, cases, seeds, tool budgets, traces and summary unchanged.
 Only inference goes through the logged-in Codex CLI. Completed requests are
@@ -77,6 +78,8 @@ def main():
     parser.add_argument("--inference-concurrency", type=int, default=2)
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--max-runs", type=int, default=0,
+                        help="run at most this many pending runs, then stop (0: all); --resume continues later")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     suite = SUITES[args.suite]
@@ -116,6 +119,9 @@ def main():
              and family(c) in args.families]
     jobs = [(case, seed) for seed in args.seeds for case in cases if (case.id, seed) not in done]
     planned = len(cases) * len(args.seeds)
+    if args.max_runs > 0:
+        # a slice of the plan, in its order: the rest waits for a later --resume (Codex usage is weekly)
+        jobs = jobs[:args.max_runs]
     plan = [{"case": case.id, "seed": seed, "agents": case.team_size(), "calls": case.calls, "problem": case.opt} for case, seed in jobs]
     write_json(out / "pending_plan.json", plan)
     write_json(out / "status.json", {"status": "running", "planned_runs": planned, "completed_runs": len(rows)})
@@ -139,7 +145,8 @@ def main():
         write_json(out / "failure.json", {"error": str(error)})
         write_json(out / "status.json", {"status": "infrastructure_error", "completed_runs": len(rows), "error": str(error)})
         raise
-    write_json(out / "status.json", {"status": "complete", "completed_runs": len(rows), "planned_runs": planned})
+    write_json(out / "status.json", {"status": "complete" if len(rows) >= planned else "paused",
+                                     "completed_runs": len(rows), "planned_runs": planned})
 
 
 if __name__ == "__main__":

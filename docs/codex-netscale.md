@@ -20,6 +20,23 @@
 
 已完成的正式试跑见 [2026年10月22日结果与用量](../results/net/runs/20261022-codex-netscale-pilot-01/netscale-pilot/README.md)，包含原始汇总、轨迹、完整调用归档及 Word 精简报告。
 
+## 分段补跑：第五条预测（同期对照，按周额度分段）
+
+第五条预测（`docs/netscale-predictions.md`，冻结于 `1545ab6`）的 12 组不一次跑完。每次只跑一段，跑完就退出：
+
+```bash
+RUN=results/net/runs/20261102-codex-control-n32-grain4-08
+.venv/bin/python -m netagents.netscale_control status --run $RUN            # 进度、各组 tokens、Codex 周用量
+.venv/bin/python -m netagents.netscale_control next --run $RUN --dry-run    # 只打印下一段要跑的命令
+.venv/bin/python -m netagents.netscale_control next --run $RUN --max-usage 70
+```
+
+- 第 1–5 段：plain 32 和 columns 32 各跑一个种子，两边同时跑（每组一个团队，总推理并发 2）。每段约 2.5–3 小时、约 7000 万 tokens。两组之间最多只差一段，这样对照才是同期的。
+- 第 6 段：plain 16 的种子 103、104，两个团队同时跑。
+- 一段中途断了（额度用完、合上电脑、Ctrl-C）：再运行一次 `next` 就行。被打断的团队会从缓存的 Codex 调用接着跑，已经跑完本段的那一组会等另一组。
+- `--max-usage` 会读最新 Codex 会话日志里的周用量百分比，超过阈值就不启动；读不到时只提示，不拦截。
+- 每段的命令、git 提交和启动时的用量记录在 `$RUN/slices.jsonl`，日志在 `$RUN/<arm>-runner.log`。
+
 ## 原协议与模型替换
 
 直接调用原来的 `evaluate.run_one(DESIGNS["peers"], ...)`，复用：
