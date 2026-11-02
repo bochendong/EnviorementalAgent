@@ -627,3 +627,13 @@ def test_main_replication_is_the_grain_4_scaling_grid_of_table_2():
     # the same cases (ids and call budgets) as the frontier runs, so the two models pair seed by seed
     intervene = {c.id: c for c in SUITES["netscale-intervene"]}
     assert all(c.calls == intervene[c.id].calls for c in cases if c.id in intervene)
+
+
+def test_concurrent_control_pairs_with_the_earlier_16_and_32_agent_cases():
+    from netagents.testset import SUITES
+
+    control = SUITES["netscale-control"]
+    assert all(c.seeds == [100, 101, 102, 103, 104] for c in control)
+    for name in ("netscale-intervene", "netscale"):
+        earlier = {c.id: c.calls for c in SUITES[name]}
+        assert all(earlier[c.id] == c.calls for c in control)

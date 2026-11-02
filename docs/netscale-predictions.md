@@ -227,6 +227,40 @@ python -m netagents.codex_netscale --suite netscale-intervene --design peers-msg
 - **Barred from working, 16 idle agents bought nothing.** The columns runs (56, 56, 49) are where the plain 16-agent runs were (44, 58, 50).
 - **What it does not isolate.** The rule also changed how the teams shared answers. They sent far fewer messages (12-55 against 134-182) and read the store more (64-102 reads against 58-127). The comparison is with earlier runs, not a concurrent random assignment.
 
+## Fifth prediction: a concurrent control and five seeds (2026-11-02, before any of these runs)
+
+Every result above at 16 and 32 agents has three seeds, and the `peers-columns` intervention was compared with plain runs made three days earlier with an older CLI. These runs repeat both arms at the same time, with the same source, CLI and model, on seeds 100-104, and add seeds 103-104 to the plain 16-agent runs. Fixed 16 x 4 problem, grain 4, gpt-6.1-sol on high. Nothing in the designs, prompts or environment changes.
+
+Suite `netscale-control` has the same cases and call budgets as `netscale-intervene` and `netscale`, with seeds 100-104.
+
+Arms, run concurrently (two processes, one team each, total inference concurrency 2; each arm takes the seeds in its own shuffled order, fixed below):
+
+| arm | suite | design | agents | seeds (order) |
+|---|---|---|---|---|
+| plain-32 | `netscale-control` | `peers` | 32 | 103, 100, 104, 102, 101 |
+| columns-32 | `netscale-control` | `peers-columns` | 32 | 101, 104, 100, 103, 102 |
+| plain-16 (after the two arms) | `netscale-control` | `peers` | 16 | 103, 104 |
+
+Predictions, from the runs above and nothing else. T is in lockstep rounds; "loss per layer" is the mean handoff loss over layers 1-3 (`netagents.netscale.phases`).
+
+1. **The plain 32-agent result replicates.** Mean T over seeds 100-104 is 35-42 (earlier: 38), and every plain-32 team forms two crews on alternating layers (judged from the traces as in the earlier runs). Mean loss per layer 2.0-3.5.
+2. **The intervention holds against a concurrent control.** On every one of the five seeds, columns-32 is slower than plain-32 on the same seed and loses more per layer. Mean loss per layer is 4.5-6.5 for columns-32 against 2.0-3.5 for plain-32; mean T 46-58.
+3. **The join rule holds out of sample.** In every new run, the join loses (store reads by its solver) + 1-4 rounds; a run whose solver reads 5 or more answers one by one from the store loses at least reads + 1.
+4. **32 beats 16 with five seeds.** Mean T of plain-16 over seeds 100-104 (three earlier runs, two new) exceeds the mean of plain-32 over seeds 100-104 by at least 5 rounds, and plain-16 loses at least 4 rounds per layer on average.
+
+What would count against the crew mechanism: plain-32 teams that do not form two crews yet stay near 38, or columns-32 within 2 rounds of plain-32 on two or more seeds.
+
+The plain-16 runs of seeds 100-102 come from older source and CLI; prediction 4 mixes them with the new seeds and says so. Prediction 2 uses only the concurrent runs.
+
+```bash
+python -m netagents.codex_netscale --suite netscale-control --design peers --families fixed --sizes 32 --grains 4 \
+  --seeds 103 100 104 102 101 --parallel-runs 1 --inference-concurrency 1 --out results/net/runs/<run>/plain32
+python -m netagents.codex_netscale --suite netscale-control --design peers-columns --families fixed --sizes 32 --grains 4 \
+  --seeds 101 104 100 103 102 --parallel-runs 1 --inference-concurrency 1 --out results/net/runs/<run>/columns32
+python -m netagents.codex_netscale --suite netscale-control --design peers --families fixed --sizes 16 --grains 4 \
+  --seeds 103 104 --parallel-runs 2 --inference-concurrency 2 --out results/net/runs/<run>/plain16
+```
+
 ## 中文摘要
 
 16 人和 32 人还没跑之前，先用两轮试跑的结果写下预测。

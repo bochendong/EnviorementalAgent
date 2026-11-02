@@ -165,6 +165,9 @@ SUITES: dict[str, list[Case]] = {
     # the interventions (designs peers-columns on 32 agents, peers-msgjoin on 16): the same cases as netscale's,
     # so that each pairs with the plain peers runs seed by seed
     "netscale-intervene": [netscale_case("fixed", n, TEST_SEEDS[:3], 4) for n in (16, 32)],
+    # the fifth prediction (docs/netscale-predictions.md): plain and peers-columns at once, seeds 100-104, the same
+    # cases as netscale-intervene's
+    "netscale-control": [netscale_case("fixed", n, TEST_SEEDS[:5], 4) for n in (16, 32)],
     "netscale-slack": [netscale_case("w8", n, TEST_SEEDS[:3], 4, width=8) for n in (4, 8, 12, 16)],
     "netscale": [netscale_case(f, n, TEST_SEEDS[:5], g) for g in NETSCALE_GRAINS for f in ("fixed", "scaled")
                  for n in NETSCALE_SIZES],
