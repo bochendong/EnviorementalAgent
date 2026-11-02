@@ -1,0 +1,50 @@
+# Run 20261027-screen-qwen3-30b-instruct-2507
+
+`commit.txt`:
+
+```
+commit e37e95821508345298bff794db595258ce643316  (HEAD)
+submitted 2026-10-27T22:20:31-04:00
+```
+
+`env.txt`:
+
+```
+# 2026-10-27T22:20:31-04:00, stage netscale-screen
+ACCOUNT=rrg-hup_gpu
+CPU_ACCOUNT=def-hup-ab_cpu
+GPU_ACCOUNT=rrg-hup_gpu
+GPU_RESOURCE=h100:1
+GPU_CPUS=4
+GPU_MEM=64G
+GPU_DEPENDENCY=
+MODEL_ID=Qwen/Qwen3-30B-A3B-Instruct-2507-FP8
+SERVED_NAME=qwen3-30b-a3b-instruct-2507-fp8
+TP=1
+MAX_MODEL_LEN=65536
+NATIVE_LEN=262144
+TOOL_PARSER=hermes
+REASONING_PARSER=
+EXTRA_VLLM_ARGS=
+SERVER_MODE=venv
+CUDA_MODULE=cuda/12.9
+DESIGNS=react reflexion sas independent centralized decentralized hybrid debate moa blackboard
+FRAMEWORKS=
+SEEDS=
+N=
+TIME=1-00:00
+NETSCALE_DESIGNS=
+WS_THINKING=0
+WS_MAX_TOKENS=
+WS_CONTEXT_TOKENS=39321
+NETAGENTS_PARALLEL=
+```
+
+## netscale-screen
+
+
+
+Jobs: peers `25163613`, summary `25163615`
+
+_no runs yet_
+
